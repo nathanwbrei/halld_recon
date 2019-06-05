@@ -393,7 +393,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    gPARMS->SetDefaultParameter("TRKFIT:USE_MULS_COVARIANCE",
          USE_MULS_COVARIANCE);  
 
-   USE_PASS1_TIME_MODE=false;
+   USE_PASS1_TIME_MODE=true;
    gPARMS->SetDefaultParameter("KALMAN:USE_PASS1_TIME_MODE",USE_PASS1_TIME_MODE); 
 
    USE_FDC_DRIFT_TIMES=true;
@@ -697,7 +697,7 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
 
 
    mT0=0.,mT0MinimumDriftTime=1e6;
-   mVarT0=25.;
+   mVarT0=100.;
 
    mCDCInternalStepSize=0.5;
    //mCDCInternalStepSize=1.0;
@@ -3266,8 +3266,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 
       kalman_error_t error=ForwardFit(S0,C0); 
       if (error==FIT_SUCCEEDED) return NOERROR;
-      if ((error==FIT_FAILED || ndf_==0) && my_cdchits.size()<6){
-	return UNRECOVERABLE_ERROR;
+      if (my_cdchits.size()<6){
+	if (error>=INVALID_FIT) return UNRECOVERABLE_ERROR;
+	else return NOERROR;
       }
       
       fdc_prob=TMath::Prob(chisq_,ndf_);
@@ -3435,8 +3436,12 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	ExtrapolateToVertex(xy,S0);
       }
     
-      cdc_error=CentralFit(xy,S0,C0);
-      if (cdc_error==FIT_SUCCEEDED){
+      cdc_error=CentralFit(xy,S0,C0);  
+      if (error==FIT_NOT_DONE && cdc_error<INVALID_FIT){
+	return NOERROR;
+      }
+
+      if (cdc_error<INVALID_FIT){
 	// if the result of the fit using the forward parameterization succeeded
 	// but the chi2 was too high, it still may provide the best estimate 
 	// for the track parameters... 
@@ -3468,7 +3473,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 
       }
       // otherwise if the fit using the forward parametrization worked, return that 
-      else if (error!=FIT_FAILED){
+      else if (error<INVALID_FIT){
          phi_=phi;
          q_over_pt_=q_over_pt;
          tanl_=tanl;
@@ -6953,6 +6958,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
    unsigned int my_ndf=0;
    unsigned int last_ndf=1;
    kalman_error_t error=FIT_NOT_DONE;
+   kalman_error_t last_error=FIT_NOT_DONE;
 
    // Iterate over reference trajectories
    for (int iter=0;
@@ -7051,6 +7057,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
       
       chisq_forward=chisq; 
       last_ndf=my_ndf;
+      last_error=error;
       Slast=S;
       Clast=C;	 
       last_z=z_;
@@ -7148,7 +7155,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
       fcov.push_back(dummy);
    }
 
-   return error;
+   return last_error;
 }
 
 // Routine to fit hits in the CDC using the forward parametrization
@@ -7176,6 +7183,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
 
    double anneal_factor=ANNEAL_SCALE+1.;
    kalman_error_t error=FIT_NOT_DONE;
+   kalman_error_t last_error=FIT_NOT_DONE;
     
    // Chi-squared and degrees of freedom
    double chisq=-1.,chisq_forward=-1.;
@@ -7306,6 +7314,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
       Slast=S;
       Clast=C;
       last_ndf=my_ndf;
+      last_error=error;
       zlast=z_;
       
       last_cdc_used_in_fit=cdc_used_in_fit;
@@ -7386,7 +7395,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
       fcov.push_back(dummy);
    }  
 
-   return error;
+   return last_error;
 }
 
 // Routine to fit hits in the CDC using the central parametrization
@@ -7426,6 +7435,7 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
    ndf_=0.;
    unsigned int last_ndf=1;
    kalman_error_t error=FIT_NOT_DONE;
+   kalman_error_t last_error=FIT_NOT_DONE;
 
    // Iterate over reference trajectories
    int iter2=0;
@@ -7547,10 +7557,11 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
       last_pos=pos;
       chisq_iter=chisq;
       last_ndf=my_ndf;
+      last_error=error;
    
       last_cdc_used_in_fit=cdc_used_in_fit;
    }
-
+ 
    // Run smoother and fill pulls vector
    IsSmoothed=false;
    if(fit_type==kTimeBased){
@@ -7632,9 +7643,8 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
    // total chisq and ndf
    chisq_=chisq_iter;
    ndf_=last_ndf;
-   //printf("NDof %d\n",ndf);
 
-   return error;
+   return last_error;
 }
 
 // Smoothing algorithm for the forward trajectory.  Updates the state vector
