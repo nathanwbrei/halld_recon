@@ -286,8 +286,8 @@ jerror_t DHelicalFit::AddStereoHit(const DCDCWire *wire){
   // distance along wire relative to origin
   double s=dz/cos(wire->stereo);
   
-  //  if(DEBUG_LEVEL>15)
-    _DBG_<<"s="<<s<<" ring="<<wire->ring<<" straw="<<wire->straw<<" stereo="<<wire->stereo<<endl;
+    //if(DEBUG_LEVEL>15)
+    //_DBG_<<"s="<<s<<" ring="<<wire->ring<<" straw="<<wire->straw<<" stereo="<<wire->stereo<<endl;
   if(fabs(s) > 0.5*wire->L) return VALUE_OUT_OF_RANGE; // if wire doesn't cross circle, skip hit
 		
   // Compute the position for this hit
