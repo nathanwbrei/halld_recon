@@ -139,6 +139,9 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 				vector<const DFDCSegment *>&segments,
 				const DTrackCandidate *cdccan,
 				vector<unsigned int>&used_cdc_hits);
+  bool MergeCDCCandidates(const DTrackCandidate *cdccan,
+			  const DTrackCandidate *cdccan2,
+			  vector<unsigned int>&used_cdc_hits);
  
  private:
   const DMagneticFieldMap *bfield;

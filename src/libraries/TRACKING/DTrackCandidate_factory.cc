@@ -323,7 +323,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
   // Variables for candidate number accounting
   int num_forward_cdc_cands_remaining=cdc_forward_ids.size();
   int num_fdc_cands_remaining=fdctrackcandidates.size();
-  vector<int>cdc_forward_matches(cdc_forward_ids.size());
+  vector<int>cdc_forward_matches(cdc_forward_ids.size()); 
+  vector<int>cdc_backward_matches(cdc_backward_ids.size());
 
   // Loop through the list of FDC candidates looking for matches between the
   // CDC and the FDC in the transition region.
@@ -445,15 +446,38 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     } 
   }
  
-  // Unmatched CDC track candidates
+  // Unmatched CDC track candidates -- attempt to merge cdc candidates
+  if (num_forward_cdc_cands_remaining>0){
+    for (unsigned int j=0;j<cdc_forward_ids.size();j++){
+      if (cdc_forward_matches[j]==0){
+	const DTrackCandidate *cdccan = cdctrackcandidates[cdc_forward_ids[j]];
+	for (unsigned int k=j+1;k<cdc_forward_ids.size();k++){  
+	  if (cdc_forward_matches[k]==0){
+	    const DTrackCandidate *cdccan2 = cdctrackcandidates[cdc_forward_ids[k]];
+	    double diffx=cdccan->xc-cdccan2->xc;   
+	    double diffy=cdccan->yc-cdccan2->yc;
+	    double diff_sq=diffx*diffx+diffy*diffy;
+	    if (diff_sq<9.){
+	      if (MergeCDCCandidates(cdccan,cdccan2,used_cdc_hits)){
+		cdc_forward_matches[k]=1;
+		cdc_forward_matches[j]=1;
+		num_forward_cdc_cands_remaining--;
+	      }
+	    } // matched circles?
+	  }
+	}
+      }
+    }
+  }
+  // add to the main list of candidates those we did not successfully merge
   if (num_forward_cdc_cands_remaining>0){
     for (unsigned int j=0;j<cdc_forward_ids.size();j++){
       if (cdc_forward_matches[j]==0){
 	DTrackCandidate *can = new DTrackCandidate;
+
 	const DTrackCandidate *cdccan = cdctrackcandidates[cdc_forward_ids[j]];
 	vector<const DCDCTrackHit *>cdchits;
 	cdccan->GetT(cdchits);
-	stable_sort(cdchits.begin(), cdchits.end(), CDCHitSortByLayerincreasing);
 	
 	// circle parameters
 	can->rc=cdccan->rc;
@@ -488,6 +512,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     if (num_fdc_cands_remaining>0 
 	&& MatchMethod8(cdccan,forward_matches,used_cdc_hits)==true){
       num_fdc_cands_remaining--;
+      cdc_backward_matches[j]=1;
     }
     else{
       DVector3 mom=cdccan->momentum();
@@ -495,7 +520,6 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
       // Check for candidates that appear to go backwards but are actually 
       // going forwards and try to match these to remaining fdc candidates
-      bool got_match=false;
       if (num_fdc_cands_remaining>0 && mom.Theta()>M_PI_2 && !sc_pos.empty()){
 	if (TryToFlipDirection(schits,mom,pos)){
 	  if (DEBUG_LEVEL>0){
@@ -515,8 +539,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 		  _DBG_ << "... matched to FDC candidate #" << i <<endl;
 		}
 		forward_matches[i]=1;
+		cdc_backward_matches[j]=1;
 		num_fdc_cands_remaining--;
-		got_match=true;
 		break;
 	      }
 
@@ -542,7 +566,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 					     used_cdc_hits)){
 		  forward_matches[i]=1;
 		  num_fdc_cands_remaining--;
-		  got_match=true;   
+		  cdc_backward_matches[j]=1;
 		  if (DEBUG_LEVEL>0)
 		    _DBG_ << ".. matched to CDC candidate #" << cdc_backward_ids[j] <<endl;
 		  break;
@@ -551,33 +575,61 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	    } // fdc candidate not already matched?
 	  } // loop over fdc candidates
 	}
-      }
-      if (got_match==false){
-	DTrackCandidate *can = new DTrackCandidate;
-	can->setMomentum(cdccan->momentum());
-	can->setPosition(cdccan->position());
-	can->setPID(cdccan->PID());
-	
-	// circle parameters
-	can->rc=cdccan->rc;
-	can->xc=cdccan->xc;
-	can->yc=cdccan->yc;
-	
-	// Get the cdc hits and add them to the candidate
-	vector<const DCDCTrackHit *>cdchits;
-	cdccan->GetT(cdchits);
-	stable_sort(cdchits.begin(), cdchits.end(), CDCHitSortByLayerincreasing);
-	for (unsigned int n=0;n<cdchits.size();n++){
-	  used_cdc_hits[cdccan->used_cdc_indexes[n]]=1;
-	  can->AddAssociatedObject(cdchits[n]);
-	}
-	can->chisq=cdccan->chisq;
-	can->Ndof=cdccan->Ndof;
-	
-	trackcandidates.push_back(can);
-      }
+      } // do we have fdc candidates remaining?
     }
-  }	
+  } //loop over "backward" going cdc tracks
+  
+  // Deal with "backward" cdc tracks not already matched to other tracks:
+  // try to match cdc candidates  
+  for (unsigned int j=0;j<cdc_backward_ids.size();j++){
+    if (cdc_backward_matches[j]==0){ 
+      const DTrackCandidate *cdccan = cdctrackcandidates[cdc_backward_ids[j]];
+      for (unsigned int k=j+1;k<cdc_backward_ids.size();k++){
+	if (cdc_backward_matches[k]==0){
+	  const DTrackCandidate *cdccan2 = cdctrackcandidates[cdc_backward_ids[k]]; 
+	  double diffx=cdccan->xc-cdccan2->xc;   
+	  double diffy=cdccan->yc-cdccan2->yc;
+	  double diff_sq=diffx*diffx+diffy*diffy;
+	  if (diff_sq<9.){
+	    if (MergeCDCCandidates(cdccan,cdccan2,used_cdc_hits)){
+	      cdc_backward_ids[k]=1;
+	      cdc_backward_ids[j]=1;
+	    }	  
+	  } // matching circles?
+	}
+      } // already matched to another candidate?
+    }
+  }
+  // put the remaining "backward" tracks in the main list of candidates
+  for (unsigned int j=0;j<cdc_backward_ids.size();j++){
+    if (cdc_backward_matches[j]==0){
+      const DTrackCandidate *cdccan = cdctrackcandidates[cdc_backward_ids[j]]; 
+
+      // Get the cdc hits
+      vector<const DCDCTrackHit *>cdchits;
+      cdccan->GetT(cdchits);
+      stable_sort(cdchits.begin(), cdchits.end(), CDCHitSortByLayerincreasing);
+     
+      DTrackCandidate *can = new DTrackCandidate;
+      can->setMomentum(cdccan->momentum());
+      can->setPosition(cdccan->position());
+      can->setPID(cdccan->PID());
+      
+      // circle parameters
+      can->rc=cdccan->rc;
+      can->xc=cdccan->xc;
+      can->yc=cdccan->yc;
+      
+      for (unsigned int n=0;n<cdchits.size();n++){
+	used_cdc_hits[cdccan->used_cdc_indexes[n]]=1;
+	can->AddAssociatedObject(cdchits[n]);
+      }
+      can->chisq=cdccan->chisq;
+      can->Ndof=cdccan->Ndof;
+      
+      trackcandidates.push_back(can);
+    }
+  }
 
   unsigned int num_unmatched_cdcs=0;
   for (unsigned int i=0;i<used_cdc_hits.size();i++){
@@ -3285,4 +3337,123 @@ bool DTrackCandidate_factory::CheckZPosition(const DTrackCandidate *fdccan)
   double newz=pos.z()-phi_s*tan(M_PI_2-fdccan->momentum().Theta())*fdccan->rc;
 
   return (newz>0);
+}
+
+// merge two track candidates that are actually segments of a single track
+bool DTrackCandidate_factory::MergeCDCCandidates(const DTrackCandidate *cdccan,
+						 const DTrackCandidate *cdccan2,
+						 vector<unsigned int>&used_cdc_hits){
+
+  // Get the cdc hits
+  vector<const DCDCTrackHit *>cdchits;
+  cdccan->GetT(cdchits);
+  stable_sort(cdchits.begin(), cdchits.end(), CDCHitSortByLayerincreasing);
+  // Get the cdc hits
+  vector<const DCDCTrackHit *>cdchits2;
+  cdccan2->GetT(cdchits2);
+  stable_sort(cdchits2.begin(), cdchits2.end(), CDCHitSortByLayerincreasing);
+  
+  // Set up to redo helical fit with the additional hits
+  DHelicalFit fit;
+  unsigned int num_hits=0;
+  // Initialize Bz
+  double Bz=0.;
+  
+  // Add the cdc axial wires to the list of hits to use in the fit 
+  for (unsigned int m=0;m<cdchits.size();m++){	
+    if (cdchits[m]->is_stereo==false){
+      double cov=0.213;  //guess
+      const DVector3 origin=cdchits[m]->wire->origin;
+      double x=origin.x(),y=origin.y(),z=origin.z();
+      fit.AddHitXYZ(x,y,z,cov,cov,0.,true);
+      Bz+=bfield->GetBz(x,y,z);
+      num_hits++;
+    }   
+  }
+  for (unsigned int m=0;m<cdchits2.size();m++){	
+    if (cdchits2[m]->is_stereo==false){
+      double cov=0.213;  //guess
+      const DVector3 origin=cdchits2[m]->wire->origin;
+      double x=origin.x(),y=origin.y(),z=origin.z();
+      fit.AddHitXYZ(x,y,z,cov,cov,0.,true);
+      Bz+=bfield->GetBz(x,y,z);
+      num_hits++;
+    }   
+  }
+  
+  // Fit the points to a circle
+  if (fit.FitCircleRiemann(cdccan->rc)==NOERROR){
+    // Add the stereo hits and fit to find z_vertex and tanl
+    for (unsigned int m=0;m<cdchits.size();m++){	
+      if (cdchits[m]->is_stereo==true){
+	fit.AddStereoHit(cdchits[m]->wire);
+      }   
+    }
+    for (unsigned int m=0;m<cdchits2.size();m++){	
+      if (cdchits2[m]->is_stereo==true){
+	fit.AddStereoHit(cdchits2[m]->wire);
+      }   
+    }
+    if (fit.FitLineRiemann()==NOERROR){ 
+      Bz=fabs(Bz)/double(num_hits);
+
+      // Circle parameters
+      double phi0=atan2(-fit.x0,fit.y0);
+      if (fit.h<0) phi0+=M_PI;
+      double sinphi0=sin(phi0);
+      double cosphi0=cos(phi0);
+      double sign=(sinphi0>0)?1.:-1.;
+      if (fabs(sinphi0)<1e-8) sinphi0=sign*1e-8;
+      double D=FactorForSenseOfRotation*fit.h*fit.r0-fit.x0/sinphi0;
+      double x=-D*sinphi0;
+      double y=D*cosphi0;
+
+      DVector3 mom,pos;
+      // try to place at fixed R 
+      if (GetPositionAndMomentum(fit,Bz,cdchits[0]->wire->origin,
+				 pos,mom)==NOERROR){
+	
+	double dx=pos.x()-x;
+	double dy=pos.y()-y;
+	double ratio=sqrt(dx*dx+dy*dy)/(2.*fit.r0);
+	double phi_s=(ratio<1.)?2.*asin(ratio):M_PI;
+	pos.SetZ(fit.z_vertex+phi_s*fit.tanl*fit.r0);
+      }
+      else{
+	// Place at position of closest approach to beam line
+	pos.SetXYZ(x,y,fit.z_vertex);
+	
+	double pt=0.003*fabs(Bz)*fit.r0;
+	mom.SetXYZ(pt*cosphi0,pt*sinphi0,pt*fit.tanl);
+      }
+      
+      DTrackCandidate *can = new DTrackCandidate;
+      can->setMomentum(mom);
+      can->setPosition(pos);
+      can->chisq=fit.chisq;
+      can->Ndof=fit.ndof;
+      Particle_t locPID = (FactorForSenseOfRotation*fit.h > 0.0) ? PiPlus : PiMinus;
+      can->setPID(locPID);
+      
+      // circle parameters
+      can->rc=fit.r0;
+      can->xc=fit.x0;
+      can->yc=fit.y0;
+      
+      for (unsigned int n=0;n<cdchits.size();n++){
+	used_cdc_hits[cdccan->used_cdc_indexes[n]]=1;
+	can->AddAssociatedObject(cdchits[n]);
+      }
+      for (unsigned int n=0;n<cdchits2.size();n++){
+	used_cdc_hits[cdccan2->used_cdc_indexes[n]]=1;
+	can->AddAssociatedObject(cdchits2[n]);
+      } 
+      
+      trackcandidates.push_back(can);
+    
+      return true;
+     } // line fit
+  } // circle fit
+  
+  return false;
 }
