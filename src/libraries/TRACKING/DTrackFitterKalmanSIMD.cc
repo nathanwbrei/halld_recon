@@ -393,7 +393,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    gPARMS->SetDefaultParameter("TRKFIT:USE_MULS_COVARIANCE",
          USE_MULS_COVARIANCE);  
 
-   USE_PASS1_TIME_MODE=true;
+   USE_PASS1_TIME_MODE=false;
    gPARMS->SetDefaultParameter("KALMAN:USE_PASS1_TIME_MODE",USE_PASS1_TIME_MODE); 
 
    USE_FDC_DRIFT_TIMES=true;
@@ -3232,7 +3232,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
    // deal with hits in FDC
    double fdc_prob=0.,fdc_chisq=-1.;
    unsigned int fdc_ndf=0;
-   if (my_fdchits.size()>0 
+   if (my_fdchits.size()>0
          && // Make sure that these parameters are valid for forward-going tracks
          (isfinite(tx0) && isfinite(ty0))
       ){
@@ -3262,7 +3262,14 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       // The position from the track candidate is reported just outside the 
       // start counter for tracks containing cdc hits. Propagate to the distance
       // of closest approach to the beam line
-      if (fit_type==kWireBased) ExtrapolateToVertex(S0);
+      if (fit_type==kWireBased){
+	DMatrix5x1 Stemp(S0);
+	// If we don't find the doca to the beam line within the fiducial volume
+	// scrap the extrapolation for now...
+	if (ExtrapolateToVertex(S0)!=NOERROR){
+	  S0=Stemp;
+	}
+      }
 
       kalman_error_t error=ForwardFit(S0,C0); 
       if (error==FIT_SUCCEEDED) return NOERROR;
@@ -3336,7 +3343,14 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
          // The position from the track candidate is reported just outside the 
          // start counter for tracks containing cdc hits. Propagate to the 
          // distance of closest approach to the beam line   
-         if (fit_type==kWireBased) ExtrapolateToVertex(S0);
+	 if (fit_type==kWireBased){
+	   DMatrix5x1 Stemp(S0);
+	   // If we don't find the doca to the beam line within the fiducial 
+	   // volume scrap the extrapolation for now...
+	   if (ExtrapolateToVertex(S0)!=NOERROR){
+	     S0=Stemp;
+	   }
+	 }
 
          error=ForwardCDCFit(S0,C0);
 	 if (error==FIT_SUCCEEDED) return NOERROR;
@@ -3432,8 +3446,14 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       // start counter for tracks containing cdc hits. Propagate to the 
       // distance of closest approach to the beam line     
       DVector2 xy(x0,y0);  
-      if (fit_type==kWireBased){  
-	ExtrapolateToVertex(xy,S0);
+      if (fit_type==kWireBased){
+	DMatrix5x1 Stemp(S0);
+	// If we don't find the doca to the beam line within the fiducial 
+	// volume scrap the extrapolation for now...
+	if (ExtrapolateToVertex(xy,S0)!=NOERROR){
+	  S0=Stemp;
+	  xy.Set(x0,y0);
+	}
       }
     
       cdc_error=CentralFit(xy,S0,C0);  
@@ -6222,6 +6242,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S){
       S1=S;
       z=newz;
    }
+   if (newz<Z_MIN) return UNRECOVERABLE_ERROR;
+
    // update internal variables
    x_=S(state_x);
    y_=S(state_y);
@@ -6446,6 +6468,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
       r2_old=r2;
       ds_old=ds;
    }   
+   if (Sc(state_z)<Z_MIN) return UNRECOVERABLE_ERROR;
 
    return NOERROR;
 }
