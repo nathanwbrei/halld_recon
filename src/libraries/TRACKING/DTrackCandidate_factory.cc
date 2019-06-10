@@ -42,6 +42,7 @@ using namespace std;
 #include "START_COUNTER/DSCHit.h"
 #include "DANA/DApplication.h"
 #include <JANA/JCalibration.h>
+#include <TRACKING/DHoughFind.h>
 
 #include <TROOT.h>
 #include <TH2F.h>
@@ -285,8 +286,30 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
   // Normal vector for CDC endplate
   DVector3 norm(0,0,1);
 
+  // Keep track of CDC hits that have already been used in track candidates
+  for(unsigned int i=0; i<cdctrackcandidates.size(); i++){ 
+    const DTrackCandidate *srccan = cdctrackcandidates[i];
+    for (unsigned int n=0;n<srccan->used_cdc_indexes.size();n++){
+      used_cdc_hits[srccan->used_cdc_indexes[n]]=1;
+    }
+  }
+
+  // Use Hough transform to try to make CDC candidates from the remaining
+  // unused CDC hits 
+  unsigned int num_unmatched_cdcs=0;
+  for (unsigned int i=0;i<used_cdc_hits.size();i++){
+    if (!used_cdc_hits[i]) num_unmatched_cdcs++;
+  }
+  if (num_unmatched_cdcs>5){
+    bool add_track=true;
+    while (add_track){
+      if (num_unmatched_cdcs<=5) break;
+      add_track=CDCHough(used_cdc_hits,num_unmatched_cdcs);
+    }
+  }
+
   //Loop through the list of CDC candidates, flagging those that point toward 
-  // the FDC.  The others are put in the final candidate list.
+  // the FDC.
   for(unsigned int i=0; i<cdctrackcandidates.size(); i++){	
     const DTrackCandidate *srccan = cdctrackcandidates[i];
     DVector3 mom=srccan->momentum();
@@ -600,6 +623,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       } // already matched to another candidate?
     }
   }
+
   // put the remaining "backward" tracks in the main list of candidates
   for (unsigned int j=0;j<cdc_backward_ids.size();j++){
     if (cdc_backward_matches[j]==0){
@@ -629,11 +653,6 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       
       trackcandidates.push_back(can);
     }
-  }
-
-  unsigned int num_unmatched_cdcs=0;
-  for (unsigned int i=0;i<used_cdc_hits.size();i++){
-    if (!used_cdc_hits[i]) num_unmatched_cdcs++;
   }
 
   // If there are more than one FDC candidates remaining, use the best track 
@@ -674,7 +693,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	  
 	  can->setMomentum(fdccan->momentum());
 	  can->setPosition(fdccan->position());
-      can->setPID(fdccan->PID());
+	  can->setPID(fdccan->PID());
 	  can->chisq=fdccan->chisq;
 	  can->Ndof=fdccan->Ndof; 
 	  for (unsigned int m=0;m<segments.size();m++){		  
@@ -801,7 +820,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
        }
       }
     }
-  }
+  } 
 
   // Only output the candidates that have at least a minimum number of hits
   for (unsigned int i=0;i<trackcandidates.size();i++){
@@ -3399,6 +3418,7 @@ bool DTrackCandidate_factory::MergeCDCCandidates(const DTrackCandidate *cdccan,
 
       // Circle parameters
       double phi0=atan2(-fit.x0,fit.y0);
+      fit.FindSenseOfRotation();
       if (fit.h<0) phi0+=M_PI;
       double sinphi0=sin(phi0);
       double cosphi0=cos(phi0);
@@ -3439,7 +3459,7 @@ bool DTrackCandidate_factory::MergeCDCCandidates(const DTrackCandidate *cdccan,
       can->rc=fit.r0;
       can->xc=fit.x0;
       can->yc=fit.y0;
-      
+
       for (unsigned int n=0;n<cdchits.size();n++){
 	used_cdc_hits[cdccan->used_cdc_indexes[n]]=1;
 	can->AddAssociatedObject(cdchits[n]);
@@ -3457,3 +3477,148 @@ bool DTrackCandidate_factory::MergeCDCCandidates(const DTrackCandidate *cdccan,
   
   return false;
 }
+
+// Find circles using Hough transform
+bool DTrackCandidate_factory::CDCHough(vector<unsigned int>&used_cdc_hits,
+				       unsigned int &num_unmatched_cdcs
+				       ){
+  DHoughFind hough(-400.0, +400.0, -400.0, +400.0, 100, 100);
+
+  vector<unsigned int>cdc_indexes;
+  for (unsigned int n=0;n<mycdchits.size();n++){
+    if (used_cdc_hits[n]==0){    
+      hough.AddPoint(mycdchits[n]->wire->origin.x(),mycdchits[n]->wire->origin.y());
+      cdc_indexes.push_back(n);
+    }
+  }
+        
+  DVector2 Ro = hough.Find();
+  if(hough.GetMaxBinContent()>10.0){	
+    // Zoom in on resonance a little
+    double width = 60.0;
+    hough.SetLimits(Ro.X()-width, Ro.X()+width, Ro.Y()-width, Ro.Y()+width, 
+		    100, 100);
+    Ro = hough.Find();
+    
+    // Zoom in on resonance once more
+    width = 8.0;
+    hough.SetLimits(Ro.X()-width, Ro.X()+width, Ro.Y()-width, Ro.Y()+width, 100, 100);
+    Ro = hough.Find();
+    
+    vector<DVector2> points=hough.GetPoints();
+    vector<const DCDCTrackHit *>axial_hits,stereo_hits;
+    vector<unsigned int>used_axial_indexes,used_stereo_indexes;
+    for (unsigned int m=0;m<points.size();m++){
+      // Calculate distance between Hough transformed line (i.e.
+      // the line on which a circle that passes through both the
+      // origin and the point at hit->pos) and the circle center.
+      DVector2 h=0.5*points[m];
+      DVector2 g(h.Y(), -h.X()); 
+      g /= g.Mod();
+      DVector2 Ro_minus_h=Ro-h;	
+      double dist = fabs(g.X()*Ro_minus_h.Y() - g.Y()*Ro_minus_h.X());
+      
+      // If this is not close enough to the found circle's center,
+      // reject it for this track candidate
+      if(dist < 2.0){
+	if (mycdchits[cdc_indexes[m]]->is_stereo==false){
+	  axial_hits.push_back(mycdchits[cdc_indexes[m]]);
+	  used_axial_indexes.push_back(cdc_indexes[m]);
+	}
+	else{
+	  stereo_hits.push_back(mycdchits[cdc_indexes[m]]);
+	  used_stereo_indexes.push_back(cdc_indexes[m]);
+	}
+      }
+    }
+    if (axial_hits.size()>3&&stereo_hits.size()>3){
+      DHelicalFit fit;
+      // Initialize Bz
+      double Bz=0.;
+
+      // Fake point at origin
+      fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.,true);
+      for (unsigned int m=0;m<axial_hits.size();m++){
+	double cov=0.213; // guess
+	const DVector3 origin=axial_hits[m]->wire->origin;
+	double x=origin.x(),y=origin.y(),z=origin.z();
+	fit.AddHitXYZ(x,y,z,cov,cov,0.,false); 
+	
+	Bz+=bfield->GetBz(x,y,z);
+      }
+      // Fit the points to a circle
+      if (fit.FitCircleRiemann(Ro.Mod())==NOERROR){
+	// Add the stereo hits and fit to find z_vertex and tanl
+	for (unsigned int m=0;m<stereo_hits.size();m++){	
+	  fit.AddStereoHit(stereo_hits[m]->wire);
+	}   
+	if (fit.FitLineRiemann()==NOERROR){ 
+	  Bz=fabs(Bz)/double(axial_hits.size());
+	  
+	  // Circle parameters
+	  double phi0=atan2(-fit.x0,fit.y0);
+	  fit.FindSenseOfRotation();
+	  if (fit.h<0) phi0+=M_PI;
+	  double sinphi0=sin(phi0);
+	  double cosphi0=cos(phi0);
+	  double sign=(sinphi0>0)?1.:-1.;
+	  if (fabs(sinphi0)<1e-8) sinphi0=sign*1e-8;
+	  double D=FactorForSenseOfRotation*fit.h*fit.r0-fit.x0/sinphi0;
+	  double x=-D*sinphi0;
+	  double y=D*cosphi0;
+	  
+	  DVector3 mom,pos;
+	  // try to place at fixed R 
+	  if (GetPositionAndMomentum(fit,Bz,axial_hits[0]->wire->origin,
+				     pos,mom)==NOERROR){
+	
+	    double dx=pos.x()-x;
+	    double dy=pos.y()-y;
+	    double ratio=sqrt(dx*dx+dy*dy)/(2.*fit.r0);
+	    double phi_s=(ratio<1.)?2.*asin(ratio):M_PI;
+	    pos.SetZ(fit.z_vertex+phi_s*fit.tanl*fit.r0);
+	  }
+	  else{
+	    // Place at position of closest approach to beam line
+	    pos.SetXYZ(x,y,fit.z_vertex);
+	    
+	    double pt=0.003*fabs(Bz)*fit.r0;
+	    mom.SetXYZ(pt*cosphi0,pt*sinphi0,pt*fit.tanl);
+	  }
+	  
+	  DTrackCandidate *can = new DTrackCandidate;
+	  can->setMomentum(mom);
+	  can->setPosition(pos);
+	  can->chisq=fit.chisq;
+	  can->Ndof=fit.ndof;
+	  Particle_t locPID = (FactorForSenseOfRotation*fit.h > 0.0) ? PiPlus : PiMinus;
+	  can->setPID(locPID);
+	  
+	  // circle parameters
+	  can->rc=fit.r0;
+	  can->xc=fit.x0;
+	  can->yc=fit.y0;
+	  
+	  for (unsigned int n=0;n<axial_hits.size();n++){
+	    used_cdc_hits[used_axial_indexes[n]]=1;
+	    can->used_cdc_indexes.push_back(used_axial_indexes[n]);
+	    can->AddAssociatedObject(axial_hits[n]);
+	  }
+	  for (unsigned int n=0;n<stereo_hits.size();n++){
+	    used_cdc_hits[used_stereo_indexes[n]]=1; 
+	    can->used_cdc_indexes.push_back(used_stereo_indexes[n]);
+	    can->AddAssociatedObject(stereo_hits[n]);
+	  } 
+	  num_unmatched_cdcs-=axial_hits.size()+stereo_hits.size();
+	  
+	  cdctrackcandidates.push_back(can);
+	  
+	  return true;
+	}
+      }
+    }
+  } // got resonance
+  
+  return false;
+}
+

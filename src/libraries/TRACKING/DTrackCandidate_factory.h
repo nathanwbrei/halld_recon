@@ -142,7 +142,9 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
   bool MergeCDCCandidates(const DTrackCandidate *cdccan,
 			  const DTrackCandidate *cdccan2,
 			  vector<unsigned int>&used_cdc_hits);
- 
+  bool CDCHough(vector<unsigned int>&used_cdc_hits,
+		unsigned int &num_unmatched_cdcs);
+
  private:
   const DMagneticFieldMap *bfield;
   bool dIsNoFieldFlag;
