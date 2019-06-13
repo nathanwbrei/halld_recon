@@ -8,6 +8,7 @@
 #include "DTrackCandidate_factory_CDC.h"
 #include <cmath>
 #include <JANA/JCalibration.h>
+#include <TRACKING/DHoughFind.h>
 
 #define BeamRMS 0.5
 #define EPS 1e-3
@@ -63,6 +64,21 @@ inline bool CDCSort_DeltaPhis(const pair<DTrackCandidate_factory_CDC::DCDCTrkHit
 	//smallest delta-phi is first
 	return (locDeltaPhiPair1.second < locDeltaPhiPair2.second);
 }
+
+inline bool CDCHitSortByLayer(const DCDCTrackHit* const &hit1, const DCDCTrackHit* const &hit2) {
+  // Used to sort CDC hits by layer (ring) with innermost layer hits first
+  
+  // if same ring, sort by wire number
+  if(hit1->wire->ring == hit2->wire->ring)
+    {
+      if(hit1->wire->straw == hit2->wire->straw)
+	return (hit1->dE > hit2->dE);
+      return hit1->wire->straw < hit2->wire->straw;
+    }
+  
+  return hit1->wire->ring < hit2->wire->ring;
+}
+
 
 DTrackCandidate_factory_CDC::~DTrackCandidate_factory_CDC(){
   
@@ -223,7 +239,9 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *locEventLoop, uint64_t ev
 	Reset_Pools();
 
 	// Get CDC hits
-	if(Get_CDCHits(locEventLoop) != NOERROR)
+	vector<const DCDCTrackHit*> cdctrackhits;
+	locEventLoop->Get(cdctrackhits);
+	if(Get_CDCHits(locEventLoop,cdctrackhits) != NOERROR)
 	{
 		Reset_Pools();
 		return RESOURCE_UNAVAILABLE;
@@ -287,8 +305,38 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *locEventLoop, uint64_t ev
 	for(size_t loc_i = 0; loc_i < locCDCTrackCircles.size(); ++loc_i)
 		Create_TrackCandidiate(locCDCTrackCircles[loc_i]);
 
+	// Keep track of cdc hits that have already been used in a candidate
+	vector<bool>used_cdc_hits(cdctrackhits.size());
+	unsigned int num_unused=0;
+	for (unsigned int k=0;k<cdctrackhits.size();k++){
+	  for (unsigned int i=0;i<_data.size();i++){
+	    vector<const DCDCTrackHit*>used_cdc_hit_list;
+	    _data[i]->GetT(used_cdc_hit_list);
+	    for (unsigned int j=0;j<used_cdc_hit_list.size();j++){
+	      if (used_cdc_hit_list[j]==cdctrackhits[k]){
+		used_cdc_hits[k]=true;
+	      }
+	    }
+	  }
+	} 
+	for (unsigned int i=0;i<used_cdc_hits.size();i++){
+	  if (!used_cdc_hits[i]) num_unused++;
+	}
+	// Use Hough transform to try to make CDC candidates from the remaining
+	// unused CDC hits 
+	if (num_unused>5){
+	  bool add_track=true;
+	  while (add_track){
+	    if (num_unused<=5) break;
+	    add_track=CDCHough(cdctrackhits,used_cdc_hits,num_unused);
+	  }
+	}
+
 	// Reset memory before exiting event evaluation. 
 	Reset_Pools();
+
+	
+
 
 	return NOERROR;
 }
@@ -403,11 +451,9 @@ DTrackCandidate_factory_CDC::DCDCTrackCircle* DTrackCandidate_factory_CDC::Get_R
 //------------------
 // Get_CDCHits
 //------------------
-jerror_t DTrackCandidate_factory_CDC::Get_CDCHits(JEventLoop* loop)
+jerror_t DTrackCandidate_factory_CDC::Get_CDCHits(JEventLoop* loop,
+						  vector<const DCDCTrackHit*>&cdctrackhits)
 {
-	// Get the "raw" hits. These already have the wire associated with them.
-	vector<const DCDCTrackHit*> cdctrackhits;
-	loop->Get(cdctrackhits);
 	dNumCDCHits = cdctrackhits.size();
 
 	// If there are no hits, then bail now
@@ -5314,3 +5360,237 @@ double DTrackCandidate_factory_CDC::DCDCLineFit::FindMinimumChisq(double ax,doub
   return fx;
 }
 
+// Find circles using Hough transform
+bool DTrackCandidate_factory_CDC::CDCHough(vector<const DCDCTrackHit*>&cdctrackhits,
+					   vector<bool>&used_cdc_hits,
+					   unsigned int &num_unmatched_cdcs
+					   ){
+  DHoughFind hough(-400.0, +400.0, -400.0, +400.0, 100, 100);
+
+  vector<unsigned int>cdc_indexes;
+  for (unsigned int n=0;n<cdctrackhits.size();n++){
+    if (used_cdc_hits[n]==false){
+      if (cdctrackhits[n]->tdrift<MAX_DRIFT_TIME){
+	hough.AddPoint(cdctrackhits[n]->wire->origin.x(),
+		     cdctrackhits[n]->wire->origin.y());
+	cdc_indexes.push_back(n);
+      }
+    }
+  }
+        
+  DVector2 Ro = hough.Find();
+  if(hough.GetMaxBinContent()>10.0){	
+    // Zoom in on resonance a little
+    double width = 60.0;
+    hough.SetLimits(Ro.X()-width, Ro.X()+width, Ro.Y()-width, Ro.Y()+width, 
+		    100, 100);
+    Ro = hough.Find();
+    
+    // Zoom in on resonance once more
+    width = 8.0;
+    hough.SetLimits(Ro.X()-width, Ro.X()+width, Ro.Y()-width, Ro.Y()+width, 100, 100);
+    Ro = hough.Find();
+    
+    vector<DVector2> points=hough.GetPoints();
+    vector<const DCDCTrackHit *>axial_hits,stereo_hits;
+    vector<unsigned int>used_axial_indexes,used_stereo_indexes;
+    for (unsigned int m=0;m<points.size();m++){
+      // Calculate distance between Hough transformed line (i.e.
+      // the line on which a circle that passes through both the
+      // origin and the point at hit->pos) and the circle center.
+      DVector2 h=0.5*points[m];
+      DVector2 g(h.Y(), -h.X()); 
+      g /= g.Mod();
+      DVector2 Ro_minus_h=Ro-h;	
+      double dist = fabs(g.X()*Ro_minus_h.Y() - g.Y()*Ro_minus_h.X());
+      
+      // If this is not close enough to the found circle's center,
+      // reject it for this track candidate
+      if(dist < 2.0){
+	if (cdctrackhits[cdc_indexes[m]]->is_stereo==false){
+	  axial_hits.push_back(cdctrackhits[cdc_indexes[m]]);
+	  used_axial_indexes.push_back(cdc_indexes[m]);
+	}
+	else{
+	  stereo_hits.push_back(cdctrackhits[cdc_indexes[m]]);
+	  used_stereo_indexes.push_back(cdc_indexes[m]);
+	}
+      }
+    }
+    if (axial_hits.size()>3&&stereo_hits.size()>3){
+      // Setup the fit (add hits)
+      DHelicalFit* fit = Get_Resource_HelicalFit();
+      // Initialize Bz
+      double Bz=0.;
+
+      // Fake point at origin
+      const double BEAM_VAR=1.; // cm^2
+      fit->AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.,true);
+      for (unsigned int m=0;m<axial_hits.size();m++){
+	double cov=0.213; // guess
+	const DVector3 origin=axial_hits[m]->wire->origin;
+	double x=origin.x(),y=origin.y(),z=origin.z();
+	fit->AddHitXYZ(x,y,z,cov,cov,0.,false); 
+	
+	Bz+=dMagneticField->GetBz(x,y,z);
+      }
+      // Fit the points to a circle
+      if (fit->FitCircleRiemann(Ro.Mod())==NOERROR){
+	// Add the stereo hits and fit to find z_vertex and tanl
+	for (unsigned int m=0;m<stereo_hits.size();m++){	
+	  fit->AddStereoHit(stereo_hits[m]->wire);
+	}   
+	if (fit->FitLineRiemann()==NOERROR){ 
+	  Bz=fabs(Bz)/double(axial_hits.size());
+	  
+	  // Circle parameters
+	  double phi0=atan2(-fit->x0,fit->y0);
+	  fit->FindSenseOfRotation();
+	  if (fit->h<0) phi0+=M_PI;
+	  double sinphi0=sin(phi0);
+	  double cosphi0=cos(phi0);
+	  double sign=(sinphi0>0)?1.:-1.;
+	  if (fabs(sinphi0)<1e-8) sinphi0=sign*1e-8;
+	  double D=dFactorForSenseOfRotation*fit->h*fit->r0-fit->x0/sinphi0;
+	  double x=-D*sinphi0;
+	  double y=D*cosphi0;
+	  
+	  DVector3 mom,pos;
+	  // try to place at fixed R 
+	  if (GetPositionAndMomentum(fit,Bz,axial_hits[0]->wire->origin,
+				     pos,mom)==NOERROR){
+	
+	    double dx=pos.x()-x;
+	    double dy=pos.y()-y;
+	    double ratio=sqrt(dx*dx+dy*dy)/(2.*fit->r0);
+	    double phi_s=(ratio<1.)?2.*asin(ratio):M_PI;
+	    pos.SetZ(fit->z_vertex+phi_s*fit->tanl*fit->r0);
+	  }
+	  else{
+	    // Place at position of closest approach to beam line
+	    pos.SetXYZ(x,y,fit->z_vertex);
+	    
+	    double pt=0.003*fabs(Bz)*fit->r0;
+	    mom.SetXYZ(pt*cosphi0,pt*sinphi0,pt*fit->tanl);
+	  }
+	  
+	  DTrackCandidate *can = new DTrackCandidate;
+	  can->setMomentum(mom);
+	  can->setPosition(pos);
+	  can->chisq=fit->chisq;
+	  can->Ndof=fit->ndof;
+	  Particle_t locPID = (dFactorForSenseOfRotation*fit->h > 0.0) ? PiPlus : PiMinus;
+	  can->setPID(locPID);
+	  
+	  // circle parameters
+	  can->rc=fit->r0;
+	  can->xc=fit->x0;
+	  can->yc=fit->y0;
+	  
+	  for (unsigned int n=0;n<axial_hits.size();n++){
+	    used_cdc_hits[used_axial_indexes[n]]=true;
+	    can->used_cdc_indexes.push_back(used_axial_indexes[n]);
+	    can->AddAssociatedObject(axial_hits[n]);
+	  }
+	  for (unsigned int n=0;n<stereo_hits.size();n++){
+	    used_cdc_hits[used_stereo_indexes[n]]=true; 
+	    can->used_cdc_indexes.push_back(used_stereo_indexes[n]);
+	    can->AddAssociatedObject(stereo_hits[n]);
+	  } 
+	  num_unmatched_cdcs-=axial_hits.size()+stereo_hits.size();
+	  
+	  _data.push_back(can);
+	  
+	  return true;
+	}
+      }
+    }
+  } // got resonance
+  
+  return false;
+}
+
+// Get the position and momentum at a fixed radius from the beam line
+jerror_t 
+DTrackCandidate_factory_CDC::GetPositionAndMomentum(DHelicalFit *fit,
+						    double Bz,
+						    const DVector3 &origin,
+						    DVector3 &pos,
+						    DVector3 &mom) const{
+  double r2=90.0;
+  double xc=fit->x0;
+  double yc=fit->y0;
+  double rc=fit->r0;
+  double tworc=2.*rc;
+  double rc2=rc*rc;
+  double xc2=xc*xc;
+  double yc2=yc*yc;
+  double xc2_plus_yc2=xc2+yc2;
+  double a=(r2-xc2_plus_yc2-rc2)/tworc;
+  double b=xc2_plus_yc2-a*a;
+  if (b<0){
+    // We did not find an intersection between the two circles, so return 
+    // an error.  The values of mom and pos are not changed. 
+    return VALUE_OUT_OF_RANGE;
+  }
+
+  double temp1=yc*sqrt(b);
+  double temp2=xc*a;
+  double cosphi_plus=(temp2+temp1)/xc2_plus_yc2;
+  double cosphi_minus=(temp2-temp1)/xc2_plus_yc2;
+
+  // Direction tangent and transverse momentum
+  double tanl=fit->tanl;
+  double pt=0.003*Bz*rc;
+
+  double phi_plus=acos(cosphi_plus);
+  double phi_minus=acos(cosphi_minus);
+  double x_plus=xc+rc*cosphi_plus;
+  double x_minus=xc+rc*cosphi_minus;
+  double y_plus=yc+rc*sin(phi_plus);
+  double y_minus=yc+rc*sin(phi_minus);
+
+  // if the resulting radial position on the circle from the fit does not agree
+  // with the radius to which we are matching, we have the wrong sign for phi+ 
+  // or phi-
+  double r2_plus=x_plus*x_plus+y_plus*y_plus;
+  double r2_minus=x_minus*x_minus+y_minus*y_minus;  
+  if (fabs(r2-r2_plus)>EPS){
+    phi_plus*=-1.;
+    y_plus=yc+rc*sin(phi_plus);
+  }
+  if (fabs(r2-r2_minus)>EPS){
+    phi_minus*=-1.;
+    y_minus=yc+rc*sin(phi_minus);
+  }
+
+  // Choose phi- or phi+ depending on proximity to one of the cdc hits
+  double xwire=origin.x();
+  double ywire=origin.y();
+  double dx=x_minus-xwire;
+  double dy=y_minus-ywire;
+  double d2_minus=dx*dx+dy*dy;
+  dx=x_plus-xwire;
+  dy=y_plus-ywire;
+  double d2_plus=dx*dx+dy*dy;
+ 
+  DVector3 pos0(pos); // save the input position, for use in finding z
+  if (d2_plus>d2_minus){
+    fit->h=-1.;
+    phi_minus=M_PI-phi_minus;
+    pos.SetXYZ(x_minus,y_minus,0.); // z will be filled later
+    mom.SetXYZ(pt*sin(phi_minus),pt*cos(phi_minus),pt*tanl);
+  }
+  else{
+    fit->h=1.;
+    phi_plus*=-1.;   
+    pos.SetXYZ(x_plus,y_plus,0.); // z will be filled later
+    mom.SetXYZ(pt*sin(phi_plus),pt*cos(phi_plus),pt*tanl);
+  }
+  // Next find the z-position corresponding to the new (x,y) position
+  double ratio=(pos0-pos).Perp()/tworc;
+  double sperp=(ratio<1.)?tworc*asin(ratio):tworc*M_PI_2;
+  pos.SetZ(pos0.z()-sperp*tanl);
+  
+  return NOERROR;
+}

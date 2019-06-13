@@ -193,7 +193,8 @@ class DTrackCandidate_factory_CDC : public JFactory<DTrackCandidate>
 		DCDCTrackCircle* Get_Resource_CDCTrackCircle(void);
 
 		// Make Super Layer Seeds
-		jerror_t Get_CDCHits(JEventLoop* loop);
+		jerror_t Get_CDCHits(JEventLoop* loop,
+				     vector<const DCDCTrackHit*>&cdctrackhits);
 		void Find_SuperLayerSeeds(vector<DCDCTrkHit*>& locSuperLayerHits, unsigned int locSuperLayer);
 		void Link_RingSeeds(vector<DCDCRingSeed*>& parent, ringiter ring, ringiter ringend, unsigned int locSuperLayer, unsigned int locNumPreviousRingsWithoutHit);
 		double MinDist2(const DCDCRingSeed& locInnerRingSeed, const DCDCRingSeed& locOuterRingSeed);
@@ -257,6 +258,16 @@ class DTrackCandidate_factory_CDC : public JFactory<DTrackCandidate>
 		void Add_UnusedHits(vector<DCDCTrackCircle*>& locCDCTrackCircles);
 		void Create_TrackCandidiate(DCDCTrackCircle* locCDCTrackCircle);
 		bool Calc_PositionAndMomentum(DCDCTrackCircle* locCDCTrackCircle, DVector3 &pos, DVector3 &mom);
+
+		// routine to use Hough transform
+		bool CDCHough(vector<const DCDCTrackHit*>&cdctrackhits,
+			      vector<bool>&used_cdc_hits,
+			      unsigned int &num_unmatched_cdcs);
+		jerror_t GetPositionAndMomentum(DHelicalFit *fit,
+						double Bz,
+						const DVector3 &origin,
+						DVector3 &pos,
+						DVector3 &mom) const;
 
 		int DEBUG_LEVEL;
 		unsigned int MAX_ALLOWED_CDC_HITS;
