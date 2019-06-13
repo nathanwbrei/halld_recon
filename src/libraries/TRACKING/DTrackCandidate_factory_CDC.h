@@ -263,11 +263,12 @@ class DTrackCandidate_factory_CDC : public JFactory<DTrackCandidate>
 		bool CDCHough(vector<const DCDCTrackHit*>&cdctrackhits,
 			      vector<bool>&used_cdc_hits,
 			      unsigned int &num_unmatched_cdcs);
-		jerror_t GetPositionAndMomentum(DHelicalFit *fit,
-						double Bz,
-						const DVector3 &origin,
-						DVector3 &pos,
-						DVector3 &mom) const;
+		jerror_t GetPositionAndDirection(DHelicalFit *fit,
+						 const DVector3 &origin,
+						 DVector3 &pos,
+						 DVector3 &mom) const;
+		bool MergeCandidates(unsigned int first_index,
+				     unsigned int second_index);
 
 		int DEBUG_LEVEL;
 		unsigned int MAX_ALLOWED_CDC_HITS;

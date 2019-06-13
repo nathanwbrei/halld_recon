@@ -79,7 +79,6 @@ inline bool CDCHitSortByLayer(const DCDCTrackHit* const &hit1, const DCDCTrackHi
   return hit1->wire->ring < hit2->wire->ring;
 }
 
-
 DTrackCandidate_factory_CDC::~DTrackCandidate_factory_CDC(){
   
 }
@@ -331,6 +330,28 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *locEventLoop, uint64_t ev
 	    add_track=CDCHough(cdctrackhits,used_cdc_hits,num_unused);
 	  }
 	}
+	
+	// Merge candidates that are clones of each other but with varying
+	// numbers of associated hits
+	if (_data.size()>1){
+	  set<unsigned int>candidates_to_erase;
+	  for (unsigned int i=0;i<_data.size()-1;i++){
+	    for (unsigned int j=i+1;j<_data.size();j++){
+	      if (candidates_to_erase.find(j)!=candidates_to_erase.end()){
+		continue;
+	      }
+	      if (MergeCandidates(i,j)){
+		candidates_to_erase.insert(j);
+	      }
+	    }
+	  }
+	  set<unsigned int>::const_reverse_iterator it=candidates_to_erase.rbegin();
+	  for (;it!=candidates_to_erase.rend();it++){
+	    _data.erase(_data.begin()+(*it));
+	  }
+
+	}
+
 
 	// Reset memory before exiting event evaluation. 
 	Reset_Pools();
@@ -5420,8 +5441,6 @@ bool DTrackCandidate_factory_CDC::CDCHough(vector<const DCDCTrackHit*>&cdctrackh
     if (axial_hits.size()>3&&stereo_hits.size()>3){
       // Setup the fit (add hits)
       DHelicalFit* fit = Get_Resource_HelicalFit();
-      // Initialize Bz
-      double Bz=0.;
 
       // Fake point at origin
       const double BEAM_VAR=1.; // cm^2
@@ -5431,8 +5450,6 @@ bool DTrackCandidate_factory_CDC::CDCHough(vector<const DCDCTrackHit*>&cdctrackh
 	const DVector3 origin=axial_hits[m]->wire->origin;
 	double x=origin.x(),y=origin.y(),z=origin.z();
 	fit->AddHitXYZ(x,y,z,cov,cov,0.,false); 
-	
-	Bz+=dMagneticField->GetBz(x,y,z);
       }
       // Fit the points to a circle
       if (fit->FitCircleRiemann(Ro.Mod())==NOERROR){
@@ -5440,9 +5457,7 @@ bool DTrackCandidate_factory_CDC::CDCHough(vector<const DCDCTrackHit*>&cdctrackh
 	for (unsigned int m=0;m<stereo_hits.size();m++){	
 	  fit->AddStereoHit(stereo_hits[m]->wire);
 	}   
-	if (fit->FitLineRiemann()==NOERROR){ 
-	  Bz=fabs(Bz)/double(axial_hits.size());
-	  
+	if (fit->FitLineRiemann()==NOERROR){ 	  
 	  // Circle parameters
 	  double phi0=atan2(-fit->x0,fit->y0);
 	  fit->FindSenseOfRotation();
@@ -5457,8 +5472,8 @@ bool DTrackCandidate_factory_CDC::CDCHough(vector<const DCDCTrackHit*>&cdctrackh
 	  
 	  DVector3 mom,pos;
 	  // try to place at fixed R 
-	  if (GetPositionAndMomentum(fit,Bz,axial_hits[0]->wire->origin,
-				     pos,mom)==NOERROR){
+	  if (GetPositionAndDirection(fit,axial_hits[0]->wire->origin,
+				      pos,mom)==NOERROR){
 	
 	    double dx=pos.x()-x;
 	    double dy=pos.y()-y;
@@ -5467,13 +5482,17 @@ bool DTrackCandidate_factory_CDC::CDCHough(vector<const DCDCTrackHit*>&cdctrackh
 	    pos.SetZ(fit->z_vertex+phi_s*fit->tanl*fit->r0);
 	  }
 	  else{
+	    // Track direction at POCA to beam line
+	    mom.SetXYZ(cosphi0,sinphi0,fit->tanl);
+
 	    // Place at position of closest approach to beam line
 	    pos.SetXYZ(x,y,fit->z_vertex);
-	    
-	    double pt=0.003*fabs(Bz)*fit->r0;
-	    mom.SetXYZ(pt*cosphi0,pt*sinphi0,pt*fit->tanl);
 	  }
-	  
+	  // Scale mom by pt
+	  double Bz=dMagneticField->GetBz(pos.x(),pos.y(),pos.z());
+	  double pt=0.003*fabs(Bz)*fit->r0;
+	  mom*=pt;
+	  	  
 	  DTrackCandidate *can = new DTrackCandidate;
 	  can->setMomentum(mom);
 	  can->setPosition(pos);
@@ -5512,11 +5531,10 @@ bool DTrackCandidate_factory_CDC::CDCHough(vector<const DCDCTrackHit*>&cdctrackh
 
 // Get the position and momentum at a fixed radius from the beam line
 jerror_t 
-DTrackCandidate_factory_CDC::GetPositionAndMomentum(DHelicalFit *fit,
-						    double Bz,
-						    const DVector3 &origin,
-						    DVector3 &pos,
-						    DVector3 &mom) const{
+DTrackCandidate_factory_CDC::GetPositionAndDirection(DHelicalFit *fit,
+						     const DVector3 &origin,
+						     DVector3 &pos,
+						     DVector3 &dir) const{
   double r2=90.0;
   double xc=fit->x0;
   double yc=fit->y0;
@@ -5539,10 +5557,9 @@ DTrackCandidate_factory_CDC::GetPositionAndMomentum(DHelicalFit *fit,
   double cosphi_plus=(temp2+temp1)/xc2_plus_yc2;
   double cosphi_minus=(temp2-temp1)/xc2_plus_yc2;
 
-  // Direction tangent and transverse momentum
+  // Direction tangent
   double tanl=fit->tanl;
-  double pt=0.003*Bz*rc;
-
+ 
   double phi_plus=acos(cosphi_plus);
   double phi_minus=acos(cosphi_minus);
   double x_plus=xc+rc*cosphi_plus;
@@ -5579,13 +5596,13 @@ DTrackCandidate_factory_CDC::GetPositionAndMomentum(DHelicalFit *fit,
     fit->h=-1.;
     phi_minus=M_PI-phi_minus;
     pos.SetXYZ(x_minus,y_minus,0.); // z will be filled later
-    mom.SetXYZ(pt*sin(phi_minus),pt*cos(phi_minus),pt*tanl);
+    dir.SetXYZ(sin(phi_minus),cos(phi_minus),tanl);
   }
   else{
     fit->h=1.;
     phi_plus*=-1.;   
     pos.SetXYZ(x_plus,y_plus,0.); // z will be filled later
-    mom.SetXYZ(pt*sin(phi_plus),pt*cos(phi_plus),pt*tanl);
+    dir.SetXYZ(sin(phi_plus),cos(phi_plus),tanl);
   }
   // Next find the z-position corresponding to the new (x,y) position
   double ratio=(pos0-pos).Perp()/tworc;
@@ -5593,4 +5610,121 @@ DTrackCandidate_factory_CDC::GetPositionAndMomentum(DHelicalFit *fit,
   pos.SetZ(pos0.z()-sperp*tanl);
   
   return NOERROR;
+}
+
+// merge two track candidates that are actually segments of a single track
+bool DTrackCandidate_factory_CDC::MergeCandidates(unsigned int first_index,
+						  unsigned int second_index){
+  DTrackCandidate *cdccan=_data[first_index];
+  DTrackCandidate *cdccan2=_data[second_index];
+
+  // Look for circles with common centers
+  double diffx=cdccan->xc-cdccan2->xc;   
+  double diffy=cdccan->yc-cdccan2->yc;
+  double diff_sq=diffx*diffx+diffy*diffy;
+  if (diff_sq>9.) return false;
+
+  // Get the cdc hits
+  vector<const DCDCTrackHit *>cdchits;
+  cdccan->GetT(cdchits);
+  stable_sort(cdchits.begin(), cdchits.end(), CDCHitSortByLayer);
+  // Get the cdc hits
+  vector<const DCDCTrackHit *>cdchits2;
+  cdccan2->GetT(cdchits2);
+  stable_sort(cdchits2.begin(), cdchits2.end(), CDCHitSortByLayer);
+  
+  // Set up to redo helical fit with the additional hits
+  DHelicalFit* fit = Get_Resource_HelicalFit();
+  
+  // Fake point at origin
+  const double BEAM_VAR=1.; // cm^2
+  fit->AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.,true);
+
+  // Add the cdc axial wires to the list of hits to use in the fit 
+  for (unsigned int m=0;m<cdchits.size();m++){	
+    if (cdchits[m]->is_stereo==false){
+      double cov=0.213;  //guess
+      const DVector3 origin=cdchits[m]->wire->origin;
+      double x=origin.x(),y=origin.y(),z=origin.z();
+      fit->AddHitXYZ(x,y,z,cov,cov,0.,true);
+    }   
+  }
+  for (unsigned int m=0;m<cdchits2.size();m++){	
+    if (cdchits2[m]->is_stereo==false){
+      double cov=0.213;  //guess
+      const DVector3 origin=cdchits2[m]->wire->origin;
+      double x=origin.x(),y=origin.y(),z=origin.z();
+      fit->AddHitXYZ(x,y,z,cov,cov,0.,true);
+    }   
+  }
+  
+  // Fit the points to a circle
+  if (fit->FitCircleRiemann(cdccan->rc)==NOERROR){
+    // Add the stereo hits and fit to find z_vertex and tanl
+    for (unsigned int m=0;m<cdchits.size();m++){	
+      if (cdchits[m]->is_stereo==true){
+	fit->AddStereoHit(cdchits[m]->wire);
+      }   
+    }
+    for (unsigned int m=0;m<cdchits2.size();m++){	
+      if (cdchits2[m]->is_stereo==true){
+	fit->AddStereoHit(cdchits2[m]->wire);
+      }   
+    }
+    if (fit->FitLineRiemann()==NOERROR){ 
+      // Circle parameters
+      double phi0=atan2(-fit->x0,fit->y0);
+      fit->FindSenseOfRotation();
+      if (fit->h<0) phi0+=M_PI;
+      double sinphi0=sin(phi0);
+      double cosphi0=cos(phi0);
+      double sign=(sinphi0>0)?1.:-1.;
+      if (fabs(sinphi0)<1e-8) sinphi0=sign*1e-8;
+      double D=dFactorForSenseOfRotation*fit->h*fit->r0-fit->x0/sinphi0;
+      double x=-D*sinphi0;
+      double y=D*cosphi0;
+
+      DVector3 mom,pos;
+      // try to place at fixed R 
+      if (GetPositionAndDirection(fit,cdchits[0]->wire->origin,pos,mom)
+	  ==NOERROR){
+	
+	double dx=pos.x()-x;
+	double dy=pos.y()-y;
+	double ratio=sqrt(dx*dx+dy*dy)/(2.*fit->r0);
+	double phi_s=(ratio<1.)?2.*asin(ratio):M_PI;
+	pos.SetZ(fit->z_vertex+phi_s*fit->tanl*fit->r0);
+      }
+      else{
+	// Place at position of closest approach to beam line
+	pos.SetXYZ(x,y,fit->z_vertex);	
+	mom.SetXYZ(cosphi0,sinphi0,fit->tanl);
+      }
+      // Scale mom by pt
+      double Bz=dMagneticField->GetBz(pos.x(),pos.y(),pos.z());
+      double pt=0.003*fabs(Bz)*fit->r0;
+      mom*=pt;
+      
+      cdccan->setMomentum(mom);
+      cdccan->setPosition(pos);
+      cdccan->chisq=fit->chisq;
+      cdccan->Ndof=fit->ndof;
+      Particle_t locPID = (dFactorForSenseOfRotation*fit->h > 0.0) ? PiPlus : PiMinus;
+      cdccan->setPID(locPID);
+      
+      // circle parameters
+      cdccan->rc=fit->r0;
+      cdccan->xc=fit->x0;
+      cdccan->yc=fit->y0;
+
+      for (unsigned int n=0;n<cdchits2.size();n++){
+	cdccan->AddAssociatedObject(cdchits2[n]);
+	cdccan->used_cdc_indexes.push_back(cdccan2->used_cdc_indexes[n]);
+      } 
+    
+      return true;
+     } // line fit
+  } // circle fit
+  
+  return false;
 }
