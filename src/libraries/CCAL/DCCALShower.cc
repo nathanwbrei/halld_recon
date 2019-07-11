@@ -8,14 +8,14 @@
 #include <math.h>
 #include "DCCALShower.h"
 #include "DCCALGeometry.h"
-#include "hycal.h"
+#include "ccal.h"
 
 DCCALShower::DCCALShower()
 {
 
   type     =  0;
   dime     =  0;    
-  status   =  0;
+  //status   =  0;
   id       =  0;
   idmax    =  0;
   E        =  0;

@@ -11,7 +11,7 @@
 
 #include <DVector3.h>
 #include "DCCALHit.h"
-#include "hycal.h"
+#include "ccal.h"
 
 using namespace std;
 
@@ -28,10 +28,35 @@ class DCCALShower : public JObject {
       DCCALShower();
       ~DCCALShower();
       
+      /*----------------------------------------//
+      
+      Description of DCCALShower variables:
+      
+      - type: Indicates the location of shower
+      	0 - shower is in middle layers of calorimeter
+	1 - shower is in most inner layer (under absorber)
+	2 - shower is in most outer layer
+	
+      - dime:  number of hits contributing to shower
+      - id:    only non-zero for showers that share a single peak
+      - idmax: the channel number of cell with maximum energy
+      
+      - E: energy of reconstructed shower
+      - x,y: position reported from island algorithm
+      - x1, y1: position calculated using logarithmic weights
+      	x1 = Sum( xi*wi ) where wi = 4.2 + ln( Ei / E )
+      - chi2: The chi2-value reported from island
+      - sigma_E: energy resolution (needs work)
+      - Emax: energy of maximum cell
+      - time: energy-weighted average of shower's constituent times
+      	After a time-walk correction     
+      
+      //----------------------------------------*/      
+      
+      
       
       int type;
       int dime;
-      int status;
       int id;
       int idmax;
 
@@ -54,15 +79,14 @@ class DCCALShower : public JObject {
       void toStrings(vector<pair<string,string> > &items) const {
 	AddString(items, "E(GeV)",    "%2.3f",  E);
 	AddString(items, "Emax(GeV)", "%2.3f",  Emax);
-	AddString(items, "x(cm)",     "%3.1f",  x);
-	AddString(items, "y(cm)",     "%3.1f",  y);
-	AddString(items, "z(cm)",     "%3.1f",  z);
-	AddString(items, "x1(cm)",    "%3.1f",  x1);
-	AddString(items, "y1(cm)",    "%3.1f",  y1);
-	AddString(items, "chi2",      "%3.1f",  chi2);
+	AddString(items, "x(cm)",     "%3.3f",  x);
+	AddString(items, "y(cm)",     "%3.3f",  y);
+	AddString(items, "z(cm)",     "%3.3f",  z);
+	AddString(items, "x1(cm)",    "%3.3f",  x1);
+	AddString(items, "y1(cm)",    "%3.3f",  y1);
+	AddString(items, "chi2",      "%3.3f",  chi2);
 	AddString(items, "type",      "%3d",    type);
 	AddString(items, "dime",      "%3d",    dime);
-	AddString(items, "status",    "%3d",    status);
 	AddString(items, "id",        "%3d",    id);
 	AddString(items, "idmax",     "%3d",    idmax);
 	AddString(items, "sigma_E",   "%3.1f",  sigma_E);
