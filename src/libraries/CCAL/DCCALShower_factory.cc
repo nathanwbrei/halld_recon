@@ -311,20 +311,6 @@ jerror_t DCCALShower_factory::evnt(JEventLoop *locEventLoop, uint64_t eventnumbe
 	if( n_hits < 1 || n_hits > MAX_HITS_FOR_CLUSTERING ) return NOERROR;
 	
 	
-	if( SHOWER_DEBUG ) {
-	
-	  cout << "\n\nNumber of hits: " << n_hits << endl;
-	  for( int ii = 0; ii < n_hits; ii++ ) {
-	    float e = ccalhits[ii]->E;
-	    float t = ccalhits[ii]->t;
-	    int id  = ccalhits[ii]->row*12 + ccalhits[ii]->column;
-	    cout <<"  E, id, t: "<< e <<", "<< id <<", "<< t << endl;
-	  }
-	
-	}
-	
-	
-	
 	vector< vector< const DCCALHit* > > hitPatterns;
 	getHitPatterns( ccalhits, hitPatterns );
 	
@@ -334,23 +320,6 @@ jerror_t DCCALShower_factory::evnt(JEventLoop *locEventLoop, uint64_t eventnumbe
 	vector< ccalcluster_t > ccalClusters; // will hold all clusters
 	vector< cluster_t > clusterStorage;   // will hold the constituents of every cluster
 	
-	
-	
-	if( SHOWER_DEBUG ) {
-	
-	  cout << "\nNumber of hit patterns: " << n_patterns << endl;
-	  for( int ip = 0; ip < n_patterns; ip++ ) {
-	    int lochits = static_cast<int>( hitPatterns[ip].size() );
-	    cout << "  Pattern " << ip+1 << ": " << lochits << endl;
-	    for( int ih = 0; ih < lochits; ih++ ) {
-	      float e = hitPatterns[ip][ih]->E;
-	      float t = hitPatterns[ip][ih]->t;
-	      int id  = hitPatterns[ip][ih]->row*12 + hitPatterns[ip][ih]->column;
-	      cout <<"    E, id, t: "<< e <<", "<< id <<", "<< t << endl;
-	    }
-	  }
-	  
-	}
 	
 	
 	
