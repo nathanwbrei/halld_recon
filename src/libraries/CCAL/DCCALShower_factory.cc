@@ -15,68 +15,6 @@ static bool CCAL_PROFILE_LOADED = false;
 
 //==========================================================
 //
-//   LoadCCALProfileData
-//
-//==========================================================
-
-bool DCCALShower_factory::LoadCCALProfileData(JApplication *japp, int32_t runnumber)
-{
-
-	if( CCAL_PROFILE_LOADED )
-	  return true;
-	else
-	  CCAL_PROFILE_LOADED = true;
-
-	string ccal_profile_file;
-	gPARMS->SetDefaultParameter("CCAL_PROFILE_FILE", ccal_profile_file, "CCAL profile data file name");
-		
-	// make sure we have a pointer to the JApplication
-	if(japp == nullptr)
-		return false;
-	
-	// follow similar procedure as other resources (DMagneticFieldMapFineMesh)
-	map<string,string> profile_file_name;
-	JCalibration *jcalib = japp->GetJCalibration(runnumber);
-	if(jcalib->GetCalib("/CCAL/profile_data/profile_data_map", profile_file_name)) 
-		jout << "Can't find requested /CCAL/profile_data/profile_data_map in CCDB for this run!" << endl;
-	else if(profile_file_name.find("map_name") != profile_file_name.end() 
-				&& profile_file_name["map_name"] != "None") {
-		JResourceManager *jresman = japp->GetJResourceManager(runnumber);
-		ccal_profile_file = jresman->GetResource(profile_file_name["map_name"]);
-	}
-	
-	jout<<"Reading CCAL profile data from "<<ccal_profile_file<<" ..."<<endl;
-	
-	// check to see if we actually have a file
-	if(ccal_profile_file.empty()) {
-		jerr << "Empty file..." << endl;
-		return false;
-	}
-	
-	ifstream ccal_profile(ccal_profile_file.c_str());
-	for(int i=0; i<=500; i++) {
-		for(int j=0; j<=i; j++) {
-			int id1, id2;
-			double fcell_hyc, fd2c;
-			
-			ccal_profile >> id1 >> id2 >> fcell_hyc >> fd2c;
-		
-			acell[id1][id2] = fcell_hyc;
-			acell[id2][id1] = fcell_hyc;
-			ad2c[id1][id2] = fd2c;
-			ad2c[id2][id1] = fd2c;
-		}
-	}
-	ccal_profile.close();
-	
-	return true;
-}
-
-
-
-
-//==========================================================
-//
 //   Constructor
 //
 //==========================================================
@@ -86,11 +24,11 @@ DCCALShower_factory::DCCALShower_factory()
 	// Set defaults:
 	
     	MIN_CLUSTER_BLOCK_COUNT   =  2;
-    	MIN_CLUSTER_SEED_ENERGY   =  0.035;  // GeV
-	MIN_CLUSTER_ENERGY        =  0.05;   // GeV
-	MAX_CLUSTER_ENERGY        =  15.9;   // GeV
-	TIME_CUT                  =  15.0;   // ns
 	MAX_HITS_FOR_CLUSTERING   =  80;
+    	MIN_CLUSTER_SEED_ENERGY   =  0.035;  /* [GeV] */
+	MIN_CLUSTER_ENERGY        =  0.05;   /* [GeV] */
+	MAX_CLUSTER_ENERGY        =  15.9;   /* [GeV] */
+	TIME_CUT                  =  25.0;   /*  [ns] */
 	
 	SHOWER_DEBUG              =  0;
 	DO_NONLINEAR_CORRECTION   =  1;
@@ -99,16 +37,23 @@ DCCALShower_factory::DCCALShower_factory()
 	CCAL_CRITICAL_ENERGY      =  1.1e-3;
 	
 
-	gPARMS->SetDefaultParameter("CCAL:SHOWER_DEBUG",   SHOWER_DEBUG);
-	gPARMS->SetDefaultParameter("CCAL:MIN_CLUSTER_BLOCK_COUNT", MIN_CLUSTER_BLOCK_COUNT);
-	gPARMS->SetDefaultParameter("CCAL:MIN_CLUSTER_SEED_ENERGY", MIN_CLUSTER_SEED_ENERGY);
-	gPARMS->SetDefaultParameter("CCAL:MIN_CLUSTER_ENERGY", MIN_CLUSTER_ENERGY);
-	gPARMS->SetDefaultParameter("CCAL:MAX_CLUSTER_ENERGY", MAX_CLUSTER_ENERGY);
-	gPARMS->SetDefaultParameter("CCAL:MAX_HITS_FOR_CLUSTERING", MAX_HITS_FOR_CLUSTERING);
-	gPARMS->SetDefaultParameter("CCAL:TIME_CUT",TIME_CUT,"time cut for associating CCAL hits together into a cluster");
-	gPARMS->SetDefaultParameter("CCAL:DO_NONLINEAR_CORRECTION", DO_NONLINEAR_CORRECTION);
-	gPARMS->SetDefaultParameter("CCAL:CCAL_RADIATION_LENGTH", CCAL_RADIATION_LENGTH);
-	gPARMS->SetDefaultParameter("CCAL:CCAL_CRITICAL_ENERGY", CCAL_CRITICAL_ENERGY);
+	gPARMS->SetDefaultParameter( "CCAL:SHOWER_DEBUG", SHOWER_DEBUG );
+	gPARMS->SetDefaultParameter( "CCAL:MIN_CLUSTER_BLOCK_COUNT", MIN_CLUSTER_BLOCK_COUNT, 
+			"minimum number of blocks to form a cluster" );
+	gPARMS->SetDefaultParameter( "CCAL:MIN_CLUSTER_SEED_ENERGY", MIN_CLUSTER_SEED_ENERGY, 
+			"minimum energy for a block to be considered as a seed for a cluster" );
+	gPARMS->SetDefaultParameter( "CCAL:MIN_CLUSTER_ENERGY", MIN_CLUSTER_ENERGY, 
+			"minimum allowed cluster energy" );
+	gPARMS->SetDefaultParameter( "CCAL:MAX_CLUSTER_ENERGY", MAX_CLUSTER_ENERGY, 
+			"maximum allowed cluster energy" );
+	gPARMS->SetDefaultParameter( "CCAL:MAX_HITS_FOR_CLUSTERING", MAX_HITS_FOR_CLUSTERING, 
+			"maximum hits allowed to call clustering algorithm" );
+	gPARMS->SetDefaultParameter( "CCAL:TIME_CUT", TIME_CUT, 
+			"time cut for associating CCAL hits together into a cluster" );
+	gPARMS->SetDefaultParameter( "CCAL:DO_NONLINEAR_CORRECTION", DO_NONLINEAR_CORRECTION, 
+			"set this to zero when no nonlinear correction is desired" );
+	gPARMS->SetDefaultParameter( "CCAL:CCAL_RADIATION_LENGTH", CCAL_RADIATION_LENGTH );
+	gPARMS->SetDefaultParameter( "CCAL:CCAL_CRITICAL_ENERGY", CCAL_CRITICAL_ENERGY );
 
 }
 
@@ -138,32 +83,38 @@ jerror_t DCCALShower_factory::brun(JEventLoop *locEventLoop, int32_t runnumber)
 	
 	
 	
-	//------------------------------------------------------------
-	// read in shower profile data
+	
+	//------------------------------------------------------//
+	//-----------   Read in shower profile data  -----------//
 	
 	std::unique_lock<std::mutex> lck(CCAL_MUTEX);
-	//LoadCCALProfileData(eventLoop->GetJApplication(), runnumber);
 	
 	string ccal_profile_file;
 	gPARMS->SetDefaultParameter("CCAL_PROFILE_FILE", ccal_profile_file, "CCAL profile data file name");
 	
 	// follow similar procedure as other resources (DMagneticFieldMapFineMesh)
-	map<string,string> profile_file_name;
+	
+	map< string,string > profile_file_name;
 	JCalibration *jcalib = dapp->GetJCalibration(runnumber);
-	if(jcalib->GetCalib("/CCAL/profile_data/profile_data_map", profile_file_name)) 
-		jout << "Can't find requested /CCAL/profile_data/profile_data_map in CCDB for this run!" << endl;
-	else if(profile_file_name.find("map_name") != profile_file_name.end() 
-				&& profile_file_name["map_name"] != "None") {
-		JResourceManager *jresman = dapp->GetJResourceManager(runnumber);
-		ccal_profile_file = jresman->GetResource(profile_file_name["map_name"]);
+	
+	if( jcalib->GetCalib("/CCAL/profile_data/profile_data_map", profile_file_name) ) 
+	{
+	  jout << "Can't find requested /CCAL/profile_data/profile_data_map in CCDB for this run!" << endl;
+	
+	} else if( profile_file_name.find("map_name") != profile_file_name.end() 
+		&& profile_file_name["map_name"] != "None" ) 
+	{
+	  JResourceManager *jresman = dapp->GetJResourceManager(runnumber);
+	  ccal_profile_file = jresman->GetResource(profile_file_name["map_name"]);
 	}
 	
 	jout<<"Reading CCAL profile data from "<<ccal_profile_file<<" ..."<<endl;
 	
 	// check to see if we actually have a file
-	if(ccal_profile_file.empty()) {
-		jerr << "Empty file..." << endl;
-		return RESOURCE_UNAVAILABLE;
+	if(ccal_profile_file.empty()) 
+	{
+	  jerr << "Empty file..." << endl;
+	  return RESOURCE_UNAVAILABLE;
 	}
 	
 	ifstream ccal_profile(ccal_profile_file.c_str());
@@ -187,8 +138,8 @@ jerror_t DCCALShower_factory::brun(JEventLoop *locEventLoop, int32_t runnumber)
 	
 	
 	
-	//------------------------------------------------------------
-	// initialize channel status array
+	//------------------------------------------------------//
+	//----------  Initialize channel status array ----------//
 	
 	for(int icol = 0; icol < MCOL; ++icol) {
 	  for(int irow = 0; irow < MROW; ++irow) {
@@ -196,11 +147,12 @@ jerror_t DCCALShower_factory::brun(JEventLoop *locEventLoop, int32_t runnumber)
 	    else { stat_ch[irow][icol] = 0; }
 	  }
 	}
-
-
-
-	//------------------------------------------------------------
-	// read in shower timewalk parameters
+	
+	
+	
+	
+	//------------------------------------------------------//
+	//----------  Read shower timewalk parameters ----------//
 	
 	vector< vector<double> > timewalk_params;
 	if( eventLoop->GetCalib("/CCAL/shower_timewalk_correction",timewalk_params) )
@@ -229,10 +181,12 @@ jerror_t DCCALShower_factory::brun(JEventLoop *locEventLoop, int32_t runnumber)
 	    }
 	  }
 	}
-
-
-	//------------------------------------------------------------
-	// read in the nonlinearity parameters:
+	
+	
+	
+	
+	//------------------------------------------------------//
+	//---------  Read in non-linearity parameters ----------//
 	
 	vector< vector<double> > nonlin_params;
 	if( eventLoop->GetCalib("/CCAL/nonlinear_energy_correction",nonlin_params) )
@@ -262,7 +216,6 @@ jerror_t DCCALShower_factory::brun(JEventLoop *locEventLoop, int32_t runnumber)
 	  }
 	}
 	
-	
 	if( SHOWER_DEBUG ) {
 	  cout << "\n\nNONLIN_P0  NONLIN_P1  NONLIN_P2  NONLIN_P3" << endl;
 	  for(int ii = 0; ii < (int)Nonlin_p0.size(); ii++) {
@@ -272,7 +225,8 @@ jerror_t DCCALShower_factory::brun(JEventLoop *locEventLoop, int32_t runnumber)
 	}
 	
 	
-
+	
+	
 	return NOERROR;
 }
 
@@ -289,9 +243,6 @@ jerror_t DCCALShower_factory::evnt(JEventLoop *locEventLoop, uint64_t eventnumbe
 {
 	
 	
-	//---------------------------------------------------------//
-	//---------------   Get the CCAL Geometry   ---------------//
-	
 	vector< const DCCALGeometry* > ccalGeomVect;
     	locEventLoop->Get( ccalGeomVect );
 	if (ccalGeomVect.size() < 1)
@@ -301,8 +252,8 @@ jerror_t DCCALShower_factory::evnt(JEventLoop *locEventLoop, uint64_t eventnumbe
 	
 	
 	
-	//---------------------------------------------------------//
 	//------- Get the CCALHits and organize hit pattern -------//
+	
 	
 	vector< const DCCALHit* > ccalhits;
 	locEventLoop->Get( ccalhits );
@@ -321,15 +272,42 @@ jerror_t DCCALShower_factory::evnt(JEventLoop *locEventLoop, uint64_t eventnumbe
 	vector< cluster_t > clusterStorage;   // will hold the constituents of every cluster
 	
 	
+	if( SHOWER_DEBUG ) {
+	
+	  cout << "\n\nCCAL Hits (id, e, t): " << endl;
+	  for( unsigned int ii = 0; ii < ccalhits.size(); ii++ ) {
+	    int id12 = ccalhits[ii]->row*12 + ccalhits[ii]->column;
+	    double e = ccalhits[ii]->E;
+	    double t = ccalhits[ii]->t;
+	    cout <<"  "<< id12 <<"; "<< e <<"; "<< t << endl;
+	  }
+	  
+	  cout << "\nCCAL Patterns: " << endl;
+	  for( unsigned int ip = 0; ip < hitPatterns.size(); ip++ ) {
+	    cout << "Pattern " << ip+1 << endl;
+	    for( unsigned int ii = 0; ii < hitPatterns[ip].size(); ii++ ) {
+	      int id12 = hitPatterns[ip][ii]->row*12 + hitPatterns[ip][ii]->column;
+	      double e = hitPatterns[ip][ii]->E;
+	      double t = hitPatterns[ip][ii]->t;
+	      cout <<"  "<< id12 <<"; "<< e <<"; "<< t << endl;
+	    }
+	  }
+	  
+	  cout << "\n";	
+	
+	}
 	
 	
-	//---------------------------------------------------------//
+	
+	
 	//-------  Call island clusterizer on each pattern  -------//
+	
 	
 	for( int ipat = 0; ipat < n_patterns; ipat++ ) 
 	{
 	
-	  //----- prepare data in dimensionless format ----------//
+	  
+	  /*-----  prepare data in dimensionless format  -----*/
 	  
 	  vector< const DCCALHit* > locHitPattern = hitPatterns[ipat];
 	  int n_hits = static_cast<int>( locHitPattern.size() );
@@ -349,25 +327,26 @@ jerror_t DCCALShower_factory::evnt(JEventLoop *locEventLoop, uint64_t eventnumbe
 	    }	  
 	  }
 	  
-	  //--------------  call to island  --------------//
 	  
+	  /*-------------     call to island     -------------*/
+	  	  
 	  vector< gamma_t > gammas; // Output of main_island (holds reconstructed photons)
 	  main_island( ia, id, gammas );
 	
 	
-	  //----------  post-island processing  ----------//
-	
+	  /*------------  post-island processing  ------------*/
+	  	
 	  int init_clusters = static_cast<int>( gammas.size() );
 	  if( !init_clusters ) continue;
 	
-	  process_showers( gammas, ccalGeom, locHitPattern, ccalClusters, clusterStorage );
+	  processShowers( gammas, ccalGeom, locHitPattern, eventnumber, ccalClusters, clusterStorage );
+	
 	
 	}
 	
 	
 	
 	
-	//---------------------------------------------------------//
 	//--------------   Fill DCCALShower Object   --------------//
 	
 	int n_clusters = static_cast<int>( ccalClusters.size() );
@@ -377,17 +356,19 @@ jerror_t DCCALShower_factory::evnt(JEventLoop *locEventLoop, uint64_t eventnumbe
 	  DCCALShower *shower = new DCCALShower;
 	  
 	  shower->E        =   ccalClusters[k].E;
+	  shower->Esum     =   ccalClusters[k].Esum;
 	  shower->x        =   ccalClusters[k].x;
 	  shower->y        =   ccalClusters[k].y;
 	  shower->z        =   m_CCALfront;
 	  shower->x1       =   ccalClusters[k].x1;
 	  shower->y1       =   ccalClusters[k].y1;
-	  shower->time     =   ccalClusters[k].time;
 	  shower->chi2     =   ccalClusters[k].chi2;
-	  shower->type     =   ccalClusters[k].type;
-	  shower->dime     =   ccalClusters[k].nhits;
 	  shower->sigma_E  =   ccalClusters[k].sigma_E;
 	  shower->Emax     =   ccalClusters[k].emax;
+	  shower->time     =   ccalClusters[k].time;
+	  
+	  shower->type     =   ccalClusters[k].type;
+	  shower->dime     =   ccalClusters[k].nhits;
 	  shower->id       =   ccalClusters[k].id;
 	  shower->idmax    =   ccalClusters[k].idmax;
 	  
@@ -422,7 +403,8 @@ void DCCALShower_factory::getHitPatterns( vector< const DCCALHit* > hitarray,
 		vector< vector< const DCCALHit* > > &hitPatterns ) 
 {
 
-	/*
+	/*------------------------------
+	
 	Method for sorting hit patterns:
 	
 	1. Find hit with largest energy.
@@ -431,8 +413,9 @@ void DCCALShower_factory::getHitPatterns( vector< const DCCALHit* > hitarray,
 	4. Erase the elements that were moved from the previous vector
 		- maybe steps 3&4 can be done simultaneously? 
 	5. Push the new vector back to the hitPatterns vector
-	6. Repeat steps 1-5 until no hits remain in original hitarray	
-	*/
+	6. Repeat steps 1-5 until no hits remain in original hitarray
+	
+	--------------------------------*/
 
 	
 	int n_hits = static_cast<int>( hitarray.size() );
@@ -550,13 +533,13 @@ void DCCALShower_factory::sortByTime( vector< const DCCALHit* > &hitarray, float
 
 //==========================================================
 //
-//   process_showers
+//   processShowers
 //
 //==========================================================
 
-void DCCALShower_factory::process_showers( vector< gamma_t > gammas, DCCALGeometry ccalGeom, 
-		vector< const DCCALHit* > locHitPattern, vector< ccalcluster_t > &ccalClusters, 
-		vector< cluster_t > &clusterStorage )
+void DCCALShower_factory::processShowers( vector< gamma_t > gammas, DCCALGeometry ccalGeom, 
+		vector< const DCCALHit* > locHitPattern, int eventnumber, 
+		vector< ccalcluster_t > &ccalClusters, vector< cluster_t > &clusterStorage )
 {
 
 
@@ -598,13 +581,13 @@ void DCCALShower_factory::process_showers( vector< gamma_t > gammas, DCCALGeomet
 	  for( int j = 0; j < (dime>MAX_CC ? MAX_CC : dime); j++ ) {
 	  
 	    double ecell = 1.e-4*static_cast<double>( gammas[k].icl_en[j] );
-	    int id = gammas[k].icl_in[j];
-	    int kx = (id/100), ky = id%100;
-	    id = (ky-1)*12 + (kx-1);
+	    int ccal_id = gammas[k].icl_in[j];
+	    int kx  = (ccal_id/100), ky = ccal_id%100;
+	    ccal_id = (ky-1)*12 + (kx-1);
 	    e1 += ecell;
 	    if( ecell > ecellmax ) {
 	      ecellmax = ecell;
-	      idmax = id;
+	      idmax = ccal_id;
 	    }
 	  
 	  }
@@ -622,9 +605,9 @@ void DCCALShower_factory::process_showers( vector< gamma_t > gammas, DCCALGeomet
 	  
 	  for( int j = 0; j < (dime>MAX_CC ? MAX_CC : dime); j++ ) {
 	  
-	    int id = gammas[k].icl_in[j];
-	    int kx = (id/100), ky = id%100;
-	    int ccal_id = (ky-1)*12 + (kx-1);
+	    int ccal_id = gammas[k].icl_in[j];
+	    int kx  = (ccal_id/100), ky = ccal_id%100;
+	    ccal_id = (ky-1)*12 + (kx-1);
 	  
 	    double ecell  = 1.e-4*static_cast<double>( gammas[k].icl_en[j] );
 	    double xcell  = ccalGeom.positionOnFace( ccal_id ).X();
@@ -685,73 +668,21 @@ void DCCALShower_factory::process_showers( vector< gamma_t > gammas, DCCALGeomet
 	    x1 = zk*xpos/sW;
 	    y1 = zk*ypos/sW;
 	  } else {
-	    printf("WRN bad cluster log. coord, center id = %i %f\n", idmax, e);
+	    printf("WRN bad cluster log. coord at event %i: center id = %i, energy = %f\n", eventnumber, idmax, e);
 	    x1 = 0.0;
 	    y1 = 0.0;
 	  }
 	  
-	  //-----------------  Fill cluster bank  -----------------//
-	  
-	  locCluster.type   = type;
-	  locCluster.nhits  = dime;
-	  locCluster.id     = id;
-	  locCluster.idmax  = idmax;
-	  locCluster.E      = e;
-	  locCluster.time   = showerTime;
-	  locCluster.x      = x;
-	  locCluster.y      = y;
-	  locCluster.chi2   = chi2;
-	  locCluster.x1     = x1;
-	  locCluster.y1     = y1;
-	  locCluster.emax   = ecellmax;
 	  
 	  
-	  clusterStorage.push_back( locClusterStorage );
-	  ccalClusters.push_back( locCluster );
-	
-	}
-	
-
-	if( n_clusters == 0 ) return;
-	final_cluster_processing( ccalClusters );
-
-
-
-	return;
-}
-
-
-
-
-
-
-
-
-
-
-
-//==========================================================
-//
-//   final_cluster_processing
-//
-//==========================================================
-
-void DCCALShower_factory::final_cluster_processing( vector< ccalcluster_t > &ccalClusters ) 
-{
-	//--------------------------
-	// Final Cluster Processing:
-	//  - apply nolinear energy correction
-	//  - add energy resolution
-
-
-	int n_clusters = static_cast<int>( ccalClusters.size() );
-
-    	for( int icl = 0; icl < n_clusters; icl++ )
-	{
-	
-	  double e     = ccalClusters[icl].E;
-	  int idmax    = ccalClusters[icl].idmax;
-	 
+	  
+	  //--------  Calculate nonlinear-corrected energy --------//
+	  
+	  
+	  if( idmax < 0 ) {
+	    printf("WRN negative idmax recorded at event %i; energy = %f\n", eventnumber, e);
+	  }
+	  
 	  double ecorr = e;
 	  if( DO_NONLINEAR_CORRECTION ) ecorr = getCorrectedEnergy( e, idmax );
 	  
@@ -759,14 +690,13 @@ void DCCALShower_factory::final_cluster_processing( vector< ccalcluster_t > &cca
 	    cout << "\n\nShower energy before correction: " << e << " GeV" << endl;
 	    cout << "Shower energy after  correction: " << ecorr << " GeV\n\n" << endl;
 	  }
-
-      	  //float x   = ccalClusters[i].x1;
-      	  //float y   = ccalClusters[i].y1;
-          // coord_align(i, e, idmax);
 	  
-	  int type = ccalClusters[icl].type;
 	  
-      	  double se = sqrt( 0.9*0.9*e*e + 2.5*2.5*e + 1.0 ); // from HYCAL reconstruction, need to tune
+	  
+	  
+	  //--------  Get energy resolution (needs updating) --------//
+	  
+	  double se = sqrt( 0.9*0.9*ecorr*ecorr + 2.5*2.5*ecorr + 1.0 ); // from HYCAL reconstruction, need to tune
       	  se /= 100.;
 	  
       	  if( (type%10)==1 )
@@ -774,13 +704,33 @@ void DCCALShower_factory::final_cluster_processing( vector< ccalcluster_t > &cca
       	  else if( (type%10)==2 )
             se *= 1.25;
 	  
-	  ccalClusters[icl].E       = ecorr;
-      	  ccalClusters[icl].sigma_E = se;
 	  
+	  
+	  //-----------------  Fill cluster bank  -----------------//
+	  
+	  locCluster.type    = type;
+	  locCluster.nhits   = dime;
+	  locCluster.id      = id;
+	  locCluster.idmax   = idmax;
+	  
+	  locCluster.E       = ecorr;
+	  locCluster.Esum    = e1;
+	  locCluster.x       = x;
+	  locCluster.y       = y;
+	  locCluster.x1      = x1;
+	  locCluster.y1      = y1;
+	  locCluster.chi2    = chi2;
+	  locCluster.time    = showerTime;
+	  locCluster.emax    = ecellmax;
+	  locCluster.sigma_E = se;
+	  
+	  clusterStorage.push_back( locClusterStorage );
+	  ccalClusters.push_back( locCluster );
+	
 	}
 
-	return;
 
+	return;
 }
 
 
@@ -820,16 +770,11 @@ double DCCALShower_factory::getCorrectedTime( double time, double energy )
 {
 	// timewalk correction:
 	
-	double p0[2] = {0.9531, 0.3847};
-	double p1[2] = {0.9374, 1.5006};
-	double p2[2] = {-2.5223, -0.3751};
-	double p3[2] = {0.9413, -0.1129};
-	
 	int iPar;
 	if( energy < 1.0 ) iPar = 0;
 	else iPar = 1;
 	
-	double dt = p0[iPar]*exp(p1[iPar] + p2[iPar]*energy) + p3[iPar];
+	double dt = timewalk_p0[iPar]*exp( timewalk_p1[iPar] + timewalk_p2[iPar]*energy ) + timewalk_p3[iPar];
 	double t_cor = time - dt;
 	
 	return t_cor;
@@ -865,10 +810,12 @@ double DCCALShower_factory::getShowerDepth( double energy )
 
 double DCCALShower_factory::getCorrectedEnergy( double energy, int id ) 
 {
-
+	
+	if( id < 0 ) return energy;
+	
 	if( Nonlin_p1[id] == 0. && Nonlin_p2[id] == 0. && Nonlin_p3[id] == 0.) return energy;
 	if( Nonlin_p0[id] == 0. ) return energy;
-  	if( energy < 0.5 || energy > 12. ) return energy;
+  	//if( energy < 0.5 || energy > 12. ) return energy;
 
 
 	double emin = 0., emax = 12.;

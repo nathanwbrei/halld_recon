@@ -653,13 +653,13 @@ void DCCALShower_factory::gams_hyc( int nadc, vector<int> &ia, vector<int> &id, 
 	    gamma_t gam2;
 	  
 	    gam1.chi2   = chisq;
-	    gam1.type   = itype;
+	    gam1.type   = itype+40;
 	    gam1.energy = e1;
 	    gam1.x      = x1;
 	    gam1.y      = y1;
 	    gam1.dime   = leng;
 	    
-	    gam1.id     = 0;
+	    gam1.id     = 90;
 	    
 	    igmpk[0][ipk] = nadcgam;
 	    igmpk[1][ipk] = nadcgam;
@@ -668,7 +668,7 @@ void DCCALShower_factory::gams_hyc( int nadc, vector<int> &ia, vector<int> &id, 
 	      nadcgam = nadcgam+1;
 	    
 	      gam2.chi2   = chisq;
-	      gam2.type   = itype;
+	      gam2.type   = itype+50;
 	      gam2.energy = e2;
 	      gam2.x      = x2;
 	      gam2.y      = y2;
@@ -676,7 +676,7 @@ void DCCALShower_factory::gams_hyc( int nadc, vector<int> &ia, vector<int> &id, 
 	      gam2.yc     = 0.5*(y2-y1);
 	      gam1.xc     = 0.5*(x1-x2);
 	      gam1.yc     = 0.5*(y1-y2);
-	    
+	      
 	      gam2.id     = 92;
 	      gam1.id     = 91;
 	      
@@ -824,7 +824,7 @@ void DCCALShower_factory::gams_hyc( int nadc, vector<int> &ia, vector<int> &id, 
 	    gamma_t gam1;
 	    gamma_t gam2;
 	    
-	    gam1.type   = itype;
+	    gam1.type   = itype+20;
 	    gam1.dime   = leng;
 	    gam1.id     = 10;
 	    
@@ -838,7 +838,7 @@ void DCCALShower_factory::gams_hyc( int nadc, vector<int> &ia, vector<int> &id, 
 	    if( e2 > 0. && nadcgam <= MADCGAM-1 ) {
 	      nadcgam = nadcgam+1;
 	      
-	      gam2.type   = itype+10;
+	      gam2.type   = itype+30;
 	      gam2.dime   = leng;
 	      gam2.id     = 12;
 	    
@@ -849,7 +849,7 @@ void DCCALShower_factory::gams_hyc( int nadc, vector<int> &ia, vector<int> &id, 
 	      gam2.xc     = 0.5*(x2-x1);
 	      gam2.yc     = 0.5*(y2-y1);
 	      
-	      gam1.type   = itype+10;
+	      gam1.type   = itype+30;
 	      gam1.id     = 11;
 	      gam1.xc     = 0.5*(x1-x2);
 	      gam1.yc     = 0.5*(x1-x2);
@@ -1210,6 +1210,8 @@ void DCCALShower_factory::mom1_pht( int nadc, vector<int> ia, vector<int> id,
 	}
 	
 	corr = corr/1.006;
+	if( SHOWER_DEBUG ) cout << "e, corr = " << e1 << ", " << corr << endl;
+	
 	
 	if( corr < 0.8 ) {
 	  if( SHOWER_DEBUG ) {
@@ -1279,8 +1281,7 @@ void DCCALShower_factory::chisq1_hyc( int nadc, vector<int> ia, vector<int> id,
 	      chisq = chisq + e1*fcell*fcell/sigma2(dx, dy, fcell, e1);
 	    }
 	  } else {
-	    //chisq = chisq + id[ii]*id[ii]/9.;
-	    cout << "case 0 ch" << endl;
+	    chisq = chisq + id[ii]*id[ii]/9.;
 	    //if( SHOWER_DEBUG ) cout << "case 0 ch" << endl;
 	  }
 	}
@@ -1355,8 +1356,8 @@ double DCCALShower_factory::cell_hyc( double dx, double dy )
 	
 	ax = fabs(dx*100.);
 	ay = fabs(dy*100.);
-	i = int(ax);
-	j = int(ay);
+	i = static_cast<int>(ax);
+	j = static_cast<int>(ay);
 	
 	if( i < 500. && j < 500. ) {
 	

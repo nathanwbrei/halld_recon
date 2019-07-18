@@ -37,13 +37,14 @@ typedef struct {
   int id;         /* Indicates multiple gammas in same peak */
   int idmax;      /* Cluster's central cell's ID */
   
-  double E;       /* Cluster's energy (GeV) */
-  double x;       /* Cluster's x-position (cm) */
-  double y;       /* Cluster's y-position (cm) */
-  double x1;      /* Cluster's x1-position (cm) */
-  double y1;      /* Cluster's y1-position (cm) */
+  double E;       /* Cluster's energy [GeV] */
+  double Esum;    /* Cluster energy calculated as sum of blocks' energies [GeV] */
+  double x;       /* Cluster's x-position [cm] */
+  double y;       /* Cluster's y-position [cm] */
+  double x1;      /* Cluster's x1-position [cm] */
+  double y1;      /* Cluster's y1-position [cm] */
   double chi2;    /* Cluster's profile fit to single shower profile */
-  double time;    /* Cluster's time (ns) */
+  double time;    /* Cluster's time [ns] */
   double sigma_E; 
   double emax;
   

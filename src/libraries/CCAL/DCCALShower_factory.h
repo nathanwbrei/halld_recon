@@ -53,19 +53,15 @@ class DCCALShower_factory:public JFactory<DCCALShower>{
 		
 		
 		
-		bool LoadCCALProfileData(JApplication *japp, int32_t runnumber);		
-		
 		void getHitPatterns( vector< const DCCALHit* > hitarray, 
 				vector< vector< const DCCALHit* > > &hitPatterns );
 		
 		void sortByTime( vector< const DCCALHit* > &hitarray, float hitTime );
 				
-		void process_showers( vector< gamma_t > gammas, DCCALGeometry ccalGeom, 
-				vector< const DCCALHit* > locHitPattern, 
+		void processShowers( vector< gamma_t > gammas, DCCALGeometry ccalGeom, 
+				vector< const DCCALHit* > locHitPattern, int eventnumber, 
 				vector< ccalcluster_t > &ccalClusters, 
 				vector< cluster_t > &clusterStorage );
-		
-		void final_cluster_processing( vector< ccalcluster_t > &ccalClusters );
 		
 		double getEnergyWeightedTime( cluster_t clusterStorage, int nHits );
 		double getCorrectedTime( double time, double energy );

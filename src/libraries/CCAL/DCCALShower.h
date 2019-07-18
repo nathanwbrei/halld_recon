@@ -32,16 +32,25 @@ class DCCALShower : public JObject {
       
       Description of DCCALShower variables:
       
-      - type: Indicates the location of shower
+      - type: 
+      
+      	type%10:
       	0 - shower is in middle layers of calorimeter
 	1 - shower is in most inner layer (under absorber)
 	2 - shower is in most outer layer
+	
+	type/10:
+	0 - shower is in a single-peak cluster with just 1 gamma in the peak
+	1 - shower is in a single-peak cluster with 2 gammas in the peak
+	2 - shower is in a multi-peak cluster with just 1 gamma in this peak
+	3 - shower is in a multi-peak cluster with 2 gammas in this peak
 	
       - dime:  number of hits contributing to shower
       - id:    only non-zero for showers that share a single peak
       - idmax: the channel number of cell with maximum energy
       
-      - E: energy of reconstructed shower
+      - E: energy of reconstructed shower from island
+      - Esum: energy of shower calculated as sum of block energies
       - x,y: position reported from island algorithm
       - x1, y1: position calculated using logarithmic weights
       	x1 = Sum( xi*wi ) where wi = 4.2 + ln( Ei / E )
@@ -51,16 +60,10 @@ class DCCALShower : public JObject {
       - time: energy-weighted average of shower's constituent times
       	After a time-walk correction     
       
-      //----------------------------------------*/      
-      
-      
-      
-      int type;
-      int dime;
-      int id;
-      int idmax;
+      //----------------------------------------*/
 
       double E;
+      double Esum;
       double x;
       double y;
       double z;
@@ -71,6 +74,11 @@ class DCCALShower : public JObject {
       double Emax;
       double time;
       double sigma_t;
+      
+      int type;
+      int dime;
+      int id;
+      int idmax;
       
       int id_storage[MAX_CC];
       double en_storage[MAX_CC];
