@@ -21,6 +21,7 @@
 #include "PID/DNeutralShower.h"
 #include <PID/DDetectorMatches.h>
 #include "BCAL/DBCALShower.h"
+#include "CCAL/DCCALShower.h"
 #include "TOF/DTOFPoint.h"
 #include "START_COUNTER/DSCHit.h"
 #include "TRACKING/DTrackTimeBased.h"

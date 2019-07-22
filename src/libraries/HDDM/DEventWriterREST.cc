@@ -76,6 +76,9 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	std::vector<const DBCALShower*> bcalshowers;
 	locEventLoop->Get(bcalshowers);
 
+	std::vector<const DCCALShower*> ccalshowers;
+	locEventLoop->Get(ccalshowers);
+
 	std::vector<const DTOFPoint*> tofpoints;
 	locEventLoop->Get(tofpoints);
 
@@ -298,6 +301,32 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		bcallayerdata().setE_L4(bcalshowers[i]->E_L4);
 		bcallayerdata().setRmsTime(bcalshowers[i]->rmsTime);
 	}
+
+
+	// push any DCCALShower objects to the output record
+	for (size_t i=0; i < ccalshowers.size(); i++)
+	{
+		hddm_r::CcalShowerList ccal = res().addCcalShowers(1);
+		ccal().setX(ccalshowers[i]->x);
+		ccal().setY(ccalshowers[i]->y);
+		ccal().setZ(ccalshowers[i]->z);
+		ccal().setT(ccalshowers[i]->time);
+		ccal().setE(ccalshowers[i]->E);
+		ccal().setX1(ccalshowers[i]->x1);
+		ccal().setY1(ccalshowers[i]->y1);
+		ccal().setEsum(ccalshowers[i]->Esum);
+		ccal().setEmax(ccalshowers[i]->Emax);
+		ccal().setChi2(ccalshowers[i]->chi2);
+		ccal().setEerr(ccalshowers[i]->sigma_E);
+		ccal().setTerr(ccalshowers[i]->sigma_t);
+		
+		ccal().setType(ccalshowers[i]->type);
+		ccal().setNhits(ccalshowers[i]->dime);
+		ccal().setId(ccalshowers[i]->id);
+		ccal().setMaxchId(ccalshowers[i]->idmax);
+
+	}
+
 
 	// push any DTOFPoint objects to the output record
 	for (size_t i=0; i < tofpoints.size(); i++)
