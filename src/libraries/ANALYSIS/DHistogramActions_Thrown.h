@@ -166,6 +166,7 @@ class DHistogramAction_ThrownParticleKinematics : public DAnalysisAction
 		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(-50.), dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
+			dFinalStatePIDs.push_back(Electron);  dFinalStatePIDs.push_back(Positron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
 		}
@@ -176,6 +177,7 @@ class DHistogramAction_ThrownParticleKinematics : public DAnalysisAction
 		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(-50.), dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
+			dFinalStatePIDs.push_back(Electron);  dFinalStatePIDs.push_back(Positron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
 		}
@@ -186,6 +188,7 @@ class DHistogramAction_ThrownParticleKinematics : public DAnalysisAction
 		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(-50.), dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
+			dFinalStatePIDs.push_back(Electron);  dFinalStatePIDs.push_back(Positron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
 		}
@@ -228,6 +231,7 @@ class DHistogramAction_ReconnedThrownKinematics : public DAnalysisAction
 		dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
+			dFinalStatePIDs.push_back(Electron);  dFinalStatePIDs.push_back(Positron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
 
@@ -242,6 +246,7 @@ class DHistogramAction_ReconnedThrownKinematics : public DAnalysisAction
 		dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
+			dFinalStatePIDs.push_back(Electron);  dFinalStatePIDs.push_back(Positron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
 
@@ -256,6 +261,7 @@ class DHistogramAction_ReconnedThrownKinematics : public DAnalysisAction
 		dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
+			dFinalStatePIDs.push_back(Electron);  dFinalStatePIDs.push_back(Positron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
 
@@ -302,6 +308,7 @@ class DHistogramAction_GenReconTrackComparison : public DAnalysisAction
 		dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinRFDeltaT(-10.1), dMaxRFDeltaT(10.1)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
+			dFinalStatePIDs.push_back(Electron);  dFinalStatePIDs.push_back(Positron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
 
@@ -318,6 +325,7 @@ class DHistogramAction_GenReconTrackComparison : public DAnalysisAction
 		dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinRFDeltaT(-10.1), dMaxRFDeltaT(10.1)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
+			dFinalStatePIDs.push_back(Electron);  dFinalStatePIDs.push_back(Positron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
 
@@ -334,6 +342,7 @@ class DHistogramAction_GenReconTrackComparison : public DAnalysisAction
 		dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinRFDeltaT(-10.1), dMaxRFDeltaT(10.1)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
+			dFinalStatePIDs.push_back(Electron);  dFinalStatePIDs.push_back(Positron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
 
