@@ -133,6 +133,9 @@ void DReaction_factory_ReactionFilter::Set_Flags(DReaction* locReaction, string 
 			case 'U': //# save unused hypotheses
 				locSaveUnusedHypotheses = (locFlagArg == 0) ? false : true;
 				break;
+			case 'H': //# save more histograms
+				locReaction->Set_MoreHistograms(locFlagArg);
+				break;
 			case 'M': //pid to not constrain mass of during kinfit
 				for(auto& locStep : locReaction->Get_ReactionSteps())
 				{
@@ -192,7 +195,10 @@ jerror_t DReaction_factory_ReactionFilter::evnt(JEventLoop* locEventLoop, uint64
 		}
 
 		// KINEMATIC FIT
-		locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
+		if(locReaction->Get_MoreHistograms())
+			locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05, true)); //5% confidence level cut on pull histograms only
+		else
+			locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 
 		//POST-KINFIT PID CUTS
 		Add_PostKinfitTimingCuts(locReaction);

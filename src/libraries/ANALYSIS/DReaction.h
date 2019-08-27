@@ -57,6 +57,7 @@ class DReaction : public JObject
 		void Set_NumPlusMinusRFBunches(size_t locNumPlusMinusRFBunches){dNumPlusMinusRFBunches = locNumPlusMinusRFBunches;}
 		void Set_MaxExtraShowers(size_t locMaxExtraShowers){dMaxExtraShowers = pair<bool, size_t>(true, locMaxExtraShowers);}
 		void Set_MaxExtraGoodTracks(size_t locMaxExtraGoodTracks){dMaxExtraGoodTracks = pair<bool, size_t>(true, locMaxExtraGoodTracks);}
+		void Set_MoreHistograms(bool locMoreHistograms) {dCreateMoreHistograms = locMoreHistograms;}
 
 		//DEPRECATED FUNCTIONS
 		void Set_MaxPhotonRFDeltaT(double locMaxPhotonRFDeltaT);
@@ -74,6 +75,7 @@ class DReaction : public JObject
 		// GET CONTROL INFO:
 		string Get_ReactionName(void) const{return dReactionName;}
 		bool Get_IsInclusiveFlag(void) const;
+		bool Get_MoreHistograms(void) const {return dCreateMoreHistograms;}
 
 		// GET KINFIT CONTROL
 		DKinFitType Get_KinFitType(void) const{return dKinFitType;}
@@ -115,6 +117,7 @@ class DReaction : public JObject
 		string dReactionName; //must be unique
 		DKinFitType dKinFitType = d_NoFit; //defined in ANALYSIS/DKinFitResults.h
 		bool dKinFitUpdateCovarianceMatricesFlag = false; //true to create new error matrices post-kinfit, false to keep the old ones
+		bool dCreateMoreHistograms = false;  // true to create extra reaction-level histograms for monitoring and analysis
 
 		// ROOT TTREE OUTPUT:
 		bool dEnableTTreeOutputFlag = false;
