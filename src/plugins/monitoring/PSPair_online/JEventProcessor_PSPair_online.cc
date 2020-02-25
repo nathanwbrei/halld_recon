@@ -301,6 +301,11 @@ jerror_t JEventProcessor_PSPair_online::brun(JEventLoop *eventLoop, int32_t runn
         if (wl<wl_min) wl_min = wl;
         if (wr<wr_min) wr_min = wr;
     }
+    // add in a workaround for when the same value is used for the upper and lower ranges (bad!) - HACK
+    if(wl_min==0) {
+        wl_min = Elows_PSarm[0][1] - Elows_PSarm[0][0];
+        wr_min = Elows_PSarm[1][1] - Elows_PSarm[1][0];
+    }
     // add the upper limits
     Elows_PSarm[0][NC_PS] = psGeom.getEhigh(0,NC_PS);
     Elows_PSarm[1][NC_PS] = psGeom.getEhigh(1,NC_PS);
