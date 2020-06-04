@@ -124,7 +124,7 @@ class DTranslationTable:public JObject{
 	public:
 		JOBJECT_PUBLIC(DTranslationTable);
 		
-		DTranslationTable(JEventLoop *loop);
+		DTranslationTable(JApplication* app, JEvent* event);
 		~DTranslationTable();
 		
 		// Each detector system has its own native indexing scheme.
@@ -414,21 +414,13 @@ class DTranslationTable:public JObject{
 		#define makevector(A) mutable vector<A*>  v##A;
 		MyTypes(makevector)
 		
-		// Similarly, define a pointer to the factory for each type.
-		#define makefactoryptr(A) JFactory<A> *fac_##A;
-		MyTypes(makefactoryptr)
-		
-		// Method to initialize factory pointers
-		#define copyfactoryptr(A) fac_##A = (JFactory<A>*)loop->GetFactory(#A, NULL, false);
-		void InitFactoryPointers(JEventLoop *loop){ MyTypes(copyfactoryptr) }
-
 		// Method to clear each of the vectors at beginning of event
 		#define clearvector(A) v##A.clear();
 		void ClearVectors(void) const { MyTypes(clearvector) }
 
 		// Method to copy all produced objects to respective factories
-		#define copytofactory(A) fac_##A->CopyTo(v##A);
-		void CopyToFactories(void) const { MyTypes(copytofactory) }
+		#define copytofactory(A) event->Insert(v##A, "");
+		void CopyToFactories(JEvent* event) const { MyTypes(copytofactory) }
 		
 		// Method to check class name against each classname in MyTypes returning
 		// true if found and false if not.
@@ -439,7 +431,7 @@ class DTranslationTable:public JObject{
 		}
 		
 		// Method to print sizes of all vectors (for debugging)
-		#define printvectorsize(A) ttout << "     v" #A ".size() = " << v##A.size() << std::endl;
+		#define printvectorsize(A) ttout << "     v" #A ".size() = " << v##A.size() << jendl;
 		void PrintVectorSizes(void) const { MyTypes(printvectorsize) }
 		
 		
@@ -453,11 +445,11 @@ class DTranslationTable:public JObject{
 		MyfADCTypes(makefadcconfigparam2)
 		
 		// Method to initialize variables and create/get config. parameters
-		void InitNsamplesOverride(void){
+		void InitNsamplesOverride(JApplication* app){
 			#define setdefaultfadc(A) {\
 				NSAMPLES_INTEGRAL_##A = NSAMPLES_PEDESTAL_##A = 0; \
-				gPARMS->SetDefaultParameter("TT:NSAMPLES_INTEGRAL_" #A, NSAMPLES_INTEGRAL_##A, "Overwrite the nsamples_integral field of all " #A " objects with this"); \
-				gPARMS->SetDefaultParameter("TT:NSAMPLES_PEDESTAL_" #A, NSAMPLES_PEDESTAL_##A, "Overwrite the nsamples_pedestal field of all " #A " objects with this"); \
+				app->SetDefaultParameter("TT:NSAMPLES_INTEGRAL_" #A, NSAMPLES_INTEGRAL_##A, "Overwrite the nsamples_integral field of all " #A " objects with this"); \
+				app->SetDefaultParameter("TT:NSAMPLES_PEDESTAL_" #A, NSAMPLES_PEDESTAL_##A, "Overwrite the nsamples_pedestal field of all " #A " objects with this"); \
 			}
 			MyfADCTypes(setdefaultfadc)
 		}
@@ -475,7 +467,7 @@ class DTranslationTable:public JObject{
 		//-----------------------------------------------------------------------
 
 		// Methods
-		void ApplyTranslationTable(JEventLoop *loop) const;
+		void ApplyTranslationTable(JEvent *event) const;
 		
 		// fADC250 -- Fall 2016 -> ?
 		DBCALDigiHit*       MakeBCALDigiHit(       const BCALIndex_t &idx,       const Df250PulseData *pd) const;

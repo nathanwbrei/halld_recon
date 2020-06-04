@@ -97,7 +97,7 @@ bool SortBCALDigiHit(const DBCALDigiHit *a, const DBCALDigiHit *b) {
 //---------------------------------
 // DTranslationTable    (Constructor)
 //---------------------------------
-DTranslationTable::DTranslationTable(JEventLoop *loop)
+DTranslationTable::DTranslationTable(JApplication* app, JEvent* event)
 {
    // Default is to just read translation table from CCDB. If this fails,
    // then an attempt will be made to read from a file on the local disk.
@@ -111,28 +111,28 @@ DTranslationTable::DTranslationTable(JEventLoop *loop)
    VERBOSE = 0;
    SYSTEMS_TO_PARSE = "";
    CALL_STACK = false;
-   gPARMS->SetDefaultParameter("TT:NO_CCDB", NO_CCDB, 
+   app->SetDefaultParameter("TT:NO_CCDB", NO_CCDB,
            "Don't try getting translation table from CCDB and just look"
            " for file. Only useful if you want to force reading tt.xml."
            " This is automatically set if you specify a different"
            " filename via the TT:XML_FILENAME parameter.");
-   JParameter *p = gPARMS->SetDefaultParameter("TT:XML_FILENAME", XML_FILENAME,
+   JParameter *p = app->SetDefaultParameter("TT:XML_FILENAME", XML_FILENAME,
            "Fallback filename of translation table XML file."
            " If set to non-default, CCDB will not be checked.");
-   if (p->GetDefault() != p->GetValue())
+   if (p->default_value != p->value)
      NO_CCDB = true;
-   gPARMS->SetDefaultParameter("TT:VERBOSE", VERBOSE, 
+   app->SetDefaultParameter("TT:VERBOSE", VERBOSE,
            "Verbosity level for Applying Translation Table."
            " 0=no messages, 10=all messages.");
    
    ROCID_MAP_FILENAME = "rocid.map";
-   gPARMS->SetDefaultParameter("TT:ROCID_MAP_FILENAME", ROCID_MAP_FILENAME,
+   app->SetDefaultParameter("TT:ROCID_MAP_FILENAME", ROCID_MAP_FILENAME,
            "Optional rocid to rocid conversion map for use with files"
            " generated with the non-standard rocid's");
 
-	gPARMS->SetDefaultParameter("TT:SYSTEMS_TO_PARSE", SYSTEMS_TO_PARSE,"This is deprecated. Please use EVIO:SYSTEMS_TO_PARSE instead.");
+	app->SetDefaultParameter("TT:SYSTEMS_TO_PARSE", SYSTEMS_TO_PARSE,"This is deprecated. Please use EVIO:SYSTEMS_TO_PARSE instead.");
 
-	gPARMS->SetDefaultParameter("TT:CALL_STACK", CALL_STACK,
+	app->SetDefaultParameter("TT:CALL_STACK", CALL_STACK,
 			"Set this to one to try and force correct recording of the"
 			"JANA call stack. You will want this if using the janadot"
 			"plugin, but otherwise, it will just give a slight performance"
@@ -148,7 +148,7 @@ DTranslationTable::DTranslationTable(JEventLoop *loop)
 	// the nsamples_integral and nsamples_pedestal fields of each type of
 	// fADC digihit class. This is done using some special macros in
 	// DTranslationTable.h
-	InitNsamplesOverride();
+	InitNsamplesOverride(app);
 
 	// Initialize dedicated JStreamLog used for debugging messages
 	ttout.SetTag("--- TT ---: ");
@@ -160,11 +160,7 @@ DTranslationTable::DTranslationTable(JEventLoop *loop)
 
 	// Read in Translation table. This will create DChannelInfo objects
 	// and store them in the "TT" map, indexed by csc_t objects
-	ReadTranslationTable(loop->GetJCalibration());
-   
-	// Set up pointers to the factories for this JEventLoop.
-	// (n.b. each JEventLoop will have it's own DTranslationTable object)
-	InitFactoryPointers(loop);
+	ReadTranslationTable(app->GetJCalibration());
 }
 
 //---------------------------------
@@ -197,7 +193,7 @@ void DTranslationTable::ReadOptionalROCidTranslation(void)
    ifstream ifs(ROCID_MAP_FILENAME.c_str());
    if (!ifs.is_open()) return;
    
-   std::cout << "Opened ROC id translation map: " << ROCID_MAP_FILENAME << jendl;
+   jout << "Opened ROC id translation map: " << ROCID_MAP_FILENAME << jendl;
    while (ifs.good()) {
       char line[256];
       ifs.getline(line, 256);
@@ -342,7 +338,7 @@ void DTranslationTable::SetSystemsToParse(string systems, int systems_to_parse_f
 //---------------------------------
 // ApplyTranslationTable
 //---------------------------------
-void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
+void DTranslationTable::ApplyTranslationTable(JEvent *event) const
 {
    /// This will get all of the low level objects and
    /// generate detector hit objects from them, placing
@@ -363,7 +359,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
    
    // Df250PulseIntegral (will apply Df250PulseTime via associated objects)
    vector<const Df250PulseIntegral*> pulseintegrals250;
-   loop->Get(pulseintegrals250);
+   event->Get(pulseintegrals250);
    if (VERBOSE > 2) ttout << "  Number Df250PulseIntegral objects: "  << pulseintegrals250.size() << jendl;
    for (uint32_t i=0; i<pulseintegrals250.size(); i++) {
       const Df250PulseIntegral *pi = pulseintegrals250[i];
@@ -423,7 +419,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 
    // Df250PulseData
    vector<const Df250PulseData*> pulsedatas250;
-   loop->Get(pulsedatas250);
+   event->Get(pulsedatas250);
    if (VERBOSE > 2) ttout << "  Number Df250PulseData objects: "  << pulsedatas250.size() << jendl;
    for(auto pd : pulsedatas250){
       
@@ -469,7 +465,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 
    // Direct creation of DigiHits from Df250WindowRawData for TPOL (always raw mode readout) 
    vector<const Df250WindowRawData*> windowrawdata;
-   loop->Get(windowrawdata);
+   event->Get(windowrawdata);
    if (VERBOSE > 2) ttout << "  Number Df250WindowRawData objects: " << windowrawdata.size() << jendl;
    for (uint32_t i=0; i<windowrawdata.size(); i++) {
       const Df250WindowRawData *window = windowrawdata[i];
@@ -504,7 +500,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 
    // Df125PulseIntegral (will apply Df125PulseTime via associated objects)
    vector<const Df125PulseIntegral*> pulseintegrals125;
-   loop->Get(pulseintegrals125);
+   event->Get(pulseintegrals125);
    if (VERBOSE > 2) ttout << "  Number Df125PulseIntegral objects: " << pulseintegrals125.size() << jendl;
    for (uint32_t i=0; i<pulseintegrals125.size(); i++) {
       const Df125PulseIntegral *pi = pulseintegrals125[i];
@@ -551,7 +547,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 
    // Df125CDCPulse
    vector<const Df125CDCPulse*> cdcpulses;
-   loop->Get(cdcpulses);
+   event->Get(cdcpulses);
    if (VERBOSE > 2) ttout << "  Number Df125CDCPulse objects: " << cdcpulses.size() << jendl;
    for (uint32_t i=0; i<cdcpulses.size(); i++) {
       const Df125CDCPulse *p = cdcpulses[i];
@@ -591,7 +587,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 
    // Df125FDCPulse
    vector<const Df125FDCPulse*> fdcpulses;
-   loop->Get(fdcpulses);
+   event->Get(fdcpulses);
    if (VERBOSE > 2) ttout << "  Number Df125FDCPulse objects: " << fdcpulses.size() << jendl;
    for (uint32_t i=0; i<fdcpulses.size(); i++) {
       const Df125FDCPulse *p = fdcpulses[i];
@@ -632,7 +628,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 
    // DF1TDCHit
    vector<const DF1TDCHit*> f1tdchits;
-   loop->Get(f1tdchits);
+   event->Get(f1tdchits);
    if (VERBOSE > 2) ttout << "  Number DF1TDCHit objects: " << f1tdchits.size() << jendl;
    for (uint32_t i=0; i<f1tdchits.size(); i++) {
       const DF1TDCHit *hit = f1tdchits[i];
@@ -677,7 +673,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 
    // DCAEN1290TDCHit
    vector<const DCAEN1290TDCHit*> caen1290tdchits;
-   loop->Get(caen1290tdchits);
+   event->Get(caen1290tdchits);
    if (VERBOSE > 2) ttout << "  Number DCAEN1290TDCHit objects: " << caen1290tdchits.size() << jendl;
    for (uint32_t i=0; i<caen1290tdchits.size(); i++) {
       const DCAEN1290TDCHit *hit = caen1290tdchits[i];
@@ -718,7 +714,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 	
    // DDIRCTDCHit
    vector<const DDIRCTDCHit*> dirctdchits;
-   loop->Get(dirctdchits);
+   event->Get(dirctdchits);
    if (VERBOSE > 2) ttout << "  Number DDIRCTDCHit objects: " << dirctdchits.size() << jendl;
    for (uint32_t i=0; i<dirctdchits.size(); i++) {
       const DDIRCTDCHit *hit = dirctdchits[i];
@@ -757,7 +753,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 
    // DGEMSRSWindowRawData
    vector<const DGEMSRSWindowRawData*> gemsrswindowrawdata;
-   loop->Get(gemsrswindowrawdata);
+   event->Get(gemsrswindowrawdata);
    if (VERBOSE > 2) ttout << "  Number DGEMSRSWindowRawData objects: " << gemsrswindowrawdata.size() << jendl;
    for (uint32_t i=0; i<gemsrswindowrawdata.size(); i++) {
       const DGEMSRSWindowRawData *hit = gemsrswindowrawdata[i];
@@ -804,7 +800,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
    // Copy pointers to all objects produced to their appropriate
    // factories. This hands ownership of them over to the factories
    // so JANA will delete them.
-   CopyToFactories();
+   CopyToFactories(event);
    
    
 	if (VERBOSE > 3) PrintVectorSizes();
@@ -813,7 +809,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
    // Unfortunately, this is just us telling JANA the relationship as defined here.
    // It is not derived from the above code which would guarantee the declared relationsips
    // are correct. That would just be too complicated given how that code works.
-   if (record_call_stack) {
+   //if (record_call_stack) {
       // re-enable call stack recording
       // loop->EnableCallStackRecording();
 
@@ -835,7 +831,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       	// AddCAEN1290TDCObjectsToCallStack(loop, "DTOFTDCDigiHit");
       	// AddCAEN1290TDCObjectsToCallStack(loop, "DTACTDCDigiHit");
 		// }
-   }
+   //}
 }
 
 //---------------------------------
@@ -1847,7 +1843,7 @@ const DTranslationTable::csc_t
     if (tt_itr == Get_TT().end()) {
        stringstream ss_err;
        ss_err << "Could not find DAQ channel in Translaton Table:  "
-              << Channel2Str(in_channel) << jendl;
+              << Channel2Str(in_channel) << std::endl;
        throw JException(ss_err.str());
     }
 
@@ -1927,7 +1923,7 @@ string DTranslationTable::Channel2Str(const DChannelInfo &in_channel) const
        break;
 
     default:
-       ss << "Unknown detector type" << jendl;
+       ss << "Unknown detector type" << std::endl;
     }   
 
     return ss.str();
