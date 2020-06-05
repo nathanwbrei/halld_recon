@@ -12,7 +12,7 @@
 
 #include <DAQ/DModuleType.h>
 #include <DAQ/JEventSource_EVIO.h>
-#include <DAQ/JEventSource_EVIOpp.h>
+//#include <DAQ/JEventSource_EVIOpp.h>
 #include <PAIR_SPECTROMETER/DPSGeometry.h>
 
 #include <JANA/Calibrations/JCalibrationManager.h>
@@ -256,8 +256,8 @@ void DTranslationTable::SetSystemsToParse(string systems, int systems_to_parse_f
 
 	// Make sure this is a JEventSource_EVIO object pointer
 	JEventSource_EVIO   *eviosource   = dynamic_cast<JEventSource_EVIO*  >(eventsource);
-	JEventSource_EVIOpp *evioppsource = dynamic_cast<JEventSource_EVIOpp*>(eventsource);
-	if( (!eviosource) && !(evioppsource) ) {
+	//JEventSource_EVIOpp *evioppsource = dynamic_cast<JEventSource_EVIOpp*>(eventsource);
+	if( (!eviosource)) { // && !(evioppsource) ) {
 		jerr << "eventsource not a JEventSource_EVIO or JEventSource_EVIOpp object! Cannot restrict parsing list!" <<
 		jendl;
 		return;
@@ -330,7 +330,7 @@ void DTranslationTable::SetSystemsToParse(string systems, int systems_to_parse_f
 			// Add this rocid to the DAQ parsing list
 			uint32_t rocid = *it;
 			if(eviosource  ) eviosource->AddROCIDtoParseList(rocid);
-			if(evioppsource) evioppsource->AddROCIDtoParseList(rocid);
+			//if(evioppsource) evioppsource->AddROCIDtoParseList(rocid);
 			jout << "   Added rocid " << rocid << " for system " << token << " to parse list" << jendl;
 		}
 	}
