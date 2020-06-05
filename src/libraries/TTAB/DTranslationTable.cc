@@ -15,6 +15,8 @@
 #include <DAQ/JEventSource_EVIOpp.h>
 #include <PAIR_SPECTROMETER/DPSGeometry.h>
 
+#include <JANA/Calibrations/JCalibrationManager.h>
+
 using namespace std;
 
 
@@ -160,7 +162,7 @@ DTranslationTable::DTranslationTable(JApplication* app, JEvent* event)
 
 	// Read in Translation table. This will create DChannelInfo objects
 	// and store them in the "TT" map, indexed by csc_t objects
-	ReadTranslationTable(app->GetJCalibration());
+	ReadTranslationTable(app->GetService<JCalibrationManager>()->GetJCalibration(event->GetRunNumber()));
 }
 
 //---------------------------------
@@ -242,13 +244,13 @@ void DTranslationTable::SetSystemsToParse(string systems, int systems_to_parse_f
 {
 	/// This takes a string of comma separated system names and
 	/// identifies a list of Detector_t values from this (using
-	/// strings returned by DetectorName() ). It then tries to 
+	/// strings returned by DetectorName() ). It then tries to
 	/// copy the value into the DAQ plugin so they can be used
 	/// to restrict which banks to parse.
 
 	// Copy value on how to handle mismatch bewtween CCDB and hard-coded to internal variable
     Get_ROCID_By_System_Mismatch_Behaviour() = systems_to_parse_force;
-	
+
 	if(systems == "") return; // nothing to do for empty strings
 	jout << "Setting systems to parse to: " << systems << jendl;
 
@@ -266,7 +268,7 @@ void DTranslationTable::SetSystemsToParse(string systems, int systems_to_parse_f
 	for(uint32_t dettype=UNKNOWN_DETECTOR; dettype<NUM_DETECTOR_TYPES; dettype++){
 		name_to_id[DetectorName((Detector_t)dettype)] = (Detector_t)dettype;
 	}
-	
+
 	// There is a chicken-egg problem of reading the ROCID assignments
 	// from the CCDB which requires a run number. The run number is
 	// not actually available though until parsing of the first event.
@@ -297,17 +299,17 @@ void DTranslationTable::SetSystemsToParse(string systems, int systems_to_parse_f
 		rocid_map[name_to_id[        "CCAL_REF"]] = {90};
 		rocid_map[name_to_id[        "DIRC"]] = {92};
 		rocid_map[name_to_id[         "TRD"]] = {76};
-		
+
 	}
 
 	// Parse string of system names
 	std::istringstream ss(systems);
 	std::string token;
 	while(std::getline(ss, token, ',')) {
-		
+
 		// Get initial list of rocids based on token
 		set<uint32_t> rocids = rocid_map[name_to_id[token]];
-		
+
 		// Let "FDC" be an alias for both cathode strips and wires
 		if(token == "FDC"){
 			set<uint32_t> rocids1 = rocid_map[name_to_id["FDC_CATHODES"]];
@@ -316,7 +318,7 @@ void DTranslationTable::SetSystemsToParse(string systems, int systems_to_parse_f
 			rocids.insert(rocids2.begin(), rocids2.end());
 		}
 
-		// More likely than not, someone specifying "PS" will also want "PSC" 
+		// More likely than not, someone specifying "PS" will also want "PSC"
 		if(token == "PS"){
 			set<uint32_t> rocids1 = rocid_map[name_to_id["PSC"]];
 			rocids.insert(rocids1.begin(), rocids1.end());
@@ -327,8 +329,8 @@ void DTranslationTable::SetSystemsToParse(string systems, int systems_to_parse_f
 
 			// Add this rocid to the DAQ parsing list
 			uint32_t rocid = *it;
-			if(eviosource  ) eviosource->AddROCIDtoParseList(rocid);	
-			if(evioppsource) evioppsource->AddROCIDtoParseList(rocid);	
+			if(eviosource  ) eviosource->AddROCIDtoParseList(rocid);
+			if(evioppsource) evioppsource->AddROCIDtoParseList(rocid);
 			jout << "   Added rocid " << rocid << " for system " << token << " to parse list" << jendl;
 		}
 	}
@@ -388,10 +390,8 @@ void DTranslationTable::ApplyTranslationTable(JEvent *event) const
                << jendl;
       
       // Check for a pulse time (this should have been added in JEventSource_EVIO.cc)
-      const Df250PulseTime *pt = NULL;
-      const Df250PulsePedestal *pp = NULL;
-	  pi->GetSingle(pt);
-	  pi->GetSingle(pp);
+      auto pp = pi->GetSingle<Df250PulsePedestal>();
+      auto pt = pi->GetSingle<Df250PulseTime>();
 
       // Avoid f250 Error with extra PulseIntegral word
       if( pt == NULL || pp == NULL) continue;
@@ -529,10 +529,8 @@ void DTranslationTable::ApplyTranslationTable(JEvent *event) const
                << jendl;
 
       // Check for a pulse time (this should have been added in JEventSource_EVIO.cc
-      const Df125PulseTime *pt = NULL;
-      const Df125PulsePedestal *pp = NULL;
-	  pi->GetSingle(pt);
-	  pi->GetSingle(pp);
+	  auto pp = pi->GetSingle<Df125PulsePedestal>();
+	  auto pt = pi->GetSingle<Df125PulseTime>();
 
       // Create the appropriate hit type based on detector type
       switch (chaninfo.det_sys) {
@@ -711,7 +709,7 @@ void DTranslationTable::ApplyTranslationTable(JEvent *event) const
              break;
       }
    }
-	
+
    // DDIRCTDCHit
    vector<const DDIRCTDCHit*> dirctdchits;
    event->Get(dirctdchits);
