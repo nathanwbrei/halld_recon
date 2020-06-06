@@ -186,7 +186,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	// Try to open the file.
 	try {
 
-		if(VERBOSE>0) evioout << "Attempting to open \""<<this->source_name<<"\" as EVIO file..." <<endl;
+		if(VERBOSE>0) evioout << "Attempting to open \""<<this->source_name<<"\" as EVIO file..." <<jendl;
 
 #if USE_HDEVIO
 		//---------- HDEVIO ------------
@@ -196,10 +196,10 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		if(EVIO_SPARSE_READ) hdevio->PrintFileSummary();
 #else	// USE_HDEVIO
 		//-------- CODA EVIO -----------
-		jerr << "You are attempting to use the CODA Channels library for reading" << endl;
-		jerr << "and EVIO file and this mechanism has been disabled from in the" << endl;
-		jerr << "DAQ library. Contact davidl@jlab.org if you need this to be" << endl;
-		jerr << "reinstated." << endl;
+		jerr << "You are attempting to use the CODA Channels library for reading" << jendl;
+		jerr << "and EVIO file and this mechanism has been disabled from in the" << jendl;
+		jerr << "DAQ library. Contact davidl@jlab.org if you need this to be" << jendl;
+		jerr << "reinstated." << jendl;
 		quit(0);
 		//chan = new evioFileChannel(this->source_name, "r", BUFFER_SIZE);
 		//chan->open(); // open the file. Throws exception if not successful
@@ -214,7 +214,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		// Could not open file. Check if name starts with "ET:"
 		//chan = NULL;
 		if(this->source_name.substr(0,3) == "ET:"){
-			if(VERBOSE>0) evioout << "Attempting to open \""<<this->source_name<<"\" as ET (network) source..." <<endl;
+			if(VERBOSE>0) evioout << "Attempting to open \""<<this->source_name<<"\" as ET (network) source..." <<jendl;
 			ConnectToET(source_name);
 		}
 		
@@ -239,7 +239,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 
 #endif  // HAVE_ET
 	}
-	if(VERBOSE>0) evioout << "Success opening event source \"" << this->source_name << "\"!" <<endl;
+	if(VERBOSE>0) evioout << "Success opening event source \"" << this->source_name << "\"!" <<jendl;
 	
 
 	// Create list of data types this event source can provide
@@ -311,21 +311,21 @@ JEventSource_EVIO::~JEventSource_EVIO()
 {
 	// close event source here
 //	if(chan){
-//		if(VERBOSE>0) evioout << "Closing event source \"" << this->source_name << "\"" <<endl;
+//		if(VERBOSE>0) evioout << "Closing event source \"" << this->source_name << "\"" <<jendl;
 //		chan->close();
 //		delete chan;
 //	}
 
 #ifdef HAVE_ET	
 	if(et_connected){
-		if(VERBOSE>0) evioout << "Closing ET connection \"" << this->source_name << "\"" <<endl;
+		if(VERBOSE>0) evioout << "Closing ET connection \"" << this->source_name << "\"" <<jendl;
 		et_close(sys_id);
 		et_connected = false;
 	}
 #endif
 
 	if(hdevio){
-		if(VERBOSE>0) evioout << "Closing hdevio event source \"" << this->source_name << "\"" <<endl;
+		if(VERBOSE>0) evioout << "Closing hdevio event source \"" << this->source_name << "\"" <<jendl;
 		hdevio->PrintStats();
 		delete hdevio;
 	}
@@ -878,9 +878,9 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 				evt = new evioDOMTree(iptr);
 				time_dom_tree = GetTime() - tstart;
 			}catch(evioException &e){
-				_DBG_ << "Problem creating EVIO DOM Tree!!" << jendl;
-				_DBG_ << e.what() << jendl;
-				_DBG_ << "Binary dump of first 160 words follows:" << jendl;
+				_DBG_ << "Problem creating EVIO DOM Tree!!" << endl;
+				_DBG_ << e.what() << endl;
+				_DBG_ << "Binary dump of first 160 words follows:" << endl;
 				DumpBinary(iptr, iend, 160);
 				exit(-1);
 			}
@@ -897,7 +897,7 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 					time_evio_parse = GetTime() - tstart;
 				}catch(JException &jexception){
 					jerr << "Exception thrown from ParseEVIOEvent!" << jendl;
-					jerr << jexception.toString() << jendl;
+					jerr << jexception.what() << jendl;
 				}
 			}
 
@@ -1297,7 +1297,7 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 
 		}
 	} catch (evioException &e) {
-		_DBG_<<e.what()<<jendl;
+		_DBG_<<e.what()<<endl;
 		if(e.type == S_EVFILE_TRUNC){
 			jerr << "-- Event buffer truncated --" <<jendl;
 			jerr << "---- this could be because the events are too large " << jendl;
@@ -1899,7 +1899,7 @@ void JEventSource_EVIO::EmulateDf250Firmware(JEvent &event, vector<JObject*> &wr
                         if(pt->emulated){
                             jerr << "Emulating channel that already has emulated objects!" << jendl;
                             jerr << "This likely means there is a bug in JEventSource_EVIO.cc" <<jendl;
-                            jerr << "PulseTime: rocid="<<pt->rocid<<" slot="<<pt->slot<<" channel="<<pt->channel<<endl;
+                            jerr << "PulseTime: rocid="<<pt->rocid<<" slot="<<pt->slot<<" channel="<<pt->channel<<jendl;
                             jerr << "please report error to davidl@jlab.org" << jendl;
                             exit(-1);
                         }
@@ -1917,10 +1917,10 @@ void JEventSource_EVIO::EmulateDf250Firmware(JEvent &event, vector<JObject*> &wr
                         f250PulsePedestal = pp;
                         f250PulsePedestal->AddAssociatedObject(f250WindowRawData);
                         if(pp->emulated){
-                            jerr << "Emulating channel that already has emulated objects!" << endl;
-                            jerr << "This likely means there is a bug in JEventSource_EVIO.cc" <<endl;
-                            jerr << "PulsePedestal: rocid="<<pp->rocid<<" slot="<<pp->slot<<" channel="<<pp->channel<<endl;
-                            jerr << "please report error to davidl@jlab.org" << endl;
+                            jerr << "Emulating channel that already has emulated objects!" << jendl;
+                            jerr << "This likely means there is a bug in JEventSource_EVIO.cc" <<jendl;
+                            jerr << "PulsePedestal: rocid="<<pp->rocid<<" slot="<<pp->slot<<" channel="<<pp->channel<<jendl;
+                            jerr << "please report error to davidl@jlab.org" << jendl;
                             exit(-1);
                         }
                     }
@@ -1937,10 +1937,10 @@ void JEventSource_EVIO::EmulateDf250Firmware(JEvent &event, vector<JObject*> &wr
                         f250PulseIntegral = pi;
                         f250PulseIntegral->AddAssociatedObject(f250WindowRawData);
                         if(pi->emulated){
-                            jerr << "Emulating channel that already has emulated objects!" << endl;
-                            jerr << "This likely means there is a bug in JEventSource_EVIO.cc" <<endl;
-                            jerr << "PulseIntegral: rocid="<<pi->rocid<<" slot="<<pi->slot<<" channel="<<pi->channel<<endl;
-                            jerr << "please report error to davidl@jlab.org" << endl;
+                            jerr << "Emulating channel that already has emulated objects!" << jendl;
+                            jerr << "This likely means there is a bug in JEventSource_EVIO.cc" <<jendl;
+                            jerr << "PulseIntegral: rocid="<<pi->rocid<<" slot="<<pi->slot<<" channel="<<pi->channel<<jendl;
+                            jerr << "please report error to davidl@jlab.org" << jendl;
                             exit(-1);
                         }
                     }
@@ -1952,7 +1952,7 @@ void JEventSource_EVIO::EmulateDf250Firmware(JEvent &event, vector<JObject*> &wr
         uint32_t pt_emulated = pt_objs.size();
         uint32_t pp_emulated = pp_objs.size();
         uint32_t pi_emulated = pi_objs.size();
-        if(VERBOSE>3) evioout << " Calling EmulateFirmware ..." << endl;
+        if(VERBOSE>3) evioout << " Calling EmulateFirmware ..." << jendl;
         f250Emulator->EmulateFirmware(f250WindowRawData, pt_objs, pp_objs, pi_objs);
 
         // Find all new objects generated by emulation and match with hw originals, if any
@@ -1963,9 +1963,9 @@ void JEventSource_EVIO::EmulateDf250Firmware(JEvent &event, vector<JObject*> &wr
             pt_em->GetSingle(rd);
             if (rd != f250WindowRawData) {
                 jerr << "Emulated object found that does not belong to WindowRawData object!" << jendl;
-                jerr << "This likely means there is a bug in JEventSource_EVIO.cc PulseTime emulation." << endl;
-                jerr << "rocid=" << pt_em->rocid << " slot=" << pt_em->slot << " channel=" << pt_em->channel << endl;
-                jerr << "Please report error to davidl@jlab.org" << endl;
+                jerr << "This likely means there is a bug in JEventSource_EVIO.cc PulseTime emulation." << jendl;
+                jerr << "rocid=" << pt_em->rocid << " slot=" << pt_em->slot << " channel=" << pt_em->channel << jendl;
+                jerr << "Please report error to davidl@jlab.org" << jendl;
                 exit(-1);
             }
             for (uint32_t j = pt_hardware; j < pt_emulated; j++) {
@@ -1988,7 +1988,7 @@ void JEventSource_EVIO::EmulateDf250Firmware(JEvent &event, vector<JObject*> &wr
                         {
                             jout << " comparing f250 hw and emulation pulse times for ROC/slot/chan "
                                  << pt_hw->rocid << "/" << pt_hw->slot << "/" << pt_hw->channel << ": "
-                                 << pt_hw->time << " vs " << pt_hw->time_emulated << endl;
+                                 << pt_hw->time << " vs " << pt_hw->time_emulated << jendl;
                         }
                     }
                     pt_objs.erase(pt_objs.begin() + i);
@@ -2001,7 +2001,7 @@ void JEventSource_EVIO::EmulateDf250Firmware(JEvent &event, vector<JObject*> &wr
             if (pt_em != 0 && VERBOSE > 3) {
                 jout << " new f250 emulation PulseTime generated for ROC/slot/chan "
                      << pt_em->rocid << "/" << pt_em->slot << "/" << pt_em->channel << ": "
-                     << "pulse " << pt_em->pulse_number << ", time " << pt_em->time << endl;
+                     << "pulse " << pt_em->pulse_number << ", time " << pt_em->time << jendl;
             }
         }
 
@@ -2032,7 +2032,7 @@ void JEventSource_EVIO::EmulateDf250Firmware(JEvent &event, vector<JObject*> &wr
                     if ((VERBOSE > 0 && pp_hw->pulse_peak != pp_hw->pulse_peak_emulated) || VERBOSE > 3)
                         jout << " comparing f250 hw and emulation pulse peaks for ROC/slot/chan "
                              << pp_hw->rocid << "/" << pp_hw->slot << "/" << pp_hw->channel << ": "
-                             << pp_hw->pulse_peak << " vs " << pp_hw->pulse_peak_emulated << endl;
+                             << pp_hw->pulse_peak << " vs " << pp_hw->pulse_peak_emulated << jendl;
                     pp_objs.erase(pp_objs.begin() + i);
                     delete pp_em;
                     pp_em = 0;
@@ -2044,7 +2044,7 @@ void JEventSource_EVIO::EmulateDf250Firmware(JEvent &event, vector<JObject*> &wr
                 jout << " new f250 emulation PulsePedestal generated for ROC/slot/chan "
                      << pp_em->rocid << "/" << pp_em->slot << "/" << pp_em->channel << ": "
                      << "pulse " << pp_em->pulse_number << ", pedestal " << pp_em->pedestal
-                     << ", peak " << pp_em->pulse_peak << endl;
+                     << ", peak " << pp_em->pulse_peak << jendl;
             }
         }
 
@@ -2054,10 +2054,10 @@ void JEventSource_EVIO::EmulateDf250Firmware(JEvent &event, vector<JObject*> &wr
             const Df250WindowRawData *rd;
             pi_em->GetSingle(rd);
             if (rd != f250WindowRawData) {
-                jerr << "Emulated object found that does not belong to WindowRawData object!" << endl;
-                jerr << "This likely means there is a bug in JEventSource_EVIO.cc PulseIntegral emulation." << endl;
-                jerr << "rocid=" << pi_em->rocid << " slot=" << pi_em->slot << " channel=" << pi_em->channel << endl;
-                jerr << "Please report error to davidl@jlab.org" << endl;
+                jerr << "Emulated object found that does not belong to WindowRawData object!" << jendl;
+                jerr << "This likely means there is a bug in JEventSource_EVIO.cc PulseIntegral emulation." << jendl;
+                jerr << "rocid=" << pi_em->rocid << " slot=" << pi_em->slot << " channel=" << pi_em->channel << jendl;
+                jerr << "Please report error to davidl@jlab.org" << jendl;
                 exit(-1);
             }
             for (uint32_t j=pi_hardware; j < pi_emulated; j++) {
@@ -2075,7 +2075,7 @@ void JEventSource_EVIO::EmulateDf250Firmware(JEvent &event, vector<JObject*> &wr
                     if ((VERBOSE > 0 && pi_hw->integral != pi_hw->integral_emulated) || VERBOSE > 3)
                         jout << " comparing f250 hw and emulation pulse integrals for ROC/slot/chan "
                              << pi_hw->rocid << "/" << pi_hw->slot << "/" << pi_hw->channel << ": "
-                             << pi_hw->integral << " vs " << pi_hw->integral_emulated << endl;
+                             << pi_hw->integral << " vs " << pi_hw->integral_emulated << jendl;
                     pi_objs.erase(pi_objs.begin() + i);
                     delete pi_em;
                     pi_em = 0;
@@ -2087,13 +2087,13 @@ void JEventSource_EVIO::EmulateDf250Firmware(JEvent &event, vector<JObject*> &wr
                 jout << " new f250 emulation PulseIntegral generated for ROC/slot/chan "
                      << pi_em->rocid << "/" << pi_em->slot << "/" << pi_em->channel << ": "
                      << "pulse " << pi_em->pulse_number << ", integral " << pi_em->integral
-                     << ", pedestal " << pi_em->pedestal << endl;
+                     << ", pedestal " << pi_em->pedestal << jendl;
             }
         }
     }
 
     // PulseTime, PulsePedestal, PulseIntegral objects are associated to one another in GetObjects 
-    if(VERBOSE>3) evioout << " Leaving  EmulateDf250Firmware" <<endl;
+    if(VERBOSE>3) evioout << " Leaving  EmulateDf250Firmware" <<jendl;
 }
 
 //----------------
@@ -2110,7 +2110,7 @@ void JEventSource_EVIO::EmulateDf125Firmware( JEvent &event, vector<JObject*> &w
     /// sample resolution. It is doubtful anyone will be using these in the future so nbd. 3/18/2016 MS 
 
     if(wrd_objs.size() == 0) return; // Can't do anything without the raw data
-    if(VERBOSE>3) evioout << " Entering  EmulateDf125Firmware ..." <<endl;
+    if(VERBOSE>3) evioout << " Entering  EmulateDf125Firmware ..." <<jendl;
 
     vector <const Df125EmulatorAlgorithm*> f125Emulator_const;
     Df125EmulatorAlgorithm *f125Emulator = NULL;
@@ -2122,7 +2122,7 @@ void JEventSource_EVIO::EmulateDf125Firmware( JEvent &event, vector<JObject*> &w
         if (f125Emulator_const.size() != 0) {
 	  f125Emulator = const_cast<Df125EmulatorAlgorithm*>(f125Emulator_const[0]);
 	} else {
-	  jerr << "Unable to load Df125EmulatorAlgorithm !  skipping emulation ..." << endl;
+	  jerr << "Unable to load Df125EmulatorAlgorithm !  skipping emulation ..." << jendl;
 	  return;
 	}
     }
@@ -2199,7 +2199,7 @@ void JEventSource_EVIO::EmulateDf125Firmware( JEvent &event, vector<JObject*> &w
         f125Emulator->EmulateFirmware(f125WindowRawData, f125CDCPulse, f125FDCPulse);
     }
 
-    if(VERBOSE>3) evioout << " Leaving  EmulateDf125Firmware" <<endl;
+    if(VERBOSE>3) evioout << " Leaving  EmulateDf125Firmware" <<jendl;
 }
 
 //----------------
@@ -2263,9 +2263,9 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
     /// use it to provide the run number. Otherwise, return whatever run
     /// number we were able to extract from the file name. 
 
-    if(VERBOSE>1) evioout << " .. Searching for run number ..." <<endl;
+    if(VERBOSE>1) evioout << " .. Searching for run number ..." <<jendl;
     if(USER_RUN_NUMBER>0){
-        if(VERBOSE>1) evioout << "  returning user-supplied run number: " << USER_RUN_NUMBER << endl;
+        if(VERBOSE>1) evioout << "  returning user-supplied run number: " << USER_RUN_NUMBER << jendl;
         return last_run_number=USER_RUN_NUMBER;
     }
 
@@ -2278,14 +2278,14 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
 
         // EPICS event
         if( (*iptr & 0xff000f) ==  0x600001){
-            if(VERBOSE>2) evioout << "     Found EPICS header. Looking for HD:coda:daq:run_number ..." << endl;
+            if(VERBOSE>2) evioout << "     Found EPICS header. Looking for HD:coda:daq:run_number ..." << jendl;
             const char *cptr = (const char*)&iptr[1];
             const char *cend = (const char*)iend;
             const char *needle = "HD:coda:daq:run_number=";
             while(cptr<cend){
-                if(VERBOSE>4) evioout << "       \""<<cptr<<"\"" << endl;
+                if(VERBOSE>4) evioout << "       \""<<cptr<<"\"" << jendl;
                 if(!strncmp(cptr, needle, strlen(needle))){
-                    if(VERBOSE>2) evioout << "     Found it!" << endl;
+                    if(VERBOSE>2) evioout << "     Found it!" << jendl;
                     return last_run_number = atoi(&cptr[strlen(needle)]);
                 }
                 cptr+=4; // should only start on 4-byte boundary!
@@ -2306,7 +2306,7 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
             if(source_type==kFileSource){
                 int32_t run_number = EpicQuestForRunNumber();
                 if(run_number != 0){
-                    if(VERBOSE>1) evioout << "      Found run number " << run_number << " from Epic Quest." <<endl;
+                    if(VERBOSE>1) evioout << "      Found run number " << run_number << " from Epic Quest." <<jendl;
                     return last_run_number = run_number;
                 }
             }
@@ -2323,9 +2323,9 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
             case 0xFF25:
             case 0xFF30:
                 // These Trigger Bank Tag values have no run number info in them
-                if(VERBOSE>2) evioout << " ... Trigger bank tag (0x" << hex << ((*iptr)>>16) << dec << ") does not contain run number" <<endl;
+                if(VERBOSE>2) evioout << " ... Trigger bank tag (0x" << hex << ((*iptr)>>16) << dec << ") does not contain run number" <<jendl;
                 if(!WARN_USER_RUN_FILENAME) {
-                    jout << "WARNING: setting run number " << filename_run_number << " based on file name" << endl; 
+                    jout << "WARNING: setting run number " << filename_run_number << " based on file name" << jendl;
                     WARN_USER_RUN_FILENAME = true;
                 }
                 return last_run_number = filename_run_number;
@@ -2334,7 +2334,7 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
                 has_timestamps = true;
             case 0xFF22:
             case 0xFF26:
-                if(VERBOSE>2) evioout << " ... Trigger bank tag (0x" << hex << ((*iptr)>>16) << dec << ") does contain run number" <<endl;
+                if(VERBOSE>2) evioout << " ... Trigger bank tag (0x" << hex << ((*iptr)>>16) << dec << ") does contain run number" <<jendl;
                 //				Nrocs = (*iptr) & 0x0F;
                 break;
             default:
@@ -2343,13 +2343,13 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
         iptr++;
         if( ((*iptr)&0x00FF0000) != 0x000A0000) { iptr--; continue; }
         uint32_t M = iptr[-3] & 0x000000FF; // Number of events from Physics Event header
-        if(VERBOSE>2) evioout << " ... Trigger bank " << (has_timestamps ? "does":"doesn't") << " have timestamps. Nevents in block M=" << M <<endl;
+        if(VERBOSE>2) evioout << " ... Trigger bank " << (has_timestamps ? "does":"doesn't") << " have timestamps. Nevents in block M=" << M <<jendl;
         iptr++;
         uint64_t *iptr64 = (uint64_t*)iptr;
 
         uint64_t event_num = *iptr64;
         if(source_type==kETSource) event_num = ((*iptr64)>>32) | ((*iptr64)<<32);
-        if(VERBOSE>3) evioout << " .... Event num: " << event_num <<endl;
+        if(VERBOSE>3) evioout << " .... Event num: " << event_num <<jendl;
         iptr64++;
         if(has_timestamps) iptr64 = &iptr64[M]; // advance past timestamps
 
@@ -2364,7 +2364,7 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
             run64 = (*iptr64)&0xffffffff;
         }
         int32_t run = (int32_t)run64;
-        if(VERBOSE>1) evioout << " .. Found run number: " << run <<endl;
+        if(VERBOSE>1) evioout << " .. Found run number: " << run <<jendl;
 
         return last_run_number = run;
     }
@@ -2373,13 +2373,13 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
     if(source_type==kFileSource){
         int32_t run_number = EpicQuestForRunNumber();
         if(run_number != 0){
-            if(VERBOSE>1) evioout << "      Found run number " << run_number << " from Epic Quest." <<endl;
+            if(VERBOSE>1) evioout << "      Found run number " << run_number << " from Epic Quest." <<jendl;
             return last_run_number = run_number;
         }
     }
 
     if(!WARN_USER_RUN_FILENAME) {
-        jout << "WARNING: setting run number " << filename_run_number << " based on file name" << endl; 
+        jout << "WARNING: setting run number " << filename_run_number << " based on file name" << jendl;
         WARN_USER_RUN_FILENAME = true;
     }
 
@@ -2423,14 +2423,14 @@ int32_t JEventSource_EVIO::EpicQuestForRunNumber(void)
 
             // EPICS event
             if( (*iptr & 0xff000f) ==  0x600001){
-                if(VERBOSE>2) evioout << "     Found EPICS header. Looking for HD:coda:daq:run_number ..." << endl;
+                if(VERBOSE>2) evioout << "     Found EPICS header. Looking for HD:coda:daq:run_number ..." << jendl;
                 const char *cptr = (const char*)&iptr[1];
                 const char *cend = (const char*)iend;
                 const char *needle = "HD:coda:daq:run_number=";
                 while(cptr<cend){
-                    if(VERBOSE>4) evioout << "       \""<<cptr<<"\"" << endl;
+                    if(VERBOSE>4) evioout << "       \""<<cptr<<"\"" << jendl;
                     if(!strncmp(cptr, needle, strlen(needle))){
-                        if(VERBOSE>2) evioout << "     Found it!" << endl;
+                        if(VERBOSE>2) evioout << "     Found it!" << jendl;
                         int32_t run_number = atoi(&cptr[strlen(needle)]);
                         if(hdevio) delete hdevio;
                         if(buff) delete[] buff;
@@ -2470,13 +2470,13 @@ int32_t JEventSource_EVIO::EpicQuestForRunNumber(void)
             iptr++;
             if( ((*iptr)&0x00FF0000) != 0x000A0000) { iptr--; continue; }
             uint32_t M = iptr[-3] & 0x000000FF; // Number of events from Physics Event header
-            if(VERBOSE>2) evioout << " ...(epic quest) Trigger bank " << (has_timestamps ? "does":"doesn't") << " have timestamps. Nevents in block M=" << M <<endl;
+            if(VERBOSE>2) evioout << " ...(epic quest) Trigger bank " << (has_timestamps ? "does":"doesn't") << " have timestamps. Nevents in block M=" << M <<jendl;
             iptr++;
             uint64_t *iptr64 = (uint64_t*)iptr;
 
             uint64_t event_num = *iptr64;
             if(source_type==kETSource) event_num = ((*iptr64)>>32) | ((*iptr64)<<32);
-            if(VERBOSE>3) evioout << " ....(epic quest) Event num: " << event_num <<endl;
+            if(VERBOSE>3) evioout << " ....(epic quest) Event num: " << event_num <<jendl;
             iptr64++;
             if(has_timestamps) iptr64 = &iptr64[M]; // advance past timestamps
 
@@ -2491,7 +2491,7 @@ int32_t JEventSource_EVIO::EpicQuestForRunNumber(void)
                 run64 = (*iptr64)&0xffffffff;
             }
             int32_t run = (int32_t)run64;
-            if(VERBOSE>1) evioout << " .. (epic quest) Found run number: " << run <<endl;
+            if(VERBOSE>1) evioout << " .. (epic quest) Found run number: " << run <<jendl;
 
             if(hdevio) delete hdevio;
             if(buff) delete[] buff;
@@ -2516,10 +2516,10 @@ uint64_t JEventSource_EVIO::FindEventNumber(uint32_t *iptr)
     /// This is called from GetEvent() to quickly look for the event number
     /// at the time the event is read in so it can be passed into JEvent.
     /// (See comments for FindRunNumber above.)
-    if(VERBOSE>1) evioout << " .. Searching for event number ..." <<endl;
+    if(VERBOSE>1) evioout << " .. Searching for event number ..." <<jendl;
 
     if(*iptr < 6){
-        if(VERBOSE>1) evioout << " Word count(="<<*iptr<<")<6. Returning Nevents_read+1(=" << Nevents_read+1 << ") as event number" <<endl;
+        if(VERBOSE>1) evioout << " Word count(="<<*iptr<<")<6. Returning Nevents_read+1(=" << Nevents_read+1 << ") as event number" <<jendl;
         return Nevents_read+1;
     }
 
@@ -2527,8 +2527,8 @@ uint64_t JEventSource_EVIO::FindEventNumber(uint32_t *iptr)
     uint32_t mask = 0xFF202000;
     if( (iptr[3]&mask) != mask ){
         if(VERBOSE>1){
-            evioout << " iptr[3]=" << hex << iptr[3] << " does not look like trigger bank tag (" << (iptr[3]&mask) << " != " << mask << ")" << dec <<endl;
-            evioout << " Returning Nevents_read+1(=" << Nevents_read+1 << ") as event number" <<endl;
+            evioout << " iptr[3]=" << hex << iptr[3] << " does not look like trigger bank tag (" << (iptr[3]&mask) << " != " << mask << ")" << dec <<jendl;
+            evioout << " Returning Nevents_read+1(=" << Nevents_read+1 << ") as event number" <<jendl;
         }
         return Nevents_read+1;
     }
@@ -2540,7 +2540,7 @@ uint64_t JEventSource_EVIO::FindEventNumber(uint32_t *iptr)
         hievent_num = iptr[5];
     }
     uint64_t event_num = loevent_num + (hievent_num<<32);
-    if(VERBOSE>1) evioout << " .. Found event number: " << event_num <<endl;
+    if(VERBOSE>1) evioout << " .. Found event number: " << event_num <<jendl;
 
     return event_num;
 }
@@ -2576,7 +2576,7 @@ void JEventSource_EVIO::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &e
 {
     if(VERBOSE>5) evioout << "      Entering MergeObjLists().  "
         << " &events1=" << hex << &events1 << dec << "(" << events1.size() << " events) "
-            << " &events2=" << hex << &events2 << dec << "(" << events2.size() << " events) " << endl;
+            << " &events2=" << hex << &events2 << dec << "(" << events2.size() << " events) " << jendl;
 
     /// Merge the events referenced in events2 into the events1 list.
     ///
@@ -2612,8 +2612,8 @@ void JEventSource_EVIO::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &e
     unsigned int Nevents2 = events2.size();
     if(Nevents1>0 && Nevents2>0 && !justconfig){
         if(Nevents1 != Nevents2){
-            evioout << "Mismatch of number of events passed to MergeObjLists. Throwing exception." << endl;
-            evioout << "Nevents1="<<Nevents1<<"  Nevents2="<<Nevents2<<endl;
+            evioout << "Mismatch of number of events passed to MergeObjLists. Throwing exception." << jendl;
+            evioout << "Nevents1="<<Nevents1<<"  Nevents2="<<Nevents2<<jendl;
             throw JException("Number of events in JEventSource_EVIO::MergeObjLists do not match!");
         }
     }
@@ -2646,7 +2646,7 @@ void JEventSource_EVIO::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &e
     // Clear out any references to objects in event2 (this should be redundant)
     events2.clear(); // clear queue
 
-    if(VERBOSE>5) evioout << "      Leaving MergeObjLists().  &events1=" << hex << &events1 << "  &events2=" << &events2 << dec << endl;
+    if(VERBOSE>5) evioout << "      Leaving MergeObjLists().  &events1=" << hex << &events1 << "  &events2=" << &events2 << dec << jendl;
 }
 
 //----------------
@@ -2654,7 +2654,7 @@ void JEventSource_EVIO::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &e
 //----------------
 void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_events)
 {
-    if(VERBOSE>5) evioout << "    Entering ParseEVIOEvent() with evt=" << hex << evt << dec << endl;
+    if(VERBOSE>5) evioout << "    Entering ParseEVIOEvent() with evt=" << hex << evt << dec << jendl;
 
     if(!evt)throw RESOURCE_UNAVAILABLE;
 
@@ -2692,10 +2692,10 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
     // them, creating data objects and adding them to the overall list.
     evioDOMNodeListP bankList = evt->getNodeList();
     evioDOMNodeList::iterator iter = bankList->begin();
-    if(VERBOSE>7) evioout << "     Looping over " << bankList->size() << " banks in EVIO event" << endl;
+    if(VERBOSE>7) evioout << "     Looping over " << bankList->size() << " banks in EVIO event" << jendl;
     for(int ibank=1; iter!=bankList->end(); iter++, ibank++){ // ibank only used for debugging messages
 
-        if(VERBOSE>7) evioout << "      -------- bank " << ibank << "/" << bankList->size() << " --------" << endl;
+        if(VERBOSE>7) evioout << "      -------- bank " << ibank << "/" << bankList->size() << " --------" << jendl;
 
         // The data banks we want should have exactly two parents:
         // - Data Bank bank       <--  parent
@@ -2712,12 +2712,12 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
         while(outermostBankPtr->getParent()) outermostBankPtr = outermostBankPtr->getParent();
         if(outermostBankPtr->tag==0x70 && outermostBankPtr->num==1){
             // This is a BOR bank
-            if(VERBOSE>9) evioout << "     bank is part of BOR event ... " << endl;			
+            if(VERBOSE>9) evioout << "     bank is part of BOR event ... " << jendl;
             if(outermostBankPtr == *iter){
-                if(VERBOSE>9) evioout << "     bank is outermost EVIO bank. Parsing BOR event ..." << endl;	
+                if(VERBOSE>9) evioout << "     bank is outermost EVIO bank. Parsing BOR event ..." << jendl;
                 ParseBORevent(outermostBankPtr);
             }else{
-                if(VERBOSE>9) evioout << "     bank is not outermost EVIO bankin BOR event skipping ..." << endl;	
+                if(VERBOSE>9) evioout << "     bank is not outermost EVIO bankin BOR event skipping ..." << jendl;
             }
             continue; // no further processing of this bank is needed
         }		
@@ -2727,12 +2727,12 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
         evioDOMNodeP data_bank = bankPtr->getParent();
         if( data_bank==NULL ) {
 
-            if(VERBOSE>9) evioout << "     bank has no parent. Checking if it's an EPICS event ... " << endl;			
+            if(VERBOSE>9) evioout << "     bank has no parent. Checking if it's an EPICS event ... " << jendl;
             if(bankPtr->tag==96 && bankPtr->num==1){
                 // This looks like an EPICS event. Hand it over to EPICS parser
                 ParseEPICSevent(bankPtr, full_events);
             }else{
-                if(VERBOSE>9) evioout << "     Not an EPICS event bank. skipping ... " << endl;
+                if(VERBOSE>9) evioout << "     Not an EPICS event bank. skipping ... " << jendl;
             }
 
             continue;
@@ -2747,7 +2747,7 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
             if( (physics_event_bank->tag == 0xff70) &&  (bankPtr->tag == 0xEE02)){
                 const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
                 if(vec->size() < 102){
-                    evioout << "  TS record for SYNC event is inconsistent. Don't parse " << endl;
+                    evioout << "  TS record for SYNC event is inconsistent. Don't parse " << jendl;
                 } else {		      
                     ParseTSSync(bankPtr, full_events);
                     //		      MergeObjLists(full_events, tmp_events);
@@ -2757,15 +2757,15 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 
 
         if( physics_event_bank==NULL ){
-            if(VERBOSE>6) evioout << "     bank has no grandparent. Checking if this is a trigger bank ... " << endl;
+            if(VERBOSE>6) evioout << "     bank has no grandparent. Checking if this is a trigger bank ... " << jendl;
 
             // Check if this is a CODA Reserved Bank Tag. If it is, then
             // this probably is part of the built trigger bank and not
             // the ROC data we're looking to parse here.
             if((bankPtr->tag & 0xFF00) == 0xFF00){
-                if(VERBOSE>6) evioout << "      Bank tag="<<hex<<data_bank->tag<<dec<<" is in reserved CODA range and has correct lineage. Assuming it's a built trigger bank."<< endl;
+                if(VERBOSE>6) evioout << "      Bank tag="<<hex<<data_bank->tag<<dec<<" is in reserved CODA range and has correct lineage. Assuming it's a built trigger bank."<< jendl;
                 ParseBuiltTriggerBank(bankPtr, tmp_events);
-                if(VERBOSE>5) evioout << "     Merging objects in ParseEVIOEvent" << endl;
+                if(VERBOSE>5) evioout << "     Merging objects in ParseEVIOEvent" << jendl;
                 MergeObjLists(full_events, tmp_events);
 
                 // Check if this is a DEventTag bank
@@ -2775,7 +2775,7 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
                     const uint32_t *iptr = &(*vec)[0];
                     const uint32_t *iend = &(*vec)[vec->size()];
                     ParseEventTag(iptr, iend, tmp_events);
-                    if(VERBOSE>5) evioout << "     Merging DEventTag objects in ParseEVIOEvent" << endl;
+                    if(VERBOSE>5) evioout << "     Merging DEventTag objects in ParseEVIOEvent" << jendl;
                     MergeObjLists(full_events, tmp_events);
                 }
             }
@@ -2783,15 +2783,15 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
             continue;  // if this wasn't a trigger bank, then it has the wrong lineage to be a data bank
         }
         if( physics_event_bank->getParent() != NULL ){
-            if(VERBOSE>9) evioout << "     bank DOES have great-grandparent. skipping ... " << endl;
+            if(VERBOSE>9) evioout << "     bank DOES have great-grandparent. skipping ... " << jendl;
             continue; // physics event bank should have no parent!
         }
         if(VERBOSE>9){
-            evioout << "      Physics Event Bank: tag=" << hex << physics_event_bank->tag << " num=" << (int)physics_event_bank->num << dec << endl;
-            evioout << "      Data Bank:          tag=" << hex << data_bank->tag << " num=" << (int)data_bank->num << dec << endl;
+            evioout << "      Physics Event Bank: tag=" << hex << physics_event_bank->tag << " num=" << (int)physics_event_bank->num << dec << jendl;
+            evioout << "      Data Bank:          tag=" << hex << data_bank->tag << " num=" << (int)data_bank->num << dec << jendl;
         }
 
-        if(VERBOSE>9) evioout << "      bank lineage check OK. Continuing with parsing ... " << endl;
+        if(VERBOSE>9) evioout << "      bank lineage check OK. Continuing with parsing ... " << jendl;
 
         // Extract ROC id (crate number) from bank's parent
         uint32_t rocid = data_bank->tag  & 0x0FFF;
@@ -2799,29 +2799,29 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
         // Get data from bank in the form of a vector of uint32_t
         const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
         if(!vec){
-            if(VERBOSE>6) evioout << "      bank is not uint32_t. Skipping..." << endl;
+            if(VERBOSE>6) evioout << "      bank is not uint32_t. Skipping..." << jendl;
             continue;
         }
         const uint32_t *iptr = &(*vec)[0];
         const uint32_t *iend = &(*vec)[vec->size()];
-        if(VERBOSE>6) evioout << "      uint32_t bank has " << vec->size() << " words" << endl;
+        if(VERBOSE>6) evioout << "      uint32_t bank has " << vec->size() << " words" << jendl;
 
         // If there are rocid's specified that we wish to parse, make sure this one
         // is in the list. Otherwise, skip it.
         if(!ROCIDS_TO_PARSE.empty()){
-            if(VERBOSE>4) evioout << "     Skipping parsing of rocid="<<rocid<<" due to it being in ROCIDS_TO_PARSE set." << endl;
+            if(VERBOSE>4) evioout << "     Skipping parsing of rocid="<<rocid<<" due to it being in ROCIDS_TO_PARSE set." << jendl;
             if(ROCIDS_TO_PARSE.find(rocid) == ROCIDS_TO_PARSE.end()) continue;
         }
 
         // Check if this is a CODA Reserved Bank Tag. 
         if((data_bank->tag & 0xFF00) == 0xFF00){
-            if(VERBOSE>6) evioout << "      Data Bank tag="<<hex<<data_bank->tag<<dec<<" is in reserved CODA range. This is probably not ROC data"<< endl;
+            if(VERBOSE>6) evioout << "      Data Bank tag="<<hex<<data_bank->tag<<dec<<" is in reserved CODA range. This is probably not ROC data"<< jendl;
             continue;
         }
 
         // Check if this is a TS Bank. 
         if(bankPtr->tag == 0xEE02){
-            if(VERBOSE>4) evioout << "      TS bank tag="<<hex<<bankPtr->tag<<dec<< endl;
+            if(VERBOSE>4) evioout << "      TS bank tag="<<hex<<bankPtr->tag<<dec<< jendl;
             ParseTSBank(rocid, iptr, iend, full_events);
             continue;
         }
@@ -2829,7 +2829,7 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 
         // Check if this is a f250 Pedestal Bank. Read out at SYNC events.
         if(bankPtr->tag == 0xEE05){
-	  if(VERBOSE>6) evioout << "      SYNC event - f250 pedestals found " << endl;
+	  if(VERBOSE>6) evioout << "      SYNC event - f250 pedestals found " << jendl;
 	  ParseFA250AsyncPedestals(bankPtr, full_events, rocid);
 	  continue;
         }	
@@ -2837,7 +2837,7 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 
 	// FADC 250 scalers. Read out at SYNC events
         if(bankPtr->tag == 0xEE10){
-	  if(VERBOSE>6) evioout << "      SYNC event - f250 scalers found "<< endl;
+	  if(VERBOSE>6) evioout << "      SYNC event - f250 scalers found "<< jendl;
 	    ParseFA250Scalers(bankPtr, full_events, rocid);
 	    continue;
         }
@@ -2845,7 +2845,7 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
         /*
         // Check if this bank stores DVertex data
         if(bankPtr->tag == 0x0D01){
-            if(VERBOSE>4) evioout << "      DVertex bank tag="<<hex<<bankPtr->tag<<dec<< endl;
+            if(VERBOSE>4) evioout << "      DVertex bank tag="<<hex<<bankPtr->tag<<dec<< jendl;
             ParseDVertexBank(bankPtr, full_events);
             continue;
         }
@@ -2856,7 +2856,7 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
         // be at least 1.
         uint32_t NumEvents = data_bank->num & 0xFF;
         if( NumEvents<1 ){
-            if(VERBOSE>9) evioout << "      bank has less than 1 event (Data Bank num or \"M\" = 0) skipping ... " << endl;
+            if(VERBOSE>9) evioout << "      bank has less than 1 event (Data Bank num or \"M\" = 0) skipping ... " << jendl;
             continue;
         }
 
@@ -2908,7 +2908,7 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 
 
             default:
-                jerr<<"Unknown module type ("<<det_id<<") encountered for tag="<<bankPtr->tag<<" num="<< (int)bankPtr->num << endl;
+                jerr<<"Unknown module type ("<<det_id<<") encountered for tag="<<bankPtr->tag<<" num="<< (int)bankPtr->num << jendl;
                 bank_parsed = false;
                 if(VERBOSE>5){
                     cerr << endl;
@@ -2925,7 +2925,7 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 
         // Merge this bank's partial events into the full events
         if(bank_parsed){
-            if(VERBOSE>5) evioout << "     Merging objects in ParseEVIOEvent" << endl;
+            if(VERBOSE>5) evioout << "     Merging objects in ParseEVIOEvent" << jendl;
             MergeObjLists(full_events, tmp_events);
         }
     }
@@ -2942,7 +2942,7 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
     // 		objs->run_number = run_number;
     // 	}
 
-    if(VERBOSE>5) evioout << "    Leaving ParseEVIOEvent()" << endl;
+    if(VERBOSE>5) evioout << "    Leaving ParseEVIOEvent()" << jendl;
 }
 
 #if HAVE_EVIO
@@ -2996,7 +2996,7 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
         // unit64_t = common data (1st part)
         if(vec64){
 
-            if(VERBOSE>9) evioout << "       found uint64_t data" << endl;
+            if(VERBOSE>9) evioout << "       found uint64_t data" << jendl;
 
             // In addition to the first event number (1st word) there are three
             // additional pieces of information that may be present:
@@ -3033,7 +3033,7 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
         // uint16_t = common data (2nd part)
         if(vec16){
 
-            if(VERBOSE>9) evioout << "       found uint16_t data" << endl;
+            if(VERBOSE>9) evioout << "       found uint16_t data" << jendl;
 
             for(uint32_t i=0; i<Mevents; i++){
                 if(i>=vec16->size()) break;
@@ -3044,13 +3044,13 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
         // uint32_t = inidivdual ROC timestamps and misc. roc-specfic data
         if(vec32){
 
-            if(VERBOSE>9) evioout << "       found uint32_t data" << endl;
+            if(VERBOSE>9) evioout << "       found uint32_t data" << jendl;
 
             // Get pointer to DCODAROCInfo object for this rocid/event, instantiating it if necessary
             uint32_t rocid = (uint32_t)bankPtr->tag;
             uint32_t Nwords_per_event = vec32->size()/Mevents;
             if(vec32->size() != Mevents*Nwords_per_event){
-                _DBG_ << "Number of ROC data words in Trigger Bank inconsistent with header" << endl;
+                _DBG_ << "Number of ROC data words in Trigger Bank inconsistent with header" << jendl;
                 exit(-1);
             }
 
@@ -3065,7 +3065,7 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
                 codarocinfo->timestamp = (ts_high<<32) + ts_low;
                 for(uint32_t i=2; i<Nwords_per_event; i++) codarocinfo->misc.push_back(*iptr++);
 
-                if(VERBOSE>7) evioout << "       Adding DCODAROCInfo for rocid="<<rocid<< " with timestamp " << codarocinfo->timestamp << endl;
+                if(VERBOSE>7) evioout << "       Adding DCODAROCInfo for rocid="<<rocid<< " with timestamp " << codarocinfo->timestamp << jendl;
                 rocinfos[ievent].push_back(codarocinfo);
             }
         }
@@ -4435,9 +4435,9 @@ void JEventSource_EVIO::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, con
                     done = true;
                     break;
                 default:
-                    cerr<<jendl;
+                    cerr<<endl;
                     cout.flush(); cerr.flush();
-                    _DBG_<<"Unknown data word in F1TDC block. Dumping for debugging:" << jendl;
+                    _DBG_<<"Unknown data word in F1TDC block. Dumping for debugging:" << endl;
                     for(const uint32_t *iiptr = istart; iiptr<iend; iiptr++){
                         _DBG_<<"0x"<<hex<<*iiptr<<dec;
                         if(iiptr == iptr)cerr<<"  <----";
@@ -4452,7 +4452,7 @@ void JEventSource_EVIO::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, con
                             case 0xF0000000: cerr << "   <module has no valid data>"; break;
                             default: break;
                         }
-                        cerr<<jendl;
+                        cerr<<endl;
                         if(iiptr > (iptr+4)) break;
                     }
 
@@ -4513,7 +4513,7 @@ uint32_t JEventSource_EVIO::F1TDC_channel(uint32_t chip, uint32_t chan_on_chip, 
         case DModuleType::F1TDC48:
             return (chip <<3) | chan_on_chip;
         default:
-            _DBG_ << "Calling F1TDC_channel for module type: " << DModuleType::GetName((DModuleType::type_id_t)modtype) << jendl;
+            _DBG_ << "Calling F1TDC_channel for module type: " << DModuleType::GetName((DModuleType::type_id_t)modtype) << endl;
             throw JException("F1TDC_channel called for non-F1TDC module type");
     }
     return 1000000; // (should never get here)
@@ -4531,8 +4531,8 @@ void JEventSource_EVIO::ParseTSBank(int32_t rocid, const uint32_t* &iptr, const 
     uint32_t Nwords = ((uint64_t)iend - (uint64_t)iptr)/sizeof(uint32_t);
     uint32_t Nwords_expected = (6+32+16+32+16);
     if(Nwords != Nwords_expected){
-        _DBG_ << "TS bank size does not match expected!!" << jendl;
-        _DBG_ << "Found " << Nwords << " words. Expected " << Nwords_expected << jendl;
+        _DBG_ << "TS bank size does not match expected!!" << endl;
+        _DBG_ << "Found " << Nwords << " words. Expected " << Nwords_expected << endl;
 
     }else{	
         DTSscalers *s = new DTSscalers;
@@ -4786,11 +4786,11 @@ void JEventSource_EVIO::ParseBORevent(evioDOMNodeP bankPtr)
 
                 }else if(sizeof_dest>0){
                     if(f250conf) delete f250conf;
-                    _DBG_ << "BOR bank size does not match structure! " << vec->size() <<" != " << (sizeof_dest/sizeof(uint32_t)) << jendl;
-                    _DBG_ << "sizeof(f250config)="<<sizeof(f250config)<<jendl;
-                    _DBG_ << "sizeof(f125config)="<<sizeof(f125config)<<jendl;
-                    _DBG_ << "sizeof(F1TDCconfig)="<<sizeof(F1TDCconfig)<<jendl;
-                    _DBG_ << "sizeof(caen1190config)="<<sizeof(caen1190config)<<jendl;
+                    _DBG_ << "BOR bank size does not match structure! " << vec->size() <<" != " << (sizeof_dest/sizeof(uint32_t)) << endl;
+                    _DBG_ << "sizeof(f250config)="<<sizeof(f250config)<<endl;
+                    _DBG_ << "sizeof(f125config)="<<sizeof(f125config)<<endl;
+                    _DBG_ << "sizeof(F1TDCconfig)="<<sizeof(F1TDCconfig)<<endl;
+                    _DBG_ << "sizeof(caen1190config)="<<sizeof(caen1190config)<<endl;
                 }
             }
         }
@@ -5034,7 +5034,7 @@ void JEventSource_EVIO::DumpBinary(const uint32_t *iptr, const uint32_t *iend, u
     /// and only iend is checked. If both iend==NULL and MaxWords==0, then
     /// only the word at iptr is printed.
 
-    cout << "Dumping binary: istart=" << hex << iptr << " iend=" << iend << " MaxWords=" << dec << MaxWords << jendl;
+    cout << "Dumping binary: istart=" << hex << iptr << " iend=" << iend << " MaxWords=" << dec << MaxWords << endl;
 
     if(iend==NULL && MaxWords==0) MaxWords=1;
     if(MaxWords==0) MaxWords = (uint32_t)0xffffffff;
@@ -5066,9 +5066,9 @@ void JEventSource_EVIO::DumpBinary(const uint32_t *iptr, const uint32_t *iend, u
             line2 << setw(12) << *iptr << mark;
         }
 
-        cout << line1.str() << jendl;
-        cout << line2.str() << jendl;
-        cout << jendl;
+        cout << line1.str() << endl;
+        cout << line2.str() << endl;
+        cout << endl;
     }
 }
 
