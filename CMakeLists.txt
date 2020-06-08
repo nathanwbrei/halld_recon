@@ -29,6 +29,7 @@ file(GLOB DAQ_HEADERS ${PROJECT_SOURCE_DIR}/src/libraries/DAQ/*.h)
 set(HALLD_RECON_SOURCES
         src/libraries/TTAB/DTranslationTable.cc
         src/libraries/TTAB/DTranslationTable.h
+        src/libraries/TTAB/DTranslationTable_factory.h
 
         #src/libraries/DAQ/JEventSource_EVIO.cc
         #src/libraries/DAQ/JEventSource_EVIO.h
