@@ -714,7 +714,7 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	event.SetJEventSource(this);
 	event.SetEventNumber((uint64_t)objs_ptr->event_number);
 	event.SetRunNumber(objs_ptr->run_number);
-	event.SetRef(objs_ptr);
+	event.Insert(objs_ptr);
 	event.SetStatusBit(kSTATUS_EVIO);
 	if( source_type == kFileSource ) event.SetStatusBit(kSTATUS_FROM_FILE);
 	if( source_type == kETSource   ) event.SetStatusBit(kSTATUS_FROM_ET);
@@ -738,7 +738,7 @@ void JEventSource_EVIO::FreeEvent(JEvent &event)
 {
 	if(VERBOSE>1) evioout << "FreeEvent called for event: " << event.GetEventNumber() << jjendl;
 
-	ObjList *objs_ptr = (ObjList*)event.GetRef();
+	ObjList *objs_ptr = event.GetSingle<ObjList>();
 	if(objs_ptr){
 
 		// If a DAQ event was read in but GetObjects never called
@@ -1336,7 +1336,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	// algorithm. We use the "own_objects" flag here to test if we have
 	// already copied the low-level objects to the factories and so
 	// should return right away.
-	ObjList *objs_ptr = (ObjList*)event.GetRef();
+	ObjList *objs_ptr = event.GetSingle<ObjList>();
 	if(!objs_ptr)return RESOURCE_UNAVAILABLE;
 	if(!objs_ptr->own_objects) return OBJECT_NOT_AVAILABLE; // if objects were already copied ...
 	

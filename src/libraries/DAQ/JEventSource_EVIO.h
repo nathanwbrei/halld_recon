@@ -476,7 +476,7 @@ void JEventSource_EVIO::GetEVIOBuffer(JEvent &jevent, uint32_t* &buff, uint32_t 
 	}
 
 	// Get pointer to ObjList object
-	const ObjList *objs_ptr = (ObjList*)jevent.GetRef();
+	const ObjList *objs_ptr = jevent.GetSingle<ObjList>();
 	if(!objs_ptr) return;
 
 	// Copy buffer pointer and size to user's variables
@@ -503,7 +503,7 @@ evioDOMTree* JEventSource_EVIO::GetEVIODOMTree(JEvent &jevent) const
 	}
 
 	// Get pointer to ObjList object
-	const ObjList *objs_ptr = (ObjList*)jevent.GetRef();
+	const ObjList *objs_ptr = jevent.GetSingle<ObjList>();
 	if(!objs_ptr) return NULL;
 
 	return objs_ptr->DOMTree;
