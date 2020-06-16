@@ -1079,22 +1079,22 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 						case HDEVIO::HDEVIO_EVENT_BIGGER_THAN_BLOCK:
 						case HDEVIO::HDEVIO_BANK_TRUNCATED:
 						case HDEVIO::HDEVIO_UNKNOWN_BANK_TYPE:
-							if(VERBOSE>0) cout << jendl << mess << jendl;
+							if(VERBOSE>0) cout << endl << mess << endl;
 							continue;
 							break;
 						case HDEVIO::HDEVIO_EOF:
 							if(hdevio) delete hdevio;
 							hdevio = NULL;
 							if(LOOP_FOREVER && Nevents_read>=1){
-								cout << "LOOP_FOREVER: reopening " << this->source_name <<jendl;
+								cout << "LOOP_FOREVER: reopening " << this->source_name <<endl;
 								hdevio = new HDEVIO(this->source_name);
 								if( hdevio->is_open ) continue;
 							}
 							return NO_MORE_EVENTS_IN_SOURCE;
 							break;
 						default:
-							cout << jendl << "err_code=" << hdevio->err_code << jendl;
-							cout << jendl << mess << jendl;
+							cout << endl << "err_code=" << hdevio->err_code << endl;
+							cout << endl << mess << endl;
 							japp->SetExitCode(hdevio->err_code);
 							if(hdevio) delete hdevio;
 							hdevio = NULL;
@@ -2011,10 +2011,10 @@ void JEventSource_EVIO::EmulateDf250Firmware(JEvent &event, vector<JObject*> &wr
             const Df250WindowRawData *rd;
             pp_em->GetSingle(rd);
             if (rd != f250WindowRawData) {
-                jerr << "Emulated object found that does not belong to WindowRawData object!" << endl;
-                jerr << "This likely means there is a bug in JEventSource_EVIO.cc PulsePedestal emulation." << endl;
-                jerr << "rocid=" << pp_em->rocid << " slot=" << pp_em->slot << " channel=" << pp_em->channel << endl;
-                jerr << "Please report error to davidl@jlab.org" << endl;
+                jerr << "Emulated object found that does not belong to WindowRawData object!" << jendl;
+                jerr << "This likely means there is a bug in JEventSource_EVIO.cc PulsePedestal emulation." << jendl;
+                jerr << "rocid=" << pp_em->rocid << " slot=" << pp_em->slot << " channel=" << pp_em->channel << jendl;
+                jerr << "Please report error to davidl@jlab.org" << jendl;
                 exit(-1);
             }
             for (uint32_t j=pp_hardware; j < pp_emulated; j++) {

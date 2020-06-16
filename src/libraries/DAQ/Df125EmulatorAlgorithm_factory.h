@@ -8,10 +8,10 @@
 #ifndef _Df125EmulatorAlgorithm_factory_
 #define _Df125EmulatorAlgorithm_factory_
 
-#include <JANA/JFactory.h>
+#include <JANA/JFactoryT.h>
 #include <DAQ/Df125EmulatorAlgorithm.h>
 
-class Df125EmulatorAlgorithm_factory:public jana::JFactory<Df125EmulatorAlgorithm>{
+class Df125EmulatorAlgorithm_factory:public JFactoryT<Df125EmulatorAlgorithm>{
 	public:
 		Df125EmulatorAlgorithm_factory(){};
 		~Df125EmulatorAlgorithm_factory(){};

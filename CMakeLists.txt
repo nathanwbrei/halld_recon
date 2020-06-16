@@ -42,7 +42,8 @@ add_executable(halld_recon
         ${HALLD_RECON_SOURCES}
         )
 
-target_include_directories(halld_recon PRIVATE src/libraries src/libraries/include src/include ${ROOT_INCLUDE_DIRS} ${JANA_INCLUDE_DIR} ${EVIO_INCLUDE_DIR})
+target_include_directories(halld_recon PRIVATE src/libraries src/libraries/include src/include
+        ${CCDB_INCLUDE_DIRS} ${ROOT_INCLUDE_DIRS} ${JANA_INCLUDE_DIR} ${EVIO_INCLUDE_DIR})
 target_link_libraries(halld_recon jana2 ${EVIO_LIBS})
 
 
