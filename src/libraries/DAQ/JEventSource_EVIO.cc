@@ -106,7 +106,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	evioout.SetThreadstampFlag();
 	
 	// Define base set of status bits
-	if(japp) DStatusBits::SetStatusBitDescriptions(japp);
+	DStatusBits::SetStatusBitDescriptions();
 
 	// Get configuration parameters
 	AUTODETECT_MODULE_TYPES = true;
@@ -610,6 +610,10 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 
 	// If we couldn't even open the source, then there's nothing to do
 	bool no_source = true;
+
+	auto status_bits = new DStatusBits();
+	event.Insert(status_bits);  // Insert immediately but hang on to a pointer so we can set bits later
+
 #if USE_HDEVIO
 	if(source_type==kFileSource){
 		if(no_more_events_in_source) 
@@ -648,7 +652,7 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 		// If this is a stored event then it almost certainly
 		// came from a multi-event block of physics events.
 		// Set the physics event status bit.
-		event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
+		status_bits->SetStatusBit(kSTATUS_PHYSICS_EVENT);
 	}
 	pthread_mutex_unlock(&stored_events_mutex);
 
@@ -676,7 +680,7 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 
 			objs_ptr = stored_events.front();
 			stored_events.pop();
-			event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
+			status_bits->SetStatusBit(kSTATUS_PHYSICS_EVENT);
 
 			pthread_mutex_unlock(&stored_events_mutex);
 			
@@ -715,20 +719,19 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	event.SetEventNumber((uint64_t)objs_ptr->event_number);
 	event.SetRunNumber(objs_ptr->run_number);
 	event.Insert(objs_ptr);
-	event.SetStatusBit(kSTATUS_EVIO);
-	if( source_type == kFileSource ) event.SetStatusBit(kSTATUS_FROM_FILE);
-	if( source_type == kETSource   ) event.SetStatusBit(kSTATUS_FROM_ET);
+	status_bits->SetStatusBit(kSTATUS_EVIO);
+	if( source_type == kFileSource ) status_bits->SetStatusBit(kSTATUS_FROM_FILE);
+	if( source_type == kETSource   ) status_bits->SetStatusBit(kSTATUS_FROM_ET);
 	if(objs_ptr)
-		if(objs_ptr->eviobuff) FindEventType(objs_ptr->eviobuff, event);
+		if(objs_ptr->eviobuff) FindEventType(objs_ptr->eviobuff, status_bits);
 	
 	// EPICS and BOR events are barrier events
-	if(event.GetStatusBit(kSTATUS_EPICS_EVENT) || event.GetStatusBit(kSTATUS_BOR_EVENT) ){
+	if(status_bits->GetStatusBit(kSTATUS_EPICS_EVENT) || status_bits->GetStatusBit(kSTATUS_BOR_EVENT) ){
 		event.SetSequential();
 	}
 	
 	Nevents_read++;
 
-	return NOERROR;
 }
 
 //----------------
@@ -2548,22 +2551,22 @@ uint64_t JEventSource_EVIO::FindEventNumber(uint32_t *iptr)
 //----------------
 // FindEventType
 //----------------
-void JEventSource_EVIO::FindEventType(uint32_t *iptr, JEvent &event)
+void JEventSource_EVIO::FindEventType(uint32_t *iptr, DStatusBits *bits)
 {
     /// This is called from GetEvent to quickly determine the type of
     /// event this is (Physics, EPICS, SYNC, BOR, ...)
     uint32_t head = iptr[1];
     if( (head & 0xff000f) ==  0x600001){
-        event.SetStatusBit(kSTATUS_EPICS_EVENT);
+        bits->SetStatusBit(kSTATUS_EPICS_EVENT);
     }else if( (head & 0xffffffff) ==  0x00700E01){
-        event.SetStatusBit(kSTATUS_BOR_EVENT);
+        bits->SetStatusBit(kSTATUS_BOR_EVENT);
     }else if( (head & 0xffffff00) ==  0xff501000){
-        event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
+        bits->SetStatusBit(kSTATUS_PHYSICS_EVENT);
     }else if( (head & 0xffffff00) ==  0xff701000){
-        event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
+        bits->SetStatusBit(kSTATUS_PHYSICS_EVENT);
     }else if( (head & 0xfff000ff) ==  0xffd00000){
-        event.SetStatusBit(kSTATUS_CONTROL_EVENT);
-        if( (head>>16) == 0xffd0 ) event.SetStatusBit(kSTATUS_SYNC_EVENT);
+        bits->SetStatusBit(kSTATUS_CONTROL_EVENT);
+        if( (head>>16) == 0xffd0 ) bits->SetStatusBit(kSTATUS_SYNC_EVENT);
     }else{
         DumpBinary(iptr, &iptr[16]);
     }	

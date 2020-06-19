@@ -87,6 +87,7 @@ typedef pair<int,int> tagNum;
 #include "jerror.h"
 
 #include <PID/DVertex.h>
+#include <DANA/DStatusBits.h>
 
 extern set<uint32_t> ROCIDS_TO_PARSE;
 
@@ -379,7 +380,7 @@ class JEventSource_EVIO: public JEventSource {
 		int32_t FindRunNumber(uint32_t *iptr);
 		int32_t EpicQuestForRunNumber(void);
 		uint64_t FindEventNumber(uint32_t *iptr);
-		void FindEventType(uint32_t *iptr, JEvent &event);
+		void FindEventType(uint32_t *iptr, DStatusBits *bits);
 		MODULE_TYPE GuessModuleType(const uint32_t *istart, const uint32_t *iend);
 		bool IsF250ADC(const uint32_t *istart, const uint32_t *iend);
 		bool IsF1TDC(const uint32_t *istart, const uint32_t *iend);
