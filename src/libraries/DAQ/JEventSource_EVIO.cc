@@ -737,7 +737,7 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 //----------------
 void JEventSource_EVIO::FreeEvent(JEvent &event)
 {
-	if(VERBOSE>1) evioout << "FreeEvent called for event: " << event.GetEventNumber() << jjendl;
+	if(VERBOSE>1) evioout << "FreeEvent called for event: " << event.GetEventNumber() << jendl;
 
 	ObjList *objs_ptr = event.GetSingle<ObjList>();
 	if(objs_ptr){
@@ -1087,7 +1087,7 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 							if(hdevio) delete hdevio;
 							hdevio = NULL;
 							if(LOOP_FOREVER && Nevents_read>=1){
-								cout << "LOOP_FOREVER: reopening " << this->source_name <<endl;
+								cout << "LOOP_FOREVER: reopening " << GetResourceName() <<endl;
 								hdevio = new HDEVIO(this->source_name);
 								if( hdevio->is_open ) continue;
 							}
@@ -3338,7 +3338,7 @@ void JEventSource_EVIO::ParseEventTag(const uint32_t* &iptr, const uint32_t *ien
     objs->misc_objs.push_back(etag);
 
 
-    if(VERBOSE>5) evioout << "     Leaving ParseEventTag()" << endl;	
+    if(VERBOSE>5) evioout << "     Leaving ParseEventTag()" << jendl;
 }
 
 //----------------
@@ -3346,7 +3346,7 @@ void JEventSource_EVIO::ParseEventTag(const uint32_t* &iptr, const uint32_t *ien
 //----------------
 void JEventSource_EVIO::ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events)
 {
-    if(VERBOSE>5) evioout << "     Entering ParseJLabModuleData()" << endl;
+    if(VERBOSE>5) evioout << "     Entering ParseJLabModuleData()" << jendl;
 
     /// Parse a bank of data coming from one or more JLab modules.
     /// The data are assumed to follow the standard JLab format for
@@ -3355,11 +3355,11 @@ void JEventSource_EVIO::ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr
     /// a single EVIO bank and this will loop over the modules.
     while(iptr < iend){
 
-        if(VERBOSE>9) evioout << "Parsing word: " << hex << *iptr << dec << endl;
+        if(VERBOSE>9) evioout << "Parsing word: " << hex << *iptr << dec << jendl;
 
         // This was observed in some CDC data. Not sure where it came from ...
         if(*iptr == 0xF800FAFA){
-            if(VERBOSE>9) evioout << "  0xf800fafa is a known extra word. Skipping it ..." << endl;
+            if(VERBOSE>9) evioout << "  0xf800fafa is a known extra word. Skipping it ..." << jendl;
             iptr++;
             continue;
         }
@@ -3370,11 +3370,11 @@ void JEventSource_EVIO::ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr
         // The enum defined in DModuleType.h MUST be kept in alignment
         // with the DAQ group's definitions for modules types!
         MODULE_TYPE type = (MODULE_TYPE)mod_id;
-        if(VERBOSE>5) evioout << "      Encountered module type: " << type << " (=" << DModuleType::GetModule(type).GetName() << ")" << endl;
+        if(VERBOSE>5) evioout << "      Encountered module type: " << type << " (=" << DModuleType::GetModule(type).GetName() << ")" << jendl;
 
         if(modtype_translate.find(type) != modtype_translate.end()){
             type = modtype_translate[type];
-            if(VERBOSE>5) evioout << "        switched module type to: " << type << " (=" << DModuleType::GetModule(type).GetName() << ")" << endl;	
+            if(VERBOSE>5) evioout << "        switched module type to: " << type << " (=" << DModuleType::GetModule(type).GetName() << ")" << jendl;
         }
 
         // Parse buffer depending on module type
@@ -3412,20 +3412,20 @@ void JEventSource_EVIO::ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr
 
             case DModuleType::UNKNOWN:
             default:
-                jerr<<"Unknown module type ("<<mod_id<<") iptr=0x" << hex << iptr << dec << endl;
+                jerr<<"Unknown module type ("<<mod_id<<") iptr=0x" << hex << iptr << dec << jendl;
 
                 while(iptr<iend && ((*iptr) & 0xF8000000) != 0x88000000) iptr++; // Skip to JLab block trailer
                 iptr++; // advance past JLab block trailer
                 while(iptr<iend && *iptr == 0xF8000000) iptr++; // skip filler words after block trailer
                 module_parsed = false;
-                jerr<<"...skipping to 0x" << hex << iptr << dec << "  (discarding " << (((uint64_t)iptr-(uint64_t)istart)/4) << " words)" << endl;
+                jerr<<"...skipping to 0x" << hex << iptr << dec << "  (discarding " << (((uint64_t)iptr-(uint64_t)istart)/4) << " words)" << jendl;
                 break;
         }
 
-        if(VERBOSE>9) evioout << "Finished parsing (last word: " << hex << iptr[-1] << dec << ")" << endl;
+        if(VERBOSE>9) evioout << "Finished parsing (last word: " << hex << iptr[-1] << dec << ")" << jendl;
 
         if(module_parsed){
-            if(VERBOSE>5) evioout << "     Merging objects in ParseJLabModuleData" << endl;
+            if(VERBOSE>5) evioout << "     Merging objects in ParseJLabModuleData" << jendl;
             MergeObjLists(events, tmp_events);
         }
     }
