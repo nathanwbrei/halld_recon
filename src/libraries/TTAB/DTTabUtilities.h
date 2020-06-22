@@ -15,7 +15,6 @@
 
 #include <JANA/JObject.h>
 #include <JANA/JFactoryT.h>
-#include <JANA/JEventLoop.h>
 
 #include <DAQ/DCODAROCInfo.h>
 #include <DAQ/DF1TDCConfig.h>

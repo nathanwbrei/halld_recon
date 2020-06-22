@@ -9,7 +9,6 @@
 #define _DMCThrown_
 
 #include "JANA/JObject.h"
-#include "JANA/JFactory.h"
 
 #include "PID/DKinematicData.h"
 
@@ -23,14 +22,13 @@ class DMCThrown:public DKinematicData{
 		int parentid;		///< id of parent of this particle from original generator
 		int mech;			///< production mechanism of this partcle (generator specific)
 
-		void toStrings(vector<pair<string,string> > &items)const{
-			DKinematicData::toStrings(items);
-			AddString(items, "pdgtype", "%d", pdgtype);
-			AddString(items, "myid", "%d", myid);
-			AddString(items, "parentid", "%d", parentid);
-			AddString(items, "mech", "%d", mech);
+		void Summarize(JObjectSummary& summary) const override {
+			DKinematicData::Summarize(summary);
+			summary.add(pdgtype, NAME_OF(pdgtype), "%d");
+			summary.add(myid, NAME_OF(myid), "%d");
+			summary.add(parentid, NAME_OF(parentid), "%d");
+			summary.add(mech, NAME_OF(mech), "%d");
 		}
-
 };
 
 #endif // _DMCThrown_

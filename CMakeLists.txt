@@ -18,7 +18,7 @@ if (DEFINED ENV{EVIOROOT})
     message(STATUS "Compiling with EVIOROOT=" $ENV{EVIOROOT})
     set(EVIO_INCLUDE_DIR $ENV{EVIOROOT}/include)
     set(EVIO_LIB_DIR $ENV{EVIOROOT}/lib)
-    set(EVIO_LIBS $ENV{EVIOROOT}/lib/evioxx $ENV{EVIOROOT}/lib/evio $ENV{EVIOROOT}/lib/expat)
+    set(EVIO_LIBS $ENV{EVIOROOT}/lib/libevioxx.dylib $ENV{EVIOROOT}/lib/libevio.dylib) #$ENV{EVIOROOT}/lib/expat)
 else()
     message(WARN "Compiling without EVIO")
 endif()
@@ -27,14 +27,22 @@ file(GLOB DAQ_SOURCES ${PROJECT_SOURCE_DIR}/src/libraries/DAQ/*.cc)
 file(GLOB DAQ_HEADERS ${PROJECT_SOURCE_DIR}/src/libraries/DAQ/*.h)
 
 set(HALLD_RECON_SOURCES
+
+        src/libraries/TRACKING/DMCThrown.h
+
         src/libraries/TTAB/DTranslationTable.cc
         src/libraries/TTAB/DTranslationTable.h
         src/libraries/TTAB/DTranslationTable_factory.h
+        src/libraries/TTAB/DTTabUtilities.cc
+        src/libraries/TTAB/DTTabUtilities.h
+#        src/libraries/TTAB/DTTabUtilities_factory.cc
+#        src/libraries/TTAB/DTTabUtilities_factory.h
+        src/libraries/TTAB/TTab_init.cc
 
-        #src/libraries/DAQ/JEventSource_EVIO.cc
-        #src/libraries/DAQ/JEventSource_EVIO.h
-        #src/libraries/DAQ/JEventSourceGenerator_EVIO.cc
-        #src/libraries/DAQ/JEventSourceGenerator_EVIO.h
+#        src/libraries/DAQ/JEventSource_EVIO.cc
+#        src/libraries/DAQ/JEventSource_EVIO.h
+#        src/libraries/DAQ/JEventSourceGenerator_EVIO.cc
+#        src/libraries/DAQ/JEventSourceGenerator_EVIO.h
     )
 
 add_executable(halld_recon
@@ -44,6 +52,7 @@ add_executable(halld_recon
 
 target_include_directories(halld_recon PRIVATE src/libraries src/libraries/include src/include
         ${CCDB_INCLUDE_DIRS} ${ROOT_INCLUDE_DIRS} ${JANA_INCLUDE_DIR} ${EVIO_INCLUDE_DIR})
-target_link_libraries(halld_recon jana2 ${EVIO_LIBS})
+
+target_link_libraries(halld_recon ${JANA_LIBRARY} ${EVIO_LIBS})
 
 
