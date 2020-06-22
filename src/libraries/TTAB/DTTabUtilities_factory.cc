@@ -4,11 +4,12 @@
 // Created: Mon Apr  6 09:41:29 EDT 2015
 // Creator: pmatt (on Linux pmattdesktop.jlab.org 2.6.32-504.12.2.el6.x86_64 x86_64)
 //
+#include <JANA/JEvent.h>
 
 #include "DTTabUtilities_factory.h"
 #include "TOF/DTOFGeometry.h"
 
-jerror_t DTTabUtilities_factory::brun(jana::JEventLoop* locEventLoop, int32_t runnumber)
+void BeginRun(const std::shared_ptr<const JEvent> &aEvent)
 {
 	//Early Commissioning Data: Code & CCDB constants
 	//BCAL, RF: none
@@ -19,7 +20,7 @@ jerror_t DTTabUtilities_factory::brun(jana::JEventLoop* locEventLoop, int32_t ru
 	// F1TDC tframe(ns) and rollover count
 	map<string, int> tdc_parms;
 	if(locEventLoop->GetCalib("/F1TDC/rollover", tdc_parms))
-		jout << "Error loading /F1TDC/rollover !" << endl;
+		jout << "Error loading /F1TDC/rollover !" << jendl;
 
 	map<string, int>::const_iterator locMapIterator = tdc_parms.find("tframe");
 	dRolloverTimeWindowLength = (locMapIterator != tdc_parms.end()) ? uint64_t(tdc_parms["tframe"]) : 0;
@@ -27,7 +28,7 @@ jerror_t DTTabUtilities_factory::brun(jana::JEventLoop* locEventLoop, int32_t ru
 	locMapIterator = tdc_parms.find("count");
 	dNumTDCTicksInRolloverTimeWindow = (locMapIterator != tdc_parms.end()) ? uint64_t(tdc_parms["count"]) : 0;
 
-	if(locEventLoop->GetJEvent().GetRunNumber() == 0) //PSC data with bad run number. Use hard-coded values from run 2012
+	if(aEvent->GetRunNumber() == 0) //PSC data with bad run number. Use hard-coded values from run 2012
 	{
 		dRolloverTimeWindowLength = 3744;
 		dNumTDCTicksInRolloverTimeWindow = 64466;
@@ -42,7 +43,6 @@ jerror_t DTTabUtilities_factory::brun(jana::JEventLoop* locEventLoop, int32_t ru
 	if(!eventLoop->GetCalib(locTOFTDCShiftTable.c_str(), tof_tdc_shift))
 		dCAENTIPhaseDifference = tof_tdc_shift["TOF_TDC_SHIFT"];
 
-	return NOERROR;
 }
 
 jerror_t DTTabUtilities_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
@@ -85,5 +85,4 @@ jerror_t DTTabUtilities_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t e
 		locTTabUtilities->dTriggerReferenceSignal = 0;
 
 	_data.push_back(locTTabUtilities);
-	return NOERROR;
 }
