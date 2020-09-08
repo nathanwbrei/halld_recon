@@ -10,9 +10,7 @@
 
 #include <string>
 
-#include <JANA/JFactory.h>
 #include <JANA/JObject.h>
-using namespace jana;
 
 #include "units.h"
 
@@ -38,11 +36,11 @@ class DTAGMGeometry : public JObject {
    double getEhigh(unsigned int column) const;
    bool E_to_column(double E, unsigned int &column) const;
 
-   void toStrings(vector<pair<string,string> > &items) const {
-      AddString(items, "kFiberWidth", "%f cm", kFiberWidth);
-      AddString(items, "kFiberLength", "%f cm", kFiberLength);
-      AddString(items, "kRowCount", "%d", kRowCount);
-      AddString(items, "kColumnCount", "%d", kColumnCount);
+   void Summarize(JObjectSummary& summary) {
+      summary.add(kFiberWidth, "kFiberWidth", "%f cm");
+      summary.add(kFiberLength, "kFiberLength", "%f cm");
+      summary.add(kRowCount, "kRowCount", "%d");
+      summary.add(kColumnCount, "kColumnCount", "%d");
    }
    
  private:

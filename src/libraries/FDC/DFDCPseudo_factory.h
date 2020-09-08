@@ -9,7 +9,6 @@
 #define DFACTORY_DFDCPSEUDO_H
 
 #include <JANA/JFactory.h>
-#include <JANA/JObject.h>
 #include <JANA/JException.h>
 #include <JANA/JStreamLog.h>
 using namespace jana;

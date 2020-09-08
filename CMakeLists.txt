@@ -29,26 +29,59 @@ set(HALLD_RECON_SOURCES
 
 #        src/libraries/TRACKING/DMCThrown.h
 
-#        src/libraries/TTAB/DTranslationTable.cc
-#        src/libraries/TTAB/DTranslationTable.h
+#        src/libraries/DAQ/JEventSource_EVIO.cc
+#        src/libraries/DAQ/JEventSource_EVIO.h
+#        src/libraries/DAQ/JEventSourceGenerator_EVIO.cc
+#        src/libraries/DAQ/JEventSourceGenerator_EVIO.h
+
+        src/libraries/TPOL/DTPOLTruthHit.h
+        src/libraries/TPOL/DTPOLHit.h
+        src/libraries/TPOL/DTPOLSectorDigiHit.h
+        src/libraries/TPOL/DTPOLRingDigiHit.h
+
+        src/libraries/TRD/DGEMPoint.h
+        src/libraries/TRD/DTRDStripCluster.h
+        src/libraries/TRD/DGEMHit.h
+        src/libraries/TRD/DTRDDigiHit.h
+        src/libraries/TRD/DGEMDigiWindowRawData.h
+        src/libraries/TRD/DGEMStripCluster.h
+        src/libraries/TRD/DTRDHit.h
+        src/libraries/TRD/DTRDPoint.h
+
+        src/libraries/FDC/DFDCCathodeDigiHit.h
+        src/libraries/FDC/DFDCWireDigiHit.h
+#        src/libraries/FDC/DFDCSegment.h
+#        src/libraries/FDC/DFDCGeometry.h    # Uses DGeometry (with circular ref)
+#        src/libraries/FDC/DFDCIntersection.h  # Pulls in TVersionCheck somehow
+        src/libraries/FDC/DFDCHit.h
+        src/libraries/FDC/DFDCCathodeCluster.h
+#        src/libraries/FDC/DFDCPseudo.h   # Can't find cint.h
+
+        src/libraries/TAGGER/DTAGHHit.h
+        #src/libraries/TAGGER/DTAGHGeometry.h   # Uses JEventLoop to get calibrations
+        src/libraries/TAGGER/DTAGHDigiHit.h
+        src/libraries/TAGGER/DTAGMHit.h
+        src/libraries/TAGGER/DTAGMDigiHit.h
+        #src/libraries/TAGGER/DTAGMGeometry.h   # Uses JEventLoop to get calibrations
+        src/libraries/TAGGER/DTAGMTDCDigiHit.h
+        src/libraries/TAGGER/DTAGHTDCDigiHit.h
+
+        src/libraries/TTAB/DTranslationTable.h
+#        src/libraries/TTAB/DTranslationTable.cc          # Pulls in JEventSource_EVIO
 #        src/libraries/TTAB/DTranslationTable_factory.h
-#        src/libraries/TTAB/DTTabUtilities.cc
-#        src/libraries/TTAB/DTTabUtilities.h
+        src/libraries/TTAB/DTTabUtilities.cc
+        src/libraries/TTAB/DTTabUtilities.h
 #        src/libraries/TTAB/DTTabUtilities_factory.cc
 #        src/libraries/TTAB/DTTabUtilities_factory.h
 #        src/libraries/TTAB/TTab_init.cc
 
-        src/libraries/DAQ/JEventSource_EVIO.cc
-        src/libraries/DAQ/JEventSource_EVIO.h
-#        src/libraries/DAQ/JEventSourceGenerator_EVIO.cc
-#        src/libraries/DAQ/JEventSourceGenerator_EVIO.h
-    )
+        )
 
 add_executable(halld_recon
-#        src/programs/Analysis/hd_port/hd_port.cc
-        src/programs/Analysis/hd_dump/hd_dump.cc
-        src/programs/Analysis/hd_dump/MyProcessor.cc
-        src/programs/Analysis/hd_dump/MyProcessor.h
+        src/programs/Analysis/hd_port/hd_port.cc
+#        src/programs/Analysis/hd_dump/hd_dump.cc
+#        src/programs/Analysis/hd_dump/MyProcessor.cc
+#        src/programs/Analysis/hd_dump/MyProcessor.h
         ${HALLD_RECON_SOURCES}
         )
 
