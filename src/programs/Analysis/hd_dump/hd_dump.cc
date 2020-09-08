@@ -10,9 +10,10 @@ using namespace std;
 #include <termios.h>
 
 #include "MyProcessor.h"
-#include "DANA/DApplication.h"
+//#include "DANA/DApplication.h"
+// DApplication is going away. hd_dump (and janadump) will use JApplication instead.
 
-void PrintFactoryList(DApplication *app);
+void PrintFactoryList(JApplication *app);
 void ParseCommandLineArguments(int &narg, char *argv[]);
 void Usage(void);
 
@@ -32,10 +33,11 @@ int main(int narg, char *argv[])
 	MyProcessor myproc;
 
 	// Instantiate an event loop object
-	DApplication *app = new DApplication(narg, argv);
+	JApplication *app = new JApplication(narg, argv);
 	
 	// Set tag prefix for JANA streams to empty
-	jout.SetTag("");
+	// TODO: come back to this maybe
+	// jout.SetTag("");
 	
 	// If LIST_FACTORIES is set, print all factories and exit
 	if(LIST_FACTORIES){
@@ -61,17 +63,19 @@ int main(int narg, char *argv[])
 			cout << "-- * Enabling EVIO file mapping and sparse readout" << endl;
 			cout << "-- * Automatically invoking -f and -s options" << endl;
 			cout << endl;
-			gPARMS->SetParameter("EVIO:SPARSE_READ", true);
-			gPARMS->SetParameter("EVIO:EVENT_MASK", string("EPICS"));
+			app->SetParameterValue("EVIO:SPARSE_READ", true);
+			app->SetParameterValue("EVIO:EVENT_MASK", string("EPICS"));
 			PRINT_SUMMARY_HEADER = false;
 			SKIP_BORING_EVENTS = 1;
 		}
 	}
 
 	// Run though all events, calling our event processor's methods
-	app->SetShowTicker(0);
-	app->monitor_heartbeat = false;
-	app->Run(&myproc);
+	app->SetTicker(false);
+	// TODO: Re-add heartbeat to jana2
+	// app->monitor_heartbeat = false;
+	app->Add(&myproc);
+	app->Run();
 	
 	delete app;
 
@@ -81,41 +85,29 @@ int main(int narg, char *argv[])
 //-----------
 // PrintFactoryList
 //-----------
-void PrintFactoryList(DApplication *app)
+void PrintFactoryList(JApplication *app)
 {
-	// When we get here, the Run() method hasn't been
-	// called so the JEventLoop objects haven't
-	// been created yet and cansequently the factory objects
-	// don't yet exist. Since we want the "list factories"
-	// option to work even without an input file, we need
-	// to first make the factories before we can list them.
-	// To do this we only need to instantiate a JEventLoop object
-	// passing it our "app" pointer. The JEventLoop will automatically
-	// register itself with the DApplication and the factories
-	// will be made, even ones from plugins passed on the command
-	// line.
-	app->Init();
-	JEventLoop *loop = new JEventLoop(app);
-	
-	// Print header
-	cout<<endl;
-	cout<<"  Factory List"<<endl;
-	cout<<"-------------------------"<<endl;
-	
-	// Get list of factories from the JEventLoop and loop over them
-	// Printing out the data types and tags.
-	vector<JFactory_base*> factories = loop->GetFactories();
-	vector<JFactory_base*>::iterator iter = factories.begin();
-	for(; iter!=factories.end(); iter++){
-		cout<<" "<<(*iter)->GetDataClassName();
-		if(strlen((*iter)->Tag()) !=0){
-			cout<<" : "<<(*iter)->Tag();
+	// Print a summary of all factories registered with this JApplication.
+	// Note that we could also just do `cout << app->GetComponentSummary`,
+	// but this keeps the formatting consistent with the old version.
+
+	cout << endl;
+	cout << "  Factory List" << endl;
+	cout << "-------------------------" << endl;
+
+	auto factory_summary = app->GetComponentSummary().factories;
+	for (const auto & fac : factory_summary) {
+		cout << " " << fac.object_name;
+		if (fac.factory_tag.empty()) {
+			cout << " : " << fac.factory_tag;
 		}
-		cout<<endl;
+		cout << endl;
 	}
-	cout<<endl;
-	cout<<" "<<factories.size()<<" factories registered"<<endl;
-	cout<<endl;
+	cout << endl;
+	cout << " " << factory_summary.size() << " factories registered" << endl;
+	cout << endl;
+
+	auto summary = app->GetComponentSummary().factories;
 }
 
 //-----------
@@ -183,7 +175,7 @@ void ParseCommandLineArguments(int &narg, char *argv[])
 //-----------
 void Usage(void)
 {
-	DApplication dapp(0,NULL);
+	JApplication app;
 
 	cout<<"Usage:"<<endl;
 	cout<<"       hd_dump [options] source1 source2 ..."<<endl;
@@ -208,7 +200,9 @@ void Usage(void)
 	cout<<"   -e        Don't allow automatic EVIO sparse readout for EPICS data"<<endl;
 	cout<<endl;
 
-	dapp.Usage();
+
+	// TODO: Pull in usage from CLI header
+	app.Usage();
 
 	exit(0);
 }

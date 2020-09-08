@@ -7,11 +7,11 @@
 #include <iostream>
 using namespace std;
 
-#include <stdio.h>
+#include <cstdio>
 #include <unistd.h>
 
 #include <JANA/JApplication.h>
-#include <JANA/JApplication.h>
+#include "DANA/DStatusBits.h"
 
 #include "MyProcessor.h"
 
@@ -42,13 +42,17 @@ set<string> tosummarize;
 #define ansi_forward(A)	ansi_escape<<"["<<(A)<<"C"
 #define ansi_back(A)		ansi_escape<<"["<<(A)<<"D"
 
-//------------------------------------------------------------------
-// brun
-//------------------------------------------------------------------
-jerror_t MyProcessor::brun(JEventLoop *eventLoop, int32_t runnumber)
-{
+void MyProcessor::BeginRun(const std::shared_ptr<const JEvent>& event) {
+
 	vector<string> factory_names;
-	eventLoop->GetFactoryNames(factory_names);
+	for (auto fac : GetApplication()->GetComponentSummary().factories) {
+		if (fac.factory_tag.empty()) {
+			factory_names.push_back(fac.object_name);
+		}
+		else {
+			factory_names.push_back(fac.object_name + ":" + fac.factory_tag);
+		}
+	}
 
 	usleep(100000); //this just gives the Main thread a chance to finish printing the "Launching threads" message
 	cout<<endl;
@@ -105,7 +109,7 @@ jerror_t MyProcessor::brun(JEventLoop *eventLoop, int32_t runnumber)
 	
 	// At this point, toprint should contain a list of all factories
 	// in dataClassName:tag format, that both exist and were requested.
-	// Seperate the tag from the name and fill the fac_info vector.
+	// Separate the tag from the name and fill the fac_info vector.
 	fac_info.clear();
 	for(auto fac_name : toprint){
 		string tag = "";
@@ -117,20 +121,14 @@ jerror_t MyProcessor::brun(JEventLoop *eventLoop, int32_t runnumber)
 		factory_info_t f;
 		f.dataClassName = fac_name;
 		f.tag = tag;
-		f.fac = eventLoop->GetFactory(f.dataClassName, f.tag.c_str());
+		f.fac = event->GetFactory(f.dataClassName, f.tag.c_str());
 		fac_info.push_back(f);
 	}
 	
 	cout<<endl;
-
-	return NOERROR;
 }
 
-//------------------------------------------------------------------
-// evnt
-//------------------------------------------------------------------
-jerror_t MyProcessor::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
-{
+void MyProcessor::Process(const std::shared_ptr<const JEvent>& event) {
 
 	// If we're skipping boring events (events with no rows for any of
 	// the types we're printing) we must find out first if the event is
@@ -141,8 +139,8 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 
 		string name =fac_info[i].dataClassName;
 		string tag = fac_info[i].tag;
-		JFactory_base *factory = eventLoop->GetFactory(name,tag.c_str());
-		if(!factory)factory = eventLoop->GetFactory("D" + name,tag.c_str());
+		JFactory *factory = event->GetFactory(name,tag.c_str());
+		if(!factory)factory = event->GetFactory("D" + name,tag.c_str());
 		if(factory){
 			try{
 				if(factory->GetNrows()>0){
@@ -155,12 +153,12 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 		}
 	}
 	
-	if(SKIP_BORING_EVENTS && event_is_boring)return NOERROR;
+	if(SKIP_BORING_EVENTS && event_is_boring) return;
 	if(!SKIP_BORING_EVENTS)event_is_boring= 0;
 	
 	// Print event separator
 	cout<<"================================================================"<<endl;
-	cout<<"Event: "<<eventnumber<<endl;
+	cout<<"Event: "<<event->GetEventNumber()<<endl;
 
 	// We want to print info about all factories results, even if we aren't
 	// printing the actual data. To make sure the informational messages often
@@ -174,8 +172,13 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 			if( tosummarize.count(name) ) fac->GetNrows();
 		}
 	}
-	
-	if(PRINT_STATUS_BITS) cout << japp->StatusWordToString(eventLoop->GetJEvent().GetStatus()) << endl;
+
+	if(PRINT_STATUS_BITS) {
+		auto status = event->GetSingle<DStatusBits>();
+		if (status != nullptr) {
+			cout << status->ToString() << endl;
+		}
+	}
 	if(PRINT_SUMMARY_HEADER) eventLoop->PrintFactories(SPARSIFY_SUMMARY ? 2:0);
 
 	// Print data for all specified factories
@@ -183,16 +186,16 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 		try{
 			string name =fac_info[i].dataClassName;
 			string tag = fac_info[i].tag;
-			eventLoop->Print(name,tag.c_str());
+			event->Print(name,tag.c_str());
 
-			if(LIST_ASSOCIATED_OBJECTS)PrintAssociatedObjects(eventLoop, &fac_info[i]);
+			if(LIST_ASSOCIATED_OBJECTS)PrintAssociatedObjects(event, &fac_info[i]);
 		}catch(...){
 			// exception thrown
 		}
 	}
 	
 	// If the program is quitting, then don't bother waiting for the user
-	if(eventLoop->GetJApplication()->GetQuittingStatus())return NOERROR;
+	if(GetApplication()->IsQuitting()) return;
 	
 	// Wait for user input if pausing
 	if(PAUSE_BETWEEN_EVENTS && !event_is_boring){
@@ -204,7 +207,7 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 		cout<<endl;
 		switch(toupper(c)){
 			case 'Q':
-				eventLoop->QuitProgram();
+				GetApplication()->Quit();
 				break;
 			case 'P':
 				//eventLoop->GotoEvent(eventnumber-1);
@@ -216,30 +219,26 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 		cout<<ansi_up(1)<<"\r                                                     \r";
 		cout.flush();
 	}
-	
-	return NOERROR;
 }
 
 //------------------------------------------------------------------
 // PrintAssociatedObjects
 //------------------------------------------------------------------
-void MyProcessor::PrintAssociatedObjects(JEventLoop *loop, const factory_info_t *fac_info)
+void MyProcessor::PrintAssociatedObjects(const std::shared_ptr<const JEvent>& event, const factory_info_t *fac_info)
 {
-	// cast away const-ness of JFactory_base class pointer
-	JFactory_base *fac = const_cast<JFactory_base*>(fac_info->fac);
+	// cast away const-ness of JFactory class pointer
+	JFactory *fac = const_cast<JFactory*>(fac_info->fac);
 	if(!fac)return;
 
 	// Get list of all objects from this factory
-	vector<void*> vobjs = fac->Get();
-	vector<JObject*> objs;
-	for(unsigned int i=0; i<vobjs.size(); i++)objs.push_back((JObject*)vobjs[i]);
-	
+	vector<JObject*> objs = fac->GetAs<JObject>();
+
 	// Loop over objects from this factory
 	for(unsigned int i=0; i<objs.size(); i++){
 	
 		// First, get a list of all associated objects
 		vector<const JObject*> aobjs;
-		objs[i]->GetT(aobjs);
+		objs[i]->Get(aobjs);
 		// If no associated objects, just go on to the next object
 		if(aobjs.size()==0)continue;
 		
@@ -247,11 +246,11 @@ void MyProcessor::PrintAssociatedObjects(JEventLoop *loop, const factory_info_t 
 		cout<<"  [== Associated objects for row "<<i<<" ==]"<<endl;
 
 		// Make a list of all factories that made objects associated to this one
-		map<JFactory_base*, vector<const JObject*> > aofacs;
+		map<JFactory*, vector<const JObject*> > aofacs;
 		for(unsigned int j=0; j<aobjs.size(); j++){
-			JFactory_base *aofac = loop->FindOwner(aobjs[j]);
+			JFactory *aofac = loop->FindOwner(aobjs[j]);
 			
-			map<JFactory_base*, vector<const JObject*> >::iterator iter = aofacs.find(aofac);
+			map<JFactory*, vector<const JObject*> >::iterator iter = aofacs.find(aofac);
 			if(iter==aofacs.end()){
 				vector<const JObject*> tmp;
 				aofacs[aofac] = tmp;
@@ -260,12 +259,15 @@ void MyProcessor::PrintAssociatedObjects(JEventLoop *loop, const factory_info_t 
 			aofacs[aofac].push_back(aobjs[j]);
 		}
 		// Figure out number of spaces to indent objects based on factory name length
-		map<JFactory_base*, vector<const JObject*> >::iterator iter;
+		map<JFactory*, vector<const JObject*> >::iterator iter;
 		unsigned int indent=4; // some minimal string length
 		for(iter=aofacs.begin(); iter!=aofacs.end(); iter++){
-			JFactory_base *fac = iter->first;
-			string name = fac->GetDataClassName();
-			if(strlen(fac->Tag())!=0)name += string(":") + fac->Tag();
+			JFactory *fac = iter->first;
+			string name = fac->GetName();
+			auto tag = fac->GetTag();
+			if (!tag.empty()) {
+				name += ":" + tag;
+			}
 			if(name.length()>indent)indent=name.length();
 		}
 		indent += 4; // indent the factory name itself
@@ -273,12 +275,15 @@ void MyProcessor::PrintAssociatedObjects(JEventLoop *loop, const factory_info_t 
 		// Loop over factories that produced associated objects for this object and
 		// list the objects it created
 		for(iter=aofacs.begin(); iter!=aofacs.end(); iter++){
-			JFactory_base *fac = iter->first;
+			JFactory *fac = iter->first;
 			vector<const JObject*> &ptrs = iter->second;
 			
 			// Print out factory name
-			string name = fac->GetDataClassName();
-			if(strlen(fac->Tag())!=0)name += string(":") + fac->Tag();
+			string name = fac->GetName();
+			string tag = fac->GetTag();
+			if (!tag.empty()) {
+				name += ":" + tag;
+			}
 			cout<<string(indent-name.length()-1,' ');
 			cout<<name<<" ";
 			
@@ -289,6 +294,5 @@ void MyProcessor::PrintAssociatedObjects(JEventLoop *loop, const factory_info_t 
 			}
 		}
 	}
-	
 }
 

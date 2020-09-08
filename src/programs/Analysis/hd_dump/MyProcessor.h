@@ -11,9 +11,7 @@
 using namespace std;
 
 #include <JANA/JEventProcessor.h>
-#include <JANA/JEventLoop.h>
 #include <JANA/JFactory.h>
-using namespace jana;
 
 extern bool PAUSE_BETWEEN_EVENTS;
 extern bool SKIP_BORING_EVENTS;
@@ -30,19 +28,18 @@ extern set<string> tosummarize;
 
 class MyProcessor:public JEventProcessor
 {
+	int64_t m_last_run_nr = -1;  // We need to simulate BeginRun ourselves now
+
 	public:
-		jerror_t init(void){return NOERROR;};				///< Called once at program start.
-		jerror_t brun(JEventLoop *eventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
-		jerror_t evnt(JEventLoop *eventLoop, uint64_t eventnumber);						///< Called every event.
-		jerror_t erun(void){return NOERROR;};				///< Called everytime run number changes, provided brun has been called.
-		jerror_t fini(void){return NOERROR;};				///< Called after last event of last event source has been processed.
+		void BeginRun(const std::shared_ptr<const JEvent>& event);
+		void Process(const std::shared_ptr<const JEvent>& event) override;
 
 		typedef struct{
 			string dataClassName;
 			string tag;
-			JFactory_base *fac;
+			JFactory* fac;
 		}factory_info_t;
 		vector<factory_info_t> fac_info;
 		
-		void PrintAssociatedObjects(JEventLoop *eventLoop, const factory_info_t *fac_info);
+		void PrintAssociatedObjects(const std::shared_ptr<const JEvent>& event, const factory_info_t* fac_info);
 };

@@ -89,7 +89,7 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buf){return NOERROR;}
 //----------------
 // Constructor
 //----------------
-JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(source_name)
+JEventSource_EVIO::JEventSource_EVIO(std::string source_name, JApplication* app):JEventSource(source_name, app)
 {
 	// Initialize connection objects and flags to NULL
 	Nunparsed = 0;
@@ -225,7 +225,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 #else  // HAVE_ET
 
 		// No ET and the file didn't work so re-throw the exception
-		if(this->source_name.substr(0,3) == "ET:"){
+		if(source_name.substr(0,3) == "ET:"){
 			cerr << endl;
 			cerr << "=== ERROR: ET source specified and this was compiled without    ===" << endl;
 			cerr << "===        ET support. You need to install ET and set your      ===" << endl;
@@ -237,7 +237,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 
 #endif  // HAVE_ET
 	}
-	if(VERBOSE>0) evioout << "Success opening event source \"" << this->source_name << "\"!" <<jendl;
+	if(VERBOSE>0) evioout << "Success opening event source \"" << source_name << "\"!" <<jendl;
 	
 
 	// Create list of data types this event source can provide
@@ -286,12 +286,12 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	
 	// Try extracting the run number from the filename. (This is
 	// only used if the run number is not found in the EVIO data.)
-	size_t pos2 = this->source_name.find_last_of('_');
+	size_t pos2 = GetResourceName().find_last_of('_');
 	if(pos2 != string::npos){
-		size_t pos1 = this->source_name.find_last_of('_', pos2-1);
+		size_t pos1 = GetResourceName().find_last_of('_', pos2-1);
 		if(pos1 != string::npos){
 			pos1++;
-			string runstr = this->source_name.substr(pos1, pos2-pos1);
+			string runstr = GetResourceName().substr(pos1, pos2-pos1);
 			if(runstr.length()>0) filename_run_number = atoi(runstr.c_str());
 		}
 	}
@@ -323,7 +323,7 @@ JEventSource_EVIO::~JEventSource_EVIO()
 #endif
 
 	if(hdevio){
-		if(VERBOSE>0) evioout << "Closing hdevio event source \"" << this->source_name << "\"" <<jendl;
+		if(VERBOSE>0) evioout << "Closing hdevio event source \"" << GetResourceName() << "\"" <<jendl;
 		hdevio->PrintStats();
 		delete hdevio;
 	}
@@ -621,7 +621,7 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	}
 #endif
 	if(source_type==kETSource && et_connected) no_source = false;
-	if(no_source)throw JException(string("Unable to open EVIO channel for \"") + source_name + "\"");
+	if(no_source)throw JException(string("Unable to open EVIO channel for \"") + GetResourceName() + "\"");
 
 	
 	// This may not be a long term solution, but here goes:
@@ -667,9 +667,9 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 		// buffers yet to be parsed, then we need to give those buffers
 		// a chance to be parsed so we can return an event it may contain.
 		if(err == NO_MORE_EVENTS_IN_SOURCE){
-			_DBG_<<jendl<<"-- No more events in source. Waiting for all buffers to be parsed (" << Nunparsed<<") ..." << jendl;
+			_DBG_<<endl<<"-- No more events in source. Waiting for all buffers to be parsed (" << Nunparsed<<") ..." << endl;
 			no_more_events_in_source = true;
-			while(Nunparsed>0 && !japp->GetQuittingStatus()) usleep(1000);
+			while(Nunparsed>0 && !GetApplication()->IsQuitting()) usleep(1000);
 			pthread_mutex_lock(&stored_events_mutex);
 			if(stored_events.empty()){
 				pthread_mutex_unlock(&stored_events_mutex);
@@ -724,9 +724,9 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 		if(objs_ptr->eviobuff) FindEventType(objs_ptr->eviobuff, status_bits);
 	
 	// EPICS and BOR events are barrier events
-	if(status_bits->GetStatusBit(kSTATUS_EPICS_EVENT) || status_bits->GetStatusBit(kSTATUS_BOR_EVENT) ){
-		event.SetSequential();
-	}
+	//if(status_bits->GetStatusBit(kSTATUS_EPICS_EVENT) || status_bits->GetStatusBit(kSTATUS_BOR_EVENT) ){
+	//	event.SetSequential();
+	//}
 	
 	Nevents_read++;
 
@@ -739,7 +739,7 @@ void JEventSource_EVIO::FreeEvent(JEvent &event)
 {
 	if(VERBOSE>1) evioout << "FreeEvent called for event: " << event.GetEventNumber() << jendl;
 
-	ObjList *objs_ptr = event.GetSingle<ObjList>();
+	auto objs_ptr = event.GetSingle<ObjList>();
 	if(objs_ptr){
 
 		// If a DAQ event was read in but GetObjects never called
@@ -1318,7 +1318,7 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 //----------------
 // GetObjects
 //----------------
-jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
+void JEventSource_EVIO::GetObjects(JEvent &event, JFactory *factory)
 {
 	if(VERBOSE>2) evioout << "  GetObjects() called for &event = " << hex << &event << dec << jendl;
 
@@ -1348,19 +1348,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	// while in the brun method. The brun method won't get called until
 	// we ask for the DTranslationTable objects, thus, we must ask for them
 	// here, prior to calling ParseEvents.
-	// Note that we have to use the GetFromFactory() method here since
-	// if we just use Get() or GetSingle(), it will call us (the event
-	// source) again in an infinite loop!
-	// Also note that we use static_cast here instead of dynamic_cast
-	// since the latter requires that the type_info structure for
-	// the DTranslationTable_factory be present. It is not in this
-	// plugin (it is in the TTab plugin). Thus, with dynamic_cast there
-	// is an unresolved symbol error if the TTab plugin is not also
-	// present. (Make sense?)
-	vector<const DTranslationTable*> translationTables;
-	JEventLoop *loop = event.GetJEventLoop();
-	DTranslationTable_factory *ttfac = static_cast<DTranslationTable_factory*>(loop->GetFactory("DTranslationTable"));
-	if(ttfac) ttfac->Get(translationTables);
+	vector<const DTranslationTable*> translationTables = event.Get<DTranslationTable>();
 
 	// We use a deferred parsing scheme for efficiency. If the event
 	// is not flagged as having already been parsed, then parse it
@@ -1370,7 +1358,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	if(!objs_ptr->eviobuff_parsed) ParseEvents(objs_ptr);
 	
 	// Get name of class which is actually being requested by caller
-	string dataClassName = (factory==NULL ? "N/A":factory->GetDataClassName());
+	string dataClassName = (factory==NULL ? "N/A":factory->GetName());
 	
 	// Make list of data(hit) types we have. Keep list of
 	// pointers to hit objects of each type
@@ -1411,7 +1399,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
     }
 
     // Copy pointers to BOR objects
-    CopyBOR(loop, hit_objs_by_type);
+    CopyBOR(event, hit_objs_by_type);
 
     // In order for the janadot plugin to properly display the callgraph, we need to
     // make entries for each of the object types that we generated from data in the file.
@@ -1647,21 +1635,21 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
     // Loop over types of config objects, copying to appropriate factory
     map<string, vector<JObject*> >::iterator config_iter = config_objs_by_type.begin();
     for(; config_iter!=config_objs_by_type.end(); config_iter++){
-        JFactory_base *fac = loop->GetFactory(config_iter->first, "", false); // false= don't allow default tag replacement
+        JFactory *fac = event->GetFactory(config_iter->first, "", false); // false= don't allow default tag replacement
         if(fac) fac->CopyTo(config_iter->second);
     }
 
     // Loop over types of hit objects, copying to appropriate factory
     map<string, vector<JObject*> >::iterator iter = hit_objs_by_type.begin();
     for(; iter!=hit_objs_by_type.end(); iter++){
-        JFactory_base *fac = loop->GetFactory(iter->first, "", false); // false= don't allow default tag replacement
+        JFactory *fac = event->GetFactory(iter->first, "", false); // false= don't allow default tag replacement
         fac->CopyTo(iter->second);
     }
 
     // Loop over types of misc objects, copying to appropriate factory
     map<string, vector<JObject*> >::iterator misc_iter = misc_objs_by_type.begin();
     for(; misc_iter!=misc_objs_by_type.end(); misc_iter++){
-        JFactory_base *fac = loop->GetFactory(misc_iter->first, "", false); // false= don't allow default tag replacement
+        JFactory *fac = event->GetFactory(misc_iter->first, "", false); // false= don't allow default tag replacement
         fac->CopyTo(misc_iter->second);
     }
     objs_ptr->own_objects = false;
@@ -1675,7 +1663,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
     // tells JANA that we can provide this type of object and any that
     // are present have already been copied into the appropriate factory.
     jerror_t err = OBJECT_NOT_AVAILABLE;
-    if(strlen(factory->Tag()) == 0){ // We do not supply any tagged factory data here
+    if(factory->GetTag().empty()){ // We do not supply any tagged factory data here
         if(event_source_data_types.find(dataClassName) != event_source_data_types.end()) err = NOERROR;
     }
 
@@ -1688,7 +1676,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
     // evnt method called.
     set<string>::iterator dtiter = event_source_data_types.begin();
     for(; dtiter!=event_source_data_types.end(); dtiter++){
-        JFactory_base *fac = loop->GetFactory(*dtiter);
+        JFactory *fac = event->GetFactory(*dtiter);
         if(fac) {
             // The DAQ_WRD2PI plugin wants to generate some objects from
             // the waveform data, overiding anything found in the file.
@@ -1700,37 +1688,37 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
             // the use_factory flag is to have a pointer to the JFactory
             // not the JFactory_base. This means we have to check the data
             // type of the factory and make the appropriate cast
-            string dataClassName = fac->GetDataClassName();
+            string dataClassName = fac->GetName();
             int checkSourceFirst = 1;
-            if(     dataClassName == "Df250Config")           checkSourceFirst = ((JFactory<Df250Config          >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "Df250PulseIntegral")    checkSourceFirst = ((JFactory<Df250PulseIntegral   >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "Df250StreamingRawData") checkSourceFirst = ((JFactory<Df250StreamingRawData>*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "Df250WindowSum")        checkSourceFirst = ((JFactory<Df250WindowSum       >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "Df250PulseRawData")     checkSourceFirst = ((JFactory<Df250PulseRawData    >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "Df250TriggerTime")      checkSourceFirst = ((JFactory<Df250TriggerTime     >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "Df250PulseTime")        checkSourceFirst = ((JFactory<Df250PulseTime       >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "Df250PulsePedestal")    checkSourceFirst = ((JFactory<Df250PulsePedestal   >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "Df250WindowRawData")    checkSourceFirst = ((JFactory<Df250WindowRawData   >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "Df125Config")           checkSourceFirst = ((JFactory<Df125Config          >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "Df125PulseIntegral")    checkSourceFirst = ((JFactory<Df125PulseIntegral   >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "Df125TriggerTime")      checkSourceFirst = ((JFactory<Df125TriggerTime     >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "Df125PulseTime")        checkSourceFirst = ((JFactory<Df125PulseTime       >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "Df125PulsePedestal")    checkSourceFirst = ((JFactory<Df125PulsePedestal   >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "Df125WindowRawData")    checkSourceFirst = ((JFactory<Df125WindowRawData   >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "Df125CDCPulse")         checkSourceFirst = ((JFactory<Df125CDCPulse        >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "Df125FDCPulse")         checkSourceFirst = ((JFactory<Df125FDCPulse        >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "DF1TDCConfig")          checkSourceFirst = ((JFactory<DF1TDCConfig         >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "DF1TDCHit")             checkSourceFirst = ((JFactory<DF1TDCHit            >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "DF1TDCTriggerTime")     checkSourceFirst = ((JFactory<DF1TDCTriggerTime    >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "DCAEN1290TDCConfig")    checkSourceFirst = ((JFactory<DCAEN1290TDCConfig   >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "DCAEN1290TDCHit")       checkSourceFirst = ((JFactory<DCAEN1290TDCHit      >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "DCODAEventInfo")        checkSourceFirst = ((JFactory<DCODAEventInfo       >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "DCODAROCInfo")          checkSourceFirst = ((JFactory<DCODAROCInfo         >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "DTSscalers")            checkSourceFirst = ((JFactory<DTSscalers           >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "Df250BORConfig")        checkSourceFirst = ((JFactory<Df250BORConfig       >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "Df125BORConfig")        checkSourceFirst = ((JFactory<Df125BORConfig       >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "DF1TDCBORConfig")       checkSourceFirst = ((JFactory<DF1TDCBORConfig      >*)fac)->GetCheckSourceFirst();
-            else if(dataClassName == "DCAEN1290TDCBORConfig") checkSourceFirst = ((JFactory<DCAEN1290TDCBORConfig>*)fac)->GetCheckSourceFirst();
+            if(     dataClassName == "Df250Config")           checkSourceFirst = ((JFactoryT<Df250Config          >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "Df250PulseIntegral")    checkSourceFirst = ((JFactoryT<Df250PulseIntegral   >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "Df250StreamingRawData") checkSourceFirst = ((JFactoryT<Df250StreamingRawData>*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "Df250WindowSum")        checkSourceFirst = ((JFactoryT<Df250WindowSum       >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "Df250PulseRawData")     checkSourceFirst = ((JFactoryT<Df250PulseRawData    >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "Df250TriggerTime")      checkSourceFirst = ((JFactoryT<Df250TriggerTime     >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "Df250PulseTime")        checkSourceFirst = ((JFactoryT<Df250PulseTime       >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "Df250PulsePedestal")    checkSourceFirst = ((JFactoryT<Df250PulsePedestal   >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "Df250WindowRawData")    checkSourceFirst = ((JFactoryT<Df250WindowRawData   >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "Df125Config")           checkSourceFirst = ((JFactoryT<Df125Config          >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "Df125PulseIntegral")    checkSourceFirst = ((JFactoryT<Df125PulseIntegral   >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "Df125TriggerTime")      checkSourceFirst = ((JFactoryT<Df125TriggerTime     >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "Df125PulseTime")        checkSourceFirst = ((JFactoryT<Df125PulseTime       >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "Df125PulsePedestal")    checkSourceFirst = ((JFactoryT<Df125PulsePedestal   >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "Df125WindowRawData")    checkSourceFirst = ((JFactoryT<Df125WindowRawData   >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "Df125CDCPulse")         checkSourceFirst = ((JFactoryT<Df125CDCPulse        >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "Df125FDCPulse")         checkSourceFirst = ((JFactoryT<Df125FDCPulse        >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "DF1TDCConfig")          checkSourceFirst = ((JFactoryT<DF1TDCConfig         >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "DF1TDCHit")             checkSourceFirst = ((JFactoryT<DF1TDCHit            >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "DF1TDCTriggerTime")     checkSourceFirst = ((JFactoryT<DF1TDCTriggerTime    >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "DCAEN1290TDCConfig")    checkSourceFirst = ((JFactoryT<DCAEN1290TDCConfig   >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "DCAEN1290TDCHit")       checkSourceFirst = ((JFactoryT<DCAEN1290TDCHit      >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "DCODAEventInfo")        checkSourceFirst = ((JFactoryT<DCODAEventInfo       >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "DCODAROCInfo")          checkSourceFirst = ((JFactoryT<DCODAROCInfo         >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "DTSscalers")            checkSourceFirst = ((JFactoryT<DTSscalers           >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "Df250BORConfig")        checkSourceFirst = ((JFactoryT<Df250BORConfig       >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "Df125BORConfig")        checkSourceFirst = ((JFactoryT<Df125BORConfig       >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "DF1TDCBORConfig")       checkSourceFirst = ((JFactoryT<DF1TDCBORConfig      >*)fac)->GetCheckSourceFirst();
+            else if(dataClassName == "DCAEN1290TDCBORConfig") checkSourceFirst = ((JFactoryT<DCAEN1290TDCBORConfig>*)fac)->GetCheckSourceFirst();
 
             if(checkSourceFirst) {
                 fac->Set_evnt_called();
@@ -1745,20 +1733,19 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
     // If a translation table object is available, use it to create
     // detector hits from the low-level DAQ objects we just created.
     for(unsigned int i=0; i<translationTables.size(); i++){
-        translationTables[i]->ApplyTranslationTable(loop);
+        translationTables[i]->ApplyTranslationTable(&event);
         if(translationTables[i]->IsSuppliedType(dataClassName))
-            if(strlen(factory->Tag()) == 0)err = NOERROR; // Don't allow tagged factories from Translation table
+            if(factory->GetTag().empty()) err = NOERROR; // Don't allow tagged factories from Translation table
     }
 
     if(VERBOSE>2) evioout << "  Leaving GetObjects()" << jendl;
 
-    return err;
 }
 
 //----------------
 // CopyBOR
 //----------------
-void JEventSource_EVIO::CopyBOR(JEventLoop *loop, map<string, vector<JObject*> > &hit_objs_by_type)
+void JEventSource_EVIO::CopyBOR(JEvent& event, map<string, vector<JObject*> > &hit_objs_by_type)
 {
     /// Copy pointers to BOR (Beginning Of Run) objects into the
     /// appropriate factories for this event. The objects are flagged
@@ -1779,10 +1766,10 @@ void JEventSource_EVIO::CopyBOR(JEventLoop *loop, map<string, vector<JObject*> >
     for(; iter!=bor_objs_by_type.end(); iter++){
         const string &bor_obj_name = iter->first;
         vector<JObject*> &bors = iter->second;
-        JFactory_base *fac = loop->GetFactory(bor_obj_name, "", false); // false= don't allow default tag replacement
+        JFactory *fac = event->GetFactory(bor_obj_name, "", false); // false= don't allow default tag replacement
         if(fac){
             fac->CopyTo(bors);
-            fac->SetFactoryFlag(JFactory_base::NOT_OBJECT_OWNER);
+            fac->SetFactoryFlag(JFactory::NOT_OBJECT_OWNER);
         }
 
         // Associate with hit objects from this type of module
@@ -1862,22 +1849,13 @@ void JEventSource_EVIO::EmulateDf250Firmware(JEvent &event, vector<JObject*> &wr
 {
     // Cant emulate without the raw data
     if(wrd_objs.size() == 0) return;
-    if(VERBOSE>3) evioout << " Entering  EmulateDf250Firmware ..." <<jendl;
+    if(VERBOSE>3) evioout << " Entering EmulateDf250Firmware ..." <<jendl;
 
-    vector <const Df250EmulatorAlgorithm*> f250Emulator_const;
-    Df250EmulatorAlgorithm *f250Emulator = NULL;
-    JEventLoop *loop = event.GetJEventLoop();
-    Df250EmulatorAlgorithm_factory *f250EmFac = static_cast<Df250EmulatorAlgorithm_factory*>(loop->GetFactory("Df250EmulatorAlgorithm"));
-    if (f250EmFac) {
-        f250EmFac->Get(f250Emulator_const);
-        // Drop const
-        if (f250Emulator_const.size() != 0) {
-	  f250Emulator = const_cast<Df250EmulatorAlgorithm*>(f250Emulator_const[0]);
-	} else {
-	  jerr << "Unable to load Df250EmulatorAlgorithm !  skipping emulation ..." << jendl;
-	  return;
+	Df250EmulatorAlgorithm *f250Emulator = const_cast<Df250EmulatorAlgorithm*>(event.GetSingle<Df250EmulatorAlgorithm>());
+	if (f250Emulator == nullptr) {
+		jerr << "Unable to load Df250EmulatorAlgorithm !  skipping emulation ..." << jendl;
+		return;
 	}
-    }
 
     if(VERBOSE>3) evioout << " Looping over raw data ..." <<jendl;
     // Loop over all window raw data objects
@@ -2113,19 +2091,11 @@ void JEventSource_EVIO::EmulateDf125Firmware( JEvent &event, vector<JObject*> &w
     if(wrd_objs.size() == 0) return; // Can't do anything without the raw data
     if(VERBOSE>3) evioout << " Entering  EmulateDf125Firmware ..." <<jendl;
 
-    vector <const Df125EmulatorAlgorithm*> f125Emulator_const;
-    Df125EmulatorAlgorithm *f125Emulator = NULL;
-    JEventLoop *loop = event.GetJEventLoop();
-    Df125EmulatorAlgorithm_factory *f125EmFac = static_cast<Df125EmulatorAlgorithm_factory*>(loop->GetFactory("Df125EmulatorAlgorithm"));
-    if (f125EmFac) {
-        f125EmFac->Get(f125Emulator_const);
-        // Drop const
-        if (f125Emulator_const.size() != 0) {
-	  f125Emulator = const_cast<Df125EmulatorAlgorithm*>(f125Emulator_const[0]);
-	} else {
-	  jerr << "Unable to load Df125EmulatorAlgorithm !  skipping emulation ..." << jendl;
-	  return;
-	}
+
+    auto f125Emulator = event.GetSingle<Df125EmulatorAlgorithm>();
+    if (f125Emulator == nullptr) {
+	    jerr << "Unable to load Df125EmulatorAlgorithm !  skipping emulation ..." << jendl;
+	    return;
     }
 
     // Loop over all window raw data objects
@@ -3051,7 +3021,7 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
             uint32_t rocid = (uint32_t)bankPtr->tag;
             uint32_t Nwords_per_event = vec32->size()/Mevents;
             if(vec32->size() != Mevents*Nwords_per_event){
-                _DBG_ << "Number of ROC data words in Trigger Bank inconsistent with header" << jendl;
+                _DBG_ << "Number of ROC data words in Trigger Bank inconsistent with header" << endl;
                 exit(-1);
             }
 
@@ -3107,8 +3077,8 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
         for(uint32_t i=0; i<codarocinfos.size(); i++) objs->misc_objs.push_back(codarocinfos[i]);		
     }
 
-    if(VERBOSE>6) evioout << "      Found "<<events.size()<<" events in Built Trigger Bank"<< endl;
-    if(VERBOSE>5) evioout << "    Leaving ParseBuiltTriggerBank()" << endl;
+    if(VERBOSE>6) evioout << "      Found "<<events.size()<<" events in Built Trigger Bank"<< jendl;
+    if(VERBOSE>5) evioout << "    Leaving ParseBuiltTriggerBank()" << jendl;
 }
 #endif // HAVE_EVIO		
 
@@ -3119,7 +3089,7 @@ void JEventSource_EVIO::ParseModuleConfiguration(int32_t rocid, const uint32_t* 
 {
     if(!PARSE_CONFIG){ iptr = iend; return; }
 
-    if(VERBOSE>5) evioout << "     Entering ParseModuleConfiguration()  (events.size()="<<events.size()<<")" << endl;
+    if(VERBOSE>5) evioout << "     Entering ParseModuleConfiguration()  (events.size()="<<events.size()<<")" << jendl;
 
     /// Parse a bank of module configuration data. These are configuration values
     /// programmed into the module at the beginning of the run that may be needed
@@ -3157,7 +3127,7 @@ void JEventSource_EVIO::ParseModuleConfiguration(int32_t rocid, const uint32_t* 
             daq_param_type ptype = (daq_param_type)((*iptr)>>16);
             uint16_t val = (*iptr) & 0xFFFF;
 
-            if(VERBOSE>6) evioout << "       DAQ parameter of type: 0x" << hex << ptype << dec << "  found with value: " << val << endl;
+            if(VERBOSE>6) evioout << "       DAQ parameter of type: 0x" << hex << ptype << dec << "  found with value: " << val << jendl;
 
             // Create config object of correct type if needed and copy
             // parameter value into it.
@@ -3299,7 +3269,7 @@ void JEventSource_EVIO::ParseModuleConfiguration(int32_t rocid, const uint32_t* 
         if(caen1290tdcconfig) objs->config_objs.push_back(caen1290tdcconfig);
     }
 
-    if(VERBOSE>5) evioout << "     Leaving ParseModuleConfiguration()" << endl;	
+    if(VERBOSE>5) evioout << "     Leaving ParseModuleConfiguration()" << jendl;
 }
 
 //----------------
@@ -3309,7 +3279,7 @@ void JEventSource_EVIO::ParseEventTag(const uint32_t* &iptr, const uint32_t *ien
 {
     if(!PARSE_EVENTTAG){ iptr = iend; return; }
 
-    if(VERBOSE>5) evioout << "     Entering ParseEventTag()  (events.size()="<<events.size()<<")" << endl;
+    if(VERBOSE>5) evioout << "     Entering ParseEventTag()  (events.size()="<<events.size()<<")" << jendl;
 
     // Make sure there is one event in the event container
     // and get pointer to it.
@@ -4349,7 +4319,7 @@ void JEventSource_EVIO::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, con
         // Double check that event header is set
         if( ((*iptr) & 0xF8000000) != 0x90000000 ){
             if(VERBOSE>10){
-                _DBG_<<"Corrupt F1TDC Event header! Data dump follows (\"*\" indicates bad header word):" <<jendl;
+                _DBG_<<"Corrupt F1TDC Event header! Data dump follows (\"*\" indicates bad header word):" << endl;
                 DumpBinary(istart, iend, 0, iptr);
             }
             throw JException("F1TDC Event header corrupt! (high 5 bits not set to 0x90000000!)");

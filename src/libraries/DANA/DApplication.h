@@ -15,9 +15,7 @@
 
 #include "TF1.h"
 
-#include <JANA/jerror.h>
 #include <JANA/JApplication.h>
-using namespace jana;
 using namespace std;
 
 #include "HDGEOMETRY/DGeometry.h"

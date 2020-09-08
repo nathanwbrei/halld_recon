@@ -38,14 +38,17 @@ set(HALLD_RECON_SOURCES
 #        src/libraries/TTAB/DTTabUtilities_factory.h
 #        src/libraries/TTAB/TTab_init.cc
 
-#        src/libraries/DAQ/JEventSource_EVIO.cc
-#        src/libraries/DAQ/JEventSource_EVIO.h
+        src/libraries/DAQ/JEventSource_EVIO.cc
+        src/libraries/DAQ/JEventSource_EVIO.h
 #        src/libraries/DAQ/JEventSourceGenerator_EVIO.cc
 #        src/libraries/DAQ/JEventSourceGenerator_EVIO.h
     )
 
 add_executable(halld_recon
-        src/programs/Analysis/hd_port/hd_port.cc
+#        src/programs/Analysis/hd_port/hd_port.cc
+        src/programs/Analysis/hd_dump/hd_dump.cc
+        src/programs/Analysis/hd_dump/MyProcessor.cc
+        src/programs/Analysis/hd_dump/MyProcessor.h
         ${HALLD_RECON_SOURCES}
         )
 

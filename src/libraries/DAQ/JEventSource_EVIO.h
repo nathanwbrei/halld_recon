@@ -370,7 +370,7 @@ class JEventSource_EVIO: public JEventSource {
 		pthread_rwlock_t BOR_lock;
 		vector<JObject*> BORobjs;
 
-		void CopyBOR(JEventLoop *loop, map<string, vector<JObject*> > &hit_objs_by_type);
+		void CopyBOR(JEvent& event, map<string, vector<JObject*> > &hit_objs_by_type);
 		//void AddSourceObjectsToCallStack(JEventLoop *loop, string className);
 		//void AddEmulatedObjectsToCallStack(JEventLoop *loop, string caller, string callee);
         void EmulateDf250Firmware(JEvent &event, vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs, vector<JObject*> &pi_objs);
