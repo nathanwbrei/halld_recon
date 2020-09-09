@@ -2,9 +2,8 @@
 #define _DTrigger_
 
 #include <JANA/JObject.h>
-#include <JANA/JFactory.h>
 
-class DTrigger : public jana::JObject
+class DTrigger : public JObject
 {
 	public:
 		JOBJECT_PUBLIC(DTrigger);
@@ -18,11 +17,9 @@ class DTrigger : public jana::JObject
 		void Set_L1TriggerBits(uint32_t locL1TriggerBits){dL1TriggerBits = locL1TriggerBits;}
 		void Set_L1FrontPanelTriggerBits(uint32_t locL1FrontPanelTriggerBits){dL1FrontPanelTriggerBits = locL1FrontPanelTriggerBits;}
 
-		// the second argument to AddString is printf style format
-		void toStrings(vector<pair<string,string> >& items) const
-		{
-			AddString(items, "dL1TriggerBits", "%ld", dL1TriggerBits);
-			AddString(items, "dL1FrontPanelTriggerBits", "%ld", dL1FrontPanelTriggerBits);
+		void Summarize(JObjectSummary& summary) const override {
+			summary.add(dL1TriggerBits, "dL1TriggerBits", "%ld");
+			summary.add(dL1FrontPanelTriggerBits, "dL1FrontPanelTriggerBits", "%ld");
 		}
 
 	private:

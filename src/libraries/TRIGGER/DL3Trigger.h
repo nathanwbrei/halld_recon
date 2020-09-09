@@ -10,7 +10,7 @@
 
 #include <JANA/JObject.h>
 
-class DL3Trigger:public JObject{
+class DL3Trigger: public JObject{
 	public:
 		JOBJECT_PUBLIC(DL3Trigger);
 		

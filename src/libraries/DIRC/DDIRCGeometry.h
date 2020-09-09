@@ -6,11 +6,8 @@
 #ifndef _DDIRCGeometry_
 #define _DDIRCGeometry_
 
-#include <JANA/JFactory.h>
 #include <JANA/JObject.h>
-#include <JANA/JCalibration.h>
-
-using namespace jana;
+#include <JANA/Calibrations/JCalibration.h>
 
 class DDIRCGeometry : public JObject {
 
@@ -45,13 +42,13 @@ public:
 	int GetPixelX       ( int channel ) const;
 	int GetPixelY       ( int channel ) const;
 
-	void toStrings(vector<pair<string,string> > &items) const {
-		//AddString(items, "kBlocksWide", "%d", (int)kBlocksWide);
-		//AddString(items, "kBlocksTall", "%d", (int)kBlocksTall);
-		//AddString(items, "kMaxChannels", "%d", (int)kMaxChannels);
-		//AddString(items, "kBeamHoleSize", "%2.3f", (int)kBeamHoleSize);
+	void Summarize(JObjectSummary& summary) const override {
+		// summary.add((int)kBlocksWide, "kBlocksWide", "%d");
+		// summary.add((int)kBlocksTall, "kBlocksTall", "%d");
+		// summary.add((int)kMaxChannels, "kMaxChannels", "%d");
+		// summary.add((int)kBeamHoleSize, "kBeamHoleSize", "%2.3f");
 	}
-	
+
 private:
 
 	DDIRCGeometry(); // forbid default constructor

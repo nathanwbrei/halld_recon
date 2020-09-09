@@ -9,10 +9,8 @@
 #define _DTOFPaddleHit_
 
 #include <JANA/JObject.h>
-#include <JANA/JFactory.h>
-using namespace jana;
 
-class DTOFPaddleHit:public JObject{
+class DTOFPaddleHit: public JObject{
  public:
   JOBJECT_PUBLIC(DTOFPaddleHit);
   
@@ -29,18 +27,18 @@ class DTOFPaddleHit:public JObject{
   float dpos;       // estimated uncertainty in hitposition
   float dE;         // weighted energy deposition
   
-  void toStrings(vector<pair<string,string> > &items)const{
-    AddString(items, "orientation", "%d", orientation);
-    AddString(items, "bar", "%d", bar);
-    AddString(items, "t_north", "%1.3f", t_north);
-    AddString(items, "E_north", "%1.3f", E_north);
-    AddString(items, "t_south", "%1.3f", t_south);
-    AddString(items, "E_south", "%1.3f", E_south);
-    AddString(items, "meantime", "%1.3f", meantime);
-    AddString(items, "timediff", "%1.3f", timediff);
-    AddString(items, "pos", "%1.3f", pos);
-    AddString(items, "dpos", "%1.3f", dpos);
-    AddString(items, "dE", "%1.3f", dE);
+  void Summarize(JObjectSummary& summary) const override {
+    summary.add(orientation, "orientation", "%d");
+    summary.add(bar, "bar", "%d");
+    summary.add(t_north, "t_north", "%1.3f");
+    summary.add(E_north, "E_north", "%1.3f");
+    summary.add(t_south, "t_south", "%1.3f");
+    summary.add(E_south, "E_south", "%1.3f");
+    summary.add(meantime, "meantime", "%1.3f");
+    summary.add(timediff, "timediff", "%1.3f");
+    summary.add(pos, "pos", "%1.3f");
+    summary.add(dpos, "dpos", "%1.3f");
+    summary.add(dE, "dE", "%1.3f");
   }
 };
 

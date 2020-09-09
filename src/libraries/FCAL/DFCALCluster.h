@@ -13,8 +13,6 @@
 using namespace std;
 
 #include <JANA/JObject.h>
-#include <JANA/JFactory.h>
-using namespace jana;
 
 #define FCAL_USER_HITS_MAX 2800
 #define MOLIERE_RADIUS 3.696
@@ -84,12 +82,12 @@ class DFCALCluster : public JObject {
    inline const vector<DFCALClusterHit_t> GetHits() const { return my_hits; }
    inline uint32_t GetNHits(void) const { return my_hits.size(); }
 
-   void toStrings(vector<pair<string,string> > &items) const {
-      AddString(items, "x(cm)", "%3.1f", getCentroid().x());
-      AddString(items, "y(cm)", "%3.1f", getCentroid().y());
-      AddString(items, "z(cm)", "%3.1f", getCentroid().z());
-      AddString(items, "E(GeV)", "%2.3f", getEnergy());
-      AddString(items, "t(ns)", "%2.3f", getTime());
+   void Summarize(JObjectSummary& summary) const override {
+      summary.add(getCentroid().x(), "x(cm)", "%3.1f");
+      summary.add(getCentroid().y(), "y(cm)", "%3.1f");
+      summary.add(getCentroid().z(), "z(cm)", "%3.1f");
+      summary.add(getEnergy(), "E(GeV)", "%2.3f");
+      summary.add(getTime(), "t(ns)", "%2.3f");
    }
 
    private:

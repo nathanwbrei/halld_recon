@@ -9,9 +9,8 @@
 #define _DCDCDigiHit_
 
 #include <JANA/JObject.h>
-#include <JANA/JFactoryT.h>
 
-class DCDCDigiHit:public JObject{
+class DCDCDigiHit: public JObject{
 	public:
 		JOBJECT_PUBLIC(DCDCDigiHit);
 		

@@ -10,7 +10,7 @@
 
 #include <JANA/JObject.h>
 
-class DSCDigiHit:public JObject{
+class DSCDigiHit: public JObject{
 	public:
 		JOBJECT_PUBLIC(DSCDigiHit);
 		
