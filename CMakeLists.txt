@@ -27,32 +27,30 @@ file(GLOB DAQ_HEADERS ${PROJECT_SOURCE_DIR}/src/libraries/DAQ/*.h)
 
 set(HALLD_RECON_SOURCES
 
-#        src/libraries/TRACKING/DMCThrown.h
-
         src/libraries/BCAL/DBCALCluster.h
         src/libraries/BCAL/DBCALTDCHit.h
         src/libraries/BCAL/DBCALTDCDigiHit.h
         src/libraries/BCAL/DBCALGeometry.h
         src/libraries/BCAL/DBCALIncidentParticle.h
-#        src/libraries/BCAL/DBCALSiPMSpectrum.h  # TVersionCheck
+        src/libraries/BCAL/DBCALSiPMSpectrum.h
         src/libraries/BCAL/DBCALUnifiedHit.h
         src/libraries/BCAL/DBCALTruthCell.h
         src/libraries/BCAL/DBCALClump.h
         src/libraries/BCAL/DBCALPoint.h
         src/libraries/BCAL/DBCALSiPMHit.h
         src/libraries/BCAL/DBCALDigiHit.h
-#        src/libraries/BCAL/DBCALShower.h # TVersionCheck
+        src/libraries/BCAL/DBCALShower.h
         src/libraries/BCAL/DBCALHit.h
         src/libraries/BCAL/DBCALTruthShower.h
 
-#        src/libraries/CDC/DCDCTrackHit.h   # Uses TVersionCheck
+        src/libraries/CDC/DCDCTrackHit.h
         src/libraries/CDC/DCDCHit.h
         src/libraries/CDC/DCDCDigiHit.h
 
-#        src/libraries/CCAL/DCCALShower.h    # Uses TVersionCheck
+        src/libraries/CCAL/DCCALShower.h
         src/libraries/CCAL/DCCALDigiHit.h
         src/libraries/CCAL/DCCALRefDigiHit.h
-#        src/libraries/CCAL/DCCALGeometry.h  # Uses TVersionCheck
+        src/libraries/CCAL/DCCALGeometry.h
 #        src/libraries/CCAL/DCCALTruthShower.h    # Uses oid
         src/libraries/CCAL/DCCALHit.h
 
@@ -75,7 +73,7 @@ set(HALLD_RECON_SOURCES
 
         src/libraries/FCAL/DFCALHit.h
         src/libraries/FCAL/DFCALDigiHit.h
-#        src/libraries/FCAL/DFCALGeometry.h  # Uses TVersionCheck
+        src/libraries/FCAL/DFCALGeometry.h
 #        src/libraries/FCAL/DFCALShower.h    # Uses oid via Cluster
 #        src/libraries/FCAL/DFCALTruthShower.h  # Uses oid
 #        src/libraries/FCAL/DFCALCluster.h     # Uses oid
@@ -85,7 +83,7 @@ set(HALLD_RECON_SOURCES
         src/libraries/FDC/DFDCWireDigiHit.h
 #        src/libraries/FDC/DFDCSegment.h
 #        src/libraries/FDC/DFDCGeometry.h    # Uses DGeometry (with circular ref)
-#        src/libraries/FDC/DFDCIntersection.h  # Pulls in TVersionCheck somehow
+        src/libraries/FDC/DFDCIntersection.h
         src/libraries/FDC/DFDCHit.h
         src/libraries/FDC/DFDCCathodeCluster.h
 #        src/libraries/FDC/DFDCPseudo.h   # Can't find cint.h
@@ -104,6 +102,17 @@ set(HALLD_RECON_SOURCES
 #        src/libraries/PAIR_SPECTROMETER/DLumi.h  # Uses JEventLoop, DTAGHGeometry, GTAGMGeometry
         src/libraries/PAIR_SPECTROMETER/DPSCHit.h
         src/libraries/PAIR_SPECTROMETER/DPSCPair.h
+
+        src/libraries/PID/DChargedTrack.h  # oid
+        src/libraries/PID/DVertex.h
+        src/libraries/PID/DKinematicData.h  # Problem with thread-local storage
+        src/libraries/PID/DMCReaction.h
+        src/libraries/PID/DNeutralShower.h   # oid
+        src/libraries/PID/DNeutralParticleHypothesis.h # oid
+        src/libraries/PID/DDetectorMatches.h
+        src/libraries/PID/DParticleID.h  # cint.h via HDGEOMETRY/DRootGeom
+        src/libraries/PID/DNeutralParticle.h
+        src/libraries/PID/DEventRFBunch.h
 
         src/libraries/RF/DRFTDCDigiTime.h
         src/libraries/RF/DRFTime.h
@@ -134,12 +143,24 @@ set(HALLD_RECON_SOURCES
         src/libraries/TOF/DTOFDigiHit.h
         # src/libraries/TOF/DTOFGeometry.h   # Uses DGeometry
         src/libraries/TOF/DTOFTDCDigiHit.h
-        # src/libraries/TOF/DTOFPoint.h    # Uses TVersionCheck
+        src/libraries/TOF/DTOFPoint.h
 
         src/libraries/TPOL/DTPOLTruthHit.h
         src/libraries/TPOL/DTPOLHit.h
         src/libraries/TPOL/DTPOLSectorDigiHit.h
         src/libraries/TPOL/DTPOLRingDigiHit.h
+
+        src/libraries/TRACKING/DTrackWireBased.h    # oid, DKinematicData
+        src/libraries/TRACKING/DTrackFinder.h
+        src/libraries/TRACKING/DTrackCandidate.h    # DKinematicData
+        src/libraries/TRACKING/DMCTrackHit.h
+        src/libraries/TRACKING/DHoughFind.h
+        src/libraries/TRACKING/DMCThrown.h          # DKinematicData
+        src/libraries/TRACKING/DTrackTimeBased.h    # DKinematicData
+        src/libraries/TRACKING/DTrackHit.h
+        src/libraries/TRACKING/DMCTrajectoryPoint.h
+        src/libraries/TRACKING/DTrackFitter.h        # Uses JEventLoop, SECRET FACTORY
+        src/libraries/TRACKING/DTrackHitSelector.h   # Uses JEventLoop
 
         src/libraries/TRD/DGEMPoint.h
         src/libraries/TRD/DTRDStripCluster.h
@@ -180,7 +201,6 @@ target_include_directories(halld_recon PRIVATE src/libraries src/libraries/inclu
         ${CCDB_INCLUDE_DIRS} ${ROOT_INCLUDE_DIRS} ${JANA_INCLUDE_DIR} ${EVIO_INCLUDE_DIR})
 
 message(WARN ${EVIO_LIBS})
-target_link_libraries(halld_recon ${JANA_LIBRARY} ${EVIO_LIBS} ${EXPAT_LIBRARY})
-#target_link_libraries(halld_recon ${JANA_LIBRARY})
+target_link_libraries(halld_recon ${JANA_LIBRARY} ${EVIO_LIBS} ${EXPAT_LIBRARY} ${ROOT_LIBRARIES})
 
 

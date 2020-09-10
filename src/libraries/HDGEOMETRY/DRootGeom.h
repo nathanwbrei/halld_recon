@@ -8,7 +8,7 @@
 #ifndef _DRootGeom_
 #define _DRootGeom_
 
-#include <JANA/jerror.h>
+#include <JANA/Compatibility/jerror.h>
 #include <DANA/DApplication.h>
 
 #include <DVector3.h>

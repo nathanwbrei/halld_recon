@@ -60,11 +60,10 @@ class DNeutralParticleHypothesis : public DKinematicData
 		void Set_T0(double locT0, double locT0Error, DetectorSystem_t locT0Detector);
 		void Set_ChiSq_Overall(double locChiSq, unsigned int locNDF, double locFOM);
 
-		void toStrings(vector<pair<string,string> > &items) const
-		{
-			DKinematicData::toStrings(items);
-			AddString(items, "PID_ChiSq", "%f", Get_ChiSq());
-			AddString(items, "PID_FOM", "%f", Get_FOM());
+		void Summarize(JObjectSummary& summary) const override {
+			DKinematicData::Summarize(summary);
+			summary.add(Get_ChiSq(), "PID_ChiSq", "%f");
+			summary.add(Get_FOM(), "PID_FOM", "%f");
 		}
 
 		class DTimingInfo : public DResettable

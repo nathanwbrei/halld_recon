@@ -8,7 +8,6 @@
 #ifndef _DTrackFinder_
 #define _DTrackFinder_
 
-#include <JANA/jerror.h>
 #include "DVector3.h"
 #include "TH1F.h"
 #include "TH1I.h"
@@ -19,7 +18,7 @@
 
 #include <vector>
 
-class DTrackFinder:public jana::JObject{
+class DTrackFinder:public JObject{
    public:
       JOBJECT_PUBLIC(DTrackFinder);
 

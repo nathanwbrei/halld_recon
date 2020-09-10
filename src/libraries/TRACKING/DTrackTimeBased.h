@@ -9,13 +9,11 @@
 #define _DTrackTimeBased_
 
 #include <JANA/JObject.h>
-#include <JANA/JFactory.h>
 #include "DTrackingData.h"
 #include "DTrackFitter.h"
 #include "CDC/DCDCTrackHit.h"
 #include "FDC/DFDCPseudo.h"
 
-using namespace jana;
 using namespace std;
 
 class DTrackTimeBased:public DTrackingData{
@@ -81,16 +79,16 @@ class DTrackTimeBased:public DTrackingData{
 		int dMCThrownMatchMyID; //MC track match myid (-1 if somehow no match)
 		int dNumHitsMatchedToThrown;
 
-		void toStrings(vector<pair<string,string> > &items)const{
-			DKinematicData::toStrings(items);
-			AddString(items, "candidate","%d",candidateid);
-			//AddString(items, "wirebased","%d",trackid);
-			AddString(items, "chisq", "%f", chisq);
-			AddString(items, "Ndof", "%d", Ndof);
-			AddString(items, "FOM", "%f",(float)FOM);
-			AddString(items, "Flags","%d",flags);
-			//AddString(items, "MCMatchID", "%d",dMCThrownMatchMyID);
-			//AddString(items, "#HitsMCMatched", "%d",dNumHitsMatchedToThrown);
+		void Summarize(JObjectSummary& summary) const override {
+			DKinematicData::Summarize(summary);
+			summary.add(candidateid, "candidate", "%d");
+			//summary.add(trackid, "wirebased", "%d");
+			summary.add(chisq, "chisq", "%f");
+			summary.add(Ndof, "Ndof", "%d");
+			summary.add((float)FOM, "FOM", "%f");
+			summary.add(flags, "Flags", "%d");
+			//summary.add(dMCThrownMatchMyID, "MCMatchID", "%d");
+			//summary.add(dNumHitsMatchedToThrown);
 		}
 };
 
@@ -102,7 +100,7 @@ inline size_t Get_NumTrackHits(const DTrackTimeBased* locTrackTimeBased)
 	vector<const DFDCPseudo*> locFDCHits;
 	locTrackTimeBased->Get(locFDCHits);
 
-	size_t locNumHits = locCDCHits.size() + locFDCHits.size();
+	size_t locNumHits = locCDCHits.size() + locFDCHits.size(, "#HitsMCMatched", "%d");
 	if(locNumHits > 0)
 		return locNumHits;
 

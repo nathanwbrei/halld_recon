@@ -15,7 +15,6 @@
 #include <cmath>
 
 #include <JANA/JObject.h>
-#include <JANA/JFactory.h>
 
 #include <DVector3.h>
 #include "HDGEOMETRY/DRootGeom.h"
@@ -54,7 +53,7 @@
 
 class DTrackTimeBased;
 
-class DParticleID:public jana::JObject
+class DParticleID: public JObject
 {
 	public:
 		JOBJECT_PUBLIC(DParticleID);

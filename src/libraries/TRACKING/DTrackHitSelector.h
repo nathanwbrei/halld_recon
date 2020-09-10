@@ -9,7 +9,6 @@
 #define _DTrackHitSelector_
 
 #include <JANA/JObject.h>
-#include <JANA/JFactory.h>
 
 #include <TRACKING/DTrackFitter.h>
 
@@ -27,7 +26,7 @@ class DFDCPseudo;
 /// this point in time, we expect at least a couple of algorithms may
 /// be tried.    Feb. 6, 2009  DL
 
-class DTrackHitSelector:public jana::JObject{
+class DTrackHitSelector: public JObject {
  public:
   JOBJECT_PUBLIC(DTrackHitSelector);
   

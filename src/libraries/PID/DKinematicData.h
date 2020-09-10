@@ -35,8 +35,8 @@ class DKinematicData : public JObject, public DResettable
 		void Share_FromInput_Kinematics(const DKinematicData* locSourceData);
 
 		//Reset & Release
-		virtual void Reset(void);
-		virtual void Release(void);
+		void Reset(void) override;
+		void Release(void) override;
 
 		//GETTERS
 		Particle_t PID(void) const{return dKinematicInfo->dPID;}
