@@ -11,9 +11,8 @@
 #include <pthread.h>
 #include <map>
 
-#include <JANA/jerror.h>
+#include <JANA/Compatibility/jerror.h>
 #include <JANA/JGeometry.h>
-using namespace jana;
 
 #include <DANA/DApplication.h>
 #include "FDC/DFDCGeometry.h"
@@ -25,7 +24,6 @@ using namespace jana;
 #include <DVector3.h>
 #include "DMaterial.h"
 #include "DMaterialMap.h"
-using namespace jana;
 
 class DApplication;
 class DMagneticFieldMap;

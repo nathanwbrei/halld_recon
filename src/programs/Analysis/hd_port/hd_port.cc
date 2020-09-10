@@ -27,6 +27,58 @@
 #include <CCAL/DCCALHit.h>
 #include <CCAL/DCCALGeometry.h>
 
+#include <DAQ/DF1TDCConfig.h>
+// #include <DAQ/Df250EmulatorAlgorithm_v3.h>  // JEventLoop
+#include <DAQ/DF1TDCHit.h>
+#include <DAQ/Df125EmulatorAlgorithm.h>
+#include <DAQ/Df125Config.h>
+#include <DAQ/Df125PulseIntegral.h>
+#include <DAQ/DCAEN1290TDCConfig.h>
+#include <DAQ/Df250Scaler.h>
+#include <DAQ/Df250TriggerTime.h>
+#include <DAQ/Df125BORConfig.h>
+#include <DAQ/Df125FDCPulse.h>
+#include <DAQ/Df250BORConfig.h>
+#include <DAQ/DCAEN1290TDCHit.h>
+#include <DAQ/DTSscalers.h>
+#include <DAQ/DCODAROCInfo.h>
+#include <DAQ/DGEMSRSWindowRawData.h>
+#include <DAQ/DDIRCTDCHit.h>
+#include <DAQ/DCODAControlEvent.h>
+#include <DAQ/Df250Config.h>
+#include <DAQ/Df250WindowRawData.h>
+#include <DAQ/DF1TDCTriggerTime.h>
+#include <DAQ/DCODAEventInfo.h>
+#include <DAQ/Df125PulsePedestal.h>
+#include <DAQ/Df250AsyncPedestal.h>
+#include <DAQ/DTSGBORConfig.h>
+#include <DAQ/Df125PulseRawData.h>
+#include <DAQ/Df250StreamingRawData.h>
+#include <DAQ/Df125PulseTime.h>
+#include <DAQ/Df125CDCPulse.h>
+#include <DAQ/DEPICSvalue.h>
+#include <DAQ/Df250PulseTime.h>
+#include <DAQ/DCAEN1290TDCBORConfig.h>
+#include <DAQ/DL1Info.h>
+#include <DAQ/DF1TDCBORConfig.h>
+#include <DAQ/Df250EmulatorAlgorithm_v1.h>
+#include <DAQ/Df250EmulatorAlgorithm.h>
+#include <DAQ/Df125TriggerTime.h>
+#include <DAQ/DEventTag.h>
+#include <DAQ/Df250PulseIntegral.h>
+#include <DAQ/DBeamCurrent.h>
+#include <DAQ/DDIRCADCHit.h>
+#include <DAQ/Df250PulseRawData.h>
+#include <DAQ/DDIRCTriggerTime.h>
+#include <DAQ/Df250PulseData.h>
+#include <DAQ/DDAQConfig.h>
+#include <DAQ/Df250PulsePedestal.h>
+#include <DAQ/Df250WindowSum.h>
+// #include <DAQ/Df250EmulatorAlgorithm_v2.h>      # JEventLoop
+// #include <DAQ/DParsedEvent.h>                # JEventLoop
+#include <DAQ/Df125WindowRawData.h>
+#include <DAQ/DDAQAddress.h>
+
 #include <DIRC/DDIRCLEDRef.h>
 #include <DIRC/DDIRCTruthPmtHit.h>
 #include <DIRC/DDIRCTDCDigiHit.h>

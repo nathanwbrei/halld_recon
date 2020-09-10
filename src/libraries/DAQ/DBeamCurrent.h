@@ -9,7 +9,6 @@
 #define _DBeamCurrent_
 
 #include <JANA/JObject.h>
-#include <JANA/JFactoryT.h>
 
 class DBeamCurrent : public JObject{
 	public:

@@ -10,7 +10,6 @@
 #define _DDAQConfig_
 
 #include <JANA/JObject.h>
-#include <JANA/JFactoryT.h>
 
 /// This class is a base class used for classes that hold
 /// DAQ module configuration parameters. A subclass for each

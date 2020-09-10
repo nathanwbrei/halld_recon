@@ -2,7 +2,6 @@
 #define _Df250Scaler_
 
 #include <JANA/JObject.h>
-#include <JANA/JObject.h>
 
 using namespace std;
 

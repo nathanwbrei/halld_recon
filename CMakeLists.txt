@@ -57,11 +57,64 @@ set(HALLD_RECON_SOURCES
         src/libraries/CERE/DCereHit.h
 
 #        src/libraries/DAQ/JEventSource_EVIO.cc
-#        src/libraries/DAQ/JEventSource_EVIO.h
+        src/libraries/DAQ/JEventSource_EVIO.h
 #        src/libraries/DAQ/JEventSourceGenerator_EVIO.cc
-#        src/libraries/DAQ/JEventSourceGenerator_EVIO.h
+        src/libraries/DAQ/JEventSourceGenerator_EVIO.h
+#        src/libraries/DAQ/JEventSource_EVIO.cc
 
-#        src/libraries/DIRC/DDIRCLut.h     # Needs a lot of work
+        src/libraries/DAQ/DF1TDCConfig.h
+        src/libraries/DAQ/Df250EmulatorAlgorithm_v3.h  # JEventLoop
+        src/libraries/DAQ/DF1TDCHit.h
+        src/libraries/DAQ/Df125EmulatorAlgorithm.h
+        src/libraries/DAQ/Df125Config.h
+        src/libraries/DAQ/Df125PulseIntegral.h
+        src/libraries/DAQ/DCAEN1290TDCConfig.h
+        src/libraries/DAQ/Df250Scaler.h
+        src/libraries/DAQ/Df250TriggerTime.h
+        src/libraries/DAQ/Df125BORConfig.h
+        src/libraries/DAQ/Df125FDCPulse.h
+        src/libraries/DAQ/Df250BORConfig.h
+        src/libraries/DAQ/DCAEN1290TDCHit.h
+        src/libraries/DAQ/DTSscalers.h
+        src/libraries/DAQ/DCODAROCInfo.h
+        src/libraries/DAQ/DGEMSRSWindowRawData.h
+        src/libraries/DAQ/DDIRCTDCHit.h
+        src/libraries/DAQ/DCODAControlEvent.h
+        src/libraries/DAQ/Df250Config.h
+        src/libraries/DAQ/Df250WindowRawData.h
+        src/libraries/DAQ/DF1TDCTriggerTime.h
+        src/libraries/DAQ/DCODAEventInfo.h
+        src/libraries/DAQ/Df125PulsePedestal.h
+        src/libraries/DAQ/Df250AsyncPedestal.h
+        src/libraries/DAQ/DTSGBORConfig.h
+        src/libraries/DAQ/Df125PulseRawData.h
+        src/libraries/DAQ/Df250StreamingRawData.h
+        src/libraries/DAQ/Df125PulseTime.h
+        src/libraries/DAQ/Df125CDCPulse.h
+        src/libraries/DAQ/DEPICSvalue.h
+        src/libraries/DAQ/Df250PulseTime.h
+        src/libraries/DAQ/DCAEN1290TDCBORConfig.h
+        src/libraries/DAQ/DL1Info.h
+        src/libraries/DAQ/DF1TDCBORConfig.h
+        src/libraries/DAQ/Df250EmulatorAlgorithm_v1.h
+        src/libraries/DAQ/Df250EmulatorAlgorithm.h
+        src/libraries/DAQ/Df125TriggerTime.h
+        src/libraries/DAQ/DEventTag.h
+        src/libraries/DAQ/Df250PulseIntegral.h
+        src/libraries/DAQ/DBeamCurrent.h
+        src/libraries/DAQ/DDIRCADCHit.h
+        src/libraries/DAQ/Df250PulseRawData.h
+        src/libraries/DAQ/DDIRCTriggerTime.h
+        src/libraries/DAQ/Df250PulseData.h
+        src/libraries/DAQ/DDAQConfig.h
+        src/libraries/DAQ/Df250PulsePedestal.h
+        src/libraries/DAQ/Df250WindowSum.h
+        src/libraries/DAQ/Df250EmulatorAlgorithm_v2.h   # JEventLoop
+        src/libraries/DAQ/DParsedEvent.h                # JEventLoop
+        src/libraries/DAQ/Df125WindowRawData.h
+        src/libraries/DAQ/DDAQAddress.h
+
+        src/libraries/DIRC/DDIRCLut.h     # JEventLoop
         src/libraries/DIRC/DDIRCLEDRef.h
         src/libraries/DIRC/DDIRCTruthPmtHit.h
         src/libraries/DIRC/DDIRCTDCDigiHit.h
@@ -74,32 +127,32 @@ set(HALLD_RECON_SOURCES
         src/libraries/FCAL/DFCALHit.h
         src/libraries/FCAL/DFCALDigiHit.h
         src/libraries/FCAL/DFCALGeometry.h
-#        src/libraries/FCAL/DFCALShower.h    # Uses oid via Cluster
-#        src/libraries/FCAL/DFCALTruthShower.h  # Uses oid
-#        src/libraries/FCAL/DFCALCluster.h     # Uses oid
+        src/libraries/FCAL/DFCALShower.h    # Uses oid via Cluster
+        src/libraries/FCAL/DFCALTruthShower.h  # Uses oid
+        src/libraries/FCAL/DFCALCluster.h     # Uses oid
 #        src/libraries/FCAL/DFCALCluster.cc    # Uses oid
 
         src/libraries/FDC/DFDCCathodeDigiHit.h
         src/libraries/FDC/DFDCWireDigiHit.h
-#        src/libraries/FDC/DFDCSegment.h
-#        src/libraries/FDC/DFDCGeometry.h    # Uses DGeometry (with circular ref)
+        src/libraries/FDC/DFDCSegment.h
+        src/libraries/FDC/DFDCGeometry.h    # Uses DGeometry (with circular ref)
         src/libraries/FDC/DFDCIntersection.h
         src/libraries/FDC/DFDCHit.h
         src/libraries/FDC/DFDCCathodeCluster.h
-#        src/libraries/FDC/DFDCPseudo.h   # Can't find cint.h
+        src/libraries/FDC/DFDCPseudo.h   # Can't find cint.h
 
         src/libraries/FMWPC/DFMWPCTruthHit.h
         src/libraries/FMWPC/DFMWPCHit.h
 
         src/libraries/PAIR_SPECTROMETER/DPSDigiHit.h
-#        src/libraries/PAIR_SPECTROMETER/DPSGeometry.h  # Uses JEventLoop
+        src/libraries/PAIR_SPECTROMETER/DPSGeometry.h  # Uses JEventLoop
         src/libraries/PAIR_SPECTROMETER/DPSCDigiHit.h
         src/libraries/PAIR_SPECTROMETER/DPSCTDCDigiHit.h
-#        src/libraries/PAIR_SPECTROMETER/DPSHit.h  # Uses DPSGeometry
+        src/libraries/PAIR_SPECTROMETER/DPSHit.h  # Uses DPSGeometry
         src/libraries/PAIR_SPECTROMETER/DPSTruthHit.h
         src/libraries/PAIR_SPECTROMETER/DPSCTruthHit.h
         src/libraries/PAIR_SPECTROMETER/DPSPair.h
-#        src/libraries/PAIR_SPECTROMETER/DLumi.h  # Uses JEventLoop, DTAGHGeometry, GTAGMGeometry
+        src/libraries/PAIR_SPECTROMETER/DLumi.h  # Uses JEventLoop, DTAGHGeometry, GTAGMGeometry
         src/libraries/PAIR_SPECTROMETER/DPSCHit.h
         src/libraries/PAIR_SPECTROMETER/DPSCPair.h
 
@@ -128,11 +181,11 @@ set(HALLD_RECON_SOURCES
         src/libraries/TAC/DTACDigiHit.h
 
         src/libraries/TAGGER/DTAGHHit.h
-        #src/libraries/TAGGER/DTAGHGeometry.h   # Uses JEventLoop to get calibrations
+        src/libraries/TAGGER/DTAGHGeometry.h   # Uses JEventLoop to get calibrations
         src/libraries/TAGGER/DTAGHDigiHit.h
         src/libraries/TAGGER/DTAGMHit.h
         src/libraries/TAGGER/DTAGMDigiHit.h
-        #src/libraries/TAGGER/DTAGMGeometry.h   # Uses JEventLoop to get calibrations
+        src/libraries/TAGGER/DTAGMGeometry.h   # Uses JEventLoop to get calibrations
         src/libraries/TAGGER/DTAGMTDCDigiHit.h
         src/libraries/TAGGER/DTAGHTDCDigiHit.h
 
@@ -141,7 +194,7 @@ set(HALLD_RECON_SOURCES
         src/libraries/TOF/DTOFTruth.h
         src/libraries/TOF/DTOFPaddleHit.h
         src/libraries/TOF/DTOFDigiHit.h
-        # src/libraries/TOF/DTOFGeometry.h   # Uses DGeometry
+        src/libraries/TOF/DTOFGeometry.h   # Uses DGeometry
         src/libraries/TOF/DTOFTDCDigiHit.h
         src/libraries/TOF/DTOFPoint.h
 
@@ -179,8 +232,8 @@ set(HALLD_RECON_SOURCES
 
         src/libraries/TTAB/DTranslationTable.h
 #        src/libraries/TTAB/DTranslationTable.cc          # Pulls in JEventSource_EVIO
-#        src/libraries/TTAB/DTranslationTable_factory.h
-        src/libraries/TTAB/DTTabUtilities.cc
+        src/libraries/TTAB/DTranslationTable_factory.h
+#        src/libraries/TTAB/DTTabUtilities.cc
         src/libraries/TTAB/DTTabUtilities.h
 #        src/libraries/TTAB/DTTabUtilities_factory.cc
 #        src/libraries/TTAB/DTTabUtilities_factory.h
