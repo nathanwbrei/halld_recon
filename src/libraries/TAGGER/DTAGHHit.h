@@ -25,7 +25,7 @@ class DTAGHHit : public JObject{
       bool has_fADC, has_TDC, is_double;
       int bg = -1; //if MC, 0 for the photon that generated the event, nonzero otherwise //ignore if not MC
 
-      void Summarize(JObjectSummary& summary) {
+      void Summarize(JObjectSummary& summary) const override {
       	 summary.add(counter_id, NAME_OF(counter_id), "%d");
 	     summary.add(E, "E(GeV)", "%f");
 	     summary.add(t, "t(ns)", "%f");

@@ -36,7 +36,7 @@ class DTAGMGeometry : public JObject {
    double getEhigh(unsigned int column) const;
    bool E_to_column(double E, unsigned int &column) const;
 
-   void Summarize(JObjectSummary& summary) {
+   void Summarize(JObjectSummary& summary) const override {
       summary.add(kFiberWidth, "kFiberWidth", "%f cm");
       summary.add(kFiberLength, "kFiberLength", "%f cm");
       summary.add(kRowCount, "kRowCount", "%d");

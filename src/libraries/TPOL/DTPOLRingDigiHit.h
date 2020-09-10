@@ -16,7 +16,7 @@ class DTPOLRingDigiHit: public JObject{
 		uint32_t nsamples_pedestal;    // number of samples used in pedestal
 
 
-		void Summarize(JObjectSummary& summary) {
+		void Summarize(JObjectSummary& summary) const override {
 			summary.add(ring, "ring", "%d");
 			summary.add(pulse_integral, "pulse_integral", "%d");
 			summary.add(pulse_time, "pulse_time", "%d");

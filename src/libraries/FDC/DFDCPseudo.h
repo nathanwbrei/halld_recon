@@ -70,7 +70,7 @@ enum FDCPseudoD {
 
 ///
 /// class DFDCPseudo: definition for a reconstructed point in the FDC
-/// 
+///
 class DFDCPseudo : public JObject {
    public :
       JOBJECT_PUBLIC(DFDCPseudo);			/// DANA identifier
@@ -99,7 +99,7 @@ class DFDCPseudo : public JObject {
       int itrack;
       DVector2 xy; ///< rough x,y coordinates in lab coordinate system
 
-      void Summarize(JObjectSummary& summary) { 
+      void Summarize(JObjectSummary& summary) const override {
          summary.add(u, "u", "%3.2f");
          summary.add(v, "v", "%3.2f");
          summary.add(t_u, "t_u", "%3.2f");

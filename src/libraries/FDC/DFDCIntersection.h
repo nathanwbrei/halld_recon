@@ -25,7 +25,7 @@ class DFDCIntersection:public JObject{
 		const DFDCWire *wire2;
 		DVector3 pos;
 
-		void Summarize(JObjectSummary& summary) {
+		void Summarize(JObjectSummary& summary) const override {
 			summary.add(wire1->layer, "layer1", "%d");
 			summary.add(wire1->wire, "wire1", "%d");
 			summary.add(wire1->angle*180.0/M_PI, "angle1(deg)", "%3.1f");

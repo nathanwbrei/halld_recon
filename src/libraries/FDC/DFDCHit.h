@@ -45,7 +45,7 @@ class DFDCHit : public JObject{
 	    int itrack;                         // track number causing the hit
 	    int ptype;                          // particle type causing the hit
 
-		void Summarize(JObjectSummary& summary) {
+		void Summarize(JObjectSummary& summary) const override {
 			summary.add(layer, "layer", "%d");
 			summary.add(module, "module", "%d");
 			summary.add(element, "w/s #", "%d");

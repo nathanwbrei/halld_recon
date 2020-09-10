@@ -28,7 +28,7 @@ class DFDCCathodeCluster : public JObject {
   float q_tot;		   ///< total energy/charge deposited in the cluster
 		
   /// Return a sensible string representation of this object
-  void Summarize(JObjectSummary& summary) {
+  void Summarize(JObjectSummary& summary) const override {
     summary.add(members.size(), "Nmembers", "%d");
     summary.add(plane, "plane", "%d");
     summary.add(gLayer, "gLayer", "%d"); 

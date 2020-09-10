@@ -17,7 +17,7 @@ public:
   int   plane;        // plane number
   int   strip;        // strip number
 
-  void Summarize(JObjectSummary& summary) {
+  void Summarize(JObjectSummary& summary) const override {
     summary.add(t, "t", "%1.3f");
     summary.add(pulse_height, "pulse_height", "%1.3f");
     summary.add(plane, "plane", "%d");

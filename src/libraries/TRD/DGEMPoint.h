@@ -34,7 +34,7 @@ class DGEMPoint : public JObject {
       double dE_amp; /// < energy deposition, from pulse height
       int itrack;
 
-      void Summarize(JObjectSummary& summary) { 
+      void Summarize(JObjectSummary& summary) const override {
          summary.add(x, "x", "%3.2f");
          summary.add(y, "y", "%3.2f");
          summary.add(z, "z", "%3.2f");

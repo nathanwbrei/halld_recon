@@ -74,7 +74,7 @@ class DFDCSegment : public JObject {
 		// List of pseudopoints belonging to this track segment
 		vector<const DFDCPseudo *>hits;	
 
-		void Summarize(JObjectSummary& summary) {
+		void Summarize(JObjectSummary& summary) const override {
 			summary.add(xc, "xc", "%3.2f");
 			summary.add(yc, "yc", "%3.2f");
 			summary.add(rc, "rc", "%3.2f");

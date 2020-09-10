@@ -30,7 +30,7 @@ class DTAGHGeometry : public JObject {
    double getEhigh(unsigned int counter) const;
    bool E_to_counter(double E, unsigned int &counter) const;
 
-   void Summarize(JObjectSummary& summary) {
+   void Summarize(JObjectSummary& summary) const override {
       summary.add(kCounterCount, "kCounterCount", "%d");
    }
    

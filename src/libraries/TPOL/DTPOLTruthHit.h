@@ -18,7 +18,7 @@ public:
     float t;
     int sector;
 
-    void Summarize(JObjectSummary& summary) {
+    void Summarize(JObjectSummary& summary) const override {
         summary.add(track, "track", "%d");
         summary.add(itrack, "itrack", "%d");
         summary.add(primary, "primary", "%d");

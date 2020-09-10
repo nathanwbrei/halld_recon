@@ -22,7 +22,7 @@ public:
     double dE;
     double t;
 
-    void Summarize(JObjectSummary& summary) {
+    void Summarize(JObjectSummary& summary) const override {
         summary.add(sector, "sector", "%d");
         summary.add(phi, "phi", "%3.3f");
         summary.add(ring, "ring", "%d");
