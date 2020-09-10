@@ -101,6 +101,7 @@
 #include <FDC/DFDCIntersection.h>
 #include <FDC/DFDCHit.h>
 #include <FDC/DFDCCathodeCluster.h>
+#include <FDC/DFDCPseudo.h>
 
 #include <FMWPC/DFMWPCTruthHit.h>
 #include <FMWPC/DFMWPCHit.h>
@@ -119,7 +120,7 @@
 // #include <PID/DNeutralShower.h>             // DKinematic
 // #include <PID/DNeutralParticleHypothesis.h> // DKinematic
 // #include <PID/DDetectorMatches.h>           // DKinematic
-// #include <PID/DParticleID.h>                // cint.h
+// #include <PID/DParticleID.h>                // JGeometry
 // #include <PID/DNeutralParticle.h>           // DKinematic
 // #include <PID/DMCReaction.h>                // DKinematic
 // #include <PID/DVertex.h>                    // DKinematic

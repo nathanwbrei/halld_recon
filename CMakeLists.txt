@@ -139,7 +139,7 @@ set(HALLD_RECON_SOURCES
         src/libraries/FDC/DFDCIntersection.h
         src/libraries/FDC/DFDCHit.h
         src/libraries/FDC/DFDCCathodeCluster.h
-        src/libraries/FDC/DFDCPseudo.h   # Can't find cint.h
+        src/libraries/FDC/DFDCPseudo.h
 
         src/libraries/FMWPC/DFMWPCTruthHit.h
         src/libraries/FMWPC/DFMWPCHit.h
@@ -152,7 +152,7 @@ set(HALLD_RECON_SOURCES
         src/libraries/PAIR_SPECTROMETER/DPSTruthHit.h
         src/libraries/PAIR_SPECTROMETER/DPSCTruthHit.h
         src/libraries/PAIR_SPECTROMETER/DPSPair.h
-        src/libraries/PAIR_SPECTROMETER/DLumi.h  # Uses JEventLoop, DTAGHGeometry, GTAGMGeometry
+        src/libraries/PAIR_SPECTROMETER/DLumi.h  # Uses JEventLoop, DTAGHGeometry, DTAGMGeometry
         src/libraries/PAIR_SPECTROMETER/DPSCHit.h
         src/libraries/PAIR_SPECTROMETER/DPSCPair.h
 
@@ -163,7 +163,7 @@ set(HALLD_RECON_SOURCES
         src/libraries/PID/DNeutralShower.h
         src/libraries/PID/DNeutralParticleHypothesis.h
         src/libraries/PID/DDetectorMatches.h
-        src/libraries/PID/DParticleID.h  # cint.h via HDGEOMETRY/DRootGeom
+        src/libraries/PID/DParticleID.h  # JGeometry
         src/libraries/PID/DNeutralParticle.h
         src/libraries/PID/DEventRFBunch.h
 
