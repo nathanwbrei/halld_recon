@@ -11,7 +11,7 @@
 #include <JANA/JObject.h>
 #include "DPSGeometry.h"
 
-class DPSDigiHit:public JObject{
+class DPSDigiHit: public JObject{
  public:
   JOBJECT_PUBLIC(DPSDigiHit);
   

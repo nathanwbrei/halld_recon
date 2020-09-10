@@ -10,6 +10,8 @@
 
 #include <JANA/JObject.h>
 
+using namespace std;
+
 // create a single number channel id which is useful in algorithms
 // if M L S are module layer sector the bit map looks like:
 // MMMM MMMM LLLL SSSS

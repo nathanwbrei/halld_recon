@@ -3,12 +3,10 @@
 #define _DLumi_
 
 #include <JANA/JObject.h>
-#include <JANA/JFactory.h>
 
 #include "TAGGER/DTAGHGeometry.h"
 #include "TAGGER/DTAGMGeometry.h"
 
-using namespace jana;
 using namespace std;
 
 #include <string>

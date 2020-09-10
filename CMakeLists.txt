@@ -29,6 +29,22 @@ set(HALLD_RECON_SOURCES
 
 #        src/libraries/TRACKING/DMCThrown.h
 
+        src/libraries/BCAL/DBCALCluster.h
+        src/libraries/BCAL/DBCALTDCHit.h
+        src/libraries/BCAL/DBCALTDCDigiHit.h
+        src/libraries/BCAL/DBCALGeometry.h
+        src/libraries/BCAL/DBCALIncidentParticle.h
+#        src/libraries/BCAL/DBCALSiPMSpectrum.h  # TVersionCheck
+        src/libraries/BCAL/DBCALUnifiedHit.h
+        src/libraries/BCAL/DBCALTruthCell.h
+        src/libraries/BCAL/DBCALClump.h
+        src/libraries/BCAL/DBCALPoint.h
+        src/libraries/BCAL/DBCALSiPMHit.h
+        src/libraries/BCAL/DBCALDigiHit.h
+#        src/libraries/BCAL/DBCALShower.h # TVersionCheck
+        src/libraries/BCAL/DBCALHit.h
+        src/libraries/BCAL/DBCALTruthShower.h
+
 #        src/libraries/CDC/DCDCTrackHit.h   # Uses TVersionCheck
         src/libraries/CDC/DCDCHit.h
         src/libraries/CDC/DCDCDigiHit.h
@@ -55,6 +71,8 @@ set(HALLD_RECON_SOURCES
         src/libraries/DIRC/DDIRCGeometry.h
         src/libraries/DIRC/DDIRCTruthBarHit.h
 
+        src/libraries/EVENTSTORE/DESSkimData.h
+
         src/libraries/FCAL/DFCALHit.h
         src/libraries/FCAL/DFCALDigiHit.h
 #        src/libraries/FCAL/DFCALGeometry.h  # Uses TVersionCheck
@@ -74,6 +92,18 @@ set(HALLD_RECON_SOURCES
 
         src/libraries/FMWPC/DFMWPCTruthHit.h
         src/libraries/FMWPC/DFMWPCHit.h
+
+        src/libraries/PAIR_SPECTROMETER/DPSDigiHit.h
+#        src/libraries/PAIR_SPECTROMETER/DPSGeometry.h  # Uses JEventLoop
+        src/libraries/PAIR_SPECTROMETER/DPSCDigiHit.h
+        src/libraries/PAIR_SPECTROMETER/DPSCTDCDigiHit.h
+#        src/libraries/PAIR_SPECTROMETER/DPSHit.h  # Uses DPSGeometry
+        src/libraries/PAIR_SPECTROMETER/DPSTruthHit.h
+        src/libraries/PAIR_SPECTROMETER/DPSCTruthHit.h
+        src/libraries/PAIR_SPECTROMETER/DPSPair.h
+#        src/libraries/PAIR_SPECTROMETER/DLumi.h  # Uses JEventLoop, DTAGHGeometry, GTAGMGeometry
+        src/libraries/PAIR_SPECTROMETER/DPSCHit.h
+        src/libraries/PAIR_SPECTROMETER/DPSCPair.h
 
         src/libraries/RF/DRFTDCDigiTime.h
         src/libraries/RF/DRFTime.h

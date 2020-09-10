@@ -12,11 +12,9 @@
 #include "BCAL/DBCALPoint.h"
 
 #include <JANA/JObject.h>
-#include <JANA/JFactory.h>
 
 #include <vector>
 
-using namespace jana;
 using namespace std;
 
 class DBCALCluster : public JObject {
