@@ -14,6 +14,7 @@
 #include <memory>
 
 #include "JANA/JObject.h"
+#include "DANA/DObjectID.h"
 
 #include "GlueX.h"
 #include "DLorentzVector.h"

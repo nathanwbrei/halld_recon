@@ -32,8 +32,8 @@ class DNeutralParticleHypothesis : public DKinematicData
 		//SHARE RESOURCES
 		void Share_FromInput(const DNeutralParticleHypothesis* locSourceData, bool locShareTimingFlag, bool locShareKinematicsFlag);
 
-		void Reset(void);
-		void Release(void);
+		void Reset(void) override;
+		void Release(void) override;
 
 		//GETTERS
 		const DNeutralShower* Get_NeutralShower(void) const{return dNeutralShower;}

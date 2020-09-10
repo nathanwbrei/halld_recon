@@ -26,6 +26,7 @@
 #include <CCAL/DCCALRefDigiHit.h>
 #include <CCAL/DCCALHit.h>
 #include <CCAL/DCCALGeometry.h>
+#include <CCAL/DCCALTruthShower.h>
 
 #include <DAQ/DF1TDCConfig.h>
 // #include <DAQ/Df250EmulatorAlgorithm_v3.h>  // JEventLoop
@@ -91,6 +92,9 @@
 #include <FCAL/DFCALHit.h>
 #include <FCAL/DFCALDigiHit.h>
 #include <FCAL/DFCALGeometry.h>
+#include <FCAL/DFCALShower.h>
+#include <FCAL/DFCALTruthShower.h>
+#include <FCAL/DFCALCluster.h>
 
 #include <FDC/DFDCCathodeDigiHit.h>
 #include <FDC/DFDCWireDigiHit.h>
@@ -110,15 +114,15 @@
 #include <PAIR_SPECTROMETER/DPSCHit.h>
 #include <PAIR_SPECTROMETER/DPSCPair.h>
 
-// #include <PID/DChargedTrack.h>  // oid
-// #include <PID/DKinematicData.h  # Problem with thread-local storage
-// #include <PID/DNeutralShower.h>   # oid
-// #include <PID/DNeutralParticleHypothesis.h> # oid
-// #include <PID/DDetectorMatches.h>  oid via DFCALCluster
-// #include <PID/DParticleID.h>   # transitive problem with cint.h
-// #include <PID/DNeutralParticle.h> oid via DNeutralShower
-// #include <PID/DMCReaction.h> # Problem with DKinematic TLS
-// #include <PID/DVertex.h>  # DKinematic TLS
+// #include <PID/DChargedTrack.h>              // DKinematic
+// #include <PID/DKinematicData.h              // Problem with thread-local storage
+// #include <PID/DNeutralShower.h>             // DKinematic
+// #include <PID/DNeutralParticleHypothesis.h> // DKinematic
+// #include <PID/DDetectorMatches.h>           // DKinematic
+// #include <PID/DParticleID.h>                // cint.h
+// #include <PID/DNeutralParticle.h>           // DKinematic
+// #include <PID/DMCReaction.h>                // DKinematic
+// #include <PID/DVertex.h>                    // DKinematic
 #include <PID/DEventRFBunch.h>
 
 #include <RF/DRFTDCDigiTime.h>

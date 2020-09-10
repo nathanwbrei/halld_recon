@@ -51,7 +51,7 @@ set(HALLD_RECON_SOURCES
         src/libraries/CCAL/DCCALDigiHit.h
         src/libraries/CCAL/DCCALRefDigiHit.h
         src/libraries/CCAL/DCCALGeometry.h
-#        src/libraries/CCAL/DCCALTruthShower.h    # Uses oid
+        src/libraries/CCAL/DCCALTruthShower.h
         src/libraries/CCAL/DCCALHit.h
 
         src/libraries/CERE/DCereHit.h
@@ -127,10 +127,10 @@ set(HALLD_RECON_SOURCES
         src/libraries/FCAL/DFCALHit.h
         src/libraries/FCAL/DFCALDigiHit.h
         src/libraries/FCAL/DFCALGeometry.h
-        src/libraries/FCAL/DFCALShower.h    # Uses oid via Cluster
-        src/libraries/FCAL/DFCALTruthShower.h  # Uses oid
-        src/libraries/FCAL/DFCALCluster.h     # Uses oid
-#        src/libraries/FCAL/DFCALCluster.cc    # Uses oid
+        src/libraries/FCAL/DFCALShower.h
+        src/libraries/FCAL/DFCALTruthShower.h
+        src/libraries/FCAL/DFCALCluster.h
+        src/libraries/FCAL/DFCALCluster.cc
 
         src/libraries/FDC/DFDCCathodeDigiHit.h
         src/libraries/FDC/DFDCWireDigiHit.h
@@ -156,12 +156,12 @@ set(HALLD_RECON_SOURCES
         src/libraries/PAIR_SPECTROMETER/DPSCHit.h
         src/libraries/PAIR_SPECTROMETER/DPSCPair.h
 
-        src/libraries/PID/DChargedTrack.h  # oid
+        src/libraries/PID/DChargedTrack.h  # DKinematicData
         src/libraries/PID/DVertex.h
         src/libraries/PID/DKinematicData.h  # Problem with thread-local storage
         src/libraries/PID/DMCReaction.h
-        src/libraries/PID/DNeutralShower.h   # oid
-        src/libraries/PID/DNeutralParticleHypothesis.h # oid
+        src/libraries/PID/DNeutralShower.h
+        src/libraries/PID/DNeutralParticleHypothesis.h
         src/libraries/PID/DDetectorMatches.h
         src/libraries/PID/DParticleID.h  # cint.h via HDGEOMETRY/DRootGeom
         src/libraries/PID/DNeutralParticle.h
@@ -203,7 +203,7 @@ set(HALLD_RECON_SOURCES
         src/libraries/TPOL/DTPOLSectorDigiHit.h
         src/libraries/TPOL/DTPOLRingDigiHit.h
 
-        src/libraries/TRACKING/DTrackWireBased.h    # oid, DKinematicData
+        src/libraries/TRACKING/DTrackWireBased.h    # DKinematicData
         src/libraries/TRACKING/DTrackFinder.h
         src/libraries/TRACKING/DTrackCandidate.h    # DKinematicData
         src/libraries/TRACKING/DMCTrackHit.h

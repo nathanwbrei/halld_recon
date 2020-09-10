@@ -13,6 +13,7 @@
 #include "TMath.h"
 
 #include <JANA/JObject.h>
+#include <DANA/DObjectID.h>
 
 #include <particleType.h>
 #include <PID/DChargedTrackHypothesis.h>

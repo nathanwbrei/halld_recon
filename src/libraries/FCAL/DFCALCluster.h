@@ -13,6 +13,7 @@
 using namespace std;
 
 #include <JANA/JObject.h>
+#include <DANA/DObjectID.h>
 
 #define FCAL_USER_HITS_MAX 2800
 #define MOLIERE_RADIUS 3.696
@@ -218,7 +219,7 @@ inline int DFCALCluster::getHits() const
    return fNhits;
 }
 
-inline JObject::oid_t DFCALCluster::getHitID(const userhits_t* const hitList, const int ihit ) const
+inline oid_t DFCALCluster::getHitID(const userhits_t* const hitList, const int ihit ) const
 {
    if ( ihit >= 0  && ihit < fNhits && hitList && ihit < hitList->nhits ) {
      return hitList->hit[ fHit[ ihit ] ].id;

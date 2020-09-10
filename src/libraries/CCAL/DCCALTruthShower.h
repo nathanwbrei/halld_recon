@@ -9,6 +9,7 @@
 #define _DCCALTruthShower_
 
 #include <JANA/JObject.h>
+#include <DANA/DObjectID.h>
 
 class DCCALTruthShower:public JObject{
 	public:
@@ -22,7 +23,6 @@ class DCCALTruthShower:public JObject{
 				  float E, float t,
 				  bool primary, int track, int type,
 				  int itrack=0) :
-		  JObject( id ),
 		  m_x( x ),
 		  m_y( y ),
 		  m_z( z ),

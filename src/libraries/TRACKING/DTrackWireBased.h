@@ -9,7 +9,7 @@
 #define _DTrackWireBased_
 
 #include <JANA/JObject.h>
-#include <JANA/JFactoryT.h>
+#include <DANA/DObjectID.h>
 #include <TRACKING/DTrackingData.h>
 #include <TRACKING/DTrackFitter.h>
 
