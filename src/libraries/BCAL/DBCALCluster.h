@@ -72,7 +72,7 @@ public:
   void removePoint( const DBCALPoint* point ); 
  
   // this prints out info
-  void toStrings( vector< pair < string, string > > &items ) const;
+  void Summarize(JObjectSummary& summary) const override;
 
 private:
   

@@ -28,15 +28,18 @@ file(GLOB DAQ_HEADERS ${PROJECT_SOURCE_DIR}/src/libraries/DAQ/*.h)
 set(HALLD_RECON_SOURCES
 
         src/libraries/BCAL/DBCALCluster.h
+#        src/libraries/BCAL/DBCALCluster.cc             // DBCALGeometry
         src/libraries/BCAL/DBCALTDCHit.h
         src/libraries/BCAL/DBCALTDCDigiHit.h
         src/libraries/BCAL/DBCALGeometry.h
+#        src/libraries/BCAL/DBCALGeometry.cc            // JGeometry
         src/libraries/BCAL/DBCALIncidentParticle.h
         src/libraries/BCAL/DBCALSiPMSpectrum.h
         src/libraries/BCAL/DBCALUnifiedHit.h
         src/libraries/BCAL/DBCALTruthCell.h
         src/libraries/BCAL/DBCALClump.h
         src/libraries/BCAL/DBCALPoint.h
+#        src/libraries/BCAL/DBCALPoint.cc               // DBCALGeometry
         src/libraries/BCAL/DBCALSiPMHit.h
         src/libraries/BCAL/DBCALDigiHit.h
         src/libraries/BCAL/DBCALShower.h
@@ -157,6 +160,8 @@ set(HALLD_RECON_SOURCES
         src/libraries/PAIR_SPECTROMETER/DPSCPair.h
 
         src/libraries/PID/DChargedTrack.h
+        src/libraries/PID/DChargedTrackHypothesis.h
+        src/libraries/PID/DBeamPhoton.h
         src/libraries/PID/DVertex.h
         src/libraries/PID/DKinematicData.h
         src/libraries/PID/DKinematicPools.cc  # Commented out NeutralParticleHypothesis, etc

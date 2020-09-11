@@ -2,10 +2,10 @@
 #include <JANA/JApplication.h>
 #include <JANA/JCsvWriter.h>
 
-#include <BCAL/DBCALCluster.h>
+// #include <BCAL/DBCALCluster.h>    // DBCALGeometry
 #include <BCAL/DBCALTDCHit.h>
 #include <BCAL/DBCALTDCDigiHit.h>
-#include <BCAL/DBCALGeometry.h>
+#include <BCAL/DBCALGeometry.h>      // JGeometry
 #include <BCAL/DBCALIncidentParticle.h>
 #include <BCAL/DBCALSiPMSpectrum.h>
 #include <BCAL/DBCALUnifiedHit.h>
@@ -119,12 +119,14 @@
 #include <PID/DKinematicData.h>
 // #include <PID/DNeutralShower.h>             // DNeutralParticleHypothesis
 // #include <PID/DNeutralParticleHypothesis.h> // DTrackFitter
+// #include <PID/DChargedParticleHypothesis.h> // DTrackFitter
 #include <PID/DDetectorMatches.h>
 // #include <PID/DParticleID.h>                // JGeometry
 // #include <PID/DNeutralParticle.h>           // DNeutralParticleHypothesis
 #include <PID/DMCReaction.h>
 #include <PID/DVertex.h>
 #include <PID/DEventRFBunch.h>
+#include <PID/DBeamPhoton.h>
 
 #include <RF/DRFTDCDigiTime.h>
 #include <RF/DRFTime.h>

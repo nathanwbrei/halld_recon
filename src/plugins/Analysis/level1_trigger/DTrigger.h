@@ -9,9 +9,8 @@
 #define _DTrigger_
 
 #include <JANA/JObject.h>
-#include <JANA/JFactory.h>
 
-class DTrigger:public jana::JObject{
+class DTrigger: public JObject {
 	public:
 		JOBJECT_PUBLIC(DTrigger);
 		
@@ -25,12 +24,12 @@ class DTrigger:public jana::JObject{
 		
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format
-		void toStrings(vector<pair<string,string> > &items)const{
-			AddString(items, "L1a_fired", "%d", L1a_fired ? 1:0);
-			AddString(items, "L1b_fired", "%d", L1b_fired ? 1:0);
-			AddString(items, "Ebcal", "%5.3f", Ebcal);
-			AddString(items, "Efcal", "%5.3f", Efcal);
-			AddString(items, "Nschits", "%2d", Nschits);
+		void Summarize(JObjectSummary& summary) const override {
+			summary.add(L1a_fired ? 1:0, "L1a_fired", "%d");
+			summary.add(L1b_fired ? 1:0, "L1b_fired", "%d");
+			summary.add(Ebcal, "Ebcal", "%5.3f");
+			summary.add(Efcal, "Efcal", "%5.3f");
+			summary.add(Nschits, "Nschits", "%2d");
 		}
 		
 };
