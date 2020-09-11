@@ -156,9 +156,10 @@ set(HALLD_RECON_SOURCES
         src/libraries/PAIR_SPECTROMETER/DPSCHit.h
         src/libraries/PAIR_SPECTROMETER/DPSCPair.h
 
-        src/libraries/PID/DChargedTrack.h  # DKinematicData
+        src/libraries/PID/DChargedTrack.h
         src/libraries/PID/DVertex.h
-        src/libraries/PID/DKinematicData.h  # Problem with thread-local storage
+        src/libraries/PID/DKinematicData.h
+        src/libraries/PID/DKinematicPools.cc  # Commented out NeutralParticleHypothesis, etc
         src/libraries/PID/DMCReaction.h
         src/libraries/PID/DNeutralShower.h
         src/libraries/PID/DNeutralParticleHypothesis.h
@@ -203,13 +204,13 @@ set(HALLD_RECON_SOURCES
         src/libraries/TPOL/DTPOLSectorDigiHit.h
         src/libraries/TPOL/DTPOLRingDigiHit.h
 
-        src/libraries/TRACKING/DTrackWireBased.h    # DKinematicData
+        src/libraries/TRACKING/DTrackWireBased.h    # DTrackFitter
         src/libraries/TRACKING/DTrackFinder.h
-        src/libraries/TRACKING/DTrackCandidate.h    # DKinematicData
+        src/libraries/TRACKING/DTrackCandidate.h    # DTrackFitter
         src/libraries/TRACKING/DMCTrackHit.h
         src/libraries/TRACKING/DHoughFind.h
-        src/libraries/TRACKING/DMCThrown.h          # DKinematicData
-        src/libraries/TRACKING/DTrackTimeBased.h    # DKinematicData
+        src/libraries/TRACKING/DMCThrown.h
+        src/libraries/TRACKING/DTrackTimeBased.h    # DTrackFitter
         src/libraries/TRACKING/DTrackHit.h
         src/libraries/TRACKING/DMCTrajectoryPoint.h
         src/libraries/TRACKING/DTrackFitter.h        # Uses JEventLoop, SECRET FACTORY

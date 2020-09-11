@@ -115,15 +115,15 @@
 #include <PAIR_SPECTROMETER/DPSCHit.h>
 #include <PAIR_SPECTROMETER/DPSCPair.h>
 
-// #include <PID/DChargedTrack.h>              // DKinematic
-// #include <PID/DKinematicData.h              // Problem with thread-local storage
-// #include <PID/DNeutralShower.h>             // DKinematic
-// #include <PID/DNeutralParticleHypothesis.h> // DKinematic
-// #include <PID/DDetectorMatches.h>           // DKinematic
+// #include <PID/DChargedTrack.h>              // DTrackFitter
+#include <PID/DKinematicData.h>
+// #include <PID/DNeutralShower.h>             // DNeutralParticleHypothesis
+// #include <PID/DNeutralParticleHypothesis.h> // DTrackFitter
+#include <PID/DDetectorMatches.h>
 // #include <PID/DParticleID.h>                // JGeometry
-// #include <PID/DNeutralParticle.h>           // DKinematic
-// #include <PID/DMCReaction.h>                // DKinematic
-// #include <PID/DVertex.h>                    // DKinematic
+// #include <PID/DNeutralParticle.h>           // DNeutralParticleHypothesis
+#include <PID/DMCReaction.h>
+#include <PID/DVertex.h>
 #include <PID/DEventRFBunch.h>
 
 #include <RF/DRFTDCDigiTime.h>
@@ -158,7 +158,8 @@
 #include <TRACKING/DHoughFind.h>
 #include <TRACKING/DTrackHit.h>
 #include <TRACKING/DMCTrajectoryPoint.h>
-// #include <TRACKING/DMCThrown.h>
+#include <TRACKING/DMCThrown.h>
+// #include <TRACKING/DTrackCandidate.h>
 // #include <TRACKING/DTrackTimeBased.h>
 // #include <TRACKING/DTrackFitter.h>
 // #include <TRACKING/DTrackHitSelector.h>
