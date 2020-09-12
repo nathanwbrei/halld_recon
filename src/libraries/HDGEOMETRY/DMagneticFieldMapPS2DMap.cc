@@ -13,18 +13,19 @@ using namespace evio;
 
 #include "DMagneticFieldMapPS2DMap.h"
 
-//class DApplication;
 #include <HDGEOMETRY/DGeometry.h>
 #include <DANA/DApplication.h>
+#include <JANA/Calibrations/JCalibrationManager.h>
+#include <JANA/Compatibility/JResourceManager.h>
 
 //---------------------------------
 // DMagneticFieldMapPS2DMap    (Constructor)
 //---------------------------------
-DMagneticFieldMapPS2DMap::DMagneticFieldMapPS2DMap(JApplication *japp, int32_t runnumber, string namepath)
+DMagneticFieldMapPS2DMap::DMagneticFieldMapPS2DMap(JApplication *app, int32_t runnumber, string namepath)
 {
-	jcalib = japp->GetJCalibration(runnumber);
-	jresman = japp->GetJResourceManager(runnumber);
-	DApplication *dapp = dynamic_cast<DApplication *>(japp);
+	jcalib = app->GetService<JCalibrationManager>()->GetJCalibration(runnumber);
+	jresman = app->GetService<JResourceManagerManager>(runnumber);
+	auto dapp = app->GetService<DApplication>();
 	geom = dapp->GetDGeometry(runnumber);
 	
 	JParameterManager *jparms = japp->GetJParameterManager();
@@ -87,7 +88,7 @@ int DMagneticFieldMapPS2DMap::ReadMap(string namepath, int32_t runnumber, string
     return 0;
   }
   
-  jout<<endl;
+  jout<<jendl;
   jout<<"Reading Pair Spectrometer Magnetic field map from "<<namepath<<" ..."<<endl;
   vector< vector<float> > Bmap;
 

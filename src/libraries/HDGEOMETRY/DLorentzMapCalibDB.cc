@@ -1,5 +1,6 @@
 #include "DLorentzMapCalibDB.h"
 #include "DLorentzDeflections.h"
+#include <JANA/Calibrations/JCalibrationManager.h>
 #include <map>
 #include <vector>
 using namespace std;
@@ -10,7 +11,7 @@ using namespace std;
 //---------------------------------
 DLorentzMapCalibDB::DLorentzMapCalibDB(JApplication *japp, unsigned int run_number)
 {
-  jcalib = japp->GetJCalibration(run_number);
+  jcalib = japp->GetService<JCalibrationManager>()->GetJCalibration(run_number);
 
   int Npoints = GetLorentzDeflections(); 
   if(Npoints==0){
@@ -64,11 +65,11 @@ unsigned int DLorentzMapCalibDB::GetLorentzDeflections(void){
   }
   
   // Notify user
-  jout<<"Read "<<tvals.size()<<" values from FDC/lorentz_deflections in calibDB"<<endl;
+  jout<<"Read "<<tvals.size()<<" values from FDC/lorentz_deflections in calibDB"<<jendl;
   jout<<"   lorentz_deflections columns (alphabetical): ";
   map<string,float>::iterator iter;
   for(iter=tvals[0].begin(); iter!=tvals[0].end(); iter++)jout<<iter->first<<" ";
-  jout<<endl;
+  jout<<jendl;
 
   // Copy values into tables. We preserve the order since that is how it was
   // originally done in hitFDC.c

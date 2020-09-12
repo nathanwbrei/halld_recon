@@ -70,7 +70,7 @@ DBCALGeometry::Initialize(int runnumber) {
 	}
   }
   else{
-  	jerr<<"Did not retrieve 5 values for BCAL fADC radii!!!" << endl;
+  	jerr<<"Did not retrieve 5 values for BCAL fADC radii!!!" << jendl;
   	exit(-1);
   }
 

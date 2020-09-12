@@ -5,7 +5,6 @@
 #ifndef _DMagneticFieldMapPS2DMap_
 #define _DMagneticFieldMapPS2DMap_
 
-#include <JANA/jerror.h>
 
 #include <HDGEOMETRY/DMagneticFieldMapPS.h>
 
@@ -15,8 +14,8 @@ using std::vector;
 using std::string;
 
 #include <JANA/JApplication.h>
-#include <JANA/JCalibration.h>
-using namespace jana;
+#include <JANA/Calibrations/JCalibration.h>
+#include <JANA/Compatibility/JResourceManager.h>
 
 class DGeometry;
 

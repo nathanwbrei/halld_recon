@@ -106,6 +106,13 @@
 #include <FMWPC/DFMWPCTruthHit.h>
 #include <FMWPC/DFMWPCHit.h>
 
+#include <HDGEOMETRY/DMaterial.h>
+#include <HDGEOMETRY/DMagneticFieldMap.h>
+#include <HDGEOMETRY/DMagneticFieldMapConst.h>
+#include <HDGEOMETRY/DMagneticFieldMapPSConst.h>
+#include <HDGEOMETRY/DMagneticFieldMapNoField.h>
+#include <HDGEOMETRY/DMaterialMap.h>
+
 #include <PAIR_SPECTROMETER/DPSDigiHit.h>
 #include <PAIR_SPECTROMETER/DPSCDigiHit.h>
 #include <PAIR_SPECTROMETER/DPSCTDCDigiHit.h>

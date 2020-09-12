@@ -3,7 +3,8 @@
 #ifndef _DMaterialMap_
 #define _DMaterialMap_
 
-#include <JANA/jerror.h>
+#include <JANA/Compatibility/jerror.h>
+#include <JANA/Calibrations/JCalibration.h>
 
 #include <DVector3.h>
 #include <DVector2.h>

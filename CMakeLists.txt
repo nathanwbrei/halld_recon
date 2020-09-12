@@ -28,18 +28,18 @@ file(GLOB DAQ_HEADERS ${PROJECT_SOURCE_DIR}/src/libraries/DAQ/*.h)
 set(HALLD_RECON_SOURCES
 
         src/libraries/BCAL/DBCALCluster.h
-#        src/libraries/BCAL/DBCALCluster.cc             // DBCALGeometry
+#        src/libraries/BCAL/DBCALCluster.cc             # DBCALGeometry
         src/libraries/BCAL/DBCALTDCHit.h
         src/libraries/BCAL/DBCALTDCDigiHit.h
         src/libraries/BCAL/DBCALGeometry.h
-#        src/libraries/BCAL/DBCALGeometry.cc            // JGeometry
+#        src/libraries/BCAL/DBCALGeometry.cc            # JGeometry
         src/libraries/BCAL/DBCALIncidentParticle.h
         src/libraries/BCAL/DBCALSiPMSpectrum.h
         src/libraries/BCAL/DBCALUnifiedHit.h
         src/libraries/BCAL/DBCALTruthCell.h
         src/libraries/BCAL/DBCALClump.h
         src/libraries/BCAL/DBCALPoint.h
-#        src/libraries/BCAL/DBCALPoint.cc               // DBCALGeometry
+#        src/libraries/BCAL/DBCALPoint.cc               # DBCALGeometry
         src/libraries/BCAL/DBCALSiPMHit.h
         src/libraries/BCAL/DBCALDigiHit.h
         src/libraries/BCAL/DBCALShower.h
@@ -54,6 +54,7 @@ set(HALLD_RECON_SOURCES
         src/libraries/CCAL/DCCALDigiHit.h
         src/libraries/CCAL/DCCALRefDigiHit.h
         src/libraries/CCAL/DCCALGeometry.h
+        src/libraries/CCAL/DCCALGeometry.cc
         src/libraries/CCAL/DCCALTruthShower.h
         src/libraries/CCAL/DCCALHit.h
 
@@ -146,6 +147,39 @@ set(HALLD_RECON_SOURCES
 
         src/libraries/FMWPC/DFMWPCTruthHit.h
         src/libraries/FMWPC/DFMWPCHit.h
+
+
+#        src/libraries/HDGEOMETRY/DGeometry.cc
+#        src/libraries/HDGEOMETRY/DGeometry.h
+        src/libraries/HDGEOMETRY/DLorentzDeflections.cc
+        src/libraries/HDGEOMETRY/DLorentzDeflections.h
+        src/libraries/HDGEOMETRY/DLorentzMapCalibDB.cc
+        src/libraries/HDGEOMETRY/DLorentzMapCalibDB.h
+        src/libraries/HDGEOMETRY/DMagneticFieldMap.h
+        src/libraries/HDGEOMETRY/DMagneticFieldMapCalibDB.cc
+        src/libraries/HDGEOMETRY/DMagneticFieldMapCalibDB.h
+        src/libraries/HDGEOMETRY/DMagneticFieldMapConst.cc
+        src/libraries/HDGEOMETRY/DMagneticFieldMapConst.h
+#        src/libraries/HDGEOMETRY/DMagneticFieldMapFineMesh.cc     # JResourceManager
+        src/libraries/HDGEOMETRY/DMagneticFieldMapFineMesh.h
+        src/libraries/HDGEOMETRY/DMagneticFieldMapNoField.cc
+        src/libraries/HDGEOMETRY/DMagneticFieldMapNoField.h
+        src/libraries/HDGEOMETRY/DMagneticFieldMapParameterized.cc
+        src/libraries/HDGEOMETRY/DMagneticFieldMapParameterized.h
+        src/libraries/HDGEOMETRY/DMagneticFieldMapPS.h
+#        src/libraries/HDGEOMETRY/DMagneticFieldMapPS2DMap.cc
+#        src/libraries/HDGEOMETRY/DMagneticFieldMapPS2DMap.h       # JResourceManager, DApplication as JService
+        src/libraries/HDGEOMETRY/DMagneticFieldMapPSConst.cc
+        src/libraries/HDGEOMETRY/DMagneticFieldMapPSConst.h
+        src/libraries/HDGEOMETRY/DMagneticFieldMapSpoiled.cc
+        src/libraries/HDGEOMETRY/DMagneticFieldMapSpoiled.h
+        src/libraries/HDGEOMETRY/DMaterial.cc
+        src/libraries/HDGEOMETRY/DMaterial.h
+#        src/libraries/HDGEOMETRY/DMaterialMap.cc                 # DDIRCLutReader via DApplication
+        src/libraries/HDGEOMETRY/DMaterialMap.h
+#        src/libraries/HDGEOMETRY/DRootGeom.cc
+        src/libraries/HDGEOMETRY/DRootGeom.h
+
 
         src/libraries/PAIR_SPECTROMETER/DPSDigiHit.h
         src/libraries/PAIR_SPECTROMETER/DPSGeometry.h  # Uses JEventLoop

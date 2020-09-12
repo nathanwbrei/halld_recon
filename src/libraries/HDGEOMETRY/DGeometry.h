@@ -12,9 +12,8 @@
 #include <map>
 
 #include <JANA/Compatibility/jerror.h>
-#include <JANA/JGeometry.h>
+#include <JANA/Compatibility/JGeometry.h>
 
-#include <DANA/DApplication.h>
 #include "FDC/DFDCGeometry.h"
 #include "FDC/DFDCWire.h"
 #include "FDC/DFDCCathode.h"
