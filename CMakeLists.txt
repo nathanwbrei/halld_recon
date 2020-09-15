@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-find_package(ROOT REQUIRED)
+find_package(ROOT REQUIRED COMPONENTS Geom)
 find_package(JANA REQUIRED)
 
 # Only add ET if ETROOT is set
@@ -21,6 +21,8 @@ if (EVIO_FOUND)
     find_package(expat REQUIRED)
 endif()
 
+set(HDDS_INCLUDE_DIR /Users/nbrei/src/hdds/build/src)
+set(HDDS_LIBRARY /Users/nbrei/src/hdds/build/lib/libhdds.so)
 
 file(GLOB DAQ_SOURCES ${PROJECT_SOURCE_DIR}/src/libraries/DAQ/*.cc)
 file(GLOB DAQ_HEADERS ${PROJECT_SOURCE_DIR}/src/libraries/DAQ/*.h)
@@ -198,7 +200,7 @@ set(HALLD_RECON_SOURCES
         src/libraries/HDGEOMETRY/DMaterial.h
         src/libraries/HDGEOMETRY/DMaterialMap.cc
         src/libraries/HDGEOMETRY/DMaterialMap.h
-#        src/libraries/HDGEOMETRY/DRootGeom.cc                     # hddsroot.c
+        src/libraries/HDGEOMETRY/DRootGeom.cc
         src/libraries/HDGEOMETRY/DRootGeom.h
 
 
@@ -313,9 +315,9 @@ add_executable(halld_recon
 
 
 target_include_directories(halld_recon PRIVATE src/libraries src/libraries/include src/include
-        ${CCDB_INCLUDE_DIRS} ${ROOT_INCLUDE_DIRS} ${JANA_INCLUDE_DIR} ${EVIO_INCLUDE_DIR})
+        ${CCDB_INCLUDE_DIRS} ${ROOT_INCLUDE_DIRS} ${JANA_INCLUDE_DIR} ${EVIO_INCLUDE_DIR} ${HDDS_INCLUDE_DIR})
 
 message(WARN ${EVIO_LIBS})
-target_link_libraries(halld_recon ${JANA_LIBRARY} ${EVIO_LIBS} ${EXPAT_LIBRARY} ${ROOT_LIBRARIES})
+target_link_libraries(halld_recon ${JANA_LIBRARY} ${EVIO_LIBS} ${EXPAT_LIBRARY} ${ROOT_LIBRARIES} ${HDDS_LIBRARY})
 
 
