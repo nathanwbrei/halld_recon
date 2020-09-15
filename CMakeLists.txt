@@ -184,15 +184,16 @@ set(HALLD_RECON_SOURCES
         src/libraries/HDGEOMETRY/DMaterial.h
 #        src/libraries/HDGEOMETRY/DMaterialMap.cc                 # DDIRCLutReader via DApplication
         src/libraries/HDGEOMETRY/DMaterialMap.h
-#        src/libraries/HDGEOMETRY/DRootGeom.cc
+#        src/libraries/HDGEOMETRY/DRootGeom.cc                     # hddsroot.c
         src/libraries/HDGEOMETRY/DRootGeom.h
 
 
         src/libraries/PAIR_SPECTROMETER/DPSDigiHit.h
-        src/libraries/PAIR_SPECTROMETER/DPSGeometry.h  # Uses JEventLoop
+        src/libraries/PAIR_SPECTROMETER/DPSGeometry.h
+        src/libraries/PAIR_SPECTROMETER/DPSGeometry.cc
         src/libraries/PAIR_SPECTROMETER/DPSCDigiHit.h
         src/libraries/PAIR_SPECTROMETER/DPSCTDCDigiHit.h
-        src/libraries/PAIR_SPECTROMETER/DPSHit.h  # Uses DPSGeometry
+        src/libraries/PAIR_SPECTROMETER/DPSHit.h
         src/libraries/PAIR_SPECTROMETER/DPSTruthHit.h
         src/libraries/PAIR_SPECTROMETER/DPSCTruthHit.h
         src/libraries/PAIR_SPECTROMETER/DPSPair.h
@@ -205,7 +206,7 @@ set(HALLD_RECON_SOURCES
         src/libraries/PID/DBeamPhoton.h
         src/libraries/PID/DVertex.h
         src/libraries/PID/DKinematicData.h
-        src/libraries/PID/DKinematicPools.cc  # Commented out NeutralParticleHypothesis, etc
+        src/libraries/PID/DKinematicPools.cc  # Commented out ChargedTrackHypothesis, needs DTrackFitter
         src/libraries/PID/DMCReaction.h
         src/libraries/PID/DNeutralShower.h
         src/libraries/PID/DNeutralParticleHypothesis.h

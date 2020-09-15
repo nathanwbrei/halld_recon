@@ -13,7 +13,7 @@ class DPSGeometry : public JObject {
   
   JOBJECT_PUBLIC(DPSGeometry);
   
-  DPSGeometry(JApplication* loop); // TODO: Rethink this! Maybe pass in calibration manager instead?
+  DPSGeometry(JApplication* app, size_t run_number, size_t event_number);  // TODO: Do this better
   ~DPSGeometry();
 
   enum Arm { kNorth, kSouth };

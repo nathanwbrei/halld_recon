@@ -2,22 +2,24 @@
 #include <iostream>
 #include <map>
 
-#include <JANA/JApplication.h>
-#include <JANA/JEvent.h>
 #include "DPSGeometry.h"
+
+#include <JANA/JApplication.h>
+#include <JANA/Calibrations/JCalibrationManager.h>
+
 
 //---------------------------------
 // DPSGeometry    (Constructor)
 //---------------------------------
-DPSGeometry::DPSGeometry(JEventLoop *loop)
+DPSGeometry::DPSGeometry(JApplication *app, size_t run_number, size_t event_number)
 {
     // read PS hodoscope counter energy bounds from calibdb
     std::vector<std::map<string,double> > result;
-    loop->GetCalib("/PHOTON_BEAM/pair_spectrometer/fine/energy_range", result);
+    app->GetService<JCalibrationManager>()->GetCalib(run_number, event_number, "/PHOTON_BEAM/pair_spectrometer/fine/energy_range", result);
     if ((int)result.size() != NUM_FINE_COLUMNS) {
         jerr << "Error in DPSGeometry constructor: "
         << "failed to read fine PS energy_range table "
-        << "from calibdb at /PHOTON_BEAM/pair_spectrometer/fine/energy_range" << std::endl;
+        << "from calibdb at /PHOTON_BEAM/pair_spectrometer/fine/energy_range" << jendl;
         for (int arm=0; arm < NUM_ARMS; ++arm) {
             for (int i=0; i < NUM_FINE_COLUMNS; ++i) {
                 m_energy_low[arm][i] = 0;

@@ -120,6 +120,7 @@
 #include <PAIR_SPECTROMETER/DPSCTruthHit.h>
 #include <PAIR_SPECTROMETER/DPSPair.h>
 #include <PAIR_SPECTROMETER/DPSCHit.h>
+#include <PAIR_SPECTROMETER/DPSHit.h>
 #include <PAIR_SPECTROMETER/DPSCPair.h>
 
 // #include <PID/DChargedTrack.h>              // DTrackFitter
