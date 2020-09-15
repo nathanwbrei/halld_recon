@@ -111,7 +111,7 @@ jerror_t DCCALShower_factory::brun(JEventLoop *locEventLoop, int32_t runnumber)
 	} else if( profile_file_name.find("map_name") != profile_file_name.end() 
 		&& profile_file_name["map_name"] != "None" ) 
 	{
-	  JResourceManager *jresman = dapp->GetJResourceManager(runnumber);
+	  JLargeCalibration *jresman = dapp->GetService<JCalibrationManager>()->GetLargeCalibration(runnumber);
 	  ccal_profile_file = jresman->GetResource(profile_file_name["map_name"]);
 	}
 	

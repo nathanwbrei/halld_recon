@@ -15,7 +15,7 @@ using std::string;
 
 #include <JANA/JApplication.h>
 #include <JANA/Calibrations/JCalibration.h>
-#include <JANA/Compatibility/JResourceManager.h>
+#include <JANA/Calibrations/JLargeCalibration.h>
 
 class DGeometry;
 
@@ -63,7 +63,7 @@ class DMagneticFieldMapPS2DMap:public DMagneticFieldMapPS {
  protected:
   
   JCalibration *jcalib;
-  JResourceManager *jresman;
+  JLargeCalibration *jresman;
   DGeometry* geom;
 
   vector< vector< vector<DBfieldPoint_t> > > Btable;

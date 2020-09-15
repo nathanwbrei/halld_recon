@@ -16,20 +16,22 @@ using namespace evio;
 #include <HDGEOMETRY/DGeometry.h>
 #include <DANA/DApplication.h>
 #include <JANA/Calibrations/JCalibrationManager.h>
-#include <JANA/Compatibility/JResourceManager.h>
+#include <JANA/Calibrations/JLargeCalibration.h>
 
 //---------------------------------
 // DMagneticFieldMapPS2DMap    (Constructor)
 //---------------------------------
 DMagneticFieldMapPS2DMap::DMagneticFieldMapPS2DMap(JApplication *app, int32_t runnumber, string namepath)
 {
-	jcalib = app->GetService<JCalibrationManager>()->GetJCalibration(runnumber);
-	jresman = app->GetService<JResourceManagerManager>(runnumber);
+
+	auto calib_svc = app->GetService<JCalibrationManager>();
+	jcalib = calib_svc->GetJCalibration(runnumber);
+	jresman = calib_svc->GetLargeCalibration(runnumber);
+
 	auto dapp = app->GetService<DApplication>();
 	geom = dapp->GetDGeometry(runnumber);
 	
-	JParameterManager *jparms = japp->GetJParameterManager();
-	jparms->SetDefaultParameter("PSBFIELD_MAP", namepath);
+	app->SetDefaultParameter("PSBFIELD_MAP", namepath);
 	
 	int Npoints = ReadMap(namepath, runnumber); 
 	if(Npoints==0){

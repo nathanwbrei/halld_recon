@@ -51,6 +51,8 @@ set(HALLD_RECON_SOURCES
         src/libraries/CDC/DCDCDigiHit.h
 
         src/libraries/CCAL/DCCALShower.h
+#        src/libraries/CCAL/DCCALShower_factory.h
+#        src/libraries/CCAL/DCCALShower_factory.cc
         src/libraries/CCAL/DCCALDigiHit.h
         src/libraries/CCAL/DCCALRefDigiHit.h
         src/libraries/CCAL/DCCALGeometry.h
@@ -119,6 +121,8 @@ set(HALLD_RECON_SOURCES
         src/libraries/DAQ/DDAQAddress.h
 
         src/libraries/DIRC/DDIRCLut.h     # JEventLoop
+        src/libraries/DIRC/DDIRCLutReader.h
+        src/libraries/DIRC/DDIRCLutReader.cc
         src/libraries/DIRC/DDIRCLEDRef.h
         src/libraries/DIRC/DDIRCTruthPmtHit.h
         src/libraries/DIRC/DDIRCTDCDigiHit.h
@@ -139,7 +143,8 @@ set(HALLD_RECON_SOURCES
         src/libraries/FDC/DFDCCathodeDigiHit.h
         src/libraries/FDC/DFDCWireDigiHit.h
         src/libraries/FDC/DFDCSegment.h
-        src/libraries/FDC/DFDCGeometry.h    # Uses DGeometry (with circular ref)
+        src/libraries/FDC/DFDCGeometry.h
+        src/libraries/FDC/DFDCGeometry.cc
         src/libraries/FDC/DFDCIntersection.h
         src/libraries/FDC/DFDCHit.h
         src/libraries/FDC/DFDCCathodeCluster.h
@@ -160,15 +165,15 @@ set(HALLD_RECON_SOURCES
         src/libraries/HDGEOMETRY/DMagneticFieldMapCalibDB.h
         src/libraries/HDGEOMETRY/DMagneticFieldMapConst.cc
         src/libraries/HDGEOMETRY/DMagneticFieldMapConst.h
-#        src/libraries/HDGEOMETRY/DMagneticFieldMapFineMesh.cc     # JResourceManager
-        src/libraries/HDGEOMETRY/DMagneticFieldMapFineMesh.h
+#        src/libraries/HDGEOMETRY/DMagneticFieldMapFineMesh.cc     # Problem linking DAQ/HDEVIO
+#        src/libraries/HDGEOMETRY/DMagneticFieldMapFineMesh.h
         src/libraries/HDGEOMETRY/DMagneticFieldMapNoField.cc
         src/libraries/HDGEOMETRY/DMagneticFieldMapNoField.h
         src/libraries/HDGEOMETRY/DMagneticFieldMapParameterized.cc
         src/libraries/HDGEOMETRY/DMagneticFieldMapParameterized.h
         src/libraries/HDGEOMETRY/DMagneticFieldMapPS.h
 #        src/libraries/HDGEOMETRY/DMagneticFieldMapPS2DMap.cc
-#        src/libraries/HDGEOMETRY/DMagneticFieldMapPS2DMap.h       # JResourceManager, DApplication as JService
+#        src/libraries/HDGEOMETRY/DMagneticFieldMapPS2DMap.h       # DApplication as JService
         src/libraries/HDGEOMETRY/DMagneticFieldMapPSConst.cc
         src/libraries/HDGEOMETRY/DMagneticFieldMapPSConst.h
         src/libraries/HDGEOMETRY/DMagneticFieldMapSpoiled.cc

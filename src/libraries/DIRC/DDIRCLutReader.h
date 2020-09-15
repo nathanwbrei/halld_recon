@@ -9,8 +9,7 @@
 #include <JANA/Compatibility/jerror.h>
 #include <JANA/JApplication.h>
 #include <JANA/Calibrations/JCalibration.h>
-
-#include <DANA/DApplication.h>
+#include <JANA/Calibrations/JLargeCalibration.h>
 
 #include "TROOT.h"
 #include "TVector3.h"
@@ -41,7 +40,7 @@ private:
 
 protected:
 	JCalibration *jcalib;
-	JResourceManager *jresman;
+	JLargeCalibration *jresman;
 };
 
 #endif // _DDIRCLutReader_

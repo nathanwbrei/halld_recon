@@ -9,11 +9,9 @@
 #define _DCCALShower_factory_
 
 #include <JANA/JFactory.h>
-#include <JANA/JEventLoop.h>
 
 #include <JANA/JEvent.h>
-#include <JANA/JCalibration.h>
-#include <JANA/JResourceManager.h>
+#include <JANA/Calibrations/JCalibrationManager.h>
 
 #include "CCAL/DCCALShower.h"
 #include "CCAL/DCCALHit.h"
@@ -29,10 +27,9 @@
 #include <mutex>
 
 using namespace std;
-using namespace jana;
 
 
-class DCCALShower_factory:public JFactory<DCCALShower>{
+class DCCALShower_factory:public JFactoryT<DCCALShower>{
 
 	public:
 		DCCALShower_factory();

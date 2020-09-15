@@ -9,7 +9,7 @@
 using namespace std;
 
 #include "DGeometry.h"
-#include <JANA/JGeometryXML.h>
+#include <JANA/Compatibility/JGeometryXML.h>
 #include "FDC/DFDCWire.h"
 #include "FDC/DFDCGeometry.h"
 #include <ansi_escape.h>
