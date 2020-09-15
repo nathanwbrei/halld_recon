@@ -64,10 +64,12 @@ set(HALLD_RECON_SOURCES
 
         src/libraries/DANA/DANARootErrorHandler.cc
         src/libraries/DANA/DANARootErrorHandler.h
+#        src/libraries/DANA/DGeometryManager.cc
+        src/libraries/DANA/DGeometryManager.h
 #        src/libraries/DANA/DApplication.cc
-#        src/libraries/DANA/DApplication.h
-#        src/libraries/DANA/DFactoryGenerator.cc   # All of the jfactorygen inits
-#        src/libraries/DANA/DFactoryGenerator.h
+        src/libraries/DANA/DApplication.h
+#        src/libraries/DANA/DFactoryGenerator.cc
+        src/libraries/DANA/DFactoryGenerator.h
         src/libraries/DANA/DObjectID.h
         src/libraries/DANA/DStatusBits.h
         src/libraries/DANA/JExceptionDataFormat.h
