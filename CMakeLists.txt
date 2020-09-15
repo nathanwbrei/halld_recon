@@ -62,6 +62,18 @@ set(HALLD_RECON_SOURCES
 
         src/libraries/CERE/DCereHit.h
 
+        src/libraries/DANA/DANARootErrorHandler.cc
+        src/libraries/DANA/DANARootErrorHandler.h
+#        src/libraries/DANA/DApplication.cc
+#        src/libraries/DANA/DApplication.h
+#        src/libraries/DANA/DFactoryGenerator.cc   # All of the jfactorygen inits
+#        src/libraries/DANA/DFactoryGenerator.h
+        src/libraries/DANA/DObjectID.h
+        src/libraries/DANA/DStatusBits.h
+        src/libraries/DANA/JExceptionDataFormat.h
+        src/libraries/DANA/ReadWriteLock.cc
+        src/libraries/DANA/ReadWriteLock.h
+
 #        src/libraries/DAQ/JEventSource_EVIO.cc
         src/libraries/DAQ/JEventSource_EVIO.h
 #        src/libraries/DAQ/JEventSourceGenerator_EVIO.cc
@@ -157,7 +169,7 @@ set(HALLD_RECON_SOURCES
 
 
 #        src/libraries/HDGEOMETRY/DGeometry.cc
-#        src/libraries/HDGEOMETRY/DGeometry.h
+        src/libraries/HDGEOMETRY/DGeometry.h
         src/libraries/HDGEOMETRY/DLorentzDeflections.cc
         src/libraries/HDGEOMETRY/DLorentzDeflections.h
         src/libraries/HDGEOMETRY/DLorentzMapCalibDB.cc
