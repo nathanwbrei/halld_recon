@@ -194,7 +194,7 @@ set(HALLD_RECON_SOURCES
         src/libraries/HDGEOMETRY/DMagneticFieldMapSpoiled.h
         src/libraries/HDGEOMETRY/DMaterial.cc
         src/libraries/HDGEOMETRY/DMaterial.h
-#        src/libraries/HDGEOMETRY/DMaterialMap.cc                 # DDIRCLutReader via DApplication
+        src/libraries/HDGEOMETRY/DMaterialMap.cc
         src/libraries/HDGEOMETRY/DMaterialMap.h
 #        src/libraries/HDGEOMETRY/DRootGeom.cc                     # hddsroot.c
         src/libraries/HDGEOMETRY/DRootGeom.h

@@ -5,6 +5,7 @@
 
 #include <JANA/Compatibility/jerror.h>
 #include <JANA/Calibrations/JCalibration.h>
+#include <JANA/Services/JParameterManager.h>
 
 #include <DVector3.h>
 #include <DVector2.h>
@@ -13,7 +14,7 @@ class DMagneticFieldMap;
 
 class DMaterialMap{
 	public:
-		DMaterialMap(string namepath, JCalibration *jcalib);
+		DMaterialMap(string namepath, JCalibration *jcalib, std::shared_ptr<JParameterManager> params);
 		virtual ~DMaterialMap(){};
 
 		bool IS_VALID;
