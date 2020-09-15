@@ -119,6 +119,8 @@ set(HALLD_RECON_SOURCES
         src/libraries/DAQ/DParsedEvent.h                # JEventLoop
         src/libraries/DAQ/Df125WindowRawData.h
         src/libraries/DAQ/DDAQAddress.h
+        src/libraries/DAQ/HDEVIO.h
+        src/libraries/DAQ/HDEVIO.cc
 
         src/libraries/DIRC/DDIRCLut.h     # JEventLoop
         src/libraries/DIRC/DDIRCLutReader.h
@@ -165,8 +167,8 @@ set(HALLD_RECON_SOURCES
         src/libraries/HDGEOMETRY/DMagneticFieldMapCalibDB.h
         src/libraries/HDGEOMETRY/DMagneticFieldMapConst.cc
         src/libraries/HDGEOMETRY/DMagneticFieldMapConst.h
-#        src/libraries/HDGEOMETRY/DMagneticFieldMapFineMesh.cc     # Problem linking DAQ/HDEVIO
-#        src/libraries/HDGEOMETRY/DMagneticFieldMapFineMesh.h
+        src/libraries/HDGEOMETRY/DMagneticFieldMapFineMesh.cc
+        src/libraries/HDGEOMETRY/DMagneticFieldMapFineMesh.h
         src/libraries/HDGEOMETRY/DMagneticFieldMapNoField.cc
         src/libraries/HDGEOMETRY/DMagneticFieldMapNoField.h
         src/libraries/HDGEOMETRY/DMagneticFieldMapParameterized.cc
