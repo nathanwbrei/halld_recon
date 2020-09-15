@@ -14,7 +14,7 @@ using namespace std;
 //-----------------
 // DMaterialMap  (Constructor)
 //-----------------
-DMaterialMap::DMaterialMap(string namepath, JCalibration *jcalib, std::shared_ptr<JParameterManager> params)
+DMaterialMap::DMaterialMap(string namepath, JCalibration *jcalib, JParameterManager *params)
 {
 	/// Read the specified material map in from the calibration database.
 	/// This will read in the map and figure out the number of grid

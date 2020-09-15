@@ -64,7 +64,7 @@ set(HALLD_RECON_SOURCES
 
         src/libraries/DANA/DANARootErrorHandler.cc
         src/libraries/DANA/DANARootErrorHandler.h
-#        src/libraries/DANA/DGeometryManager.cc
+        src/libraries/DANA/DGeometryManager.cc
         src/libraries/DANA/DGeometryManager.h
 #        src/libraries/DANA/DApplication.cc
         src/libraries/DANA/DApplication.h
@@ -170,7 +170,7 @@ set(HALLD_RECON_SOURCES
         src/libraries/FMWPC/DFMWPCHit.h
 
 
-#        src/libraries/HDGEOMETRY/DGeometry.cc
+        src/libraries/HDGEOMETRY/DGeometry.cc
         src/libraries/HDGEOMETRY/DGeometry.h
         src/libraries/HDGEOMETRY/DLorentzDeflections.cc
         src/libraries/HDGEOMETRY/DLorentzDeflections.h
@@ -188,8 +188,8 @@ set(HALLD_RECON_SOURCES
         src/libraries/HDGEOMETRY/DMagneticFieldMapParameterized.cc
         src/libraries/HDGEOMETRY/DMagneticFieldMapParameterized.h
         src/libraries/HDGEOMETRY/DMagneticFieldMapPS.h
-#        src/libraries/HDGEOMETRY/DMagneticFieldMapPS2DMap.cc
-#        src/libraries/HDGEOMETRY/DMagneticFieldMapPS2DMap.h       # DApplication as JService
+        src/libraries/HDGEOMETRY/DMagneticFieldMapPS2DMap.cc
+        src/libraries/HDGEOMETRY/DMagneticFieldMapPS2DMap.h
         src/libraries/HDGEOMETRY/DMagneticFieldMapPSConst.cc
         src/libraries/HDGEOMETRY/DMagneticFieldMapPSConst.h
         src/libraries/HDGEOMETRY/DMagneticFieldMapSpoiled.cc

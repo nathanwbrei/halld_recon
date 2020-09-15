@@ -97,7 +97,7 @@ DGeometry *DGeometryManager::GetDGeometry(unsigned int run_number) {
 
 		// Couldn't find a DGeometry object that uses this JGeometry object.
 		// Create one and add it to the list.
-		DGeometry *dgeom = new DGeometry(jgeom, this, run_number);
+		DGeometry *dgeom = new DGeometry(jgeom, this, app, run_number);
 		geometries.push_back(dgeom);
 		return dgeom;
 	}

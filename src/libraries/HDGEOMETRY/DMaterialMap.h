@@ -14,7 +14,7 @@ class DMagneticFieldMap;
 
 class DMaterialMap{
 	public:
-		DMaterialMap(string namepath, JCalibration *jcalib, std::shared_ptr<JParameterManager> params);
+		DMaterialMap(string namepath, JCalibration *jcalib, JParameterManager *params);
 		virtual ~DMaterialMap(){};
 
 		bool IS_VALID;

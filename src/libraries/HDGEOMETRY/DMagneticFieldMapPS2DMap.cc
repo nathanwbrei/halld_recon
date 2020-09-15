@@ -28,8 +28,7 @@ DMagneticFieldMapPS2DMap::DMagneticFieldMapPS2DMap(JApplication *app, int32_t ru
 	jcalib = calib_svc->GetJCalibration(runnumber);
 	jresman = calib_svc->GetLargeCalibration(runnumber);
 
-	auto dapp = app->GetService<DApplication>();
-	geom = dapp->GetDGeometry(runnumber);
+	geom = app->GetService<DGeometryManager>()->GetDGeometry(runnumber);
 	
 	app->SetDefaultParameter("PSBFIELD_MAP", namepath);
 	
@@ -78,20 +77,20 @@ int DMagneticFieldMapPS2DMap::ReadMap(string namepath, int32_t runnumber, string
   // built into a run-dependent geometry framework, but for now
   // we do it this way. 
   if(!jcalib){
-    jerr << "ERROR: jcalib pointer is NULL in DMagneticFieldMapPS2DMap::ReadMap() !" << endl;
+    jerr << "ERROR: jcalib pointer is NULL in DMagneticFieldMapPS2DMap::ReadMap() !" << jendl;
     return 0;
   }
   if(!jresman){
-    jerr << "ERROR: jresman pointer is NULL in DMagneticFieldMapPS2DMap::ReadMap() !" << endl;
+    jerr << "ERROR: jresman pointer is NULL in DMagneticFieldMapPS2DMap::ReadMap() !" << jendl;
     return 0;
   }
   if(!geom){
-    jerr << "ERROR: geom pointer is NULL in DMagneticFieldMapPS2DMap::ReadMap() !" << endl;
+    jerr << "ERROR: geom pointer is NULL in DMagneticFieldMapPS2DMap::ReadMap() !" << jendl;
     return 0;
   }
   
   jout<<jendl;
-  jout<<"Reading Pair Spectrometer Magnetic field map from "<<namepath<<" ..."<<endl;
+  jout<<"Reading Pair Spectrometer Magnetic field map from "<<namepath<<" ..."<<jendl;
   vector< vector<float> > Bmap;
 
   // Try getting it as a JANA resource.
