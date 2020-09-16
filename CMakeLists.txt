@@ -30,23 +30,25 @@ file(GLOB DAQ_HEADERS ${PROJECT_SOURCE_DIR}/src/libraries/DAQ/*.h)
 set(HALLD_RECON_SOURCES
 
         src/libraries/BCAL/DBCALCluster.h
-#        src/libraries/BCAL/DBCALCluster.cc             # DBCALGeometry
+        src/libraries/BCAL/DBCALCluster.cc
         src/libraries/BCAL/DBCALTDCHit.h
         src/libraries/BCAL/DBCALTDCDigiHit.h
         src/libraries/BCAL/DBCALGeometry.h
-#        src/libraries/BCAL/DBCALGeometry.cc            # JGeometry
+        src/libraries/BCAL/DBCALGeometry.cc
         src/libraries/BCAL/DBCALIncidentParticle.h
         src/libraries/BCAL/DBCALSiPMSpectrum.h
         src/libraries/BCAL/DBCALUnifiedHit.h
         src/libraries/BCAL/DBCALTruthCell.h
         src/libraries/BCAL/DBCALClump.h
         src/libraries/BCAL/DBCALPoint.h
-#        src/libraries/BCAL/DBCALPoint.cc               # DBCALGeometry
+        src/libraries/BCAL/DBCALPoint.cc
         src/libraries/BCAL/DBCALSiPMHit.h
         src/libraries/BCAL/DBCALDigiHit.h
         src/libraries/BCAL/DBCALShower.h
         src/libraries/BCAL/DBCALHit.h
         src/libraries/BCAL/DBCALTruthShower.h
+        src/libraries/BCAL/DBCALUnifiedHit_factory.h
+        src/libraries/BCAL/DBCALUnifiedHit_factory.cc
 
         src/libraries/CDC/DCDCTrackHit.h
         src/libraries/CDC/DCDCHit.h
@@ -227,7 +229,8 @@ set(HALLD_RECON_SOURCES
         src/libraries/PID/DNeutralShower.h
         src/libraries/PID/DNeutralParticleHypothesis.h
         src/libraries/PID/DDetectorMatches.h
-        src/libraries/PID/DParticleID.h  # JGeometry
+        src/libraries/PID/DParticleID.h
+#        src/libraries/PID/DParticleID.cc
         src/libraries/PID/DNeutralParticle.h
         src/libraries/PID/DEventRFBunch.h
 

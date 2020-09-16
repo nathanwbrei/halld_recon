@@ -53,8 +53,8 @@ DBCALGeometry::DBCALGeometry(int runnumber)
 void
 DBCALGeometry::Initialize(int runnumber) {
   //Get pointer to DGeometry object
-  DApplication* dapp=dynamic_cast<DApplication*>(japp);
-  const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
+  auto dgeoman = japp->GetService<DGeometryManager>();
+  const DGeometry *dgeom  = dgeoman->GetDGeometry(runnumber);
 
   // Get inner rad of BCAL (including the support plate)
   float my_BCALINNERRAD;
