@@ -55,6 +55,10 @@ set(HALLD_RECON_SOURCES
         src/libraries/BCAL/DBCALShower_factory_KLOE.cc
         src/libraries/BCAL/DBCALShower_factory_JLAB.h
         src/libraries/BCAL/DBCALShower_factory_JLAB.cc
+#        src/libraries/BCAL/DBCALShower_factory_IU.cc
+#        src/libraries/BCAL/DBCALShower_factory_IU.h
+        src/libraries/BCAL/DBCALShower_factory_CURVATURE.cc
+        src/libraries/BCAL/DBCALShower_factory_CURVATURE.h
 
         src/libraries/CDC/DCDCTrackHit.h
         src/libraries/CDC/DCDCHit.h
