@@ -8,7 +8,7 @@
 #ifndef _DTTabUtilities_factory_
 #define _DTTabUtilities_factory_
 
-#include <JANA/JFactory.h>
+#include <JANA/JFactoryT.h>
 #include "DTTabUtilities.h"
 #include "TRACKING/DMCThrown.h"
 
