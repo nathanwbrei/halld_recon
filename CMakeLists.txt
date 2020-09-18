@@ -47,6 +47,8 @@ set(HALLD_RECON_SOURCES
         src/libraries/BCAL/DBCALShower.h
         src/libraries/BCAL/DBCALHit.h
         src/libraries/BCAL/DBCALTruthShower.h
+        src/libraries/BCAL/DBCALTDCHit_factory.h
+        src/libraries/BCAL/DBCALTDCHit_factory.cc
         src/libraries/BCAL/DBCALUnifiedHit_factory.h
         src/libraries/BCAL/DBCALUnifiedHit_factory.cc
 
@@ -300,7 +302,7 @@ set(HALLD_RECON_SOURCES
         src/libraries/TTAB/DTranslationTable.h
 #        src/libraries/TTAB/DTranslationTable.cc          # Pulls in JEventSource_EVIO
         src/libraries/TTAB/DTranslationTable_factory.h
-#        src/libraries/TTAB/DTTabUtilities.cc
+        src/libraries/TTAB/DTTabUtilities.cc
         src/libraries/TTAB/DTTabUtilities.h
 #        src/libraries/TTAB/DTTabUtilities_factory.cc
 #        src/libraries/TTAB/DTTabUtilities_factory.h
