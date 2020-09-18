@@ -51,6 +51,8 @@ set(HALLD_RECON_SOURCES
         src/libraries/BCAL/DBCALTDCHit_factory.cc
         src/libraries/BCAL/DBCALUnifiedHit_factory.h
         src/libraries/BCAL/DBCALUnifiedHit_factory.cc
+        src/libraries/BCAL/DBCALShower_factory_KLOE.h
+        src/libraries/BCAL/DBCALShower_factory_KLOE.cc
 
         src/libraries/CDC/DCDCTrackHit.h
         src/libraries/CDC/DCDCHit.h
