@@ -77,8 +77,6 @@ void DBCALShower_factory_JLAB::Process(const std::shared_ptr<const JEvent>& even
     
     Insert(shower);  
   }
-  
-  return;
 }
 
 

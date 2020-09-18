@@ -34,12 +34,13 @@ set(HALLD_RECON_SOURCES
         src/libraries/BCAL/DBCALTDCHit.h
         src/libraries/BCAL/DBCALTDCDigiHit.h
         src/libraries/BCAL/DBCALGeometry.h
-        src/libraries/BCAL/DBCALGeometry.cc
+        src/libraries/BCAL/DBCALGeometry.cc     # Uses japp
         src/libraries/BCAL/DBCALIncidentParticle.h
         src/libraries/BCAL/DBCALSiPMSpectrum.h
         src/libraries/BCAL/DBCALUnifiedHit.h
         src/libraries/BCAL/DBCALTruthCell.h
         src/libraries/BCAL/DBCALClump.h
+        src/libraries/BCAL/DBCALClump.cc
         src/libraries/BCAL/DBCALPoint.h
         src/libraries/BCAL/DBCALPoint.cc
         src/libraries/BCAL/DBCALSiPMHit.h
@@ -51,14 +52,26 @@ set(HALLD_RECON_SOURCES
         src/libraries/BCAL/DBCALTDCHit_factory.cc
         src/libraries/BCAL/DBCALUnifiedHit_factory.h
         src/libraries/BCAL/DBCALUnifiedHit_factory.cc
+        src/libraries/BCAL/DBCALShower_factory.h
         src/libraries/BCAL/DBCALShower_factory_KLOE.h
         src/libraries/BCAL/DBCALShower_factory_KLOE.cc
         src/libraries/BCAL/DBCALShower_factory_JLAB.h
         src/libraries/BCAL/DBCALShower_factory_JLAB.cc
-#        src/libraries/BCAL/DBCALShower_factory_IU.cc
-#        src/libraries/BCAL/DBCALShower_factory_IU.h
+#        src/libraries/BCAL/DBCALShower_factory_IU.cc  # ROOT rwlock
+        src/libraries/BCAL/DBCALShower_factory_IU.h
         src/libraries/BCAL/DBCALShower_factory_CURVATURE.cc
         src/libraries/BCAL/DBCALShower_factory_CURVATURE.h
+        src/libraries/BCAL/DBCALClump_factory.cc
+        src/libraries/BCAL/DBCALClump_factory.h
+#        src/libraries/BCAL/DBCALCluster_factory.cc   # DTrackFitter
+#        src/libraries/BCAL/DBCALCluster_factory.h
+        src/libraries/BCAL/DBCALCluster_factory_SINGLE.cc
+        src/libraries/BCAL/DBCALCluster_factory_SINGLE.h
+        src/libraries/BCAL/DBCALGeometry_factory.h    # Construction logic in ctor
+        src/libraries/BCAL/DBCALPoint_factory.cc
+        src/libraries/BCAL/DBCALPoint_factory.h
+        src/libraries/BCAL/DBCALHit_factory.cc
+        src/libraries/BCAL/DBCALHit_factory.h
 
         src/libraries/CDC/DCDCTrackHit.h
         src/libraries/CDC/DCDCHit.h

@@ -41,36 +41,31 @@ DBCALCluster_factory::DBCALCluster_factory() :
 	// C2_parm are parameters [0] and [1] in dtheta_inclusion_curve. 
 	}
 
-jerror_t
-DBCALCluster_factory::init(void){
-
+void
+DBCALCluster_factory::Init(){
 	m_BCALGeom = NULL;
-	return NOERROR;
-
 }
 
-jerror_t
-DBCALCluster_factory::fini( void ){
-
-	return NOERROR;
+void
+DBCALCluster_factory::Finish(){
 }
 
-jerror_t DBCALCluster_factory::brun(JEventLoop *loop, int32_t runnumber) {
-	DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
+void DBCALCluster_factory::BeginRun(const std::shared_ptr<const JEvent>& event) {
+	DApplication* app = dynamic_cast<DApplication*>(event->GetJApplication());
 	DGeometry* geom = app->GetDGeometry(runnumber);
 	geom->GetTargetZ(m_z_target_center);
 
 	// load BCAL Geometry
 	vector<const DBCALGeometry *> BCALGeomVec;
-        loop->Get(BCALGeomVec);
+        event->Get(BCALGeomVec);
         if(BCALGeomVec.size() == 0)
                 throw JException("Could not load DBCALGeometry object!");
         m_BCALGeom = BCALGeomVec[0];
 
 
-	loop->GetCalib("/BCAL/effective_velocities", effective_velocities);
+	event->GetCalib("/BCAL/effective_velocities", effective_velocities);
 
-	loop->GetCalib("/BCAL/attenuation_parameters",attenuation_parameters);
+	event->GetCalib("/BCAL/attenuation_parameters",attenuation_parameters);
 
 	BCALCLUSTERVERBOSE = 0;
 	gPARMS->SetDefaultParameter("BCALCLUSTERVERBOSE", BCALCLUSTERVERBOSE, "VERBOSE level for BCAL Cluster overlap success and conditions");
@@ -78,7 +73,7 @@ jerror_t DBCALCluster_factory::brun(JEventLoop *loop, int32_t runnumber) {
 
 
   vector<const DTrackFitter *> fitters;
-  loop->Get(fitters);
+  event->Get(fitters);
 
   if(fitters.size()<1){
     _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
@@ -87,25 +82,25 @@ jerror_t DBCALCluster_factory::brun(JEventLoop *loop, int32_t runnumber) {
 
   fitter = fitters[0];
 
-	return NOERROR;
+	return;
 }
 
-jerror_t
-DBCALCluster_factory::evnt( JEventLoop *loop, uint64_t eventnumber ){
+void
+DBCALCluster_factory::process( const std::shared_ptr<const JEvent>& event ){
 
 	vector< const DBCALPoint* > twoEndPoint;
 	vector< const DBCALPoint* > usedPoints;
-	loop->Get(twoEndPoint);
+	event->Get(twoEndPoint);
 
 	// Want to add singled-ended hits to the Clusters. 
 
 	// Looking for hits that are single-ended.
 
 	vector< const DBCALUnifiedHit* > hits;
-	loop->Get(hits);
+	event->Get(hits);
 
 	vector< const DTrackWireBased* > tracks;
-	loop->Get(tracks);
+	event->Get(tracks);
 
 	// first arrange the list of hits so they are grouped by cell
 	map< int, vector< const DBCALUnifiedHit* > > cellHitMap;
@@ -161,7 +156,7 @@ DBCALCluster_factory::evnt( JEventLoop *loop, uint64_t eventnumber ){
 		}
 		_data.push_back(*clust);
 	}
-	return NOERROR;
+	return;
 }
 
 vector<DBCALCluster*>
@@ -253,7 +248,7 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
 	  break;
 	}
 	// once we erase a point the iterator is no longer useful
-	// and we start the loop over, so that a point doesn't get added to
+	// and we start the event over, so that a point doesn't get added to
 	// multiple clusters. We will recycle through points later to 
 	// check if a point was added to its closest cluster.
       }
@@ -523,7 +518,7 @@ DBCALCluster_factory::merge( vector<DBCALCluster*>& clusters, double point_reatt
                                                 	clusters.erase( lClust );
 						}
                                         
-					// now iterators are invalid and we need to bail out of loops
+					// now iterators are invalid and we need to bail out of events
 					stillMerging = true;
 					break;
 				}

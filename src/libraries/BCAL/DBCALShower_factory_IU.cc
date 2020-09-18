@@ -9,7 +9,11 @@
 #include "DBCALShower_factory_IU.h"
 #include "DBCALCluster.h"
 
-#include "DANA/DApplication.h"
+#include <JANA/JEvent.h>
+#include <JANA/Calibrations/JCalibrationManager.h>
+
+#include "DANA/DGeometryManager.h"
+#include "HDGEOMETRY/DGeometry.h"
 
 #include "units.h"
 
@@ -24,48 +28,57 @@
 
 
 DBCALShower_factory_IU::DBCALShower_factory_IU(){
-	// defaults set to minimize probles if new values are not loaded
-	LOAD_CCDB_CONSTANTS = 1.;
-        const_term = 1;              ///< default to make no change to energy
-        first_term_scale_factor = 0; ///< default to make no change to energy
-        first_exp_param0 = 1;        ///< default to make no change to energy
-        first_exp_param1 = 1;        ///< default to make no change to energy
-        second_term_scale_factor = 0;///< default to make no change to energy
-        second_exp_const_term = 1;   ///< default to make no change to energy
-        second_exp_scale_factor = 1; ///< default to make no change to energy
-        second_exp_param0 = 1;       ///< default to make no change to energy
-        second_exp_param1 = 1;       ///< default to make no change to energy
-	VERBOSE = 0;              ///< >0 once off info ; >2 event by event ; >3 everything
-	COVARIANCEFILENAME = "";  ///<  Setting the filename will take precidence over the CCDB.  Files must end in ij.txt, where i and j are integers corresponding to the element of the matrix
-	
-	if (gPARMS){
-		gPARMS->SetDefaultParameter("BCAL:LOAD_NONLIN_CCDB", LOAD_CCDB_CONSTANTS);
-		/// use to set energy corrections on command line
-		gPARMS->SetDefaultParameter("BCAL:const_term", const_term);
-                gPARMS->SetDefaultParameter("BCAL:first_term_scale_factor", first_term_scale_factor);
-                gPARMS->SetDefaultParameter("BCAL:first_exp_param0", first_exp_param0);
-                gPARMS->SetDefaultParameter("BCAL:first_exp_param1", first_exp_param1);
-                gPARMS->SetDefaultParameter("BCAL:second_term_scale_factor", second_term_scale_factor);
-                gPARMS->SetDefaultParameter("BCAL:second_exp_const_term", second_exp_const_term);
-                gPARMS->SetDefaultParameter("BCAL:second_exp_scale_factor", second_exp_scale_factor);
-                gPARMS->SetDefaultParameter("BCAL:second_exp_param0", second_exp_param0);
-                gPARMS->SetDefaultParameter("BCAL:second_exp_param1", second_exp_param1);	
-		gPARMS->SetDefaultParameter("DBCALShower:VERBOSE", VERBOSE, "Verbosity level for DBCALShower objects and factories");
-		gPARMS->SetDefaultParameter("DBCALShower:COVARIANCEFILENAME", COVARIANCEFILENAME, "File name for covariance files");
-	}
+	SetTag("IU");
 }
 
-jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
-  DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
-  DGeometry* geom = app->GetDGeometry(runnumber);
-  geom->GetTargetZ(m_zTarget);
+void DBCALShower_factory_IU::Init() {
+	// defaults set to minimize problems if new values are not loaded
+	LOAD_CCDB_CONSTANTS = 1.;
+	const_term = 1;              ///< default to make no change to energy
+	first_term_scale_factor = 0; ///< default to make no change to energy
+	first_exp_param0 = 1;        ///< default to make no change to energy
+	first_exp_param1 = 1;        ///< default to make no change to energy
+	second_term_scale_factor = 0;///< default to make no change to energy
+	second_exp_const_term = 1;   ///< default to make no change to energy
+	second_exp_scale_factor = 1; ///< default to make no change to energy
+	second_exp_param0 = 1;       ///< default to make no change to energy
+	second_exp_param1 = 1;       ///< default to make no change to energy
+	VERBOSE = 0;              ///< >0 once off info ; >2 event by event ; >3 everything
+	COVARIANCEFILENAME = "";  ///<  Setting the filename will take precidence over the CCDB.  Files must end in ij.txt, where i and j are integers corresponding to the element of the matrix
+
+	auto app = GetApplication();
+	app->SetDefaultParameter("BCAL:LOAD_NONLIN_CCDB", LOAD_CCDB_CONSTANTS);
+	/// use to set energy corrections on command line
+	app->SetDefaultParameter("BCAL:const_term", const_term);
+	app->SetDefaultParameter("BCAL:first_term_scale_factor", first_term_scale_factor);
+	app->SetDefaultParameter("BCAL:first_exp_param0", first_exp_param0);
+	app->SetDefaultParameter("BCAL:first_exp_param1", first_exp_param1);
+	app->SetDefaultParameter("BCAL:second_term_scale_factor", second_term_scale_factor);
+	app->SetDefaultParameter("BCAL:second_exp_const_term", second_exp_const_term);
+	app->SetDefaultParameter("BCAL:second_exp_scale_factor", second_exp_scale_factor);
+	app->SetDefaultParameter("BCAL:second_exp_param0", second_exp_param0);
+	app->SetDefaultParameter("BCAL:second_exp_param1", second_exp_param1);
+	app->SetDefaultParameter("DBCALShower:VERBOSE", VERBOSE, "Verbosity level for DBCALShower objects and factories");
+	app->SetDefaultParameter("DBCALShower:COVARIANCEFILENAME", COVARIANCEFILENAME, "File name for covariance files");
+}
+
+void DBCALShower_factory_IU::BeginRun(const std::shared_ptr<const JEvent>& event) {
+
+    auto event_number = event->GetEventNumber();
+    auto run_number = event->GetRunNumber();
+    auto calibration_manager = event->GetJApplication()->GetService<JCalibrationManager>();
+    auto calibration = calibration_manager->GetJCalibration(run_number);
+    auto app = GetApplication();
+    auto geom_manager = app->GetService<DGeometryManager>();
+    auto geom = geom_manager->GetDGeometry(run_number);
+    geom->GetTargetZ(m_zTarget);
 
     //by default, energy correction parameters are obtained through ccdb
     if(LOAD_CCDB_CONSTANTS > 0.5){
                 map<string, double> shower_calib2;
 
 
-                if (loop->GetCalib("BCAL/shower_calib2", shower_calib2)){
+                if (calibration->Get("BCAL/shower_calib2", shower_calib2, event_number)){
 			jerr << " Error loading BCAL nonlinear correction parameters from CCDB\n";
 		} else {
                         const_term = shower_calib2["const_term"];
@@ -93,21 +106,19 @@ jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
                 printf("%20s = %f\n","second_exp_param1",second_exp_param1);
          }
 	
-	jerror_t result = LoadCovarianceLookupTables(loop);
+	jerror_t result = LoadCovarianceLookupTables(event);
 	if (result!=NOERROR) return result;
 	
 	// load BCAL geometry
   	vector<const DBCALGeometry *> BCALGeomVec;
-  	loop->Get(BCALGeomVec);
+  	event->Get(BCALGeomVec);
   	if(BCALGeomVec.size() == 0)
 		throw JException("Could not load DBCALGeometry object!");
 	dBCALGeom = BCALGeomVec[0];
-	
-  return NOERROR;
 }
 
 
-jerror_t DBCALShower_factory_IU::erun(void) {
+void DBCALShower_factory_IU::EndRun() {
     // delete lookup tables to prevent memory leak
 	for (int i=0; i<5; i++) {
 		for (int j=0; j<=i; j++) {
@@ -115,17 +126,16 @@ jerror_t DBCALShower_factory_IU::erun(void) {
             CovarianceLookupTable[i][j] = nullptr;
         }
     }
-    return NOERROR;
 }
 
 
-jerror_t
-DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
+void
+DBCALShower_factory_IU::Process( const std::shared_ptr<const JEvent>& event ){
  
   vector< const DBCALCluster* > clusters;
-  loop->Get( clusters );
+  event->Get( clusters );
   
-  // loop through and fill the shower structure from the cluster
+  // event through and fill the shower structure from the cluster
   // right now just a simple 1 to 1 correspondence with 
   // an overall energy correction
   
@@ -192,10 +202,8 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
 
     shower->AddAssociatedObject(*clItr);
     
-    _data.push_back( shower );
+    Insert( shower );
   }
-  
-  return NOERROR;
 }
 
 
@@ -254,13 +262,11 @@ DBCALShower_factory_IU::FillCovarianceMatrix(DBCALShower *shower){
 			shower->ExyztCovariance(i, j) = D(i, j);
 	}
 	if (VERBOSE>2) {printf("(E,x,y,z,t)    "); shower->ExyztCovariance.Print(); }
-
-	return NOERROR;
 }
 
 
 jerror_t
-DBCALShower_factory_IU::LoadCovarianceLookupTables(JEventLoop *eventLoop){
+DBCALShower_factory_IU::LoadCovarianceLookupTables(const std::shared_ptr<const JEvent>& event){
     // Note that there's no error checking that the lookup tables have been loaded correctly!!
 	std::thread::id this_id = std::this_thread::get_id();
 	stringstream idstring;
@@ -274,8 +280,8 @@ DBCALShower_factory_IU::LoadCovarianceLookupTables(JEventLoop *eventLoop){
 	map<string,string> covariance_data;	
 	if (USECCDB) {
 		// load information for covariance matrix
-		if (eventLoop->GetJCalibration()->GetCalib("/BCAL/shower_covariance", covariance_data)) {
-			jerr << "Error loading /BCAL/shower_covariance !" << endl;
+		if (event->GetJCalibration()->GetCalib("/BCAL/shower_covariance", covariance_data)) {
+			jerr << "Error loading /BCAL/shower_covariance !" << jendl;
 			return ERROR_OPENING_EVENT_SOURCE;
 		}
 		if (covariance_data.size() == 15)  {  // there are 15 elements in the covariance matrix
@@ -286,7 +292,7 @@ DBCALShower_factory_IU::LoadCovarianceLookupTables(JEventLoop *eventLoop){
 				}
 			}
 		} else {
-			jerr << "Wrong number of elements /BCAL/shower_covariance !" << endl;
+			jerr << "Wrong number of elements /BCAL/shower_covariance !" << jendl;
 			return ERROR_OPENING_EVENT_SOURCE;	
 		}
 	}
@@ -313,7 +319,7 @@ DBCALShower_factory_IU::LoadCovarianceLookupTables(JEventLoop *eventLoop){
 				if (VERBOSE>0) cout  << filename << std::endl;
 				ifs.open(filename);
 				if (! ifs.is_open()) {
-					jerr << " Error: Cannot open file! " << filename << std::endl;
+					jerr << " Error: Cannot open file! " << filename << jendl;
 					return ERROR_OPENING_EVENT_SOURCE;
 				}
 				getline(ifs, line, '\n');
@@ -362,6 +368,5 @@ DBCALShower_factory_IU::LoadCovarianceLookupTables(JEventLoop *eventLoop){
 
 		}
 	}
-	return NOERROR;
 }
 

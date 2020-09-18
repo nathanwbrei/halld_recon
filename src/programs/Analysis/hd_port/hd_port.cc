@@ -16,6 +16,7 @@
 #include <BCAL/DBCALShower.h>
 #include <BCAL/DBCALDigiHit.h>
 #include <BCAL/DBCALTruthShower.h>
+#include <BCAL/DBCALGeometry_factory.h>
 
 #include <CDC/DCDCHit.h>
 #include <CDC/DCDCTrackHit.h>

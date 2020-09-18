@@ -7,48 +7,49 @@
 
 
 #include <JANA/JApplication.h>
-using namespace jana;
+#include <JANA/JEvent.h>
+#include <JANA/Calibrations/JCalibrationManager.h>
 
-#include <DBCALClump_factory.h>
+
+#include "DBCALClump_factory.h"
 
 
 //----------------
-// init
+// Init
 //----------------
-jerror_t DBCALClump_factory::init(void)
+void DBCALClump_factory::Init()
 {
-  return NOERROR;
 }
 
 //----------------
-// init
+// Init
 //----------------
-jerror_t DBCALClump_factory::brun(JEventLoop *loop, int32_t runnumber)
+void DBCALClump_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
+  auto event_number = event->GetEventNumber();
+  auto run_number = event->GetRunNumber();
+  auto app = GetApplication();
+  auto calibration = app->GetService<JCalibrationManager>()->GetJCalibration(run_number);
+
   map<string, double> bcalparms;
 
-  if ( !loop->GetCalib("BCAL/mc_parms", bcalparms)){
-    cout<<"DBCALClump_factory: loading values from TOF data base"<<endl;
+  if ( !calibration->Get("BCAL/mc_parms", bcalparms, event_number)){
+    jout<<"DBCALClump_factory: loading values from TOF data base"<<jendl;
   } else {
-    cout << "DBCALClumpo_factory: Error loading values from BCAL MC data base" <<endl;
+    jout << "DBCALClumpo_factory: Error loading values from BCAL MC data base" <<jendl;
 
     VELOCITY = 15.;  // set to some reasonable value
-
-    return NOERROR;
   }
 
   VELOCITY = bcalparms["C_EFFECTIVE"];
-
-
-  return NOERROR;
 }
 
 
 
 //----------------
-// evnt
+// Process
 //----------------
-jerror_t DBCALClump_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
+void DBCALClump_factory::Process(const std::shared_ptr<const JEvent>& event) {
 
   const DBCALHit *BcalMatrixU[48*4][4]; // Up stream
   const DBCALHit *BcalMatrixD[48*4][4]; // Down stream
@@ -61,7 +62,7 @@ jerror_t DBCALClump_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
   int EDi[48*4];
 
   vector<const DBCALHit*> AllBcalHits;
-  loop->Get(AllBcalHits);
+  event->Get(AllBcalHits);
 
   for (int i=0;i<48*4;i++){
     EU[i] = 0.;
@@ -256,7 +257,7 @@ jerror_t DBCALClump_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
     }
 
     if (MaxU==999 || MaxD==999){
-      return NOERROR;  
+      return;  
     }
 
     if (mU>mD){
@@ -275,7 +276,7 @@ jerror_t DBCALClump_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
     int idxMaxU[2] = {999,999};
     int idxMaxD[2] = {999,999};
 
-    // loop over all layers in the seed sector
+    // event over all layers in the seed sector
     // and its neighouring sectors and use all
     // instances with hits on both ends to determine 
     // the mean time    
@@ -482,17 +483,17 @@ jerror_t DBCALClump_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
 	  }
 	}
 	if (oK){
-	  _data.push_back(myClump);
+	  Insert(myClump);
 	} else {
 	  delete myClump;
 	}
       } else {
-	cout<<"Error no hits in this Clump!!!! Event: "<<eventnumber<<"      cnt= "<<cnt <<endl;
+	jout<<"Error no hits in this Clump!!!! Event: "<<event->GetEventNumber()<<"      cnt= "<<cnt <<jendl;
       }
     }
         
   }
 
-  return NOERROR;
+  return;
 }
 
