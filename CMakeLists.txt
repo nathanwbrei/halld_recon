@@ -228,6 +228,18 @@ set(HALLD_RECON_SOURCES
         src/libraries/HDGEOMETRY/DRootGeom.cc
         src/libraries/HDGEOMETRY/DRootGeom.h
 
+        src/libraries/KINFITTER/DKinFitChain.h
+        src/libraries/KINFITTER/DKinFitChainStep.h
+        src/libraries/KINFITTER/DKinFitConstraint.h
+        src/libraries/KINFITTER/DKinFitConstraint_Mass.h
+        src/libraries/KINFITTER/DKinFitConstraint_P4.h
+        src/libraries/KINFITTER/DKinFitConstraint_Spacetime.h
+        src/libraries/KINFITTER/DKinFitConstraint_Vertex.h
+        src/libraries/KINFITTER/DKinFitParticle.h
+        src/libraries/KINFITTER/DKinFitter.cc
+        src/libraries/KINFITTER/DKinFitter.h
+        src/libraries/KINFITTER/DKinFitUtils.cc
+        src/libraries/KINFITTER/DKinFitUtils.h
 
         src/libraries/PAIR_SPECTROMETER/DPSDigiHit.h
         src/libraries/PAIR_SPECTROMETER/DPSGeometry.h
