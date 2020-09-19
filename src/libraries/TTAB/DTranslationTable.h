@@ -15,10 +15,8 @@ using namespace std;
 
 
 #include <JANA/JObject.h>
-#include <JANA/JFactoryT.h>
+#include <JANA/JEvent.h>
 #include <JANA/Calibrations/JCalibration.h>
-#include <JANA/JException.h>
-#include <JANA/JEventSource.h>
 
 #include <DAQ/DModuleType.h>
 #include <DAQ/Df250PulseData.h>
@@ -534,8 +532,8 @@ class DTranslationTable:public JObject{
 		//void AddToCallStack(JEventLoop *loop, string caller, string callee) const;
 
 		void ReadOptionalROCidTranslation(void);
-		static void SetSystemsToParse(string systems, int systems_to_parse_force, JEventSource *eventsource);
-		void SetSystemsToParse(JEventSource *eventsource){SetSystemsToParse(SYSTEMS_TO_PARSE, 0, eventsource);}
+		static std::set<uint32_t> GetSystemsToParse(string systems, int systems_to_parse_force);
+		std::set<uint32_t> GetSystemsToParse() { return GetSystemsToParse(SYSTEMS_TO_PARSE, 0); }
 		void ReadTranslationTable(JCalibration *jcalib=NULL);
 		
 		template<class T> void CopyDf250Info(T *h, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
@@ -590,7 +588,7 @@ class DTranslationTable:public JObject{
 		string SYSTEMS_TO_PARSE;
 		string ROCID_MAP_FILENAME;
 		bool CALL_STACK;
-		
+
 		mutable JLogger ttout;
 
 		string Channel2Str(const DChannelInfo &in_channel) const;

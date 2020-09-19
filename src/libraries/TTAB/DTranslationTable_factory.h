@@ -9,6 +9,8 @@
 #define _DTranslationTable_factory_
 
 #include <JANA/JFactoryT.h>
+#include <JANA/JEvent.h>
+
 #include "DTranslationTable.h"
 
 #include <mutex>
@@ -47,10 +49,6 @@ class DTranslationTable_factory : public JFactoryT<DTranslationTable> {
 			// TODO: Implement the correct solution.
 			JEvent* unsafe_event = &(const_cast<JEvent&>(*event));
 			tt = new DTranslationTable(GetApplication(), unsafe_event);
-
-			// If restricting parsing, make sure it is set for this source
-			// TODO: Ideally refactor this, too.
-			tt->SetSystemsToParse(event->GetJEventSource());
 		}
 
 		void Process(const std::shared_ptr<const JEvent>& aEvent) override {

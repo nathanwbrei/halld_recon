@@ -192,6 +192,7 @@
 #include <TRIGGER/DL1Trigger.h>
 
 #include <TTAB/DTranslationTable.h>
+#include <TTAB/DTranslationTable_factory.h>
 #include <TTAB/DTTabUtilities.h>
 
 

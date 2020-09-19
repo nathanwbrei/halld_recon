@@ -333,13 +333,13 @@ set(HALLD_RECON_SOURCES
         src/libraries/TRIGGER/DL1Trigger.h
 
         src/libraries/TTAB/DTranslationTable.h
-#        src/libraries/TTAB/DTranslationTable.cc          # Pulls in JEventSource_EVIO
+        src/libraries/TTAB/DTranslationTable.cc
         src/libraries/TTAB/DTranslationTable_factory.h
         src/libraries/TTAB/DTTabUtilities.cc
         src/libraries/TTAB/DTTabUtilities.h
         src/libraries/TTAB/DTTabUtilities_factory.cc
         src/libraries/TTAB/DTTabUtilities_factory.h
-#        src/libraries/TTAB/TTab_init.cc
+        src/libraries/TTAB/TTab_init.cc
 
         )
 

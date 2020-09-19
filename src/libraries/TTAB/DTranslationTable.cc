@@ -11,8 +11,6 @@
 #include <sstream>
 
 #include <DAQ/DModuleType.h>
-#include <DAQ/JEventSource_EVIO.h>
-//#include <DAQ/JEventSource_EVIOpp.h>
 #include <PAIR_SPECTROMETER/DPSGeometry.h>
 
 #include <JANA/Calibrations/JCalibrationManager.h>
@@ -238,30 +236,22 @@ void DTranslationTable::ReadOptionalROCidTranslation(void)
 }
 
 //---------------------------------
-// SetSystemsToParse
+// GetSystemsToParse
 //---------------------------------
-void DTranslationTable::SetSystemsToParse(string systems, int systems_to_parse_force, JEventSource *eventsource)
+std::set<uint32_t> DTranslationTable::GetSystemsToParse(string systems, int systems_to_parse_force)
 {
 	/// This takes a string of comma separated system names and
 	/// identifies a list of Detector_t values from this (using
 	/// strings returned by DetectorName() ). It then tries to
 	/// copy the value into the DAQ plugin so they can be used
 	/// to restrict which banks to parse.
+	std::set<uint32_t> rocids_to_parse;
 
 	// Copy value on how to handle mismatch bewtween CCDB and hard-coded to internal variable
     Get_ROCID_By_System_Mismatch_Behaviour() = systems_to_parse_force;
 
-	if(systems == "") return; // nothing to do for empty strings
+	if(systems == "") return rocids_to_parse; // nothing to do for empty strings
 	jout << "Setting systems to parse to: " << systems << jendl;
-
-	// Make sure this is a JEventSource_EVIO object pointer
-	JEventSource_EVIO   *eviosource   = dynamic_cast<JEventSource_EVIO*  >(eventsource);
-	//JEventSource_EVIOpp *evioppsource = dynamic_cast<JEventSource_EVIOpp*>(eventsource);
-	if( (!eviosource)) { // && !(evioppsource) ) {
-		jerr << "eventsource not a JEventSource_EVIO or JEventSource_EVIOpp object! Cannot restrict parsing list!" <<
-		jendl;
-		return;
-	}
 
     // Make map of system type id by name
 	map<string, Detector_t> name_to_id;
@@ -329,12 +319,11 @@ void DTranslationTable::SetSystemsToParse(string systems, int systems_to_parse_f
 
 			// Add this rocid to the DAQ parsing list
 			uint32_t rocid = *it;
-			if(eviosource  ) eviosource->AddROCIDtoParseList(rocid);
-			//if(evioppsource) evioppsource->AddROCIDtoParseList(rocid);
+			rocids_to_parse.insert(rocid);
 			jout << "   Added rocid " << rocid << " for system " << token << " to parse list" << jendl;
 		}
 	}
-
+	return rocids_to_parse;
 }
 
 //---------------------------------
