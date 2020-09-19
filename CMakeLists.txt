@@ -163,7 +163,8 @@ set(HALLD_RECON_SOURCES
         src/libraries/DAQ/HDEVIO.h
         src/libraries/DAQ/HDEVIO.cc
 
-        src/libraries/DIRC/DDIRCLut.h     # JEventLoop
+        src/libraries/DIRC/DDIRCLut.h
+        src/libraries/DIRC/DDIRCLut.cc     # Init requires event
         src/libraries/DIRC/DDIRCLutReader.h
         src/libraries/DIRC/DDIRCLutReader.cc
         src/libraries/DIRC/DDIRCLEDRef.h
@@ -171,6 +172,7 @@ set(HALLD_RECON_SOURCES
         src/libraries/DIRC/DDIRCTDCDigiHit.h
         src/libraries/DIRC/DDIRCPmtHit.h
         src/libraries/DIRC/DDIRCGeometry.h
+        src/libraries/DIRC/DDIRCGeometry.cc
         src/libraries/DIRC/DDIRCTruthBarHit.h
 
         src/libraries/EVENTSTORE/DESSkimData.h
@@ -296,26 +298,34 @@ set(HALLD_RECON_SOURCES
         src/libraries/TOF/DTOFTruth.h
         src/libraries/TOF/DTOFPaddleHit.h
         src/libraries/TOF/DTOFDigiHit.h
-        src/libraries/TOF/DTOFGeometry.h   # Uses DGeometry
+        src/libraries/TOF/DTOFGeometry.h
+        src/libraries/TOF/DTOFGeometry.cc
         src/libraries/TOF/DTOFTDCDigiHit.h
         src/libraries/TOF/DTOFPoint.h
+        src/libraries/TOF/DTOFPoint_factory.cc
+        src/libraries/TOF/DTOFPoint_factory.h
 
         src/libraries/TPOL/DTPOLTruthHit.h
         src/libraries/TPOL/DTPOLHit.h
         src/libraries/TPOL/DTPOLSectorDigiHit.h
         src/libraries/TPOL/DTPOLRingDigiHit.h
 
-        src/libraries/TRACKING/DTrackWireBased.h    # DTrackFitter
+        src/libraries/TRACKING/DTrackWireBased.h
         src/libraries/TRACKING/DTrackFinder.h
-        src/libraries/TRACKING/DTrackCandidate.h    # DTrackFitter
+        src/libraries/TRACKING/DTrackCandidate.h
         src/libraries/TRACKING/DMCTrackHit.h
         src/libraries/TRACKING/DHoughFind.h
         src/libraries/TRACKING/DMCThrown.h
-        src/libraries/TRACKING/DTrackTimeBased.h    # DTrackFitter
+        src/libraries/TRACKING/DTrackTimeBased.h
         src/libraries/TRACKING/DTrackHit.h
         src/libraries/TRACKING/DMCTrajectoryPoint.h
-        src/libraries/TRACKING/DTrackFitter.h        # Uses JEventLoop, SECRET FACTORY
-        src/libraries/TRACKING/DTrackHitSelector.h   # Uses JEventLoop
+        src/libraries/TRACKING/DTrackFitter.h        # Put some of this in a factory?!?
+#        src/libraries/TRACKING/DTrackFitter.cc
+        src/libraries/TRACKING/DTrackHitSelector.h
+#        src/libraries/TRACKING/DTrackWireBased_factory.cc
+        src/libraries/TRACKING/DTrackWireBased_factory.h
+#        src/libraries/TRACKING/DTrackTimeBased_factory.cc
+        src/libraries/TRACKING/DTrackTimeBased_factory.h
 
         src/libraries/TRD/DGEMPoint.h
         src/libraries/TRD/DTRDStripCluster.h

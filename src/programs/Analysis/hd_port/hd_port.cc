@@ -124,11 +124,11 @@
 #include <PAIR_SPECTROMETER/DPSHit.h>
 #include <PAIR_SPECTROMETER/DPSCPair.h>
 
-// #include <PID/DChargedTrack.h>              // DTrackFitter
+#include <PID/DChargedTrack.h>              // DTrackFitter
 #include <PID/DKinematicData.h>
 // #include <PID/DNeutralShower.h>             // DNeutralParticleHypothesis
-// #include <PID/DNeutralParticleHypothesis.h> // DTrackFitter
-// #include <PID/DChargedParticleHypothesis.h> // DTrackFitter
+#include <PID/DNeutralParticleHypothesis.h> // DTrackFitter
+#include <PID/DChargedTrackHypothesis.h> // DTrackFitter
 #include <PID/DDetectorMatches.h>
 // #include <PID/DParticleID.h>                // JGeometry
 // #include <PID/DNeutralParticle.h>           // DNeutralParticleHypothesis
@@ -172,7 +172,7 @@
 #include <TRACKING/DMCThrown.h>
 // #include <TRACKING/DTrackCandidate.h>
 // #include <TRACKING/DTrackTimeBased.h>
-// #include <TRACKING/DTrackFitter.h>
+#include <TRACKING/DTrackFitter.h>
 // #include <TRACKING/DTrackHitSelector.h>
 
 

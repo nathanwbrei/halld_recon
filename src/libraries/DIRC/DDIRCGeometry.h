@@ -7,6 +7,7 @@
 #define _DDIRCGeometry_
 
 #include <JANA/JObject.h>
+#include <JANA/JEvent.h>
 #include <JANA/Calibrations/JCalibration.h>
 
 class DDIRCGeometry : public JObject {
@@ -15,7 +16,7 @@ public:
 	
 	JOBJECT_PUBLIC(DDIRCGeometry);
 
-	DDIRCGeometry(int runnumber);
+	DDIRCGeometry(){}
 	~DDIRCGeometry(){}
 
 	// these numbers are fixed for the DIRC as constructed
@@ -51,8 +52,7 @@ public:
 
 private:
 
-	DDIRCGeometry(); // forbid default constructor
-	void Initialize(int runnumber);
+	void Initialize(const std::shared_ptr<const JEvent>& event);
 
 	int CHANNEL_PER_PMT, PMT_ROWS, PMT_COLUMNS;
 

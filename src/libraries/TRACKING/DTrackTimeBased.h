@@ -9,6 +9,7 @@
 #define _DTrackTimeBased_
 
 #include <JANA/JObject.h>
+#include <DANA/DObjectID.h>
 #include "DTrackingData.h"
 #include "DTrackFitter.h"
 #include "CDC/DCDCTrackHit.h"
@@ -88,19 +89,17 @@ class DTrackTimeBased:public DTrackingData{
 			summary.add((float)FOM, "FOM", "%f");
 			summary.add(flags, "Flags", "%d");
 			//summary.add(dMCThrownMatchMyID, "MCMatchID", "%d");
-			//summary.add(dNumHitsMatchedToThrown);
+			//summary.add(dNumHitsMatchedToThrown, "#HitsMCMatched", "%d");
 		}
 };
 
 size_t Get_NumTrackHits(const DTrackTimeBased* locTrackTimeBased);
 inline size_t Get_NumTrackHits(const DTrackTimeBased* locTrackTimeBased)
 {
-	vector<const DCDCTrackHit*> locCDCHits;
-	locTrackTimeBased->Get(locCDCHits);
-	vector<const DFDCPseudo*> locFDCHits;
-	locTrackTimeBased->Get(locFDCHits);
+	vector<const DCDCTrackHit*> locCDCHits = locTrackTimeBased->Get<DCDCTrackHit>();
+	vector<const DFDCPseudo*> locFDCHits = locTrackTimeBased->Get<DFDCPseudo>();
 
-	size_t locNumHits = locCDCHits.size() + locFDCHits.size(, "#HitsMCMatched", "%d");
+	size_t locNumHits = locCDCHits.size() + locFDCHits.size();
 	if(locNumHits > 0)
 		return locNumHits;
 

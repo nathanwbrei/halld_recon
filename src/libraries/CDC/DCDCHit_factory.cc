@@ -11,14 +11,17 @@
 #include <cmath>
 #include <CDC/DCDCHit.h>
 
+#include <JANA/JEvent.h>
+#include <JANA/Calibrations/JCalibrationManager.h>
+
 #include "DCDCHit_factory.h"
 
 static double DIGI_THRESHOLD = -1.0e8;
 
 //------------------
-// init
+// Init
 //------------------
-jerror_t DCDCHit_factory::init(void)
+void DCDCHit_factory::Init()
 {
 
   LowTCut = -10000.;
@@ -26,56 +29,60 @@ jerror_t DCDCHit_factory::init(void)
 
   Disable_CDC_TimingCuts = 0; // this can be changed by a parameter in brun()
   // Note: That has to be done in brun() because the parameters are read from ccdb at every call to brun()
-  gPARMS->SetDefaultParameter("CDCHit:Disable_TimingCuts", Disable_CDC_TimingCuts,
+
+  auto app = GetApplication();
+
+  app->SetDefaultParameter("CDCHit:Disable_TimingCuts", Disable_CDC_TimingCuts,
                               "Disable CDC timing Cuts if this variable is not zero!");
   
 
-  gPARMS->SetDefaultParameter("CDC:DIGI_THRESHOLD",DIGI_THRESHOLD,
+  app->SetDefaultParameter("CDC:DIGI_THRESHOLD",DIGI_THRESHOLD,
 			      "Do not convert CDC digitized hits into DCDCHit objects"
 			      " that would have q less than this");
   
   RemoveCorrelationHits = 1;
   
-  gPARMS->SetDefaultParameter("CDCHit:RemoveCorrelationHits", RemoveCorrelationHits,
+  app->SetDefaultParameter("CDCHit:RemoveCorrelationHits", RemoveCorrelationHits,
 			      "Remove hits correlated in time with saturation hits!");
   
   CorrelationHitsCut = 1.5;
-  gPARMS->SetDefaultParameter("CDCHit:CorrelationHitsCut", CorrelationHitsCut,
+  app->SetDefaultParameter("CDCHit:CorrelationHitsCut", CorrelationHitsCut,
 			      "Cut in units of 8ns bins to remove correlated hits with Saturation hits!");
   
   CorrelatedHitPeak = 3.5;
-  gPARMS->SetDefaultParameter("CDCHit:CorrelatedHitPeak", CorrelatedHitPeak,
+  app->SetDefaultParameter("CDCHit:CorrelatedHitPeak", CorrelatedHitPeak,
                               "Location of peak time around which we cut correlated times in units of 8ns bins");
 
   // Setting this flag makes it so that JANA does not delete the objects in _data.
   // This factory will manage this memory.
-  SetFactoryFlag(NOT_OBJECT_OWNER);
-  
-  return NOERROR;
+  SetFactoryFlag(NOT_OBJECT_OWNER);  // TODO: This is
 }
 
 //------------------
-// brun
+// BeginRun
 //------------------
-jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
+void DCDCHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-  
-  /// Read in calibration constants
-  
+
+  auto event_number = event->GetEventNumber();
+  auto run_number = event->GetRunNumber();
+  auto app = GetApplication();
+  auto calibration = app->GetService<JCalibrationManager>()->GetJCalibration(run_number);
+
   vector<double> cdc_timing_cuts;
   
-  if (eventLoop->GetCalib("/CDC/timing_cut", cdc_timing_cuts)){
+  if (calibration->Get("/CDC/timing_cut", cdc_timing_cuts)){
     LowTCut = -60.;
     HighTCut = 900.;
-    jout << "Error loading /CDC/timing_cut ! set defaul values -60. and 900." << endl;
+    jout << "Error loading /CDC/timing_cut ! set defaul values -60. and 900." << jendl;
   } else {
     LowTCut = cdc_timing_cuts[0];
     HighTCut = cdc_timing_cuts[1];
     //jout<<"CDC Timing Cuts: "<<LowTCut<<" ... "<<HighTCut<<endl;
   }
   
-  gPARMS->SetDefaultParameter("CDCHit:LowTCut", LowTCut,"Minimum acceptable CDC hit time (ns)");
-  gPARMS->SetDefaultParameter("CDCHit:HighTCut", HighTCut, "Maximum acceptable CDC hit time (ns)");
+  app->SetDefaultParameter("CDCHit:LowTCut", LowTCut,"Minimum acceptable CDC hit time (ns)");
+  app->SetDefaultParameter("CDCHit:HighTCut", HighTCut, "Maximum acceptable CDC hit time (ns)");
   
   //jout<<LowTCut<<" / "<<HighTCut<<endl;
 
@@ -83,31 +90,31 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     
     LowTCut = -10000.;
     HighTCut = 10000.;
-    jout << "Disable CDC Hit Timing Cuts!" << endl;
+    jout << "Disable CDC Hit Timing Cuts!" << jendl;
     
   }
   
-  eventLoop->Get(ttab);
+  event->Get(ttab);
   
-  return NOERROR;
+  return;
 }
 
 //------------------
-// evnt
+// Process
 //------------------
-jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
+void DCDCHit_factory::Process(const std::shared_ptr<const JEvent>& event)
 {
  
   // Clear _data vector
-  _data.clear();  
-  
+  _data.clear();           // TODO: I don't trust this
+
   vector<const DCDCHit*> hits;
-  loop->Get(hits, "Calib");
+  event->Get(hits, "Calib");
   
   
   vector<cdchit_info_t> hit_info_vec;
   
-  // loop over hits and find roc/slot/con numbers
+  // event over hits and find roc/slot/con numbers
   for (unsigned int k=0 ;k<hits.size(); k++){
     const DCDCHit *hit = hits[k];
     vector <const Df125CDCPulse*> pulse;
@@ -211,22 +218,22 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     _data.push_back( const_cast<DCDCHit*>(hit) );
     
   }
-  
-  return NOERROR;
+
+  return;
 }
 
 //------------------
-// erun
+// EndRun
 //------------------
-jerror_t DCDCHit_factory::erun(void)
+void DCDCHit_factory::EndRun()
 {
-    return NOERROR;
+    return;
 }
 
 //------------------
-// fini
+// Finish
 //------------------
-jerror_t DCDCHit_factory::fini(void)
+void DCDCHit_factory::Finish()
 {
-    return NOERROR;
+    return;
 }

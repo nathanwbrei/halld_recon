@@ -46,7 +46,7 @@ public:
 		//------------------
 		// EndRun
 		//------------------
-		void EndRun()
+		void EndRun() override
 		{
 			if( bcalgeometry ) delete bcalgeometry;
 			bcalgeometry = NULL;

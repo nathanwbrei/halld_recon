@@ -18,29 +18,27 @@ using namespace std;
 #include "DAQ/Df250Config.h"
 #include "TTAB/DTTabUtilities.h"
 
-using namespace jana;
+
 
 //----------------
 // Constructor
 //----------------
-DCCALHit_factory::DCCALHit_factory(){
-
-  HIT_DEBUG    =  0;
-  DB_PEDESTAL  =  1;    //   1  -  take from DB
-                        //   0  -  event-by-event pedestal subtraction
-  
-  gPARMS->SetDefaultParameter("CCAL:HIT_DEBUG",    HIT_DEBUG);
-  gPARMS->SetDefaultParameter("CCAL:DB_PEDESTAL",  DB_PEDESTAL);
-
-}
+DCCALHit_factory::DCCALHit_factory(){}
 
 
 //------------------
-// init
+// Init
 //------------------
-jerror_t DCCALHit_factory::init(void)
+void DCCALHit_factory::Init()
 {
-    // initialize calibration tables
+	HIT_DEBUG    =  0;
+	DB_PEDESTAL  =  1;    //   1  -  take from DB
+	//   0  -  event-by-event pedestal subtraction
+
+	gPARMS->SetDefaultParameter("CCAL:HIT_DEBUG",    HIT_DEBUG);
+	gPARMS->SetDefaultParameter("CCAL:DB_PEDESTAL",  DB_PEDESTAL);
+
+	// Initialize calibration tables
     vector< vector<double > > gains_tmp(DCCALGeometry::kCCALBlocksTall, 
             vector<double>(DCCALGeometry::kCCALBlocksWide));
     vector< vector<double > > pedestals_tmp(DCCALGeometry::kCCALBlocksTall, 
@@ -62,14 +60,12 @@ jerror_t DCCALHit_factory::init(void)
     
     base_time  = 0;
     
-
-    return NOERROR;
 }
 
 //------------------
-// brun
+// BeginRun
 //------------------
-jerror_t DCCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
+void DCCALHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
 
     // Only print messages for one thread whenever run number change
@@ -85,7 +81,7 @@ jerror_t DCCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 
     // extract the CCAL Geometry
     vector<const DCCALGeometry*> ccalGeomVect;
-    eventLoop->Get( ccalGeomVect );
+    event->Get( ccalGeomVect );
     if (ccalGeomVect.size() < 1)
       return OBJECT_NOT_AVAILABLE;
     const DCCALGeometry& ccalGeom = *(ccalGeomVect[0]);
@@ -99,8 +95,8 @@ jerror_t DCCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     // load scale factors
     map<string,double> scale_factors;
 
-    if (eventLoop->GetCalib("/CCAL/digi_scales", scale_factors))
-        jout << "Error loading /CCAL/digi_scales !" << endl;
+    if (calibration->Get("/CCAL/digi_scales", scale_factors))
+        jout << "Error loading /CCAL/digi_scales !" << jendl;
     if (scale_factors.find("ADC_EN_SCALE") != scale_factors.end())
         adc_en_scale = scale_factors["ADC_EN_SCALE"];
     else
@@ -111,23 +107,23 @@ jerror_t DCCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
         jerr << "Unable to get ADC_TIME_SCALE from /CCAL/digi_scales !" << endl;
 
     map<string,double> base_time_offset;
-    if (eventLoop->GetCalib("/CCAL/base_time_offset",base_time_offset))
-        jout << "Error loading /CCAL/base_time_offset !" << endl;
+    if (calibration->Get("/CCAL/base_time_offset",base_time_offset))
+        jout << "Error loading /CCAL/base_time_offset !" << jendl;
     if (base_time_offset.find("BASE_TIME") != base_time_offset.end())
         base_time = base_time_offset["BASE_TIME"];
     else
         jerr << "Unable to get BASE_TIME from /CCAL/base_time_offset !" << endl;
 
 
-    if (eventLoop->GetCalib("/CCAL/gains", ccal_gains_ch))
-      jout << "DCCALHit_factory: Error loading /CCAL/gains !" << endl;
-    if (eventLoop->GetCalib("/CCAL/pedestals", ccal_pedestals_ch))
-      jout << "DCCALHit_factory: Error loading /CCAL/pedestals !" << endl;
+    if (calibration->Get("/CCAL/gains", ccal_gains_ch))
+      jout << "DCCALHit_factory: Error loading /CCAL/gains !" << jendl;
+    if (calibration->Get("/CCAL/pedestals", ccal_pedestals_ch))
+      jout << "DCCALHit_factory: Error loading /CCAL/pedestals !" << jendl;
 
-    if (eventLoop->GetCalib("/CCAL/timing_offsets", time_offsets_ch))
-        jout << "Error loading /CCAL/timing_offsets !" << endl;
-    if (eventLoop->GetCalib("/CCAL/adc_offsets", adc_offsets_ch))
-        jout << "Error loading /CCAL/adc_offsets !" << endl;
+    if (calibration->Get("/CCAL/timing_offsets", time_offsets_ch))
+        jout << "Error loading /CCAL/timing_offsets !" << jendl;
+    if (calibration->Get("/CCAL/adc_offsets", adc_offsets_ch))
+        jout << "Error loading /CCAL/adc_offsets !" << jendl;
 
 
     LoadCCALConst(gains, ccal_gains_ch, ccalGeom);
@@ -190,14 +186,12 @@ jerror_t DCCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
       cout << endl;
 
     }     
-    
-    return NOERROR;
 }
 
 //------------------
-// evnt
+// Process
 //------------------
-jerror_t DCCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
+void DCCALHit_factory::Process(const std::shared_ptr<const JEvent>& event)
 {
     /// Generate DCCALHit object for each DCCALDigiHit object.
     /// This is where the first set of calibration constants
@@ -211,7 +205,7 @@ jerror_t DCCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
     // extract the CCAL Geometry
     vector<const DCCALGeometry*> ccalGeomVect;
-    eventLoop->Get( ccalGeomVect );
+    event->Get( ccalGeomVect );
     if (ccalGeomVect.size() < 1)
       return OBJECT_NOT_AVAILABLE;
     const DCCALGeometry& ccalGeom = *(ccalGeomVect[0]);
@@ -219,7 +213,7 @@ jerror_t DCCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
     vector<const DCCALDigiHit*> digihits;
 
-    loop->Get(digihits);
+    event->Get(digihits);
 
     for (unsigned int i = 0; i < digihits.size(); i++) {
 
@@ -281,29 +275,26 @@ jerror_t DCCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	    hit->intOverPeak = 0;
 
 	  hit->AddAssociatedObject(digihit);
-	  _data.push_back(hit);
+	  Insert(hit);
 
 	}   // Good hit
 
     }
-    
-    return NOERROR;
+    return;
 }
 
 //------------------
-// erun
+// EndRun
 //------------------
-jerror_t DCCALHit_factory::erun(void)
+void DCCALHit_factory::EndRun()
 {
-    return NOERROR;
 }
 
 //------------------
-// fini
+// Finish
 //------------------
-jerror_t DCCALHit_factory::fini(void)
+void DCCALHit_factory::Finish()
 {
-    return NOERROR;
 }
 
 

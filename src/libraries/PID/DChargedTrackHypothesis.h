@@ -25,8 +25,8 @@ class DChargedTrackHypothesis : public DKinematicData
 		DChargedTrackHypothesis(const DTrackTimeBased* locSourceData);
 		DChargedTrackHypothesis& operator=(const DChargedTrackHypothesis& locSourceData);
 
-		void Reset(void);
-		void Release(void);
+		void Reset(void) override;
+		void Release(void) override;
 
 		//SHARE RESOURCES
 		void Share_FromInput(const DChargedTrackHypothesis* locSourceData, bool locShareTrackingFlag, bool locShareTimingFlag, bool locShareKinematicsFlag);

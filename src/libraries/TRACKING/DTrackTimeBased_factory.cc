@@ -27,7 +27,7 @@ using namespace std;
 #include "HDGEOMETRY/DMagneticFieldMapNoField.h"
 #include <deque>
 
-using namespace jana;
+
 
 // Routine for sorting start times
 bool DTrackTimeBased_T0_cmp(DTrackTimeBased::DStartTime_t a,
@@ -59,9 +59,9 @@ static unsigned int count_common_members(vector<T> &a, vector<T> &b)
 
 
 //------------------
-// init
+// Init
 //------------------
-jerror_t DTrackTimeBased_factory::init(void)
+void DTrackTimeBased_factory::Init()
 {
 	fitter = NULL;
 
@@ -70,14 +70,14 @@ jerror_t DTrackTimeBased_factory::init(void)
 	DEBUG_LEVEL = 0;
 
 	USE_HITS_FROM_WIREBASED_FIT=false;
-	gPARMS->SetDefaultParameter("TRKFIT:USE_HITS_FROM_WIREBASED_FIT",
+	app->SetDefaultParameter("TRKFIT:USE_HITS_FROM_WIREBASED_FIT",
 			      USE_HITS_FROM_WIREBASED_FIT);
 	INSERT_MISSING_HYPOTHESES=true;
-	gPARMS->SetDefaultParameter("TRKFIT:INSERT_MISSING_HYPOTHESES",
+	app->SetDefaultParameter("TRKFIT:INSERT_MISSING_HYPOTHESES",
 				    INSERT_MISSING_HYPOTHESES);
 
-	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_HISTS",DEBUG_HISTS);
-	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_LEVEL",DEBUG_LEVEL);
+	app->SetDefaultParameter("TRKFIT:DEBUG_HISTS",DEBUG_HISTS);
+	app->SetDefaultParameter("TRKFIT:DEBUG_LEVEL",DEBUG_LEVEL);
 	
 	vector<int> hypotheses;
 	hypotheses.push_back(Positron);
@@ -98,7 +98,7 @@ jerror_t DTrackTimeBased_factory::init(void)
 	}
 
 	string HYPOTHESES = locMassStream.str();
-	gPARMS->SetDefaultParameter("TRKFIT:HYPOTHESES", HYPOTHESES);
+	app->SetDefaultParameter("TRKFIT:HYPOTHESES", HYPOTHESES);
 
 	// Parse MASS_HYPOTHESES strings to make list of masses to try
 	hypotheses.clear();
@@ -116,23 +116,23 @@ jerror_t DTrackTimeBased_factory::init(void)
 	if(mass_hypotheses_positive.empty()){
 		static once_flag pwarn_flag;
 		call_once(pwarn_flag, [](){
-			jout << endl;
+			jout << jendl;
 			jout << "############# WARNING !! ################ " <<endl;
-			jout << "There are no mass hypotheses for positive tracks!" << endl;
-			jout << "Be SURE this is what you really want!" << endl;
+			jout << "There are no mass hypotheses for positive tracks!" << jendl;
+			jout << "Be SURE this is what you really want!" << jendl;
 			jout << "######################################### " <<endl;
-			jout << endl;
+			jout << jendl;
 		});
 	}
 	if(mass_hypotheses_negative.empty()){
 		static once_flag nwarn_flag;
 		call_once(nwarn_flag, [](){
-			jout << endl;
+			jout << jendl;
 			jout << "############# WARNING !! ################ " <<endl;
-			jout << "There are no mass hypotheses for negative tracks!" << endl;
-			jout << "Be SURE this is what you really want!" << endl;
+			jout << "There are no mass hypotheses for negative tracks!" << jendl;
+			jout << "Be SURE this is what you really want!" << jendl;
 			jout << "######################################### " <<endl;
-			jout << endl;
+			jout << jendl;
 		});
 	}
 
@@ -141,30 +141,30 @@ jerror_t DTrackTimeBased_factory::init(void)
 
 	// Forces correct particle id (when available)
 	PID_FORCE_TRUTH = false;
-	gPARMS->SetDefaultParameter("TRKFIT:PID_FORCE_TRUTH", PID_FORCE_TRUTH);
+	app->SetDefaultParameter("TRKFIT:PID_FORCE_TRUTH", PID_FORCE_TRUTH);
 
 	USE_SC_TIME=true;
-	gPARMS->SetDefaultParameter("TRKFIT:USE_SC_TIME",USE_SC_TIME);
+	app->SetDefaultParameter("TRKFIT:USE_SC_TIME",USE_SC_TIME);
 
 	USE_TOF_TIME=true;
-	gPARMS->SetDefaultParameter("TRKFIT:USE_TOF_TIME",USE_TOF_TIME);
+	app->SetDefaultParameter("TRKFIT:USE_TOF_TIME",USE_TOF_TIME);
 
 	USE_FCAL_TIME=true;
-	gPARMS->SetDefaultParameter("TRKFIT:USE_FCAL_TIME",USE_FCAL_TIME);
+	app->SetDefaultParameter("TRKFIT:USE_FCAL_TIME",USE_FCAL_TIME);
 	
 	USE_BCAL_TIME=true;
-	gPARMS->SetDefaultParameter("TRKFIT:USE_BCAL_TIME",USE_BCAL_TIME);
+	app->SetDefaultParameter("TRKFIT:USE_BCAL_TIME",USE_BCAL_TIME);
        
-	return NOERROR;
+	return;
 }
 
 //------------------
-// brun
+// BeginRun
 //------------------
-jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int32_t runnumber)
+void DTrackTimeBased_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
   // Get the geometry
-  DApplication* dapp=dynamic_cast<DApplication*>(loop->GetJApplication());
+  DApplication* dapp=dynamic_cast<DApplication*>(event->GetJApplication());
   geom = dapp->GetDGeometry(runnumber);
    // Check for magnetic field
   dIsNoFieldFlag = (dynamic_cast<const DMagneticFieldMapNoField*>(dapp->GetBfield(runnumber)) != NULL);
@@ -182,7 +182,7 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int32_t runnumber
 
   // Get pointer to TrackFitter object that actually fits a track
   vector<const DTrackFitter *> fitters;
-  loop->Get(fitters);
+  event->Get(fitters);
   if(fitters.size()<1){
     _DBG_<<"Unable to get a DTrackFitter object! NO Charged track fitting will be done!"<<endl;
     return RESOURCE_UNAVAILABLE;
@@ -199,7 +199,7 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int32_t runnumber
 	
   // Get the particle ID algorithms
   vector<const DParticleID *> pid_algorithms;
-  loop->Get(pid_algorithms);
+  event->Get(pid_algorithms);
   if(pid_algorithms.size()<1){
     _DBG_<<"Unable to get a DParticleID object! NO PID will be done!"<<endl;
     return RESOURCE_UNAVAILABLE;
@@ -239,17 +239,17 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int32_t runnumber
 
 	}
 
-	return NOERROR;
+	return;
 }
 
 //------------------
-// evnt
+// Process
 //------------------
-jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
+void DTrackTimeBased_factory::Process(const std::shared_ptr<const JEvent>& event)
 {
   // Save event number to help with debugging
   myevt=eventnumber;
-  if(!fitter)return NOERROR;
+  if(!fitter)return;
 
   if(dIsNoFieldFlag){
     //Clear previous objects: 
@@ -258,41 +258,41 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     _data.clear();
      
     vector<const DTrackTimeBased*> locTimeBasedTracks;
-    loop->Get(locTimeBasedTracks, "StraightLine");
+    event->Get(locTimeBasedTracks, "StraightLine");
     for(size_t loc_i = 0; loc_i < locTimeBasedTracks.size(); ++loc_i)
       _data.push_back(const_cast<DTrackTimeBased*>(locTimeBasedTracks[loc_i]));
-    return NOERROR;
+    return;
   }
 
   // Get candidates and hits
   vector<const DTrackWireBased*> tracks;
-  loop->Get(tracks);
-  if (tracks.size()==0) return NOERROR;
+  event->Get(tracks);
+  if (tracks.size()==0) return;
  
   // get start counter hits
   vector<const DSCHit*>sc_hits;
   if (USE_SC_TIME){
-    loop->Get(sc_hits);
+    event->Get(sc_hits);
   }
   
   // Get TOF points
   vector<const DTOFPoint*> tof_points;
   if (USE_TOF_TIME){
-    loop->Get(tof_points);
+    event->Get(tof_points);
   }
 
   // Get BCAL and FCAL showers
   vector<const DBCALShower*>bcal_showers;
   if (USE_BCAL_TIME){
-    loop->Get(bcal_showers);
+    event->Get(bcal_showers);
   }
   vector<const DFCALShower*>fcal_showers;
   if (USE_FCAL_TIME){
-    loop->Get(fcal_showers);
+    event->Get(fcal_showers);
   }
   
   vector<const DMCThrown*> mcthrowns;
-  loop->Get(mcthrowns, "FinalState");
+  event->Get(mcthrowns, "FinalState");
    
   // Loop over candidates
   for(unsigned int i=0; i<tracks.size(); i++){
@@ -305,7 +305,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     CreateStartTimeList(track,sc_hits,tof_points,bcal_showers,fcal_showers,start_times);
 	
     // Fit the track
-    DoFit(track,start_times,loop,track->mass());
+    DoFit(track,start_times,event,track->mass());
   
     //_DBG_<< "eventnumber:   " << eventnumber << endl;
     if (PID_FORCE_TRUTH && _data.size()>num) {
@@ -315,14 +315,14 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       _data[_data.size()-1]->FOM=GetTruthMatchingFOM(i,_data[_data.size()-1],
 						     mcthrowns);
     }
-  } // loop over track candidates
+  } // event over track candidates
 
   // Filter out duplicate tracks
   FilterDuplicates();
 
   // Fill in track data for missing hypotheses 
   if (INSERT_MISSING_HYPOTHESES){
-    InsertMissingHypotheses(loop);
+    InsertMissingHypotheses(event);
   }
 
   // Set MC Hit-matching information
@@ -342,23 +342,23 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     }
   }
 
-  return NOERROR;
+  return;
 }
 
 //------------------
-// erun
+// EndRun
 //------------------
-jerror_t DTrackTimeBased_factory::erun(void)
+void DTrackTimeBased_factory::EndRun()
 {
-	return NOERROR;
+	return;
 }
 
 //------------------
-// fini
+// Finish
 //------------------
-jerror_t DTrackTimeBased_factory::fini(void)
+void DTrackTimeBased_factory::Finish()
 {
-	return NOERROR;
+	return;
 }
 
 //------------------
@@ -580,7 +580,7 @@ int DTrackTimeBased_factory::GetThrownIndex(vector<const DMCThrown*>& locMCThrow
 	}
 
 	// The track number is buried in the truth hit objects of type DMCTrackHit. These should be 
-	// associated objects for the individual hit objects. We need to loop through them and
+	// associated objects for the individual hit objects. We need to event through them and
 	// keep track of how many hits for each track number we find
 
 	map<int, int> locHitMatches; //first int is MC my id, second is num hits
@@ -655,7 +655,7 @@ void DTrackTimeBased_factory
   // Match to the start counter and the outer detectors
   double locStartTimeVariance = 0.0;
   double track_t0=track->t0();
-  double locStartTime = track_t0;  // initial guess from tracking
+  double locStartTime = track_t0;  // Initial guess from tracking
  
   // Get start time estimate from Start Counter
   if (pid_algorithm->Get_StartTime(track->extrapolations.at(SYS_START),sc_hits,locStartTime)){
@@ -666,7 +666,7 @@ void DTrackTimeBased_factory
     start_times.push_back(start_time);
   }
   // Get start time estimate from TOF
-  locStartTime = track_t0;  // initial guess from tracking
+  locStartTime = track_t0;  // Initial guess from tracking
   if (pid_algorithm->Get_StartTime(track->extrapolations.at(SYS_TOF),tof_points,locStartTime)){
     // Fill in the start time vector
     start_time.t0=locStartTime;
@@ -676,7 +676,7 @@ void DTrackTimeBased_factory
     start_times.push_back(start_time); 
   }
   // Get start time estimate from FCAL
-  locStartTime = track_t0;  // initial guess from tracking
+  locStartTime = track_t0;  // Initial guess from tracking
   if (pid_algorithm->Get_StartTime(track->extrapolations.at(SYS_FCAL),fcal_showers,locStartTime)){
     // Fill in the start time vector
     start_time.t0=locStartTime;
@@ -713,7 +713,7 @@ void DTrackTimeBased_factory
 // Create a list of start times and do the fit for a particular mass hypothesis
 bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
 				    vector<DTrackTimeBased::DStartTime_t>&start_times,
-				    JEventLoop *loop,
+				    JEventLoop *event,
 				    double mass){  
   if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting time based fit with mass: "<<mass<<endl;}
   // Get the hits from the wire-based track
@@ -737,7 +737,7 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
   else{   
     fitter->Reset();
     fitter->SetFitType(DTrackFitter::kTimeBased);    
-    status = fitter->FindHitsAndFitTrack(*track, track->extrapolations,loop, 
+    status = fitter->FindHitsAndFitTrack(*track, track->extrapolations,event, 
 					 mass,
 					 mycdchits.size()+2*myfdchits.size(),
 					 mStartTime,mStartDetector);
@@ -830,7 +830,7 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
  	  timebased_track->potential_fdc_hits_on_track = fitter->GetNumPotentialFDCHits();
 
       timebased_track->AddAssociatedObject(track);
-      _data.push_back(timebased_track);
+      Insert(timebased_track);
       
       return true;
       break;
@@ -935,7 +935,7 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       timebased_track->FOM = TMath::Prob(timebased_track->chisq, timebased_track->Ndof);
       //_DBG_<< "FOM:   " << timebased_track->FOM << endl;
 
-      _data.push_back(timebased_track);
+      Insert(timebased_track);
      
       return true;
       break;
@@ -954,7 +954,7 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
 				      const DTrackTimeBased *src_track,
 							double my_mass,
 							double q,
-							JEventLoop *loop){
+							JEventLoop *event){
 
   // Create a new time-based track object
   DTrackTimeBased *timebased_track = new DTrackTimeBased();
@@ -1015,7 +1015,7 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
     fitter->Reset();
     fitter->SetFitType(DTrackFitter::kTimeBased);    
     status = fitter->FindHitsAndFitTrack(*timebased_track,
-					 timebased_track->extrapolations,loop, 
+					 timebased_track->extrapolations,event, 
 					 my_mass,
 					 src_cdchits.size()+2*src_fdchits.size(),
 					 timebased_track->t0(),
@@ -1126,7 +1126,7 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
 
 // If the fit failed for certain hypotheses, fill in the gaps using data from
 // successful fits for each candidate.
-bool DTrackTimeBased_factory::InsertMissingHypotheses(JEventLoop *loop){
+bool DTrackTimeBased_factory::InsertMissingHypotheses(JEventLoop *event){
   if (_data.size()==0) return false;
   
   // Make sure the tracks are ordered by candidate id
@@ -1141,7 +1141,7 @@ bool DTrackTimeBased_factory::InsertMissingHypotheses(JEventLoop *loop){
   for (size_t i=0;i<_data.size();i++){
     if (_data[i]->candidateid!=old_id){
       AddMissingTrackHypotheses(mass_bits,tracks_to_add,myhypotheses,q,
-				flipped_charge,loop);
+				flipped_charge,event);
 
       // Clear the myhypotheses vector for the next track
       myhypotheses.clear();
@@ -1168,7 +1168,7 @@ bool DTrackTimeBased_factory::InsertMissingHypotheses(JEventLoop *loop){
   }
   // Deal with last track candidate	
   AddMissingTrackHypotheses(mass_bits,tracks_to_add,myhypotheses,q,
-			    flipped_charge,loop);
+			    flipped_charge,event);
     
   // Add the new list of tracks to the output list
   if (tracks_to_add.size()>0){
@@ -1205,7 +1205,7 @@ void DTrackTimeBased_factory::AddMissingTrackHypotheses(unsigned int mass_bits,
 							vector<DTrackTimeBased *>&myhypotheses,
 							double q,
 							bool flipped_charge,
-							JEventLoop *loop){ 
+							JEventLoop *event){ 
 
   unsigned int last_index=myhypotheses.size()-1;
   unsigned int index=0;
@@ -1213,7 +1213,7 @@ void DTrackTimeBased_factory::AddMissingTrackHypotheses(unsigned int mass_bits,
     if (flipped_charge){
       /*if ((mass_bits & (1<<AntiProton))==0){
 	AddMissingTrackHypothesis(tracks_to_add,myhypotheses[last_index],
-				  ParticleMass(Proton),-1.,loop);  
+				  ParticleMass(Proton),-1.,event);  
       } 
       */
       for (unsigned int i=0;i<mass_hypotheses_negative.size();i++){
@@ -1222,13 +1222,13 @@ void DTrackTimeBased_factory::AddMissingTrackHypotheses(unsigned int mass_bits,
 	  else index=0;
 	  AddMissingTrackHypothesis(tracks_to_add,myhypotheses[index],
 				    ParticleMass(Particle_t(mass_hypotheses_negative[i])),
-				    -1.,loop);  
+				    -1.,event);  
 	} 
       }
     }
     /*   if ((mass_bits & (1<<Proton))==0){
       AddMissingTrackHypothesis(tracks_to_add,myhypotheses[last_index],
-				ParticleMass(Proton),+1.,loop);  
+				ParticleMass(Proton),+1.,event);  
 				} */
     for (unsigned int i=0;i<mass_hypotheses_positive.size();i++){
       if ((mass_bits & (1<<mass_hypotheses_positive[i]))==0){
@@ -1236,7 +1236,7 @@ void DTrackTimeBased_factory::AddMissingTrackHypotheses(unsigned int mass_bits,
 	else index=0;
 	AddMissingTrackHypothesis(tracks_to_add,myhypotheses[index],
 				  ParticleMass(Particle_t(mass_hypotheses_positive[i])),
-				  +1.,loop);  
+				  +1.,event);  
       } 
     }    
   }
@@ -1244,7 +1244,7 @@ void DTrackTimeBased_factory::AddMissingTrackHypotheses(unsigned int mass_bits,
     /*
     if ((mass_bits & (1<<AntiProton))==0){
       AddMissingTrackHypothesis(tracks_to_add,myhypotheses[last_index],
-				ParticleMass(Proton),-1.,loop);  
+				ParticleMass(Proton),-1.,event);  
 				} */	
     for (unsigned int i=0;i<mass_hypotheses_negative.size();i++){
       if ((mass_bits & (1<<mass_hypotheses_negative[i]))==0){
@@ -1252,13 +1252,13 @@ void DTrackTimeBased_factory::AddMissingTrackHypotheses(unsigned int mass_bits,
 	else index=0;
 	AddMissingTrackHypothesis(tracks_to_add,myhypotheses[index],
 				  ParticleMass(Particle_t(mass_hypotheses_negative[i])),
-				  -1.,loop);  
+				  -1.,event);  
       } 
     }
     if (flipped_charge){
       /*if ((mass_bits & (1<<Proton))==0){
 	AddMissingTrackHypothesis(tracks_to_add,myhypotheses[last_index],
-				  ParticleMass(Proton),+1.,loop);  
+				  ParticleMass(Proton),+1.,event);  
 				  } */
       for (unsigned int i=0;i<mass_hypotheses_positive.size();i++){
 	if ((mass_bits & (1<<mass_hypotheses_positive[i]))==0){
@@ -1266,7 +1266,7 @@ void DTrackTimeBased_factory::AddMissingTrackHypotheses(unsigned int mass_bits,
 	  else index=0;
 	  AddMissingTrackHypothesis(tracks_to_add,myhypotheses[index],
 				    ParticleMass(Particle_t(mass_hypotheses_positive[i])),
-				    +1.,loop);  
+				    +1.,event);  
 	} 
       }	
     }

@@ -8,40 +8,45 @@
 using namespace std;
 
 #include "DDIRCLut.h"
-#include "DANA/DApplication.h"
-#include <JANA/JCalibration.h>
+
+#include <JANA/JEvent.h>
+#include "HDGEOMETRY/DGeometry.h"
+
 
 //---------------------------------
-// DDIRCLut    (Constructor)
+// Init
 //---------------------------------
-DDIRCLut::DDIRCLut() 
-{
-	DIRC_DEBUG_HISTS = false;
-	gPARMS->SetDefaultParameter("DIRC:DEBUG_HISTS",DIRC_DEBUG_HISTS);
+bool DDIRCLut::Init(const std::shared_ptr<const JEvent>& event) {
+
+	auto event_number = event->GetEventNumber();
+	auto run_number = event->GetRunNumber();
+	auto app = event->GetJApplication();
+	dGeometryManager = app->GetService<DGeometryManager>();
+	jGlobalRootLock = app->GetService<JGlobalRootLock>();
 
 	DIRC_TRUTH_BARHIT = false;
-	gPARMS->SetDefaultParameter("DIRC:TRUTH_BARHIT",DIRC_TRUTH_BARHIT);
+	app->SetDefaultParameter("DIRC:TRUTH_BARHIT",DIRC_TRUTH_BARHIT);
 
 	DIRC_TRUTH_PIXELTIME = false;
-	gPARMS->SetDefaultParameter("DIRC:TRUTH_PIXELTIME",DIRC_TRUTH_PIXELTIME);
+	app->SetDefaultParameter("DIRC:TRUTH_PIXELTIME",DIRC_TRUTH_PIXELTIME);
 
 	// timing cuts for photons
 	DIRC_CUT_TDIFFD = 3; // direct cut in ns
-	gPARMS->SetDefaultParameter("DIRC:CUT_TDIFFD",DIRC_CUT_TDIFFD);
+	app->SetDefaultParameter("DIRC:CUT_TDIFFD",DIRC_CUT_TDIFFD);
 	DIRC_CUT_TDIFFR = 4; // reflected cut in ns
-	gPARMS->SetDefaultParameter("DIRC:CUT_TDIFFR",DIRC_CUT_TDIFFR);
+	app->SetDefaultParameter("DIRC:CUT_TDIFFR",DIRC_CUT_TDIFFR);
 
 	// Gives DeltaT = 0, but shouldn't it be v=20.3767 [cm/ns] for 1.47125
 	DIRC_LIGHT_V = 19.80; // v=19.8 [cm/ns] for 1.5141
-	gPARMS->SetDefaultParameter("DIRC:LIGHT_V",DIRC_LIGHT_V);
+	app->SetDefaultParameter("DIRC:LIGHT_V",DIRC_LIGHT_V);
 
 	// sigma (thetaC for single photon) in radiams
 	DIRC_SIGMA_THETAC = 0.01;
-	gPARMS->SetDefaultParameter("DIRC:SIGMA_THETAC",DIRC_SIGMA_THETAC);
+	app->SetDefaultParameter("DIRC:SIGMA_THETAC",DIRC_SIGMA_THETAC);
 
 	// Rotate tracks angle based on bar box survey data
 	DIRC_ROTATE_TRACK = false;
-	gPARMS->SetDefaultParameter("DIRC:ROTATE_TRACK",DIRC_ROTATE_TRACK);
+	app->SetDefaultParameter("DIRC:ROTATE_TRACK",DIRC_ROTATE_TRACK);
 
 	// set PID for different passes in debuging histograms
 	dFinalStatePIDs.push_back(Positron);
@@ -54,18 +59,16 @@ DDIRCLut::DDIRCLut()
 	dCriticalAngle = asin(1.00028/1.47125); // n_quarzt = 1.47125; //(1.47125 <==> 390nm)
 	dIndex = 1.473;
 
-	if(DIRC_DEBUG_HISTS) 	
-		CreateDebugHistograms();	
-}
+	DIRC_DEBUG_HISTS = false;
+	app->SetDefaultParameter("DIRC:DEBUG_HISTS",DIRC_DEBUG_HISTS);
+	if(DIRC_DEBUG_HISTS)
+		CreateDebugHistograms();
 
-bool DDIRCLut::brun(JEventLoop *loop) {
-
-	dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
-	dDIRCLutReader = dapp->GetDIRCLut(loop->GetJEvent().GetRunNumber());
+	dDIRCLutReader = dGeometryManager->GetDIRCLut(run_number);
 	
 	// get DIRC geometry
 	vector<const DDIRCGeometry*> locDIRCGeometry;
-        loop->Get(locDIRCGeometry);
+        event->Get(locDIRCGeometry);
         dDIRCGeometry = locDIRCGeometry[0];
 
 	// rotation angles for bar boxes (reverse sign from survey)
@@ -169,7 +172,7 @@ bool DDIRCLut::CalcLUT(TVector3 locProjPos, TVector3 locProjMom, const vector<co
 	if(locDIRCMatchParams == nullptr)
 		locDIRCMatchParams = std::make_shared<DDIRCMatchParams>();
 
-	// initialize variables for LUT summary
+	// Initialize variables for LUT summary
 	double locAngle = CalcAngle(momInBar.Mag(), locMass);
 	map<Particle_t, double> locExpectedAngle = CalcExpectedAngles(momInBar.Mag());
 	map<Particle_t, double> logLikelihoodSum;
@@ -179,7 +182,7 @@ bool DDIRCLut::CalcLUT(TVector3 locProjPos, TVector3 locProjMom, const vector<co
 		if(fabs(ParticleMass(dFinalStatePIDs[loc_i])-locMass) < 0.01) locHypothesisPID = dFinalStatePIDs[loc_i];
 	}
 
-	// loop over DIRC hits
+	// event over DIRC hits
 	int nPhotons = 0;
 	int nPhotonsThetaC = 0;
 	double meanThetaC = 0.;
@@ -195,12 +198,12 @@ bool DDIRCLut::CalcLUT(TVector3 locProjPos, TVector3 locProjMom, const vector<co
 			locDIRCTrackMatchParams[locDIRCMatchParams].push_back(locDIRCHit);
 		} 
 
-	}// end loop over hits
+	}// end event over hits
 		
 	if(DIRC_DEBUG_HISTS) {
-		dapp->RootWriteLock();
+		jGlobalRootLock->acquire_write_lock();
 		hNph->Fill(nPhotons);
-		dapp->RootUnLock();
+		jGlobalRootLock->release_lock();
 	}
 	
 	// skip tracks without enough photons
@@ -225,7 +228,7 @@ bool DDIRCLut::CalcLUT(TVector3 locProjPos, TVector3 locProjMom, const vector<co
 
 vector<pair<double,double>> DDIRCLut::CalcPhoton(const DDIRCPmtHit *locDIRCHit, double locFlightTime, TVector3 posInBar, TVector3 momInBar, map<Particle_t, double> locExpectedAngle, double locAngle, Particle_t locPID, map<Particle_t, double> &logLikelihoodSum, int &nPhotonsThetaC, double &meanThetaC, double &meanDeltaT, bool &isGood) const
 {	
-	// initialize photon pairs for time and thetaC
+	// Initialize photon pairs for time and thetaC
 	pair<double, double> locDIRCPhoton(-999., -999.);
 	vector<pair<double, double>> locDIRCPhotons;
 
@@ -262,8 +265,7 @@ vector<pair<double,double>> DDIRCLut::CalcPhoton(const DDIRCPmtHit *locDIRCHit, 
 	double hitTime = locDIRCHit->t - locFlightTime;
 	
 	// option to use truth hit time rather than smeared hit time
-	vector<const DDIRCTruthPmtHit*> locTruthDIRCHits;
-	locDIRCHit->Get(locTruthDIRCHits);
+	vector<const DDIRCTruthPmtHit*> locTruthDIRCHits = locDIRCHit->Get<DDIRCTruthPmtHit>();
 	if(DIRC_TRUTH_PIXELTIME && locTruthDIRCHits.size() > 0) {
 		double locTruthTime = locTruthDIRCHits[0]->t - locFlightTime;
 		hitTime = locTruthTime;          
@@ -282,12 +284,12 @@ vector<pair<double,double>> DDIRCLut::CalcPhoton(const DDIRCPmtHit *locDIRCHit, 
 	double dlenz = lenz; // direct
 	if(reflected) lenz = 2*radiatorL - lenz;
 		
-	// check for pixel before going through loop
+	// check for pixel before going through event
 	int box_channel = channel%dMaxChannels;
 	if(dDIRCLutReader->GetLutPixelAngleSize(bar, box_channel) == 0) 
 		return locDIRCPhotons;
 	
-	// loop over LUT table for this bar/pixel to calculate thetaC	     
+	// event over LUT table for this bar/pixel to calculate thetaC	     
 	for(uint i = 0; i < dDIRCLutReader->GetLutPixelAngleSize(bar, box_channel); i++){
 		
 		dird   = dDIRCLutReader->GetLutPixelAngle(bar, box_channel, i); 
@@ -329,8 +331,8 @@ vector<pair<double,double>> DDIRCLut::CalcPhoton(const DDIRCPmtHit *locDIRCHit, 
 				// calculate time difference
 				double locDeltaT = totalTime-hitTime;
 
-				if(DIRC_DEBUG_HISTS) {	
-					dapp->RootWriteLock(); 
+				if(DIRC_DEBUG_HISTS) {
+					jGlobalRootLock->acquire_write_lock();
 					hTime->Fill(hitTime);
 					hCalc->Fill(totalTime);
 					
@@ -343,7 +345,7 @@ vector<pair<double,double>> DDIRCLut::CalcPhoton(const DDIRCPmtHit *locDIRCHit, 
 							else hDiffD->Fill(locDeltaT);
 						}
 					}
-					dapp->RootUnLock();
+					jGlobalRootLock->release_lock();
 				}
 				
 				// save hits array which pass some lose time and angle criteria
@@ -358,10 +360,10 @@ vector<pair<double,double>> DDIRCLut::CalcPhoton(const DDIRCPmtHit *locDIRCHit, 
 				if( r && fabs(locDeltaT)>DIRC_CUT_TDIFFR) continue;
 				
 				if(DIRC_DEBUG_HISTS) {
-					dapp->RootWriteLock();
+					jGlobalRootLock->acquire_write_lock();
 					//hDeltaThetaC[locPID]->Fill(tangle-locAngle);
 					//hDeltaThetaC_Pixel[locPID]->Fill(channel, tangle-locAngle);
-					dapp->RootUnLock();
+					jGlobalRootLock->release_lock();
 				}
 				
 				// remove photon candidates not used in likelihood
@@ -383,8 +385,8 @@ vector<pair<double,double>> DDIRCLut::CalcPhoton(const DDIRCPmtHit *locDIRCHit, 
 				}
 				
 			}
-		} // end loop over reflections
-	} // end loop over nodes
+		} // end event over reflections
+	} // end event over nodes
 	
 	return locDIRCPhotons;
 }

@@ -35,8 +35,6 @@ def main():
 
     r.add(re.compile(r'loop'), 'event')
 
-    # r.add(re.compile(r'eventnumber'), 'event->GetEventNumber()')
-
     r.add(re.compile(r"JFactory<([a-zA-Z_0-9]+)>"), r'JFactoryT<\1>')
 
     r.add(re.compile(r'#include <JANA/JFactory.h>'), r'#include <JANA/JFactoryT.h>')
@@ -73,6 +71,8 @@ def main():
 
     r.add(re.compile(r'#include <JANA/jerror\.h>\n'), ''),
 
+    r.add(re.compile(r'gPARMS'), 'app'),
+
     r.add(re.compile(r'jout((?:(?! endl).)*) endl;'), r'jout\1 jendl;'),
 
     r.add(re.compile(r'jerr((?:(?!>endl).)*)>endl;'), r'jerr\1>jendl;')
@@ -81,7 +81,6 @@ def main():
     r.add(re.compile(r'// brun'), '// BeginRun')
     r.add(re.compile(r'// evnt'), '// Process')
     r.add(re.compile(r'// erun'), '// EndRun')
-    r.add(re.compile(r'// fini'), '// Finish')
     r.add(re.compile(r'// fini'), '// Finish')
     r.add(re.compile(r'event->GetCalib'), 'calibration->Get')
 

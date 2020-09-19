@@ -17,7 +17,7 @@ using std::vector;
 #include <HDGEOMETRY/DGeometry.h>
 #include <DVector3.h>
 #include <DVector2.h>
-#include <JANA/jerror.h>
+#include <JANA/Compatibility/jerror.h>
 #include <DMatrixDSym.h>
 #include <DMatrix.h>
 #include <PID/DKinematicData.h>
