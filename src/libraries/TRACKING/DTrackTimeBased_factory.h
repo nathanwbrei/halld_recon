@@ -42,8 +42,7 @@ class DTrackTimeBased_factory:public JFactoryT<DTrackTimeBased>{
   void EndRun() override;						///< Called everytime run number changes, provided brun has been called.
   void Finish();						///< Called after last event of last event source has been processed.
 
- 
-  
+
   bool DEBUG_HISTS;
   int DEBUG_LEVEL;
   bool PID_FORCE_TRUTH;
@@ -73,18 +72,18 @@ class DTrackTimeBased_factory:public JFactoryT<DTrackTimeBased>{
 			   vector<DTrackTimeBased::DStartTime_t>&start_times);
   bool DoFit(const DTrackWireBased *track,
 	     vector<DTrackTimeBased::DStartTime_t>&start_times,
-	     JEventLoop *event,double mass);  
+	     const std::shared_ptr<const JEvent>&event,double mass);  
 
   void AddMissingTrackHypothesis(vector<DTrackTimeBased*>&tracks_to_add,
 				 const DTrackTimeBased *src_track,
 				 double my_mass,double q,
-				 JEventLoop *event);
-  bool InsertMissingHypotheses(JEventLoop *event);
+				 const std::shared_ptr<const JEvent>&event);
+  bool InsertMissingHypotheses(const std::shared_ptr<const JEvent>&event);
   void CorrectForELoss(DVector3 &position,DVector3 &momentum,double q,double my_mass);
   void AddMissingTrackHypotheses(unsigned int mass_bits,
 				 vector<DTrackTimeBased*>&tracks_to_add,
 				 vector<DTrackTimeBased *>&hypotheses,
-				 double q,bool flipped_charge,JEventLoop *event);
+				 double q,bool flipped_charge,const std::shared_ptr<const JEvent>&event);
 
   // Geometry
   const DGeometry *geom;

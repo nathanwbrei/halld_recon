@@ -182,6 +182,7 @@ set(HALLD_RECON_SOURCES
         src/libraries/FCAL/DFCALGeometry.h
         src/libraries/FCAL/DFCALGeometry.cc
         src/libraries/FCAL/DFCALShower.h
+        src/libraries/FCAL/DFCALShower.cc
         src/libraries/FCAL/DFCALTruthShower.h
         src/libraries/FCAL/DFCALCluster.h
         src/libraries/FCAL/DFCALCluster.cc
@@ -329,7 +330,7 @@ set(HALLD_RECON_SOURCES
         src/libraries/TRACKING/DTrackHitSelector.cc
         src/libraries/TRACKING/DTrackWireBased_factory.cc
         src/libraries/TRACKING/DTrackWireBased_factory.h
-#        src/libraries/TRACKING/DTrackTimeBased_factory.cc
+        src/libraries/TRACKING/DTrackTimeBased_factory.cc
         src/libraries/TRACKING/DTrackTimeBased_factory.h
         src/libraries/TRACKING/DReferenceTrajectory.h
         src/libraries/TRACKING/DReferenceTrajectory.cc
