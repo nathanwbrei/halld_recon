@@ -16,13 +16,15 @@
 #include "CDC/DCDCWire.h"
 #include "DMatrixSIMD.h"
 
+#include <JANA/JApplication.h>
+
 #include <vector>
 
 class DTrackFinder:public JObject{
    public:
       JOBJECT_PUBLIC(DTrackFinder);
 
-      DTrackFinder();	// require JEventLoop in constructor
+      DTrackFinder(JApplication* app);
       virtual ~DTrackFinder();
 
       enum state_vector{

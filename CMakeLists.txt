@@ -180,6 +180,7 @@ set(HALLD_RECON_SOURCES
         src/libraries/FCAL/DFCALHit.h
         src/libraries/FCAL/DFCALDigiHit.h
         src/libraries/FCAL/DFCALGeometry.h
+        src/libraries/FCAL/DFCALGeometry.cc
         src/libraries/FCAL/DFCALShower.h
         src/libraries/FCAL/DFCALTruthShower.h
         src/libraries/FCAL/DFCALCluster.h
@@ -314,6 +315,7 @@ set(HALLD_RECON_SOURCES
 
         src/libraries/TRACKING/DTrackWireBased.h
         src/libraries/TRACKING/DTrackFinder.h
+        src/libraries/TRACKING/DTrackFinder.cc
         src/libraries/TRACKING/DTrackCandidate.h
         src/libraries/TRACKING/DMCTrackHit.h
         src/libraries/TRACKING/DHoughFind.h

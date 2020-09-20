@@ -33,7 +33,7 @@ def main():
 
     r.add(re.compile(r'eventLoop'), 'event')
 
-    r.add(re.compile(r'loop'), 'event')
+    r.add(re.compile(r'loop->'), 'event->')
 
     r.add(re.compile(r"JFactory<([a-zA-Z_0-9]+)>"), r'JFactoryT<\1>')
 
@@ -83,6 +83,9 @@ def main():
     r.add(re.compile(r'// erun'), '// EndRun')
     r.add(re.compile(r'// fini'), '// Finish')
     r.add(re.compile(r'event->GetCalib'), 'calibration->Get')
+
+    r.add(re.compile(r'JEventLoop\*'), 'const std::shared_ptr<const JEvent>&')
+    r.add(re.compile(r'JEventLoop \*'), 'const std::shared_ptr<const JEvent>&')
 
     filename = sys.argv[1]
     r.process(filename)

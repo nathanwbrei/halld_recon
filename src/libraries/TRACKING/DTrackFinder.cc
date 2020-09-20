@@ -24,26 +24,26 @@ bool DTrackFinder_fdc_hit_cmp(const DTrackFinder::fdc_hit_t &a,
 //---------------------------------
 // DTrackFinder    (Constructor)
 //---------------------------------
-DTrackFinder::DTrackFinder()
+DTrackFinder::DTrackFinder(JApplication* app)
 {
 
    COSMICS=false;
-   gPARMS->SetDefaultParameter("TRKFIND:COSMICS",COSMICS);
+   app->SetDefaultParameter("TRKFIND:COSMICS",COSMICS);
 
    DEBUG_HISTS=false;
-   gPARMS->SetDefaultParameter("TRKFIND:DEBUG_HISTS", DEBUG_HISTS);
+   app->SetDefaultParameter("TRKFIND:DEBUG_HISTS", DEBUG_HISTS);
 
    VERBOSE=0;
-   gPARMS->SetDefaultParameter("TRKFIND:VERBOSE", VERBOSE);
+   app->SetDefaultParameter("TRKFIND:VERBOSE", VERBOSE);
 
    CDC_MATCH_RADIUS=2.5;
-   gPARMS->SetDefaultParameter("TRKFIND:CDC_MATCH_RADIUS", CDC_MATCH_RADIUS);
+   app->SetDefaultParameter("TRKFIND:CDC_MATCH_RADIUS", CDC_MATCH_RADIUS);
 
    CDC_MATCH_PHI=0.04;
-   gPARMS->SetDefaultParameter("TRKFIND:CDC_MATCH_PHI", CDC_MATCH_PHI);
+   app->SetDefaultParameter("TRKFIND:CDC_MATCH_PHI", CDC_MATCH_PHI);
    
    CDC_COSMIC_MATCH_PHI=0.35;
-   gPARMS->SetDefaultParameter("TRKFIND:CDC_COSMIC_MATCH_PHI", CDC_COSMIC_MATCH_PHI);
+   app->SetDefaultParameter("TRKFIND:CDC_COSMIC_MATCH_PHI", CDC_COSMIC_MATCH_PHI);
 
    if (DEBUG_HISTS){
       hCDCMatch_PairD = new TH1F("CDC Pair distance", "CDC Pair distance", 100, 0.0, 20.0);
@@ -124,7 +124,7 @@ bool DTrackFinder::FindAxialSegments(void){
          if ((abs(r1-r2)<=2 && abs(r1-r2)>0 && d<CDC_MATCH_RADIUS) 
                || (r1 == r2 && abs(s1-s2)==1)){
             pair <unsigned int,unsigned int> mypair(i,j);
-            if(VERBOSE) jout<< " Pair formed R" << r1 << " S" << s1 << " ,R" << r2 << " S" << s2 << endl;
+            if(VERBOSE) jout<< " Pair formed R" << r1 << " S" << s1 << " ,R" << r2 << " S" << s2 << jendl;
             pairs.push_back(mypair);
          }
       }
@@ -185,11 +185,11 @@ bool DTrackFinder::FindAxialSegments(void){
          }
 
          if (VERBOSE){
-            jout << " Axial Segment Formed: " << endl;
+            jout << " Axial Segment Formed: " << jendl;
             for(unsigned int jj = 0; jj<neighbors.size(); jj++){
-               jout << "  R" << neighbors[jj]->wire->ring << " S" << neighbors[jj]->wire->straw << endl;
+               jout << "  R" << neighbors[jj]->wire->ring << " S" << neighbors[jj]->wire->straw << jendl;
             }
-            jout << "Dir" << endl;
+            jout << "Dir" << jendl;
             dir.Print();
          }
          axial_segments.push_back(cdc_segment_t(neighbors,dir));
@@ -238,10 +238,10 @@ bool DTrackFinder::LinkCDCSegments(void){
          pos0=mytrack.axial_hits[0]->wire->origin;
          vhat.SetMag(1.);
          if (VERBOSE){
-            jout << " Axial track Formed: pos vhat" << endl;
+            jout << " Axial track Formed: pos vhat" << jendl;
             pos0.Print(); vhat.Print();
             for(unsigned int jj = 0; jj<mytrack.axial_hits.size(); jj++){
-               jout << "  R" << mytrack.axial_hits[jj]->wire->ring << " S" << mytrack.axial_hits[jj]->wire->straw << endl;
+               jout << "  R" << mytrack.axial_hits[jj]->wire->ring << " S" << mytrack.axial_hits[jj]->wire->straw << jendl;
             }
          }
 
@@ -252,7 +252,7 @@ bool DTrackFinder::LinkCDCSegments(void){
                if (MatchCDCHit(vhat,pos0,axial_hits[j].hit,CDC_MATCH_RADIUS)){
                   axial_hits[j].used=true;
                   mytrack.axial_hits.push_back(axial_hits[j].hit);
-                  if (VERBOSE) jout << "Added to axial track R" << axial_hits[j].hit->wire->ring << " S" << axial_hits[j].hit->wire->straw << endl;
+                  if (VERBOSE) jout << "Added to axial track R" << axial_hits[j].hit->wire->ring << " S" << axial_hits[j].hit->wire->straw << jendl;
                   got_match=true;
                }
             }
@@ -285,13 +285,13 @@ bool DTrackFinder::LinkCDCSegments(void){
                if (MatchCDCStereoHit(vhat,pos0,stereo_hits[j].hit)){
                   //stereo_hits[j].used=true;
                   mytrack.stereo_hits.push_back(stereo_hits[j].hit);
-                  if (VERBOSE) jout << "Added stereo hit R" << stereo_hits[j].hit->wire->ring << " S" << stereo_hits[j].hit->wire->straw << endl;
+                  if (VERBOSE) jout << "Added stereo hit R" << stereo_hits[j].hit->wire->ring << " S" << stereo_hits[j].hit->wire->straw << jendl;
                }
             }
          }
          size_t num_stereo=mytrack.stereo_hits.size();
          size_t num_axial=mytrack.axial_hits.size();
-         if (VERBOSE) jout << " num_axial num_stereo " << num_axial << " " << num_stereo << endl; 
+         if (VERBOSE) jout << " num_axial num_stereo " << num_axial << " " << num_stereo << jendl;
          if (num_stereo>0 && num_stereo+num_axial>4){
             mytrack.dir=vhat;
             if (mytrack.FindStateVector(COSMICS)==NOERROR){

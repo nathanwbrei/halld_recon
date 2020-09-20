@@ -18,17 +18,14 @@
 
 #include <DVector3.h>
 #include "HDGEOMETRY/DRootGeom.h"
-// #include <TRACKING/DTrackTimeBased_factory.h> /// TODO: Get rid of me completely!
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCPseudo.h>
 #include <BCAL/DBCALShower.h>
 #include <BCAL/DBCALCluster.h>
 #include <FCAL/DFCALShower.h>
-// #include <FCAL/DFCALGeometry_factory.h>  /// TODO: Get rid of me completely!
-#include <FCAL/DFCALGeometry.h>  /// TODO: Get rid of me completely!
+#include <FCAL/DFCALGeometry.h>
 #include <TOF/DTOFPoint.h>
 #include <TOF/DTOFPaddleHit.h>
-// #include <TOF/DTOFGeometry_factory.h>  /// TODO: Get rid of me completely!
 #include <TOF/DTOFGeometry.h>
 #include <TOF/DTOFPoint_factory.h>
 #include <START_COUNTER/DSCHit.h>
@@ -60,9 +57,7 @@ class DParticleID: public JObject
 	public:
 		JOBJECT_PUBLIC(DParticleID);
 
-		// Constructor and destructor
-		DParticleID(const std::shared_ptr<const JEvent> &loop); // require JEventLoop in constructor
-		virtual ~DParticleID(void){}
+		void Init(const std::shared_ptr<const JEvent> &loop);
 
 		class dedx_t
 		{
