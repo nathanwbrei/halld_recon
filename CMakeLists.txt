@@ -320,12 +320,19 @@ set(HALLD_RECON_SOURCES
         src/libraries/TRACKING/DTrackHit.h
         src/libraries/TRACKING/DMCTrajectoryPoint.h
         src/libraries/TRACKING/DTrackFitter.h        # Put some of this in a factory?!?
-#        src/libraries/TRACKING/DTrackFitter.cc
+        src/libraries/TRACKING/DTrackFitter.cc
         src/libraries/TRACKING/DTrackHitSelector.h
-#        src/libraries/TRACKING/DTrackWireBased_factory.cc
+        src/libraries/TRACKING/DTrackHitSelector.cc
+        src/libraries/TRACKING/DTrackWireBased_factory.cc
         src/libraries/TRACKING/DTrackWireBased_factory.h
 #        src/libraries/TRACKING/DTrackTimeBased_factory.cc
         src/libraries/TRACKING/DTrackTimeBased_factory.h
+        src/libraries/TRACKING/DReferenceTrajectory.h
+        src/libraries/TRACKING/DReferenceTrajectory.cc
+        src/libraries/TRACKING/DMagneticFieldStepper.cc
+        src/libraries/TRACKING/DMagneticFieldStepper.h
+        src/libraries/TRACKING/grkuta.cc
+        src/libraries/TRACKING/DMatrixPools.cc
 
         src/libraries/TRD/DGEMPoint.h
         src/libraries/TRD/DTRDStripCluster.h
