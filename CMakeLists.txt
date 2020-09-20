@@ -267,7 +267,7 @@ set(HALLD_RECON_SOURCES
         src/libraries/PID/DNeutralParticleHypothesis.h
         src/libraries/PID/DDetectorMatches.h
         src/libraries/PID/DParticleID.h
-#        src/libraries/PID/DParticleID.cc
+        src/libraries/PID/DParticleID.cc
         src/libraries/PID/DNeutralParticle.h
         src/libraries/PID/DEventRFBunch.h
 
@@ -279,6 +279,8 @@ set(HALLD_RECON_SOURCES
         src/libraries/START_COUNTER/DSCTruthHit.h
         src/libraries/START_COUNTER/DSCHit.h
         src/libraries/START_COUNTER/DSCTDCDigiHit.h
+        src/libraries/START_COUNTER/DSCHit_factory.h
+        src/libraries/START_COUNTER/DSCHit_factory.cc
 
         src/libraries/TAC/DTACHit.h
         src/libraries/TAC/DTACTDCDigiHit.h
