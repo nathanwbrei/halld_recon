@@ -278,9 +278,11 @@ set(HALLD_RECON_SOURCES
         src/libraries/PID/DNeutralParticle.h
         src/libraries/PID/DEventRFBunch.h
 
+        src/libraries/RF/DRFDigiTime.h
         src/libraries/RF/DRFTDCDigiTime.h
         src/libraries/RF/DRFTime.h
-        src/libraries/RF/DRFDigiTime.h
+        src/libraries/RF/DRFTime_factory.cc
+        src/libraries/RF/DRFTime_factory.h
 
         src/libraries/START_COUNTER/DSCDigiHit.h
         src/libraries/START_COUNTER/DSCHit.h
