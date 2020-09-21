@@ -6,7 +6,6 @@
 #ifndef _DDIRCLut_
 #define _DDIRCLut_
 
-#include <JANA/JFactoryT.h>
 #include <JANA/JObject.h>
 #include <JANA/Services/JGlobalRootLock.h>
 

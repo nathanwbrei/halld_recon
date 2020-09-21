@@ -168,18 +168,24 @@ set(HALLD_RECON_SOURCES
         src/libraries/DIRC/DDIRCGeometry.h
         src/libraries/DIRC/DDIRCGeometry_factory.h
         src/libraries/DIRC/DDIRCLEDRef.h
-
+        src/libraries/DIRC/DDIRCLEDRef_factory.cc
+        src/libraries/DIRC/DDIRCLEDRef_factory.h
+        src/libraries/DIRC/DDIRCLut.cc
         src/libraries/DIRC/DDIRCLut.h
-        src/libraries/DIRC/DDIRCLut.cc     # Init requires event
-        src/libraries/DIRC/DDIRCLutReader.h
+        src/libraries/DIRC/DDIRCLut_factory.h
         src/libraries/DIRC/DDIRCLutReader.cc
-        src/libraries/DIRC/DDIRCLEDRef.h
-        src/libraries/DIRC/DDIRCTruthPmtHit.h
-        src/libraries/DIRC/DDIRCTDCDigiHit.h
+        src/libraries/DIRC/DDIRCLutReader.h
         src/libraries/DIRC/DDIRCPmtHit.h
+        src/libraries/DIRC/DDIRCPmtHit_factory.cc
+        src/libraries/DIRC/DDIRCPmtHit_factory.h
+        src/libraries/DIRC/DDIRCTDCDigiHit.h
         src/libraries/DIRC/DDIRCTruthBarHit.h
+        src/libraries/DIRC/DDIRCTruthPmtHit.h
+        src/libraries/DIRC/DIRC_init.cc
+
 
         src/libraries/EVENTSTORE/DESSkimData.h
+
 
         src/libraries/FCAL/DFCALHit.h
         src/libraries/FCAL/DFCALDigiHit.h
