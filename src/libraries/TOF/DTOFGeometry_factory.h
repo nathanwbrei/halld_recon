@@ -24,7 +24,7 @@ class DTOFGeometry_factory:public JFactoryT<DTOFGeometry>{
 		//------------------
 		// BeginRun
 		//------------------
-		void BeginRun(const std::shared_ptr<const JEvent>& event)
+		void BeginRun(const std::shared_ptr<const JEvent>& event) override
 		{
 			// (See DTAGHGeometry_factory.h)
 			SetFactoryFlag(NOT_OBJECT_OWNER);
@@ -43,7 +43,7 @@ class DTOFGeometry_factory:public JFactoryT<DTOFGeometry>{
 		//------------------
 		// Process
 		//------------------
-		 void Process(const std::shared_ptr<const JEvent>& event)
+		 void Process(const std::shared_ptr<const JEvent>& event) override
 		 {
 			// Reuse existing DBCALGeometry object.
 			if( tofgeometry ) Insert( tofgeometry );

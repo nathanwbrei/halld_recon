@@ -289,9 +289,29 @@ set(HALLD_RECON_SOURCES
         src/libraries/START_COUNTER/DSCHit_factory.h
         src/libraries/START_COUNTER/DSCHit_factory.cc
 
-        src/libraries/TAC/DTACHit.h
-        src/libraries/TAC/DTACTDCDigiHit.h
+
+        src/libraries/TAC/DRebuildFromRawFADC_factory.cc
+        src/libraries/TAC/DRebuildFromRawFADC_factory.h
+        src/libraries/TAC/DTACDigiHit.cc
         src/libraries/TAC/DTACDigiHit.h
+        src/libraries/TAC/DTACHit.cc
+        src/libraries/TAC/DTACHit.h
+        src/libraries/TAC/DTACHit_factory.cc
+        src/libraries/TAC/DTACHit_factory.h
+        src/libraries/TAC/DTACTDCDigiHit.cc
+        src/libraries/TAC/DTACTDCDigiHit.h
+        src/libraries/TAC/HitRebuilderByFit.cc
+        src/libraries/TAC/HitRebuilderByFit.h
+        src/libraries/TAC/HitRebuilderInterfaceTAC.cc
+        src/libraries/TAC/HitRebuilderInterfaceTAC.h
+        src/libraries/TAC/HitRebuilderTAC.cc
+        src/libraries/TAC/HitRebuilderTAC.h
+        src/libraries/TAC/TAC_init.cc
+        src/libraries/TAC/WaveformErfcFunctor.cc
+        src/libraries/TAC/WaveformErfcFunctor.h
+        src/libraries/TAC/WaveformSpikeFunctor.cc
+        src/libraries/TAC/WaveformSpikeFunctor.h
+
 
         src/libraries/TAGGER/DTAGHHit.h
         src/libraries/TAGGER/DTAGHGeometry.h   # Uses JEventLoop to get calibrations
