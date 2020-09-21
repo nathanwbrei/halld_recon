@@ -3,7 +3,7 @@
 #define _DPSGeometry_
 
 #include <JANA/JObject.h>
-class JApplication;
+#include <JANA/JEvent.h>
 
 #include <string>
 
@@ -13,7 +13,7 @@ class DPSGeometry : public JObject {
   
   JOBJECT_PUBLIC(DPSGeometry);
   
-  DPSGeometry(JApplication* app, size_t run_number, size_t event_number);  // TODO: Do this better
+  DPSGeometry(const std::shared_ptr<const JEvent>& event);
   ~DPSGeometry();
 
   enum Arm { kNorth, kSouth };

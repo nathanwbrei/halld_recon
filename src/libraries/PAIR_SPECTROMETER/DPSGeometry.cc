@@ -11,11 +11,15 @@
 //---------------------------------
 // DPSGeometry    (Constructor)
 //---------------------------------
-DPSGeometry::DPSGeometry(JApplication *app, size_t run_number, size_t event_number)
+DPSGeometry::DPSGeometry(const std::shared_ptr<const JEvent>& event)
 {
+	auto run_number = event->GetRunNumber();
+	auto app = event->GetJApplication();
+	auto calibration = app->GetService<JCalibrationManager>()->GetJCalibration(run_number);
+
     // read PS hodoscope counter energy bounds from calibdb
     std::vector<std::map<string,double> > result;
-    app->GetService<JCalibrationManager>()->GetCalib(run_number, event_number, "/PHOTON_BEAM/pair_spectrometer/fine/energy_range", result);
+    calibration->Get("/PHOTON_BEAM/pair_spectrometer/fine/energy_range", result);
     if ((int)result.size() != NUM_FINE_COLUMNS) {
         jerr << "Error in DPSGeometry constructor: "
         << "failed to read fine PS energy_range table "

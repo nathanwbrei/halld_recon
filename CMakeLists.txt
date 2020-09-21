@@ -250,30 +250,30 @@ set(HALLD_RECON_SOURCES
         src/libraries/KINFITTER/DKinFitUtils.cc
         src/libraries/KINFITTER/DKinFitUtils.h
 
-#        src/libraries/PAIR_SPECTROMETER/DLumi.cc  # Uses TAGGER
+        src/libraries/PAIR_SPECTROMETER/DLumi.cc
         src/libraries/PAIR_SPECTROMETER/DLumi.h
-#        src/libraries/PAIR_SPECTROMETER/DLumi_factory.h
+        src/libraries/PAIR_SPECTROMETER/DLumi_factory.h
         src/libraries/PAIR_SPECTROMETER/DPSCDigiHit.h
         src/libraries/PAIR_SPECTROMETER/DPSCHit.h
-#        src/libraries/PAIR_SPECTROMETER/DPSCHit_factory.cc
-#        src/libraries/PAIR_SPECTROMETER/DPSCHit_factory.h
+        src/libraries/PAIR_SPECTROMETER/DPSCHit_factory.cc
+        src/libraries/PAIR_SPECTROMETER/DPSCHit_factory.h
         src/libraries/PAIR_SPECTROMETER/DPSCPair.h
-#        src/libraries/PAIR_SPECTROMETER/DPSCPair_factory.cc
-#        src/libraries/PAIR_SPECTROMETER/DPSCPair_factory.h
+        src/libraries/PAIR_SPECTROMETER/DPSCPair_factory.cc
+        src/libraries/PAIR_SPECTROMETER/DPSCPair_factory.h
         src/libraries/PAIR_SPECTROMETER/DPSCTDCDigiHit.h
         src/libraries/PAIR_SPECTROMETER/DPSCTruthHit.h
         src/libraries/PAIR_SPECTROMETER/DPSDigiHit.h
         src/libraries/PAIR_SPECTROMETER/DPSGeometry.cc
         src/libraries/PAIR_SPECTROMETER/DPSGeometry.h
-#        src/libraries/PAIR_SPECTROMETER/DPSGeometry_factory.h
+        src/libraries/PAIR_SPECTROMETER/DPSGeometry_factory.h
         src/libraries/PAIR_SPECTROMETER/DPSHit.h
-#        src/libraries/PAIR_SPECTROMETER/DPSHit_factory.cc
-#        src/libraries/PAIR_SPECTROMETER/DPSHit_factory.h
+        src/libraries/PAIR_SPECTROMETER/DPSHit_factory.cc
+        src/libraries/PAIR_SPECTROMETER/DPSHit_factory.h
         src/libraries/PAIR_SPECTROMETER/DPSPair.h
-#        src/libraries/PAIR_SPECTROMETER/DPSPair_factory.cc
-#        src/libraries/PAIR_SPECTROMETER/DPSPair_factory.h
+        src/libraries/PAIR_SPECTROMETER/DPSPair_factory.cc
+        src/libraries/PAIR_SPECTROMETER/DPSPair_factory.h
         src/libraries/PAIR_SPECTROMETER/DPSTruthHit.h
-#        src/libraries/PAIR_SPECTROMETER/PAIR_SPECTROMETER_init.cc
+        src/libraries/PAIR_SPECTROMETER/PAIR_SPECTROMETER_init.cc
 
 
         src/libraries/PID/DChargedTrack.h
