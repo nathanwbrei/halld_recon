@@ -423,23 +423,64 @@ set(HALLD_RECON_SOURCES
         src/libraries/TRACKING/DTrackCandidate_factory_FDC.h
         src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
         src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.h
-
-        src/libraries/TRACKING/DTrackWireBased.h
-        src/libraries/TRACKING/DTrackFinder.h
+#        src/libraries/TRACKING/DTrackCandidate_factory_FDCpseudo.cc
+#        src/libraries/TRACKING/DTrackCandidate_factory_FDCpseudo.h
+#        src/libraries/TRACKING/DTrackCandidate_factory_StraightLine.cc
+#        src/libraries/TRACKING/DTrackCandidate_factory_StraightLine.h
+#        src/libraries/TRACKING/DTrackCandidate_factory_THROWN.cc
+#        src/libraries/TRACKING/DTrackCandidate_factory_THROWN.h
         src/libraries/TRACKING/DTrackFinder.cc
-        src/libraries/TRACKING/DTrackTimeBased.h
-        src/libraries/TRACKING/DTrackHit.h
-        src/libraries/TRACKING/DTrackFitter.h        # Put some of this in a factory?!?
+        src/libraries/TRACKING/DTrackFinder.h
+#        src/libraries/TRACKING/DTrackFinder_factory.h
         src/libraries/TRACKING/DTrackFitter.cc
-        src/libraries/TRACKING/DTrackHitSelector.h
+        src/libraries/TRACKING/DTrackFitter.h
+#        src/libraries/TRACKING/DTrackFitter_factory.h
+#        src/libraries/TRACKING/DTrackFitter_factory_ALT1.h
+#        src/libraries/TRACKING/DTrackFitter_factory_KalmanSIMD.h
+#        src/libraries/TRACKING/DTrackFitter_factory_KalmanSIMD_ALT1.h
+#        src/libraries/TRACKING/DTrackFitter_factory_Riemann.h
+#        src/libraries/TRACKING/DTrackFitter_factory_StraightTrack.h
+#        src/libraries/TRACKING/DTrackFitterALT1.cc
+#        src/libraries/TRACKING/DTrackFitterALT1.h
+#        src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+#        src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+#        src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+#        src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.h
+#        src/libraries/TRACKING/DTrackFitterRiemann.cc
+#        src/libraries/TRACKING/DTrackFitterRiemann.h
+#        src/libraries/TRACKING/DTrackFitterStraightTrack.cc
+#        src/libraries/TRACKING/DTrackFitterStraightTrack.h
+        src/libraries/TRACKING/DTrackHit.h
         src/libraries/TRACKING/DTrackHitSelector.cc
+        src/libraries/TRACKING/DTrackHitSelector.h
+        src/libraries/TRACKING/DTrackHitSelector_factory.h
+#        src/libraries/TRACKING/DTrackHitSelector_factory_ALT1.h
+#        src/libraries/TRACKING/DTrackHitSelector_factory_ALT2.h
+        src/libraries/TRACKING/DTrackHitSelector_factory_THROWN.h
+#        src/libraries/TRACKING/DTrackHitSelectorALT1.cc
+#        src/libraries/TRACKING/DTrackHitSelectorALT1.h
+#        src/libraries/TRACKING/DTrackHitSelectorALT2.cc
+#        src/libraries/TRACKING/DTrackHitSelectorALT2.h
         src/libraries/TRACKING/DTrackHitSelectorTHROWN.cc
         src/libraries/TRACKING/DTrackHitSelectorTHROWN.h
-        src/libraries/TRACKING/DTrackWireBased_factory.cc
-        src/libraries/TRACKING/DTrackWireBased_factory.h
+        src/libraries/TRACKING/DTrackingData.h
+        src/libraries/TRACKING/DTrackTimeBased.h
         src/libraries/TRACKING/DTrackTimeBased_factory.cc
         src/libraries/TRACKING/DTrackTimeBased_factory.h
+#        src/libraries/TRACKING/DTrackTimeBased_factory_StraightLine.cc
+#        src/libraries/TRACKING/DTrackTimeBased_factory_StraightLine.h
+#        src/libraries/TRACKING/DTrackTimeBased_factory_THROWN.cc
+#        src/libraries/TRACKING/DTrackTimeBased_factory_THROWN.h
+        src/libraries/TRACKING/DTrackWireBased.h
+        src/libraries/TRACKING/DTrackWireBased_factory.cc
+        src/libraries/TRACKING/DTrackWireBased_factory.h
+#        src/libraries/TRACKING/DTrackWireBased_factory_StraightLine.cc
+#        src/libraries/TRACKING/DTrackWireBased_factory_StraightLine.h
+#        src/libraries/TRACKING/DTrackWireBased_factory_THROWN.cc
+#        src/libraries/TRACKING/DTrackWireBased_factory_THROWN.h
+        src/libraries/TRACKING/fdc_covariance.cc
         src/libraries/TRACKING/grkuta.cc
+#        src/libraries/TRACKING/TRACKING_init.cc
 
         src/libraries/TRD/DGEMDigiWindowRawData.h
         src/libraries/TRD/DGEMHit.h
