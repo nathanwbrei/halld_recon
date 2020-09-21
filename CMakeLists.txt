@@ -364,14 +364,16 @@ set(HALLD_RECON_SOURCES
         src/libraries/TRACKING/DTrackTimeBased_factory.h
         src/libraries/TRACKING/grkuta.cc
 
-        src/libraries/TRD/DGEMPoint.h
-        src/libraries/TRD/DTRDStripCluster.h
-        src/libraries/TRD/DGEMHit.h
-        src/libraries/TRD/DTRDDigiHit.h
         src/libraries/TRD/DGEMDigiWindowRawData.h
+        src/libraries/TRD/DGEMHit.h
+        src/libraries/TRD/DGEMHit_factory.cc
+        src/libraries/TRD/DGEMHit_factory.h
+        src/libraries/TRD/DGEMPoint.h
         src/libraries/TRD/DGEMStripCluster.h
+        src/libraries/TRD/DTRDDigiHit.h
         src/libraries/TRD/DTRDHit.h
         src/libraries/TRD/DTRDPoint.h
+        src/libraries/TRD/DTRDStripCluster.h
 
         src/libraries/TRIGGER/DTrigger.h
         src/libraries/TRIGGER/DL3Trigger.h
@@ -386,9 +388,9 @@ set(HALLD_RECON_SOURCES
         src/libraries/TRIGGER/DL3Trigger_factory.h
         src/libraries/TRIGGER/DL1Trigger_factory.cc
         src/libraries/TRIGGER/DL1Trigger_factory.h
-        src/libraries/TRIGGER/DL1MCTrigger_factory.cc     # DEventSource_HDDM
+#        src/libraries/TRIGGER/DL1MCTrigger_factory.cc     # DEventSource_HDDM
         src/libraries/TRIGGER/DL1MCTrigger_factory.h
-        src/libraries/TRIGGER/TRIGGER_init.cc
+#        src/libraries/TRIGGER/TRIGGER_init.cc
 
         src/libraries/TTAB/DTranslationTable.h
         src/libraries/TTAB/DTranslationTable.cc
