@@ -283,11 +283,12 @@ set(HALLD_RECON_SOURCES
         src/libraries/RF/DRFDigiTime.h
 
         src/libraries/START_COUNTER/DSCDigiHit.h
-        src/libraries/START_COUNTER/DSCTruthHit.h
         src/libraries/START_COUNTER/DSCHit.h
-        src/libraries/START_COUNTER/DSCTDCDigiHit.h
-        src/libraries/START_COUNTER/DSCHit_factory.h
         src/libraries/START_COUNTER/DSCHit_factory.cc
+        src/libraries/START_COUNTER/DSCHit_factory.h
+        src/libraries/START_COUNTER/DSCTDCDigiHit.h
+        src/libraries/START_COUNTER/DSCTruthHit.h
+        src/libraries/START_COUNTER/START_COUNTER_init.cc
 
 
         src/libraries/TAC/DRebuildFromRawFADC_factory.cc

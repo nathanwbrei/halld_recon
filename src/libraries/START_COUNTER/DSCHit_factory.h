@@ -13,6 +13,9 @@
 #include "DSCHit.h"
 #include "DSCDigiHit.h"
 
+#include <vector>
+using std::vector;
+
 
 class DSCHit_factory:public JFactoryT<DSCHit>{
 	public:

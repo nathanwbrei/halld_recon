@@ -7,5 +7,5 @@
 void START_COUNTER_init(JFactorySet *factorySet)
 {
 	/// Create and register Start Counter data factories
-	loop->AddFactory(new DSCHit_factory());
+	factorySet->Add(new DSCHit_factory());
 }
