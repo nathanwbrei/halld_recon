@@ -314,16 +314,31 @@ set(HALLD_RECON_SOURCES
         src/libraries/TPOL/DTPOLSectorDigiHit.h
         src/libraries/TPOL/DTPOLRingDigiHit.h
 
+        src/libraries/TRACKING/DHelicalFit.cc
+        src/libraries/TRACKING/DHelicalFit.h
+        src/libraries/TRACKING/DHoughFind.cc
+        src/libraries/TRACKING/DHoughFind.h
+        src/libraries/TRACKING/DMagneticFieldStepper.cc
+        src/libraries/TRACKING/DMagneticFieldStepper.h
+        src/libraries/TRACKING/DMatrixPools.cc
+        src/libraries/TRACKING/DMCThrown.h
+        src/libraries/TRACKING/DMCTrackHit.h
+        src/libraries/TRACKING/DMCTrajectoryPoint.h
+        src/libraries/TRACKING/DQuickFit.cc
+        src/libraries/TRACKING/DQuickFit.h
+        src/libraries/TRACKING/DReferenceTrajectory.cc
+        src/libraries/TRACKING/DReferenceTrajectory.h
+        src/libraries/TRACKING/DRiemannFit.cc
+        src/libraries/TRACKING/DRiemannFit.h
+        src/libraries/TRACKING/DTrackCandidate.h
+        src/libraries/TRACKING/DTrackCandidate_factory.cc
+        src/libraries/TRACKING/DTrackCandidate_factory.h
+
         src/libraries/TRACKING/DTrackWireBased.h
         src/libraries/TRACKING/DTrackFinder.h
         src/libraries/TRACKING/DTrackFinder.cc
-        src/libraries/TRACKING/DTrackCandidate.h
-        src/libraries/TRACKING/DMCTrackHit.h
-        src/libraries/TRACKING/DHoughFind.h
-        src/libraries/TRACKING/DMCThrown.h
         src/libraries/TRACKING/DTrackTimeBased.h
         src/libraries/TRACKING/DTrackHit.h
-        src/libraries/TRACKING/DMCTrajectoryPoint.h
         src/libraries/TRACKING/DTrackFitter.h        # Put some of this in a factory?!?
         src/libraries/TRACKING/DTrackFitter.cc
         src/libraries/TRACKING/DTrackHitSelector.h
@@ -332,12 +347,7 @@ set(HALLD_RECON_SOURCES
         src/libraries/TRACKING/DTrackWireBased_factory.h
         src/libraries/TRACKING/DTrackTimeBased_factory.cc
         src/libraries/TRACKING/DTrackTimeBased_factory.h
-        src/libraries/TRACKING/DReferenceTrajectory.h
-        src/libraries/TRACKING/DReferenceTrajectory.cc
-        src/libraries/TRACKING/DMagneticFieldStepper.cc
-        src/libraries/TRACKING/DMagneticFieldStepper.h
         src/libraries/TRACKING/grkuta.cc
-        src/libraries/TRACKING/DMatrixPools.cc
 
         src/libraries/TRD/DGEMPoint.h
         src/libraries/TRD/DTRDStripCluster.h
