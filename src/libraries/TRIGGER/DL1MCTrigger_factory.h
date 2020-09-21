@@ -1,7 +1,7 @@
 #ifndef _DL1MCTrigger_factory_
 #define _DL1MCTrigger_factory_
 
-#include <JANA/JFactory.h>
+#include <JANA/JFactoryT.h>
 
 #include "DL1MCTrigger.h"
 
@@ -20,7 +20,7 @@
 
 typedef  vector< vector<double> >  fcal_constants_t;
 
-class DL1MCTrigger_factory:public jana::JFactory<DL1MCTrigger>{
+class DL1MCTrigger_factory:public JFactoryT<DL1MCTrigger>{
 	public:
 		DL1MCTrigger_factory(){};
 		~DL1MCTrigger_factory(){};
@@ -207,11 +207,11 @@ class DL1MCTrigger_factory:public jana::JFactory<DL1MCTrigger>{
 		float  BCAL_ADC_PER_MEV_CORRECT;
 		
  private:
-		jerror_t init(void);						///< Called once at program start.
-		jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
-		jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);	///< Called every event.
-		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
-		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+		void Init() override;						///< Called once at program start.
+		void BeginRun(const std::shared_ptr<const JEvent>& event) override;	///< Called everytime a new run number is detected.
+		void Process(const std::shared_ptr<const JEvent>& event) override;	///< Called every event.
+		void EndRun() override;						///< Called everytime run number changes, provided brun has been called.
+		void Finish();						///< Called after last event of last event source has been processed.
 		
 		
 		void LoadFCALConst( fcal_constants_t &table, 
@@ -219,7 +219,7 @@ class DL1MCTrigger_factory:public jana::JFactory<DL1MCTrigger>{
 				    const DFCALGeometry  &fcalGeom);	
 
 
-		void GetSeeds(JEventLoop *loop,  uint64_t eventnumber, UInt_t &seed1, UInt_t &seed2, UInt_t &seed3);
+		void GetSeeds(const std::shared_ptr<const JEvent>& loop,  uint64_t eventnumber, UInt_t &seed1, UInt_t &seed2, UInt_t &seed3);
 
 		TH1F *hfcal_gains;
 		TH2F *hfcal_gains2;

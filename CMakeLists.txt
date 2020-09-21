@@ -378,8 +378,17 @@ set(HALLD_RECON_SOURCES
         src/libraries/TRIGGER/DMCTrigger.h
         src/libraries/TRIGGER/DL1MCTrigger.h
         src/libraries/TRIGGER/DL1Trigger.h
-        src/libraries/TRIGGER/DTrigger_factory.h
         src/libraries/TRIGGER/DTrigger_factory.cc
+        src/libraries/TRIGGER/DTrigger_factory.h
+        src/libraries/TRIGGER/DMCTrigger_factory.cc
+        src/libraries/TRIGGER/DMCTrigger_factory.h
+        src/libraries/TRIGGER/DL3Trigger_factory.cc
+        src/libraries/TRIGGER/DL3Trigger_factory.h
+        src/libraries/TRIGGER/DL1Trigger_factory.cc
+        src/libraries/TRIGGER/DL1Trigger_factory.h
+        src/libraries/TRIGGER/DL1MCTrigger_factory.cc     # DEventSource_HDDM
+        src/libraries/TRIGGER/DL1MCTrigger_factory.h
+        src/libraries/TRIGGER/TRIGGER_init.cc
 
         src/libraries/TTAB/DTranslationTable.h
         src/libraries/TTAB/DTranslationTable.cc
