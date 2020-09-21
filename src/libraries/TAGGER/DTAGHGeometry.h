@@ -20,7 +20,7 @@ class DTAGHGeometry : public JObject {
    
    JOBJECT_PUBLIC(DTAGHGeometry);
 
-   DTAGHGeometry(JEventLoop *loop);
+   DTAGHGeometry(const std::shared_ptr<const JEvent>& loop);
    ~DTAGHGeometry();
 
    static const unsigned int kCounterCount;

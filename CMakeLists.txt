@@ -250,18 +250,31 @@ set(HALLD_RECON_SOURCES
         src/libraries/KINFITTER/DKinFitUtils.cc
         src/libraries/KINFITTER/DKinFitUtils.h
 
-        src/libraries/PAIR_SPECTROMETER/DPSDigiHit.h
-        src/libraries/PAIR_SPECTROMETER/DPSGeometry.h
-        src/libraries/PAIR_SPECTROMETER/DPSGeometry.cc
+#        src/libraries/PAIR_SPECTROMETER/DLumi.cc  # Uses TAGGER
+        src/libraries/PAIR_SPECTROMETER/DLumi.h
+#        src/libraries/PAIR_SPECTROMETER/DLumi_factory.h
         src/libraries/PAIR_SPECTROMETER/DPSCDigiHit.h
-        src/libraries/PAIR_SPECTROMETER/DPSCTDCDigiHit.h
-        src/libraries/PAIR_SPECTROMETER/DPSHit.h
-        src/libraries/PAIR_SPECTROMETER/DPSTruthHit.h
-        src/libraries/PAIR_SPECTROMETER/DPSCTruthHit.h
-        src/libraries/PAIR_SPECTROMETER/DPSPair.h
-        src/libraries/PAIR_SPECTROMETER/DLumi.h  # Uses JEventLoop, DTAGHGeometry, DTAGMGeometry
         src/libraries/PAIR_SPECTROMETER/DPSCHit.h
+#        src/libraries/PAIR_SPECTROMETER/DPSCHit_factory.cc
+#        src/libraries/PAIR_SPECTROMETER/DPSCHit_factory.h
         src/libraries/PAIR_SPECTROMETER/DPSCPair.h
+#        src/libraries/PAIR_SPECTROMETER/DPSCPair_factory.cc
+#        src/libraries/PAIR_SPECTROMETER/DPSCPair_factory.h
+        src/libraries/PAIR_SPECTROMETER/DPSCTDCDigiHit.h
+        src/libraries/PAIR_SPECTROMETER/DPSCTruthHit.h
+        src/libraries/PAIR_SPECTROMETER/DPSDigiHit.h
+        src/libraries/PAIR_SPECTROMETER/DPSGeometry.cc
+        src/libraries/PAIR_SPECTROMETER/DPSGeometry.h
+#        src/libraries/PAIR_SPECTROMETER/DPSGeometry_factory.h
+        src/libraries/PAIR_SPECTROMETER/DPSHit.h
+#        src/libraries/PAIR_SPECTROMETER/DPSHit_factory.cc
+#        src/libraries/PAIR_SPECTROMETER/DPSHit_factory.h
+        src/libraries/PAIR_SPECTROMETER/DPSPair.h
+#        src/libraries/PAIR_SPECTROMETER/DPSPair_factory.cc
+#        src/libraries/PAIR_SPECTROMETER/DPSPair_factory.h
+        src/libraries/PAIR_SPECTROMETER/DPSTruthHit.h
+#        src/libraries/PAIR_SPECTROMETER/PAIR_SPECTROMETER_init.cc
+
 
         src/libraries/PID/DChargedTrack.h
         src/libraries/PID/DChargedTrackHypothesis.h
@@ -325,10 +338,16 @@ set(HALLD_RECON_SOURCES
         src/libraries/TAC/WaveformSpikeFunctor.cc
         src/libraries/TAC/WaveformSpikeFunctor.h
 
-
-        src/libraries/TAGGER/DTAGHHit.h
-        src/libraries/TAGGER/DTAGHGeometry.h   # Uses JEventLoop to get calibrations
         src/libraries/TAGGER/DTAGHDigiHit.h
+        src/libraries/TAGGER/DTAGHGeometry.cc
+        src/libraries/TAGGER/DTAGHGeometry.h
+        src/libraries/TAGGER/DTAGHGeometry_factory.h
+        src/libraries/TAGGER/DTAGHHit.h
+        src/libraries/TAGGER/DTAGHHit_factory.cc
+        src/libraries/TAGGER/DTAGHHit_factory.h
+        src/libraries/TAGGER/DTAGHHit_factory_Calib.cc
+        src/libraries/TAGGER/DTAGHHit_factory_Calib.h
+
         src/libraries/TAGGER/DTAGMHit.h
         src/libraries/TAGGER/DTAGMDigiHit.h
         src/libraries/TAGGER/DTAGMGeometry.h   # Uses JEventLoop to get calibrations
