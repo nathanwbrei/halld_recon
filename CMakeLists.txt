@@ -198,6 +198,8 @@ set(HALLD_RECON_SOURCES
         src/libraries/FDC/DFDCPseudo.h
         src/libraries/FDC/DFDCSegment_factory.cc
         src/libraries/FDC/DFDCSegment_factory.h
+        src/libraries/FDC/DFDCPseudo_factory.cc
+        src/libraries/FDC/DFDCPseudo_factory.h
 
         src/libraries/FMWPC/DFMWPCTruthHit.h
         src/libraries/FMWPC/DFMWPCHit.h
@@ -353,6 +355,8 @@ set(HALLD_RECON_SOURCES
         src/libraries/TRACKING/DTrackFitter.cc
         src/libraries/TRACKING/DTrackHitSelector.h
         src/libraries/TRACKING/DTrackHitSelector.cc
+        src/libraries/TRACKING/DTrackHitSelectorTHROWN.cc
+        src/libraries/TRACKING/DTrackHitSelectorTHROWN.h
         src/libraries/TRACKING/DTrackWireBased_factory.cc
         src/libraries/TRACKING/DTrackWireBased_factory.h
         src/libraries/TRACKING/DTrackTimeBased_factory.cc
