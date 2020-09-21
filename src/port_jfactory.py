@@ -85,7 +85,7 @@ def main():
     r.add(re.compile(r'event->GetCalib'), 'calibration->Get')
 
     r.add(re.compile(r'JEventLoop\*'), 'const std::shared_ptr<const JEvent>&')
-    r.add(re.compile(r'JEventLoop \*'), 'const std::shared_ptr<const JEvent>&')
+    r.add(re.compile(r'Tag'), '~~~~Tag~~~~')
 
     filename = sys.argv[1]
     r.process(filename)
