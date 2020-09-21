@@ -289,6 +289,9 @@ set(HALLD_RECON_SOURCES
         src/libraries/RF/DRFTime_factory_PSC.h
         src/libraries/RF/DRFTime_factory_TAGH.cc
         src/libraries/RF/DRFTime_factory_TAGH.h
+        src/libraries/RF/DRFTime_factory_TOF.cc
+        src/libraries/RF/DRFTime_factory_TOF.h
+
 
         src/libraries/START_COUNTER/DSCDigiHit.h
         src/libraries/START_COUNTER/DSCHit.h
