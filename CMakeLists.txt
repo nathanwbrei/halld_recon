@@ -314,10 +314,13 @@ set(HALLD_RECON_SOURCES
         src/libraries/TOF/DTOFPoint_factory.cc
         src/libraries/TOF/DTOFPoint_factory.h
 
-        src/libraries/TPOL/DTPOLTruthHit.h
         src/libraries/TPOL/DTPOLHit.h
-        src/libraries/TPOL/DTPOLSectorDigiHit.h
+        src/libraries/TPOL/DTPOLHit_factory.cc
+        src/libraries/TPOL/DTPOLHit_factory.h
         src/libraries/TPOL/DTPOLRingDigiHit.h
+        src/libraries/TPOL/DTPOLSectorDigiHit.h
+        src/libraries/TPOL/DTPOLTruthHit.h
+        src/libraries/TPOL/TPOL_init.cc
 
         src/libraries/TRACKING/DHelicalFit.cc
         src/libraries/TRACKING/DHelicalFit.h
