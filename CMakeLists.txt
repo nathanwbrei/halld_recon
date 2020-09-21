@@ -431,10 +431,10 @@ set(HALLD_RECON_SOURCES
 #        src/libraries/TRACKING/DTrackCandidate_factory_THROWN.h
         src/libraries/TRACKING/DTrackFinder.cc
         src/libraries/TRACKING/DTrackFinder.h
-#        src/libraries/TRACKING/DTrackFinder_factory.h
+        src/libraries/TRACKING/DTrackFinder_factory.h
         src/libraries/TRACKING/DTrackFitter.cc
         src/libraries/TRACKING/DTrackFitter.h
-#        src/libraries/TRACKING/DTrackFitter_factory.h
+        src/libraries/TRACKING/DTrackFitter_factory.h
 #        src/libraries/TRACKING/DTrackFitter_factory_ALT1.h
 #        src/libraries/TRACKING/DTrackFitter_factory_KalmanSIMD.h
 #        src/libraries/TRACKING/DTrackFitter_factory_KalmanSIMD_ALT1.h
