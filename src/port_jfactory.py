@@ -82,6 +82,7 @@ def main():
     r.add(re.compile(r'// evnt'), '// Process')
     r.add(re.compile(r'// erun'), '// EndRun')
     r.add(re.compile(r'// fini'), '// Finish')
+    r.add(re.compile(r'locEventLoop'), 'event')
     r.add(re.compile(r'event->GetCalib'), 'calibration->Get')
 
     r.add(re.compile(r'JEventLoop\*'), 'const std::shared_ptr<const JEvent>&')
@@ -89,6 +90,7 @@ def main():
     r.add(re.compile(r'Tag'), '~~~~Tag~~~~')
     r.add(re.compile(r'dapp->Lock();'), 'root_lock->acquire_write_lock();')
     r.add(re.compile(r'dapp->Unlock();'), 'root_lock->release_lock();')
+
 
     filename = sys.argv[1]
     r.process(filename)
