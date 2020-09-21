@@ -347,12 +347,19 @@ set(HALLD_RECON_SOURCES
         src/libraries/TAGGER/DTAGHHit_factory.h
         src/libraries/TAGGER/DTAGHHit_factory_Calib.cc
         src/libraries/TAGGER/DTAGHHit_factory_Calib.h
-
-        src/libraries/TAGGER/DTAGMHit.h
-        src/libraries/TAGGER/DTAGMDigiHit.h
-        src/libraries/TAGGER/DTAGMGeometry.h   # Uses JEventLoop to get calibrations
-        src/libraries/TAGGER/DTAGMTDCDigiHit.h
         src/libraries/TAGGER/DTAGHTDCDigiHit.h
+        src/libraries/TAGGER/DTAGMDigiHit.h
+        src/libraries/TAGGER/DTAGMTDCDigiHit.h
+        src/libraries/TAGGER/DTAGMGeometry.cc
+        src/libraries/TAGGER/DTAGMGeometry.h
+        src/libraries/TAGGER/DTAGMGeometry_factory.h
+        src/libraries/TAGGER/DTAGMHit.h
+        src/libraries/TAGGER/DTAGMHit_factory.cc
+        src/libraries/TAGGER/DTAGMHit_factory.h
+        src/libraries/TAGGER/DTAGMHit_factory_Calib.cc
+        src/libraries/TAGGER/DTAGMHit_factory_Calib.h
+        src/libraries/TAGGER/TAGGER_init.cc
+
 
         src/libraries/TOF/DTOFDigiHit.h
         src/libraries/TOF/DTOFGeometry.cc

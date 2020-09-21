@@ -11,6 +11,7 @@
 #include <string>
 
 #include <JANA/JObject.h>
+#include <JANA/JEvent.h>
 
 #include "units.h"
 
@@ -23,7 +24,7 @@ class DTAGMGeometry : public JObject {
    
    JOBJECT_PUBLIC(DTAGMGeometry);
 
-   DTAGMGeometry(JEventLoop *loop);
+   DTAGMGeometry(const std::shared_ptr<const JEvent>& event);
    ~DTAGMGeometry();
 
    static const unsigned int kRowCount;

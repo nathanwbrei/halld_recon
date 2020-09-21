@@ -19,9 +19,12 @@
 #include <iostream>
 #include <map>
 
-#include <JANA/JApplication.h>
 #include <JANA/JEvent.h>
+#include <JANA/Calibrations/JCalibrationManager.h>
+
 #include "DTAGMGeometry.h"
+
+using std::string;
 
 const unsigned int DTAGMGeometry::kRowCount = 5;
 const unsigned int DTAGMGeometry::kColumnCount = 102;
@@ -32,11 +35,15 @@ const double DTAGMGeometry::kFiberLength = 2.0; // cm
 //---------------------------------
 // DTAGMGeometry    (Constructor)
 //---------------------------------
-DTAGMGeometry::DTAGMGeometry(JEventLoop *loop)
+DTAGMGeometry::DTAGMGeometry(const std::shared_ptr<const JEvent>& event)
 {
+   auto run_number = event->GetRunNumber();
+   auto app = event->GetJApplication();
+   auto calibration = app->GetService<JCalibrationManager>()->GetJCalibration(run_number);
+
    /* read tagger set endpoint energy from calibdb */
    std::map<string,double> result1;
-   loop->GetCalib("/PHOTON_BEAM/endpoint_energy", result1);
+   calibration->Get("/PHOTON_BEAM/endpoint_energy", result1);
    if (result1.find("PHOTON_BEAM_ENDPOINT_ENERGY") == result1.end()) {
       std::cerr << "Error in DTAGMGeometry constructor: "
                 << "failed to read photon beam endpoint energy "
@@ -49,7 +56,7 @@ DTAGMGeometry::DTAGMGeometry(JEventLoop *loop)
 
    /* read microscope channel energy bounds from calibdb */
    std::vector<std::map<string,double> > result2;
-   loop->GetCalib("/PHOTON_BEAM/microscope/scaled_energy_range", result2);
+   calibration->Get("/PHOTON_BEAM/microscope/scaled_energy_range", result2);
    if (result2.size() != kColumnCount) {
       std::cerr << "Error in DTAGMGeometry constructor: "
                 << "failed to read photon beam scaled_energy_range table "
@@ -73,7 +80,7 @@ DTAGMGeometry::DTAGMGeometry(JEventLoop *loop)
    m_endpoint_energy_calib_GeV = 0.;
    
    std::map<string,double> result3;
-   status = loop->GetCalib("/PHOTON_BEAM/hodoscope/endpoint_calib",result3);
+   status = calibration->Get("/PHOTON_BEAM/hodoscope/endpoint_calib",result3);
    
    
    if(!status){
