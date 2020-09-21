@@ -196,6 +196,8 @@ set(HALLD_RECON_SOURCES
         src/libraries/FDC/DFDCHit.h
         src/libraries/FDC/DFDCCathodeCluster.h
         src/libraries/FDC/DFDCPseudo.h
+        src/libraries/FDC/DFDCSegment_factory.cc
+        src/libraries/FDC/DFDCSegment_factory.h
 
         src/libraries/FMWPC/DFMWPCTruthHit.h
         src/libraries/FMWPC/DFMWPCHit.h
@@ -337,6 +339,10 @@ set(HALLD_RECON_SOURCES
         src/libraries/TRACKING/DTrackCandidate_factory_CDC.h
         src/libraries/TRACKING/DTrackCandidate_factory_CDC_or_FDCpseudo.cc
         src/libraries/TRACKING/DTrackCandidate_factory_CDC_or_FDCpseudo.h
+#        src/libraries/TRACKING/DTrackCandidate_factory_FDC.cc    # Debug level
+        src/libraries/TRACKING/DTrackCandidate_factory_FDC.h
+        src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
+        src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.h
 
         src/libraries/TRACKING/DTrackWireBased.h
         src/libraries/TRACKING/DTrackFinder.h
