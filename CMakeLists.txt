@@ -204,7 +204,7 @@ set(HALLD_RECON_SOURCES
 
         src/libraries/FMWPC/DFMWPCTruthHit.h
         src/libraries/FMWPC/DFMWPCHit.h
-
+        src/libraries/FMWPC/FMWPC_init.cc
 
         src/libraries/HDGEOMETRY/DGeometry.cc
         src/libraries/HDGEOMETRY/DGeometry.h
@@ -302,17 +302,23 @@ set(HALLD_RECON_SOURCES
         src/libraries/TAGGER/DTAGMTDCDigiHit.h
         src/libraries/TAGGER/DTAGHTDCDigiHit.h
 
-        src/libraries/TOF/DTOFHit.h
-        src/libraries/TOF/DTOFHitMC.h
-        src/libraries/TOF/DTOFTruth.h
-        src/libraries/TOF/DTOFPaddleHit.h
         src/libraries/TOF/DTOFDigiHit.h
-        src/libraries/TOF/DTOFGeometry.h
         src/libraries/TOF/DTOFGeometry.cc
-        src/libraries/TOF/DTOFTDCDigiHit.h
+        src/libraries/TOF/DTOFGeometry.h
+        src/libraries/TOF/DTOFGeometry_factory.h
+        src/libraries/TOF/DTOFHit.h
+        src/libraries/TOF/DTOFHit_factory.cc
+        src/libraries/TOF/DTOFHit_factory.h
+        src/libraries/TOF/DTOFHitMC.h
+        src/libraries/TOF/DTOFPaddleHit.h
+        src/libraries/TOF/DTOFPaddleHit_factory.cc
+        src/libraries/TOF/DTOFPaddleHit_factory.h
         src/libraries/TOF/DTOFPoint.h
         src/libraries/TOF/DTOFPoint_factory.cc
         src/libraries/TOF/DTOFPoint_factory.h
+        src/libraries/TOF/DTOFTDCDigiHit.h
+        src/libraries/TOF/DTOFTruth.h
+        src/libraries/TOF/TOF_init.cc
 
         src/libraries/TPOL/DTPOLHit.h
         src/libraries/TPOL/DTPOLHit_factory.cc

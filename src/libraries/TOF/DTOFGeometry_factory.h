@@ -8,12 +8,13 @@
 #ifndef _DTOFGeometry_factory_
 #define _DTOFGeometry_factory_
 
-#include <JANA/JFactory.h>
-using namespace jana;
+#include <JANA/JFactoryT.h>
+#include <JANA/JEvent.h>
+#include "DANA/DGeometryManager.h"
 
 #include "DTOFGeometry.h"
 
-class DTOFGeometry_factory:public JFactory<DTOFGeometry>{
+class DTOFGeometry_factory:public JFactoryT<DTOFGeometry>{
 	public:
 		DTOFGeometry_factory(){};
 		~DTOFGeometry_factory(){};
@@ -21,44 +22,40 @@ class DTOFGeometry_factory:public JFactory<DTOFGeometry>{
 		DTOFGeometry *tofgeometry=nullptr;
 
 		//------------------
-		// brun
+		// BeginRun
 		//------------------
-		jerror_t brun(JEventLoop *loop, int32_t runnumber)
+		void BeginRun(const std::shared_ptr<const JEvent>& event)
 		{
 			// (See DTAGHGeometry_factory.h)
 			SetFactoryFlag(NOT_OBJECT_OWNER);
 			ClearFactoryFlag(WRITE_TO_OUTPUT);
-			
+
+			auto event_number = event->GetEventNumber();
+			auto run_number = event->GetRunNumber();
+			auto app = event->GetJApplication();
+			auto geo_manager = app->GetService<DGeometryManager>();
+			const DGeometry* locGeometry = geo_manager->GetDGeometry(run_number);
+
 			if( tofgeometry ) delete tofgeometry;
-
-			// Get the geometry
-			DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
-			const DGeometry* locGeometry = dapp->GetDGeometry(runnumber);
 			tofgeometry = new DTOFGeometry(locGeometry);
-
-			return NOERROR;
 		}
 
 		//------------------
-		// evnt
+		// Process
 		//------------------
-		 jerror_t evnt(JEventLoop *loop, uint64_t eventnumber)
+		 void Process(const std::shared_ptr<const JEvent>& event)
 		 {
 			// Reuse existing DBCALGeometry object.
-			if( tofgeometry ) _data.push_back( tofgeometry );
-			 
-			 return NOERROR;
+			if( tofgeometry ) Insert( tofgeometry );
 		 }
 
 		//------------------
-		// erun
+		// EndRun
 		//------------------
-		jerror_t erun(void)
+		void EndRun() override
 		{
-			if( tofgeometry ) delete tofgeometry;
-			tofgeometry = NULL;
-			
-			return NOERROR;
+			delete tofgeometry;
+			tofgeometry = nullptr;
 		}
 };
 

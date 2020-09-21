@@ -15,8 +15,8 @@
 void TOF_init(JFactorySet *factorySet)
 {
   /// Create and register TOF data factories
-  loop->AddFactory(new DTOFGeometry_factory());
-  loop->AddFactory(new DTOFHit_factory());            // smeared MC data
-  loop->AddFactory(new DTOFPaddleHit_factory());
-  loop->AddFactory(new DTOFPoint_factory());
+  factorySet->Add(new DTOFGeometry_factory());
+  factorySet->Add(new DTOFHit_factory());            // smeared MC data
+  factorySet->Add(new DTOFPaddleHit_factory());
+  factorySet->Add(new DTOFPoint_factory());
 }
