@@ -1,6 +1,6 @@
 // $Id: RF_init.cc 14984 2015-03-31 14:33:22Z pmatt $
 
-#include <JANA/JFactory.h>
+#include <JANA/JFactorySet.h>
 
 #include "DRFTime_factory.h"
 #include "DRFTime_factory_FDC.h"
