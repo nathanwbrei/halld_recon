@@ -88,6 +88,7 @@ set(HALLD_RECON_SOURCES
         src/libraries/CCAL/DCCALHit.h
 
         src/libraries/CERE/DCereHit.h
+        src/libraries/CERE/CERE_init.cc
 
         src/libraries/DANA/DANARootErrorHandler.cc
         src/libraries/DANA/DANARootErrorHandler.h
@@ -377,6 +378,8 @@ set(HALLD_RECON_SOURCES
         src/libraries/TRIGGER/DMCTrigger.h
         src/libraries/TRIGGER/DL1MCTrigger.h
         src/libraries/TRIGGER/DL1Trigger.h
+        src/libraries/TRIGGER/DTrigger_factory.h
+        src/libraries/TRIGGER/DTrigger_factory.cc
 
         src/libraries/TTAB/DTranslationTable.h
         src/libraries/TTAB/DTranslationTable.cc

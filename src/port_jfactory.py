@@ -48,7 +48,7 @@ def main():
     r.add(re.compile(r'jerror_t brun\(JEventLoop \*[a-zA-Z]+, int32_t runnumber\);'),
           r'void BeginRun(const std::shared_ptr<const JEvent>& event) override;')
 
-    r.add(re.compile(r'jerror_t evnt\(JEventLoop \*[a-zA-Z]+, uint64_t eventnumber\);'),
+    r.add(re.compile(r'jerror_t evnt\(JEventLoop \*[a-zA-Z_]+, uint64_t [a-zA-Z_]+\);'),
           r'void Process(const std::shared_ptr<const JEvent>& event) override;')
 
     r.add(re.compile(r'jerror_t erun\(void\);'), r'void EndRun() override;')
@@ -60,7 +60,7 @@ def main():
     r.add(re.compile(r'jerror_t ([a-zA-Z_0-9]+)::brun\(JEventLoop \*[a-zA-Z_]+, int32_t runnumber\)'),
           r'void \1::BeginRun(const std::shared_ptr<const JEvent>& event)'),
 
-    r.add(re.compile(r'jerror_t ([a-zA-Z_0-9]+)::evnt\(JEventLoop \*[a-zA-Z_]+, uint64_t eventnumber\)'),
+    r.add(re.compile(r'jerror_t ([a-zA-Z_0-9]+)::evnt\(JEventLoop \*[a-zA-Z_]+, uint64_t [a-zA-Z_]+\)'),
           r'void \1::Process(const std::shared_ptr<const JEvent>& event)'),
 
     r.add(re.compile(r'jerror_t ([a-zA-Z_0-9]+)::erun\(void\)'), r'void \1::EndRun()'),

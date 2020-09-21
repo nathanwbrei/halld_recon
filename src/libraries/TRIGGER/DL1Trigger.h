@@ -3,6 +3,8 @@
 
 #include <JANA/JObject.h>
 
+using std::vector;
+
 class DL1Trigger:public JObject{
  public:
   JOBJECT_PUBLIC(DL1Trigger);
