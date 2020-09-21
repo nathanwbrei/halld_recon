@@ -369,11 +369,22 @@ set(HALLD_RECON_SOURCES
         src/libraries/TRD/DGEMHit_factory.cc
         src/libraries/TRD/DGEMHit_factory.h
         src/libraries/TRD/DGEMPoint.h
+        src/libraries/TRD/DGEMPoint_factory.cc
+        src/libraries/TRD/DGEMPoint_factory.h
         src/libraries/TRD/DGEMStripCluster.h
+        src/libraries/TRD/DGEMStripCluster_factory.cc
+        src/libraries/TRD/DGEMStripCluster_factory.h
         src/libraries/TRD/DTRDDigiHit.h
         src/libraries/TRD/DTRDHit.h
+        src/libraries/TRD/DTRDHit_factory.cc
+        src/libraries/TRD/DTRDHit_factory.h
         src/libraries/TRD/DTRDPoint.h
+        src/libraries/TRD/DTRDPoint_factory.cc
+        src/libraries/TRD/DTRDPoint_factory.h
         src/libraries/TRD/DTRDStripCluster.h
+        src/libraries/TRD/DTRDStripCluster_factory.cc
+        src/libraries/TRD/DTRDStripCluster_factory.h
+        src/libraries/TRD/TRD_init.cc
 
         src/libraries/TRIGGER/DTrigger.h
         src/libraries/TRIGGER/DL3Trigger.h
