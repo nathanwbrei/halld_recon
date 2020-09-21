@@ -103,8 +103,6 @@ DDIRCGeometry::Initialize(const std::shared_ptr<const JEvent>& event) {
 			DIRC_BAR_Y[i] = DCML00_XYZ[1] + DCBR_XYZ[1];
 		}
 	}
-	
-	return;
 }
 
 int

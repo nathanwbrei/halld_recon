@@ -164,6 +164,11 @@ set(HALLD_RECON_SOURCES
         src/libraries/DAQ/HDEVIO.h
         src/libraries/DAQ/HDEVIO.cc
 
+        src/libraries/DIRC/DDIRCGeometry.cc
+        src/libraries/DIRC/DDIRCGeometry.h
+        src/libraries/DIRC/DDIRCGeometry_factory.h
+        src/libraries/DIRC/DDIRCLEDRef.h
+
         src/libraries/DIRC/DDIRCLut.h
         src/libraries/DIRC/DDIRCLut.cc     # Init requires event
         src/libraries/DIRC/DDIRCLutReader.h
@@ -172,8 +177,6 @@ set(HALLD_RECON_SOURCES
         src/libraries/DIRC/DDIRCTruthPmtHit.h
         src/libraries/DIRC/DDIRCTDCDigiHit.h
         src/libraries/DIRC/DDIRCPmtHit.h
-        src/libraries/DIRC/DDIRCGeometry.h
-        src/libraries/DIRC/DDIRCGeometry.cc
         src/libraries/DIRC/DDIRCTruthBarHit.h
 
         src/libraries/EVENTSTORE/DESSkimData.h

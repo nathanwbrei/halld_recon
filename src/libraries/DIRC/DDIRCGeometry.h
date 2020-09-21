@@ -19,6 +19,11 @@ public:
 	DDIRCGeometry(){}
 	~DDIRCGeometry(){}
 
+	// We put the dependency on JEvent in Initialize so that we
+	// have other ways of creating DDIRCGeometry objects.
+	// This improves testability
+	void Initialize(const std::shared_ptr<const JEvent>& event);
+
 	// these numbers are fixed for the DIRC as constructed
 	// it probably doesn't make sense to retrieve them
 	// from a database as they aren't going to change unless
@@ -51,9 +56,6 @@ public:
 	}
 
 private:
-
-	void Initialize(const std::shared_ptr<const JEvent>& event);
-
 	int CHANNEL_PER_PMT, PMT_ROWS, PMT_COLUMNS;
 
 	double DIRC_BAR_END[48], DIRC_BAR_Y[48], DIRC_BAR_L[48];
