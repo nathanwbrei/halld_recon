@@ -333,6 +333,8 @@ set(HALLD_RECON_SOURCES
         src/libraries/TRACKING/DTrackCandidate.h
         src/libraries/TRACKING/DTrackCandidate_factory.cc
         src/libraries/TRACKING/DTrackCandidate_factory.h
+        src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+        src/libraries/TRACKING/DTrackCandidate_factory_CDC.h
 
         src/libraries/TRACKING/DTrackWireBased.h
         src/libraries/TRACKING/DTrackFinder.h
