@@ -36,6 +36,7 @@ class DTrackTimeBased:public DTrackingData{
 		unsigned int potential_fdc_hits_on_track;
 		unsigned int potential_cdc_hits_on_track;
 
+		oid_t id;               ///< TODO: What is this and why?
 		oid_t trackid;			///< id of DTrackWireBased corresponding to this track
 		oid_t candidateid;   ///< id of DTrackCandidate corresponding to this track
 		float chisq;			///< Chi-squared for the track (not chisq/dof!)

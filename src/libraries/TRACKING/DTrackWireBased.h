@@ -16,8 +16,9 @@
 class DTrackWireBased:public DTrackingData{
 	public:
 		JOBJECT_PUBLIC(DTrackWireBased);
-		
-		oid_t candidateid;	///< which DTrackCandidate this came from
+
+		oid_t id;               ///< TODO: What is this and why?
+		oid_t candidateid;		///< which DTrackCandidate this came from
 		float chisq;			///< Chi-squared for the track (not chisq/dof!)
 		int Ndof;				///< Number of degrees of freedom in the fit
 		vector<DTrackFitter::pull_t> pulls;	///< Holds pulls used in chisq calc. (not including off-diagonals)

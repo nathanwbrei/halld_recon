@@ -469,14 +469,14 @@ set(HALLD_RECON_SOURCES
         src/libraries/TRACKING/DTrackTimeBased_factory.h
         src/libraries/TRACKING/DTrackTimeBased_factory_StraightLine.cc
         src/libraries/TRACKING/DTrackTimeBased_factory_StraightLine.h
-#        src/libraries/TRACKING/DTrackTimeBased_factory_THROWN.cc  # id
+        src/libraries/TRACKING/DTrackTimeBased_factory_THROWN.cc
         src/libraries/TRACKING/DTrackTimeBased_factory_THROWN.h
         src/libraries/TRACKING/DTrackWireBased.h
         src/libraries/TRACKING/DTrackWireBased_factory.cc
         src/libraries/TRACKING/DTrackWireBased_factory.h
         src/libraries/TRACKING/DTrackWireBased_factory_StraightLine.cc
         src/libraries/TRACKING/DTrackWireBased_factory_StraightLine.h
-#        src/libraries/TRACKING/DTrackWireBased_factory_THROWN.cc  # id
+        src/libraries/TRACKING/DTrackWireBased_factory_THROWN.cc
         src/libraries/TRACKING/DTrackWireBased_factory_THROWN.h
         src/libraries/TRACKING/fdc_covariance.cc
         src/libraries/TRACKING/grkuta.cc

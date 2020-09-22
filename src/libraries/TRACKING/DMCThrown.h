@@ -8,14 +8,15 @@
 #ifndef _DMCThrown_
 #define _DMCThrown_
 
-#include "JANA/JObject.h"
-
+#include <JANA/JObject.h>
+#include <DANA/DObjectID.h>
 #include "PID/DKinematicData.h"
 
 class DMCThrown:public DKinematicData{
 	public:
 		JOBJECT_PUBLIC(DMCThrown);
-		
+
+		oid_t id;           ///< TODO: What is this and why?
 		int type;			///< GEANT particle ID
 		int pdgtype;		///< PDG particle type (not used by GEANT)
 		int myid;			///< id of this particle from original generator

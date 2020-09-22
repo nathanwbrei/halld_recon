@@ -787,7 +787,7 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       timebased_track->Ndof = track->Ndof;
       timebased_track->pulls = track->pulls; 
       timebased_track->extrapolations = track->extrapolations;
-      // timebased_track->trackid = track->id;  // TODO: Fixme
+      timebased_track->trackid = track->id;
       timebased_track->candidateid=track->candidateid;
       timebased_track->FOM=track->FOM;
       timebased_track->flags=DTrackTimeBased::FLAG__USED_WIREBASED_FIT;
@@ -840,7 +840,7 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       timebased_track->pulls = std::move(fitter->GetPulls());  
       timebased_track->extrapolations=std::move(fitter->GetExtrapolations());
       timebased_track->IsSmoothed = fitter->GetIsSmoothed();
-      // timebased_track->trackid = track->id;   // TODO: Fixme
+      timebased_track->trackid = track->id;
       timebased_track->candidateid=track->candidateid;
       timebased_track->flags=DTrackTimeBased::FLAG__GOODFIT;
       
@@ -962,7 +962,7 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
   timebased_track->Ndof = src_track->Ndof;
   timebased_track->pulls = src_track->pulls;
   timebased_track->extrapolations = src_track->extrapolations;
-  // timebased_track->trackid = src_track->id;  // TODO: Add id back because it looks like somebody actually needs it
+  timebased_track->trackid = src_track->id;
   timebased_track->candidateid=src_track->candidateid;
   timebased_track->FOM=src_track->FOM;
   timebased_track->cdc_hit_usage=src_track->cdc_hit_usage;
