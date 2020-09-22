@@ -425,10 +425,10 @@ set(HALLD_RECON_SOURCES
         src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.h
 #        src/libraries/TRACKING/DTrackCandidate_factory_FDCpseudo.cc  # Debug level
         src/libraries/TRACKING/DTrackCandidate_factory_FDCpseudo.h
-#        src/libraries/TRACKING/DTrackCandidate_factory_StraightLine.cc
-#        src/libraries/TRACKING/DTrackCandidate_factory_StraightLine.h
-#        src/libraries/TRACKING/DTrackCandidate_factory_THROWN.cc
-#        src/libraries/TRACKING/DTrackCandidate_factory_THROWN.h
+        src/libraries/TRACKING/DTrackCandidate_factory_StraightLine.cc
+        src/libraries/TRACKING/DTrackCandidate_factory_StraightLine.h
+        src/libraries/TRACKING/DTrackCandidate_factory_THROWN.cc
+        src/libraries/TRACKING/DTrackCandidate_factory_THROWN.h
         src/libraries/TRACKING/DTrackFinder.cc
         src/libraries/TRACKING/DTrackFinder.h
         src/libraries/TRACKING/DTrackFinder_factory.h
