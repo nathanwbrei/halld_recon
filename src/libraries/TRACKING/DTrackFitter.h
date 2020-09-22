@@ -238,7 +238,7 @@ class DTrackFitter: public JObject{
 		const DMagneticFieldMap *bfield;			//< Magnetic field map for current event (acquired through loop)
 		const DGeometry *geom;						//< DGeometry pointer used to access materials through calibDB maps for eloss
 		const DRootGeom *RootGeom;					//< ROOT geometry used for accessing material for MULS, energy loss
-		std::shared_ptr<const JEvent> loop;	    //< Pointer to JEventLoop object handling the current event
+		std::shared_ptr<const JEvent> event;	    //< Pointer to JEventLoop object handling the current event
 													// TODO: Delete me completely if at all possible!
 
 		// The following should be set as outputs by FitTrack(void)

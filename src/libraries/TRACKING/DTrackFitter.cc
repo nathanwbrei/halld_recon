@@ -29,7 +29,7 @@ extern bool CDCSortByRincreasing(const DCDCTrackHit* const &hit1, const DCDCTrac
 //-------------------
 DTrackFitter::DTrackFitter(const std::shared_ptr<const JEvent>& event)
 {
-	this->loop = event;  // TODO: Delete completely if possible!
+	this->event = event;  // TODO: Delete completely if possible!
 
 	auto run_number = event->GetRunNumber();
 	auto app = event->GetJApplication();
