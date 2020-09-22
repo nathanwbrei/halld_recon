@@ -73,10 +73,6 @@ def main():
 
     r.add(re.compile(r'gPARMS'), 'app'),
 
-    r.add(re.compile(r'jout((?:(?! endl).)*) endl;'), r'jout\1 jendl;'),
-
-    r.add(re.compile(r'jerr((?:(?!>endl).)*)>endl;'), r'jerr\1>jendl;')
-
     r.add(re.compile(r'// init'), '// Init')
     r.add(re.compile(r'// brun'), '// BeginRun')
     r.add(re.compile(r'// evnt'), '// Process')

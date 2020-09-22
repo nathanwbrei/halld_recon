@@ -89,11 +89,11 @@ DGeometry *DGeometryManager::GetDGeometry(unsigned int run_number) {
 			}
 		}
 
-		jout << "Creating DGeometry:" << jendl;
-		jout << "  Run requested:" << jgeom->GetRunRequested() << "  found:" << jgeom->GetRunFound() << jendl;
-		jout << "  Run validity range: " << jgeom->GetRunMin() << "-" << jgeom->GetRunMax() << jendl;
-		jout << "  URL=\"" << jgeom->GetURL() << "\"" << "  context=\"" << jgeom->GetContext() << "\"" << jendl;
-		jout << "  Type=\"" << jgeom->className() << "\"" << jendl;
+		jout << "Creating DGeometry:" << endl;
+		jout << "  Run requested:" << jgeom->GetRunRequested() << "  found:" << jgeom->GetRunFound() << endl;
+		jout << "  Run validity range: " << jgeom->GetRunMin() << "-" << jgeom->GetRunMax() << endl;
+		jout << "  URL=\"" << jgeom->GetURL() << "\"" << "  context=\"" << jgeom->GetContext() << "\"" << endl;
+		jout << "  Type=\"" << jgeom->className() << "\"" << endl;
 
 		// Couldn't find a DGeometry object that uses this JGeometry object.
 		// Create one and add it to the list.
@@ -145,7 +145,7 @@ DMagneticFieldMap *DGeometryManager::GetBfield(unsigned int run_number) {
 			map<string, string> bfield_map_name;
 			if (jcalib->GetCalib("/Magnets/Solenoid/solenoid_map", bfield_map_name)) {
 				// if we can't find information in the CCDB, then quit with an error message
-				jerr << ccdb_help << jendl;
+				jerr << ccdb_help << endl;
 				exit(-1);
 			}
 			else {
@@ -161,7 +161,7 @@ DMagneticFieldMap *DGeometryManager::GetBfield(unsigned int run_number) {
 				}
 				else {
 					// if we can't find information in the CCDB, then quit with an error message
-					jerr << ccdb_help << jendl;
+					jerr << ccdb_help << endl;
 					exit(-1);
 				}
 			}
@@ -169,10 +169,10 @@ DMagneticFieldMap *DGeometryManager::GetBfield(unsigned int run_number) {
 		string subclass = "<none>";
 		if (dynamic_cast<DMagneticFieldMapFineMesh *>(bfield)) subclass = "DMagneticFieldMapFineMesh";
 		if (dynamic_cast<DMagneticFieldMapNoField *>(bfield)) subclass = "DMagneticFieldMapNoField";
-		jout << "Created Magnetic field map of type " << subclass << jendl;
+		jout << "Created Magnetic field map of type " << subclass << endl;
 	} else if (bfield_type == "Const") {
 		bfield = new DMagneticFieldMapConst(0.0, 0.0, 1.9);
-		jout << "Created Magnetic field map of type DMagneticFieldMapConst." << jendl;
+		jout << "Created Magnetic field map of type DMagneticFieldMapConst." << endl;
 		//}else if(bfield_type=="Spoiled"){
 		// bfield = new DMagneticFieldMapSpoiled(this);
 		// jout<<"Created Magnetic field map of type DMagneticFieldMapSpoiled."<<endl;
@@ -182,7 +182,7 @@ DMagneticFieldMap *DGeometryManager::GetBfield(unsigned int run_number) {
 		//}
 	} else if (bfield_type == "NoField") {
 		bfield = new DMagneticFieldMapNoField(app);
-		jout << "Created Magnetic field map with B=(0,0,0) everywhere." << jendl;
+		jout << "Created Magnetic field map with B=(0,0,0) everywhere." << endl;
 	} else {
 		_DBG_ << " Unknown DMagneticFieldMap subclass \"DMagneticFieldMap" << bfield_type << "\" !!" << endl;
 		exit(-1);

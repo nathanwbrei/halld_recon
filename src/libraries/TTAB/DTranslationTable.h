@@ -589,7 +589,7 @@ class DTranslationTable:public JObject{
 		string ROCID_MAP_FILENAME;
 		bool CALL_STACK;
 
-		mutable JLogger ttout;
+		mutable JStreamLog ttout;
 
 		string Channel2Str(const DChannelInfo &in_channel) const;
 

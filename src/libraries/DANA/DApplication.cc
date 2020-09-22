@@ -176,8 +176,8 @@ void DApplication::CopySQLiteToLocalDisk(JApplication *app) {
 	if (JANA_CALIB_URL.empty()) return;
 
 	if (JANA_CALIB_URL.find("sqlite://") != 0) {
-		jout << "WARNING: SQLITE_TO_LOCAL specified but JANA_CALIB_URL does not specify a" << jendl;
-		jout << "         SQLite source. SQLITE_TO_LOCAL will be ignored." << jendl;
+		jout << "WARNING: SQLITE_TO_LOCAL specified but JANA_CALIB_URL does not specify a" << endl;
+		jout << "         SQLite source. SQLITE_TO_LOCAL will be ignored." << endl;
 		return;
 	}
 
@@ -188,8 +188,8 @@ void DApplication::CopySQLiteToLocalDisk(JApplication *app) {
 
 	// Check if source exists
 	if (access(src.c_str(), R_OK) == -1) {
-		jout << "WARNING: SQLITE_TO_LOCAL specified but sqlite file specified in JANA_CALIB_URL:" << jendl;
-		jout << "         " << src << "  does not exist. SQLITE_TO_LOCAL will be ignored." << jendl;
+		jout << "WARNING: SQLITE_TO_LOCAL specified but sqlite file specified in JANA_CALIB_URL:" << endl;
+		jout << "         " << src << "  does not exist. SQLITE_TO_LOCAL will be ignored." << endl;
 		return;
 	}
 
@@ -215,8 +215,8 @@ void DApplication::CopySQLiteToLocalDisk(JApplication *app) {
 			stat(src.c_str(), &src_result);
 			stat(dest.c_str(), &dest_result);
 			if (src_result.st_mtime < dest_result.st_mtime) {
-				jout << "Modification time of " << src << " is older than " << dest << jendl;
-				jout << "so file will not be copied" << jendl;
+				jout << "Modification time of " << src << " is older than " << dest << endl;
+				jout << "so file will not be copied" << endl;
 				copy_sqlite_file = false;
 			}
 		}
@@ -224,7 +224,7 @@ void DApplication::CopySQLiteToLocalDisk(JApplication *app) {
 
 	// Copy sqlite file to specified location if needed
 	if (copy_sqlite_file) {
-		jout << "Copying " << src << " -> " << dest << jendl;
+		jout << "Copying " << src << " -> " << dest << endl;
 		unlink(dest.c_str());
 		std::ifstream ifs(src.c_str(), std::ios::binary);
 		std::ofstream ofs(dest.c_str(), std::ios::binary);
@@ -233,7 +233,7 @@ void DApplication::CopySQLiteToLocalDisk(JApplication *app) {
 
 	// Overwrite the JANA_CALIB_URL config. parameter with the new destination
 	JANA_CALIB_URL = "sqlite:///" + dest;
-	jout << "Overwriting JANA_CALIB_URL with: " << JANA_CALIB_URL << jendl;
+	jout << "Overwriting JANA_CALIB_URL with: " << JANA_CALIB_URL << endl;
 	pm->SetParameter("JANA_CALIB_URL", JANA_CALIB_URL);
 }
 

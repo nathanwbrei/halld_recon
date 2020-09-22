@@ -91,9 +91,9 @@ class DCDCWire:public DCoordinateSystem{
 
       vector<double> derivatives;
       void PrintDerivatives(){
-         jout << "Printing Derivatives for Ring " << ring << " Straw " << straw << jendl;
+         jout << "Printing Derivatives for Ring " << ring << " Straw " << straw << std::endl;
          for (size_t i=0; i< derivatives.size(); i++){
-            jout << derivatives[i] << jendl;
+            jout << derivatives[i] << std::endl;
          }
       }
 
@@ -101,10 +101,10 @@ class DCDCWire:public DCoordinateSystem{
          if(false){
             if(ring == 1 && straw == 1) {
                PrintDerivatives();
-               jout << " phi x,y,z " << phiX << " " << phiY << " " << phiZ << jendl;
-               jout << " phiStraw " << phiStraw << " stereo_raw " << stereo_raw << jendl;
-               jout << "sin " << sin(phiZ) << " cos " << cos(phiZ) << jendl;
-               jout << "udir_mag " << udir_mag << jendl;
+               jout << " phi x,y,z " << phiX << " " << phiY << " " << phiZ << std::endl;
+               jout << " phiStraw " << phiStraw << " stereo_raw " << stereo_raw << std::endl;
+               jout << "sin " << sin(phiZ) << " cos " << cos(phiZ) << std::endl;
+               jout << "udir_mag " << udir_mag << std::endl;
             }
          }
          // Only need to calculate this once
