@@ -437,19 +437,19 @@ set(HALLD_RECON_SOURCES
         src/libraries/TRACKING/DTrackFitter_factory.h
         src/libraries/TRACKING/DTrackFitter_factory_ALT1.h
         src/libraries/TRACKING/DTrackFitter_factory_KalmanSIMD.h
-#        src/libraries/TRACKING/DTrackFitter_factory_KalmanSIMD_ALT1.h
-#        src/libraries/TRACKING/DTrackFitter_factory_Riemann.h
-#        src/libraries/TRACKING/DTrackFitter_factory_StraightTrack.h
+        src/libraries/TRACKING/DTrackFitter_factory_KalmanSIMD_ALT1.h
+        src/libraries/TRACKING/DTrackFitter_factory_Riemann.h
+        src/libraries/TRACKING/DTrackFitter_factory_StraightTrack.h
         src/libraries/TRACKING/DTrackFitterALT1.cc
         src/libraries/TRACKING/DTrackFitterALT1.h
         src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
         src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
-#        src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
-#        src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.h
-#        src/libraries/TRACKING/DTrackFitterRiemann.cc
-#        src/libraries/TRACKING/DTrackFitterRiemann.h
-#        src/libraries/TRACKING/DTrackFitterStraightTrack.cc
-#        src/libraries/TRACKING/DTrackFitterStraightTrack.h
+        src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+        src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.h
+        src/libraries/TRACKING/DTrackFitterRiemann.cc
+        src/libraries/TRACKING/DTrackFitterRiemann.h
+        src/libraries/TRACKING/DTrackFitterStraightTrack.cc
+        src/libraries/TRACKING/DTrackFitterStraightTrack.h
         src/libraries/TRACKING/DTrackHit.h
         src/libraries/TRACKING/DTrackHitSelector.cc
         src/libraries/TRACKING/DTrackHitSelector.h
