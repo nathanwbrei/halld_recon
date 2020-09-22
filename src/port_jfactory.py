@@ -39,7 +39,7 @@ def main():
 
     r.add(re.compile(r'#include <JANA/JFactory.h>'), r'#include <JANA/JFactoryT.h>')
 
-    r.add(re.compile(r'jerror_t init\(\);'), r'void Init() override;')
+    r.add(re.compile(r'jerror_t init'), r'void Init')
 
     r.add(re.compile(r'jerror_t init\(void\);'), r'void Init() override;')
 
@@ -50,6 +50,11 @@ def main():
 
     r.add(re.compile(r'jerror_t evnt\(JEventLoop \*[a-zA-Z_]+, uint64_t [a-zA-Z_]+\);'),
           r'void Process(const std::shared_ptr<const JEvent>& event) override;')
+
+    r.add(re.compile(r'jerror_t brun'), r'void BeginRun')
+
+    r.add(re.compile(r'jerror_t evnt'), r'void Process')
+    r.add(re.compile(r'jerror_t erun'), r'void EndRun')
 
     r.add(re.compile(r'jerror_t erun\(void\);'), r'void EndRun() override;')
 

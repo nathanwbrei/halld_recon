@@ -436,7 +436,7 @@ set(HALLD_RECON_SOURCES
         src/libraries/TRACKING/DTrackFitter.h
         src/libraries/TRACKING/DTrackFitter_factory.h
         src/libraries/TRACKING/DTrackFitter_factory_ALT1.h
-#        src/libraries/TRACKING/DTrackFitter_factory_KalmanSIMD.h
+        src/libraries/TRACKING/DTrackFitter_factory_KalmanSIMD.h
 #        src/libraries/TRACKING/DTrackFitter_factory_KalmanSIMD_ALT1.h
 #        src/libraries/TRACKING/DTrackFitter_factory_Riemann.h
 #        src/libraries/TRACKING/DTrackFitter_factory_StraightTrack.h
