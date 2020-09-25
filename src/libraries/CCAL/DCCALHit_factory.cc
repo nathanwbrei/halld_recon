@@ -18,6 +18,8 @@ using namespace std;
 #include "DAQ/Df250Config.h"
 #include "TTAB/DTTabUtilities.h"
 
+#include <JANA/JEvent.h>
+#include <JANA/Calibrations/JCalibrationManager.h>
 
 
 //----------------
@@ -31,12 +33,14 @@ DCCALHit_factory::DCCALHit_factory(){}
 //------------------
 void DCCALHit_factory::Init()
 {
+	auto app = GetApplication();
+
 	HIT_DEBUG    =  0;
 	DB_PEDESTAL  =  1;    //   1  -  take from DB
 	//   0  -  event-by-event pedestal subtraction
 
-	gPARMS->SetDefaultParameter("CCAL:HIT_DEBUG",    HIT_DEBUG);
-	gPARMS->SetDefaultParameter("CCAL:DB_PEDESTAL",  DB_PEDESTAL);
+	app->SetDefaultParameter("CCAL:HIT_DEBUG",    HIT_DEBUG);
+	app->SetDefaultParameter("CCAL:DB_PEDESTAL",  DB_PEDESTAL);
 
 	// Initialize calibration tables
     vector< vector<double > > gains_tmp(DCCALGeometry::kCCALBlocksTall, 
@@ -67,6 +71,9 @@ void DCCALHit_factory::Init()
 //------------------
 void DCCALHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
+	auto runnumber = event->GetRunNumber();
+	auto app = event->GetJApplication();
+	auto calibration = app->GetService<JCalibrationManager>()->GetJCalibration(runnumber);
 
     // Only print messages for one thread whenever run number change
     static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -83,7 +90,7 @@ void DCCALHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
     vector<const DCCALGeometry*> ccalGeomVect;
     event->Get( ccalGeomVect );
     if (ccalGeomVect.size() < 1)
-      return OBJECT_NOT_AVAILABLE;
+      return; // OBJECT_NOT_AVAILABLE; // TODO: Verify
     const DCCALGeometry& ccalGeom = *(ccalGeomVect[0]);
 
 
@@ -207,7 +214,7 @@ void DCCALHit_factory::Process(const std::shared_ptr<const JEvent>& event)
     vector<const DCCALGeometry*> ccalGeomVect;
     event->Get( ccalGeomVect );
     if (ccalGeomVect.size() < 1)
-      return OBJECT_NOT_AVAILABLE;
+      return; // OBJECT_NOT_AVAILABLE; // TODO: Verify
     const DCCALGeometry& ccalGeom = *(ccalGeomVect[0]);
 
 

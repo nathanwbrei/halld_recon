@@ -74,20 +74,27 @@ set(HALLD_RECON_SOURCES
         src/libraries/BCAL/DBCALUnifiedHit_factory.cc
         src/libraries/BCAL/DBCALUnifiedHit_factory.h
 
+        src/libraries/CCAL/CCAL_init.cc
+        src/libraries/CCAL/DCCALDigiHit.h
+        src/libraries/CCAL/DCCALGeometry.cc
+        src/libraries/CCAL/DCCALGeometry.h
+        src/libraries/CCAL/DCCALGeometry_factory.h
+        src/libraries/CCAL/DCCALHit.h
+        src/libraries/CCAL/DCCALHit_factory.cc
+        src/libraries/CCAL/DCCALHit_factory.h
+        src/libraries/CCAL/DCCALRefDigiHit.h
+        src/libraries/CCAL/DCCALShower.cc
+        src/libraries/CCAL/DCCALShower.h
+        src/libraries/CCAL/DCCALShower_factory.cc
+        src/libraries/CCAL/DCCALShower_factory.h
+        src/libraries/CCAL/DCCALTruthShower.h
+        src/libraries/CCAL/DCCALTruthShower_factory.cc
+        src/libraries/CCAL/DCCALTruthShower_factory.h
+
         src/libraries/CDC/DCDCTrackHit.h
         src/libraries/CDC/DCDCHit.h
         src/libraries/CDC/DCDCDigiHit.h
 
-        src/libraries/CCAL/DCCALShower.h
-        src/libraries/CCAL/DCCALShower.cc
-        src/libraries/CCAL/DCCALShower_factory.h
-        src/libraries/CCAL/DCCALShower_factory.cc
-        src/libraries/CCAL/DCCALDigiHit.h
-        src/libraries/CCAL/DCCALRefDigiHit.h
-        src/libraries/CCAL/DCCALGeometry.h
-        src/libraries/CCAL/DCCALGeometry.cc
-        src/libraries/CCAL/DCCALTruthShower.h
-        src/libraries/CCAL/DCCALHit.h
 
         src/libraries/CERE/DCereHit.h
         src/libraries/CERE/CERE_init.cc

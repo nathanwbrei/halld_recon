@@ -8,10 +8,8 @@
 #ifndef _DCCALShower_factory_
 #define _DCCALShower_factory_
 
-#include <JANA/JFactory.h>
 
-#include <JANA/JEvent.h>
-#include <JANA/Calibrations/JCalibrationManager.h>
+#include <JANA/JFactoryT.h>
 
 #include "CCAL/DCCALShower.h"
 #include "CCAL/DCCALHit.h"

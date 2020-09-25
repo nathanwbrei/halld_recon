@@ -20,7 +20,12 @@ class DBCALShower_factory:public JFactoryT<DBCALShower>{
 			// that the default can be changed easily by simply
 			// changing the tag here or on the command line.
 			auto showers = event->Get<DBCALShower>("IU");
-			Set(showers);
+
+			for(unsigned int i=0; i<showers.size(); i++){
+				Insert(const_cast<DBCALShower*>(showers[i]));
+				// TODO: const-cast
+			}
+
 			SetFactoryFlag(NOT_OBJECT_OWNER);
 		}
 };

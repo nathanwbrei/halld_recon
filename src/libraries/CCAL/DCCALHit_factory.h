@@ -21,7 +21,7 @@ typedef  vector< vector<double> >  ccal_constants_t;
 
 class DCCALHit_factory:public JFactoryT<DCCALHit>{
 	public:
-                DCCALHit_factory();
+		DCCALHit_factory();
 		~DCCALHit_factory(){};
 
 		ccal_constants_t  gains;
@@ -35,11 +35,11 @@ class DCCALHit_factory:public JFactoryT<DCCALHit>{
 		double base_time;
 
         private:
-		void Init() override;						///< Called once at program start.2
-		void BeginRun(const std::shared_ptr<const JEvent>& event) override;	///< Called everytime a new run number is detected.
-		void Process(const std::shared_ptr<const JEvent>& event) override;	///< Called every event.
-		void EndRun() override;						///< Called everytime run number changes, provided brun has been called.
-		void Finish();						///< Called after last event of last event source has been processed.
+		void Init() override;
+		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
+		void Process(const std::shared_ptr<const JEvent>& event) override;
+		void EndRun() override;
+		void Finish();
 
 		void LoadCCALConst( ccal_constants_t &table, 
                                     const vector<double> &ccal_const_ch, 

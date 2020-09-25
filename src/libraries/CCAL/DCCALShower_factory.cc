@@ -239,11 +239,6 @@ void DCCALShower_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 	  }
 	  cout << "\n\n";
 	}
-	
-	
-	
-	
-	return;
 }
 
 
@@ -251,7 +246,7 @@ void DCCALShower_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 
 //==========================================================
 //
-//   evnt
+//   Process
 //
 //==========================================================
 
@@ -1904,7 +1899,7 @@ void DCCALShower_factory::gamma_hyc( int nadc, vector<int> ia, vector<int> id, d
 	
 	int dof;
 	
-	double dxy;                    // Initial step for iteration
+	double dxy;                    // initial step for iteration
 	double stepmin;                // minimum step for iteration
 	double stepx, stepy;           // current steps
 	double parx, pary;             // 
@@ -1936,7 +1931,7 @@ void DCCALShower_factory::gamma_hyc( int nadc, vector<int> ia, vector<int> id, d
 	if( nadc <= 0 ) return;
 	
 	chimem = chisq;
-	chisq1_hyc( nadc, ia, id, nzero, iaz, e1, x1, y1, chi0 ); // Initial value of chi2
+	chisq1_hyc( nadc, ia, id, nzero, iaz, e1, x1, y1, chi0 ); // initial value of chi2
 	
 	
 	chisq0 = chi0;
