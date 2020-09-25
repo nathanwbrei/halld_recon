@@ -117,6 +117,7 @@ class DTrackCandidate_factory_FDCpseudo:public JFactoryT<DTrackCandidate>{
 		double MAX_HIT_DIST;
 		double MAX_HIT_DIST2;
 
+		int debug_level; // TODO: Reconnect this to params
 };
 
 #endif // _DTrackCandidate_factory_FDCpseudo_

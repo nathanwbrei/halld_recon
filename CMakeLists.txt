@@ -419,11 +419,11 @@ set(HALLD_RECON_SOURCES
         src/libraries/TRACKING/DTrackCandidate_factory_CDC.h
         src/libraries/TRACKING/DTrackCandidate_factory_CDC_or_FDCpseudo.cc
         src/libraries/TRACKING/DTrackCandidate_factory_CDC_or_FDCpseudo.h
-#        src/libraries/TRACKING/DTrackCandidate_factory_FDC.cc    # Debug level
+        src/libraries/TRACKING/DTrackCandidate_factory_FDC.cc    # Debug level
         src/libraries/TRACKING/DTrackCandidate_factory_FDC.h
         src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
         src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.h
-#        src/libraries/TRACKING/DTrackCandidate_factory_FDCpseudo.cc  # Debug level
+        src/libraries/TRACKING/DTrackCandidate_factory_FDCpseudo.cc  # Debug level
         src/libraries/TRACKING/DTrackCandidate_factory_FDCpseudo.h
         src/libraries/TRACKING/DTrackCandidate_factory_StraightLine.cc
         src/libraries/TRACKING/DTrackCandidate_factory_StraightLine.h
@@ -457,9 +457,9 @@ set(HALLD_RECON_SOURCES
         src/libraries/TRACKING/DTrackHitSelector_factory_ALT1.h
         src/libraries/TRACKING/DTrackHitSelector_factory_ALT2.h
         src/libraries/TRACKING/DTrackHitSelector_factory_THROWN.h
-        src/libraries/TRACKING/DTrackHitSelectorALT1.cc  # Needs decision on Init
+        src/libraries/TRACKING/DTrackHitSelectorALT1.cc
         src/libraries/TRACKING/DTrackHitSelectorALT1.h
-        src/libraries/TRACKING/DTrackHitSelectorALT2.cc  # Needs decision on Init
+        src/libraries/TRACKING/DTrackHitSelectorALT2.cc
         src/libraries/TRACKING/DTrackHitSelectorALT2.h
         src/libraries/TRACKING/DTrackHitSelectorTHROWN.cc
         src/libraries/TRACKING/DTrackHitSelectorTHROWN.h
