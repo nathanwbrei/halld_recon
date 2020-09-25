@@ -11,26 +11,24 @@
 #include "DFCALGeometry.h"
 
 //------------------
-// brun
+// BeginRun
 //------------------
-jerror_t DFCALGeometry_factory::brun(JEventLoop *loop, int32_t runnumber)
+void DFCALGeometry_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-	assert( _data.size() == 0 );
-
-	flags = PERSISTANT;
-	_data.push_back( new DFCALGeometry() );
-	
-	return NOERROR;
+	assert( mData.empty() );
+	SetFactoryFlag(PERSISTENT);
+	Insert(new DFCALGeometry());
 }
 
 //------------------
-// erun
+// EndRun
 //------------------
-jerror_t DFCALGeometry_factory::erun(void)
+void DFCALGeometry_factory::EndRun()
 {
-	for(unsigned int i=0; i<_data.size(); i++)delete _data[i];
-	_data.clear();
-	
-	return NOERROR;
+	// We have to manually clear and delete the contents of mData because PERSISTENT flag was set.
+	for (auto geom : mData) {
+		delete geom;
+	}
+	mData.clear();
 }
 

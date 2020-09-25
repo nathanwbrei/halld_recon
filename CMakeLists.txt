@@ -205,15 +205,25 @@ set(HALLD_RECON_SOURCES
         src/libraries/EVENTSTORE/DESSkimData.h
 
 
-        src/libraries/FCAL/DFCALHit.h
-        src/libraries/FCAL/DFCALDigiHit.h
-        src/libraries/FCAL/DFCALGeometry.h
-        src/libraries/FCAL/DFCALGeometry.cc
-        src/libraries/FCAL/DFCALShower.h
-        src/libraries/FCAL/DFCALShower.cc
-        src/libraries/FCAL/DFCALTruthShower.h
-        src/libraries/FCAL/DFCALCluster.h
         src/libraries/FCAL/DFCALCluster.cc
+        src/libraries/FCAL/DFCALCluster.h
+        src/libraries/FCAL/DFCALCluster_factory.cc
+        src/libraries/FCAL/DFCALCluster_factory.h
+        src/libraries/FCAL/DFCALDigiHit.h
+        src/libraries/FCAL/DFCALGeometry.cc
+        src/libraries/FCAL/DFCALGeometry.h
+        src/libraries/FCAL/DFCALGeometry_factory.cc
+        src/libraries/FCAL/DFCALGeometry_factory.h
+        src/libraries/FCAL/DFCALHit.h
+        src/libraries/FCAL/DFCALHit_factory.cc
+        src/libraries/FCAL/DFCALHit_factory.h
+        src/libraries/FCAL/DFCALShower.cc
+        src/libraries/FCAL/DFCALShower.h
+        src/libraries/FCAL/DFCALShower_factory.cc
+        src/libraries/FCAL/DFCALShower_factory.h
+        src/libraries/FCAL/DFCALTruthShower.h
+        src/libraries/FCAL/FCAL_init.cc
+
 
         src/libraries/FDC/DFDCCathodeDigiHit.h
         src/libraries/FDC/DFDCWireDigiHit.h

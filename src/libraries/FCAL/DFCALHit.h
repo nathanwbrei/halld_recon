@@ -9,6 +9,7 @@
 #define _DFCALHit_
 
 #include <JANA/JObject.h>
+#include <DANA/DObjectID.h>
 
 class DFCALHit: public JObject{
 	
@@ -17,7 +18,8 @@ public:
   JOBJECT_PUBLIC(DFCALHit);
 	
   DFCALHit(){}
-    
+
+  oid_t id;
   int row;
   int column;
   float x;
