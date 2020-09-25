@@ -137,7 +137,7 @@ void DBCALShower_factory_KLOE::BeginRun(const std::shared_ptr<const JEvent>& eve
     float r_inner= bcalGeom->GetBCAL_inner_rad();
     
     for (int i = (rowmin1+1); i < (rowmax1+1); i++){
-        //this event starts from 1, so we can use i in cellId with no adjustment
+        //this loop starts from 1, so we can use i in cellId with no adjustment
         int cellId = bcalGeom->cellId(1,i,1); //this gives us a cellId that we can use to get the radius. the module and sector numbers are irrelevant
         //rt is radius of center of layer - BCAL inner radius
         rt[i]=bcalGeom->r(cellId)-r_inner;
@@ -156,7 +156,7 @@ void DBCALShower_factory_KLOE::BeginRun(const std::shared_ptr<const JEvent>& eve
     for (int k = modmin; k < modmax; k++){
         for (int i = rowmin1; i < rowmax1; i++){
             for (int j = colmin1; j < colmax1; j++){
-                //in this case the events start at 0, so we have to add 1 to the indices when calling cellId(). hooray!
+                //in this case the loops start at 0, so we have to add 1 to the indices when calling cellId(). hooray!
                 //use DBCALGeometry to get r/phi position of each cell
                 int cellId = bcalGeom->cellId(k+1,i+1,j+1);
                 r[k][i][j]=bcalGeom->r(cellId);
@@ -183,8 +183,6 @@ void DBCALShower_factory_KLOE::BeginRun(const std::shared_ptr<const JEvent>& eve
     // Now the cell information are already contained in xx and yy arrays.
     // xx and yy arrays are private members of this class
     ////////////////////////////////////////////////////////////////////////////
-    
-	 return;
 }
 
 //------------------
@@ -293,6 +291,7 @@ void DBCALShower_factory_KLOE::Process(const std::shared_ptr<const JEvent>& even
         sig_t /= E;
         sig_t = sqrt(sig_t - t*t)/sqrt(N_cell);
 
+        shower->id                  = id++;
         shower->E_raw               = E;
         shower->x                   = x;
         shower->y                   = y;
@@ -331,8 +330,6 @@ void DBCALShower_factory_KLOE::Process(const std::shared_ptr<const JEvent>& even
 
         Insert(shower);  
     }
-    
-    return;
 }
 
 
@@ -716,13 +713,13 @@ void DBCALShower_factory_KLOE::PreCluster(const std::shared_ptr<const JEvent>& e
           }                    
         }             
       }
-    }        // finish second event
+    }        // finish second loop
 
     if(maxnn>0){
 
       Connect(maxnn,i);
     }
-  }       // finish first event
+  }       // finish first loop
 }
 
 
@@ -745,7 +742,7 @@ void DBCALShower_factory_KLOE::Connect(int n,int m)
     // dimension cellmax_bcal+1. This includes the nclus[] and next[]
     // arrays. The nclus[] array keeps the cluster number which is initalized
     // to the sparsified hit number. Thus, every (double-ended) hit cell
-    // is it's own cluster. A event over pairs of hits is done above to find
+    // is it's own cluster. A loop over pairs of hits is done above to find
     // nearest neighbors that should be merged into the same cluster.
     //
     // The next[] array contains an index to the "next" cell in the cluster

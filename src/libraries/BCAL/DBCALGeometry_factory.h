@@ -10,13 +10,13 @@
 
 #include <JANA/JFactoryT.h>
 
-
 #include <BCAL/DBCALGeometry.h>
+
 
 class DBCALGeometry_factory:public JFactoryT<DBCALGeometry>{
 public:
-		DBCALGeometry_factory(){bcalgeometry=NULL;};
-		~DBCALGeometry_factory(){};
+		DBCALGeometry_factory(){bcalgeometry=nullptr;};
+		~DBCALGeometry_factory() override = default;
 
 		DBCALGeometry *bcalgeometry = nullptr;
 
@@ -29,9 +29,8 @@ public:
 			SetFactoryFlag(NOT_OBJECT_OWNER);
 			ClearFactoryFlag(WRITE_TO_OUTPUT);
 			
-			if( bcalgeometry ) delete bcalgeometry;
-
-			bcalgeometry = new DBCALGeometry(event->GetRunNumber());
+			delete bcalgeometry;
+			bcalgeometry = new DBCALGeometry(event);
 		}
 
 		//------------------
@@ -48,8 +47,8 @@ public:
 		//------------------
 		void EndRun() override
 		{
-			if( bcalgeometry ) delete bcalgeometry;
-			bcalgeometry = NULL;
+			delete bcalgeometry;
+			bcalgeometry = nullptr;
 		}
 };
 

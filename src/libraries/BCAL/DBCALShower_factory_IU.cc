@@ -11,6 +11,7 @@
 
 #include <JANA/JEvent.h>
 #include <JANA/Calibrations/JCalibrationManager.h>
+#include <JANA/Services/JGlobalRootLock.h>
 
 #include "DANA/DGeometryManager.h"
 #include "HDGEOMETRY/DGeometry.h"
@@ -107,7 +108,7 @@ void DBCALShower_factory_IU::BeginRun(const std::shared_ptr<const JEvent>& event
          }
 	
 	jerror_t result = LoadCovarianceLookupTables(event);
-	if (result!=NOERROR) return result;
+	if (result!=NOERROR) return; // result; // TODO: CONSIDER THROWING HERE, at least log this
 	
 	// load BCAL geometry
   	vector<const DBCALGeometry *> BCALGeomVec;
@@ -150,7 +151,7 @@ DBCALShower_factory_IU::Process( const std::shared_ptr<const JEvent>& event ){
     float cosPhi = cos( (**clItr).phi() );
     float sinPhi = sin( (**clItr).phi() );
     float rho = (**clItr).rho();
-	if (VERBOSE>2) printf("%4lu cluster:   E=%10.6f  th=%10.6f phi=%10.6f rho=%10.6f   t=%10.6f\n",eventnumber,
+	if (VERBOSE>2) printf("%4llu cluster:   E=%10.6f  th=%10.6f phi=%10.6f rho=%10.6f   t=%10.6f\n",event->GetEventNumber(),
 						  (**clItr).E(),(**clItr).theta()/3.14159265*180,(**clItr).phi()/3.14159265*180,(**clItr).rho(),(**clItr).t());
 
     DBCALShower* shower = new DBCALShower();
@@ -262,6 +263,7 @@ DBCALShower_factory_IU::FillCovarianceMatrix(DBCALShower *shower){
 			shower->ExyztCovariance(i, j) = D(i, j);
 	}
 	if (VERBOSE>2) {printf("(E,x,y,z,t)    "); shower->ExyztCovariance.Print(); }
+	return NOERROR;
 }
 
 
@@ -276,12 +278,16 @@ DBCALShower_factory_IU::LoadCovarianceLookupTables(const std::shared_ptr<const J
 	bool USECCDB=0;
 	// if filename specified try to use filename else get info from CCDB
 	if (COVARIANCEFILENAME == "") USECCDB=1;
-	
+
+	auto app = event->GetJApplication();
+	auto calibration = app->GetService<JCalibrationManager>()->GetJCalibration(event->GetRunNumber());
+	auto root_lock = app->GetService<JGlobalRootLock>();
+
 	map<string,string> covariance_data;	
 	if (USECCDB) {
 		// load information for covariance matrix
-		if (event->GetJCalibration()->GetCalib("/BCAL/shower_covariance", covariance_data)) {
-			jerr << "Error loading /BCAL/shower_covariance !" << jendl;
+		if (calibration->Get("/BCAL/shower_covariance", covariance_data)) {
+			jerr << "Error loading /BCAL/shower_covariance !" << endl;
 			return ERROR_OPENING_EVENT_SOURCE;
 		}
 		if (covariance_data.size() == 15)  {  // there are 15 elements in the covariance matrix
@@ -292,7 +298,7 @@ DBCALShower_factory_IU::LoadCovarianceLookupTables(const std::shared_ptr<const J
 				}
 			}
 		} else {
-			jerr << "Wrong number of elements /BCAL/shower_covariance !" << jendl;
+			jerr << "Wrong number of elements /BCAL/shower_covariance !" << endl;
 			return ERROR_OPENING_EVENT_SOURCE;	
 		}
 	}
@@ -300,7 +306,7 @@ DBCALShower_factory_IU::LoadCovarianceLookupTables(const std::shared_ptr<const J
 	for (int i=0; i<5; i++) {
 		for (int j=0; j<=i; j++) {
 
-			japp->RootWriteLock();
+			root_lock->acquire_write_lock();
 			// change directory to memory so that histograms are not saved to file
 			TDirectory *savedir = gDirectory;
 
@@ -319,7 +325,7 @@ DBCALShower_factory_IU::LoadCovarianceLookupTables(const std::shared_ptr<const J
 				if (VERBOSE>0) cout  << filename << std::endl;
 				ifs.open(filename);
 				if (! ifs.is_open()) {
-					jerr << " Error: Cannot open file! " << filename << jendl;
+					jerr << " Error: Cannot open file! " << filename << endl;
 					return ERROR_OPENING_EVENT_SOURCE;
 				}
 				getline(ifs, line, '\n');
@@ -364,9 +370,9 @@ DBCALShower_factory_IU::LoadCovarianceLookupTables(const std::shared_ptr<const J
 			ifs.close();
 
 			savedir->cd();
-			japp->RootUnLock(); 
-
+			root_lock->release_lock();
 		}
 	}
+	return NOERROR;
 }
 

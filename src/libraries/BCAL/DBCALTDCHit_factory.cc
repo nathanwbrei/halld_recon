@@ -62,37 +62,37 @@ void DBCALTDCHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 
     /// Read in calibration constants
 
-    if(print_messages) jout << "In DBCALTDCHit_factory, loading constants..." << jendl;
+    if(print_messages) jout << "In DBCALTDCHit_factory, loading constants..." << endl;
 
     // load scale factors
     map<string,double> scale_factors;
     if(jcalib->Get("/BCAL/digi_scales", scale_factors))
-        jout << "Error loading /BCAL/digi_scales !" << jendl; 
+        jout << "Error loading /BCAL/digi_scales !" << endl; 
     if( scale_factors.find("BCAL_TDC_SCALE") != scale_factors.end() ) {
         t_scale = scale_factors["BCAL_TDC_SCALE"];
     } else {
-        jerr << "Unable to get BCAL_TDC_SCALE from /BCAL/digi_scales !" << jendl;
+        jerr << "Unable to get BCAL_TDC_SCALE from /BCAL/digi_scales !" << endl;
     }
 
     // load base time offset
     map<string,double> base_time_offset;
     if (jcalib->Get("/BCAL/base_time_offset",base_time_offset))
-        jout << "Error loading /BCAL/base_time_offset !" << jendl;
+        jout << "Error loading /BCAL/base_time_offset !" << endl;
     if (base_time_offset.find("BCAL_TDC_BASE_TIME_OFFSET") != base_time_offset.end())
         t_base = base_time_offset["BCAL_TDC_BASE_TIME_OFFSET"];
     else
-        jerr << "Unable to get BCAL_TDC_BASE_TIME_OFFSET from /BCAL/base_time_offset !" << jendl;
+        jerr << "Unable to get BCAL_TDC_BASE_TIME_OFFSET from /BCAL/base_time_offset !" << endl;
 
     vector<double> raw_time_offsets;
     vector<double> raw_channel_global_offset;
     vector<double> raw_tdiff_u_d;
 
     if(jcalib->Get("/BCAL/TDC_offsets", raw_time_offsets))
-        jout << "Error loading /BCAL/TDC_offsets !" << jendl;
+        jout << "Error loading /BCAL/TDC_offsets !" << endl;
     if(jcalib->Get("/BCAL/channel_global_offset", raw_channel_global_offset))
-        jout << "Error loading /BCAL/channel_global_offset !" << jendl;
+        jout << "Error loading /BCAL/channel_global_offset !" << endl;
     if(jcalib->Get("/BCAL/tdiff_u_d", raw_tdiff_u_d))
-        jout << "Error loading /BCAL/tdiff_u_d !" << jendl;
+        jout << "Error loading /BCAL/tdiff_u_d !" << endl;
 
     FillCalibTable(time_offsets, raw_time_offsets);
     FillCalibTableShort(channel_global_offset, raw_channel_global_offset);

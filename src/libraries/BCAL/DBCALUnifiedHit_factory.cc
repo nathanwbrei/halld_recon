@@ -39,10 +39,10 @@ void DBCALUnifiedHit_factory::Init()
     pthread_mutex_lock(&print_mutex);
     if (printMessage){
         if (USE_TDC){
-            jout << "DBCALUnifiedHit_factory: Using TDC times when available." << jendl;
+            jout << "DBCALUnifiedHit_factory: Using TDC times when available." << endl;
         }
         else{
-            jout << "DBCALUnifiedHit_factory: Using ADC times only." << jendl;
+            jout << "DBCALUnifiedHit_factory: Using ADC times only." << endl;
         }
     }
     printMessage = false;
@@ -67,7 +67,7 @@ void DBCALUnifiedHit_factory::BeginRun(const std::shared_ptr<const JEvent>& even
     
     // jcalib->Get("BCAL/timewalk_tdc",tdc_timewalk_table);
     if(jcalib->Get("BCAL/timewalk_tdc_c4",tdc_timewalk_table)) {
-        jerr << "Error loading BCAL/timewalk_tdc !" << jendl;
+        jerr << "Error loading BCAL/timewalk_tdc !" << endl;
     } else {
         for (vector<vector<float> >::const_iterator iter = tdc_timewalk_table.begin();
              iter != tdc_timewalk_table.end();
@@ -125,7 +125,7 @@ void DBCALUnifiedHit_factory::Process(const std::shared_ptr<const JEvent>& event
     event->Get(hits);
     event->Get(tdc_hits);
     if (hits.size() + tdc_hits.size() <= 0) return;
-	if (VERBOSE>=3)  jout << event->GetEventNumber() << " " << hits.size() << " ADC hits, " << tdc_hits.size() << " TDC hits" << jendl;
+	if (VERBOSE>=3)  jout << event->GetEventNumber() << " " << hits.size() << " ADC hits, " << tdc_hits.size() << " TDC hits" << endl;
 
     // first arrange the list of hits so they are grouped by cell
     map<readout_channel, cellHits> cellHitMap;

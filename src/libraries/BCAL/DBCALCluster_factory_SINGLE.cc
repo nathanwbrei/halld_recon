@@ -29,7 +29,6 @@ void DBCALCluster_factory_SINGLE::Init()
 //------------------
 void DBCALCluster_factory_SINGLE::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-	auto event_number = event->GetEventNumber();
 	auto run_number = event->GetRunNumber();
 	auto app = GetApplication();
 	auto geom = app->GetService<DGeometryManager>()->GetDGeometry(run_number);
@@ -42,7 +41,6 @@ void DBCALCluster_factory_SINGLE::BeginRun(const std::shared_ptr<const JEvent>& 
 		throw JException("Could not load DBCALGeometry object!");
 	dBCALGeom = BCALGeomVec[0];
 
-	return;
 }
 
 //------------------
@@ -66,8 +64,6 @@ void DBCALCluster_factory_SINGLE::Process(const std::shared_ptr<const JEvent>& e
 	
 	// Store in _data so it is published to JANA
 	Insert(cluster);
-	
-	return;
 }
 
 //------------------
@@ -75,7 +71,6 @@ void DBCALCluster_factory_SINGLE::Process(const std::shared_ptr<const JEvent>& e
 //------------------
 void DBCALCluster_factory_SINGLE::EndRun()
 {
-	return;
 }
 
 //------------------
@@ -83,6 +78,5 @@ void DBCALCluster_factory_SINGLE::EndRun()
 //------------------
 void DBCALCluster_factory_SINGLE::Finish()
 {
-	return;
 }
 

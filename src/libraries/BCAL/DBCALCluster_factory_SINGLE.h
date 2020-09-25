@@ -27,11 +27,11 @@ class DBCALCluster_factory_SINGLE:public JFactoryT<DBCALCluster>{
 		~DBCALCluster_factory_SINGLE(){};
 
 	private:
-		void Init() override;						///< Called once at program start.
-		void BeginRun(const std::shared_ptr<const JEvent>& event) override;	///< Called everytime a new run number is detected.
-		void Process(const std::shared_ptr<const JEvent>& event) override;	///< Called every event.
-		void EndRun() override;						///< Called everytime run number changes, provided brun has been called.
-		void Finish();						///< Called after last event of last event source has been processed.
+		void Init() override;
+		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
+		void Process(const std::shared_ptr<const JEvent>& event) override;
+		void EndRun() override;
+		void Finish();
 
 		double m_z_target_center;
 		const DBCALGeometry *dBCALGeom;

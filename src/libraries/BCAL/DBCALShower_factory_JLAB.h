@@ -21,7 +21,7 @@ class DBCALShower_factory_JLAB: public JFactoryT<DBCALShower>{
  public:
   
   DBCALShower_factory_JLAB();
-  ~DBCALShower_factory_JLAB(){};
+  ~DBCALShower_factory_JLAB() override = default;
   
 
  private:

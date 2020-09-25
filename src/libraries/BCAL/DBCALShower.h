@@ -6,12 +6,15 @@
 #include <DMatrix.h>
 #include <TMatrixFSym.h>
 
+#include "DANA/DObjectID.h"
+
 class DBCALShower: public JObject{
 	public:
 		JOBJECT_PUBLIC(DBCALShower);
 
  DBCALShower():ExyztCovariance(5) {} ///< Constructor initializes matrix to 5x5
 
+    oid_t id;
     float E;
     float E_raw;
     float E_preshower;

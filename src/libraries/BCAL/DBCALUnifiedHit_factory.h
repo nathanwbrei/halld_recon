@@ -16,7 +16,7 @@ class DBCALUnifiedHit_factory : public JFactoryT<DBCALUnifiedHit> {
 
   int VERBOSE;
   DBCALUnifiedHit_factory() = default;
-  ~DBCALUnifiedHit_factory() = default;
+  ~DBCALUnifiedHit_factory() override = default;
 
   TTree *bcal_points_tree;
 

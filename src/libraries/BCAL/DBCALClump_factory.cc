@@ -34,9 +34,9 @@ void DBCALClump_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
   map<string, double> bcalparms;
 
   if ( !calibration->Get("BCAL/mc_parms", bcalparms, event_number)){
-    jout<<"DBCALClump_factory: loading values from TOF data base"<<jendl;
+    jout<<"DBCALClump_factory: loading values from TOF data base"<<endl;
   } else {
-    jout << "DBCALClumpo_factory: Error loading values from BCAL MC data base" <<jendl;
+    jout << "DBCALClumpo_factory: Error loading values from BCAL MC data base" <<endl;
 
     VELOCITY = 15.;  // set to some reasonable value
   }
@@ -276,7 +276,7 @@ void DBCALClump_factory::Process(const std::shared_ptr<const JEvent>& event) {
     int idxMaxU[2] = {999,999};
     int idxMaxD[2] = {999,999};
 
-    // event over all layers in the seed sector
+    // loop over all layers in the seed sector
     // and its neighouring sectors and use all
     // instances with hits on both ends to determine 
     // the mean time    
@@ -488,12 +488,10 @@ void DBCALClump_factory::Process(const std::shared_ptr<const JEvent>& event) {
 	  delete myClump;
 	}
       } else {
-	jout<<"Error no hits in this Clump!!!! Event: "<<event->GetEventNumber()<<"      cnt= "<<cnt <<jendl;
+	jout<<"Error no hits in this Clump!!!! Event: "<<event->GetEventNumber()<<"      cnt= "<<cnt <<endl;
       }
     }
         
   }
-
-  return;
 }
 

@@ -22,7 +22,7 @@ DBCALShower_factory_JLAB::DBCALShower_factory_JLAB()
 }
 
 //------------------
-// brun
+// BeginRun
 //------------------
 void DBCALShower_factory_JLAB::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
@@ -30,7 +30,7 @@ void DBCALShower_factory_JLAB::BeginRun(const std::shared_ptr<const JEvent>& eve
 }
 
 //------------------
-// evnt
+// Process
 //------------------
 void DBCALShower_factory_JLAB::Process(const std::shared_ptr<const JEvent>& event)
 {

@@ -152,9 +152,6 @@ void DBCALHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 	   pixel_per_count[end][layer] = (saturation_SiPM_pars[i])["PIXEL_PER_COUNT"];
    } 
 
-
-
-   return;
 }
 
 //------------------
@@ -318,8 +315,6 @@ void DBCALHit_factory::Process(const std::shared_ptr<const JEvent>& event)
 
       Insert(hit);
    }
-
-   return;
 }
 
 //------------------
@@ -327,7 +322,6 @@ void DBCALHit_factory::Process(const std::shared_ptr<const JEvent>& event)
 //------------------
 void DBCALHit_factory::EndRun()
 {
-    return;
 }
 
 //------------------
@@ -335,7 +329,6 @@ void DBCALHit_factory::EndRun()
 //------------------
 void DBCALHit_factory::Finish()
 {
-    return;
 }
 
 

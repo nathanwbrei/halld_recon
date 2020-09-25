@@ -15,9 +15,9 @@
 #include <HDGEOMETRY/DGeometry.h>
 
 
-DBCALGeometry::DBCALGeometry(int runnumber)  
+DBCALGeometry::DBCALGeometry(const std::shared_ptr<const JEvent>& event)
 {
-  /// End if groupings do not evenly divide SiPM cells
+/// End if groupings do not evenly divide SiPM cells
   bool goodGeometry=true;
 
   //if (NSUMSECSIN <= 0) goodGeometry=false;
@@ -45,16 +45,9 @@ DBCALGeometry::DBCALGeometry(int runnumber)
       assert (false);
   }
 
-  // Initialize DBCALGeometry variables
-  Initialize(runnumber);
-
-}
-
-void
-DBCALGeometry::Initialize(int runnumber) {
   //Get pointer to DGeometry object
   auto dgeoman = japp->GetService<DGeometryManager>();
-  const DGeometry *dgeom  = dgeoman->GetDGeometry(runnumber);
+  const DGeometry *dgeom  = dgeoman->GetDGeometry(event->GetRunNumber());
 
   // Get inner rad of BCAL (including the support plate)
   float my_BCALINNERRAD;
