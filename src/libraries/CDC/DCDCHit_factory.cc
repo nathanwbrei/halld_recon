@@ -95,8 +95,6 @@ void DCDCHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
   }
   
   event->Get(ttab);
-  
-  return;
 }
 
 //------------------
@@ -106,7 +104,7 @@ void DCDCHit_factory::Process(const std::shared_ptr<const JEvent>& event)
 {
  
   // Clear _data vector
-  _data.clear();           // TODO: I don't trust this
+  mData.clear();
 
   vector<const DCDCHit*> hits;
   event->Get(hits, "Calib");
@@ -114,7 +112,7 @@ void DCDCHit_factory::Process(const std::shared_ptr<const JEvent>& event)
   
   vector<cdchit_info_t> hit_info_vec;
   
-  // event over hits and find roc/slot/con numbers
+  // loop over hits and find roc/slot/con numbers
   for (unsigned int k=0 ;k<hits.size(); k++){
     const DCDCHit *hit = hits[k];
     vector <const Df125CDCPulse*> pulse;
@@ -215,11 +213,9 @@ void DCDCHit_factory::Process(const std::shared_ptr<const JEvent>& event)
       continue;
     }
     
-    _data.push_back( const_cast<DCDCHit*>(hit) );
+    Insert( const_cast<DCDCHit*>(hit) );
     
   }
-
-  return;
 }
 
 //------------------
@@ -227,7 +223,6 @@ void DCDCHit_factory::Process(const std::shared_ptr<const JEvent>& event)
 //------------------
 void DCDCHit_factory::EndRun()
 {
-    return;
 }
 
 //------------------
@@ -235,5 +230,4 @@ void DCDCHit_factory::EndRun()
 //------------------
 void DCDCHit_factory::Finish()
 {
-    return;
 }

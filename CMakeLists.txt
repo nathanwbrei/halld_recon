@@ -91,9 +91,17 @@ set(HALLD_RECON_SOURCES
         src/libraries/CCAL/DCCALTruthShower_factory.cc
         src/libraries/CCAL/DCCALTruthShower_factory.h
 
-        src/libraries/CDC/DCDCTrackHit.h
-        src/libraries/CDC/DCDCHit.h
+        src/libraries/CDC/CDC_init.cc
         src/libraries/CDC/DCDCDigiHit.h
+        src/libraries/CDC/DCDCHit.h
+        src/libraries/CDC/DCDCHit_factory.cc
+        src/libraries/CDC/DCDCHit_factory.h
+        src/libraries/CDC/DCDCHit_factory_Calib.cc
+        src/libraries/CDC/DCDCHit_factory_Calib.h
+        src/libraries/CDC/DCDCTrackHit.h
+        src/libraries/CDC/DCDCTrackHit_factory.cc
+        src/libraries/CDC/DCDCTrackHit_factory.h
+        src/libraries/CDC/DCDCWire.h
 
 
         src/libraries/CERE/DCereHit.h
