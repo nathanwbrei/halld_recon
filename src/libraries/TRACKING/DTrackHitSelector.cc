@@ -22,9 +22,9 @@ extern bool TRDSortByZincreasing(const DTRDPoint* const &hit1, const DTRDPoint* 
 
 
 //---------------------
-// Init
+// Constructor
 //---------------------
-void DTrackHitSelector::Init(const std::shared_ptr<const JEvent>& event){
+DTrackHitSelector::DTrackHitSelector(const std::shared_ptr<const JEvent>& event){
 	this->event = event;
 }
 

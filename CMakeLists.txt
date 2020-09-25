@@ -457,9 +457,9 @@ set(HALLD_RECON_SOURCES
         src/libraries/TRACKING/DTrackHitSelector_factory_ALT1.h
         src/libraries/TRACKING/DTrackHitSelector_factory_ALT2.h
         src/libraries/TRACKING/DTrackHitSelector_factory_THROWN.h
-#        src/libraries/TRACKING/DTrackHitSelectorALT1.cc  # Needs decision on Init
+        src/libraries/TRACKING/DTrackHitSelectorALT1.cc  # Needs decision on Init
         src/libraries/TRACKING/DTrackHitSelectorALT1.h
-#        src/libraries/TRACKING/DTrackHitSelectorALT2.cc  # Needs decision on Init
+        src/libraries/TRACKING/DTrackHitSelectorALT2.cc  # Needs decision on Init
         src/libraries/TRACKING/DTrackHitSelectorALT2.h
         src/libraries/TRACKING/DTrackHitSelectorTHROWN.cc
         src/libraries/TRACKING/DTrackHitSelectorTHROWN.h

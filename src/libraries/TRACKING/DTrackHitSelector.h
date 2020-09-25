@@ -30,7 +30,7 @@ class DTrackHitSelector: public JObject {
  public:
   JOBJECT_PUBLIC(DTrackHitSelector);
   
-  DTrackHitSelector() = default;
+  DTrackHitSelector(const std::shared_ptr<const JEvent>& event);
   ~DTrackHitSelector() = default;
 
   enum fit_type_t{
@@ -38,8 +38,6 @@ class DTrackHitSelector: public JObject {
     kTimeBased = DTrackFitter::kTimeBased, // ensure compatibility with DTrackFitter
     kHelical
   };
-
-  void Init(const std::shared_ptr<const JEvent>& event);
 
   virtual void GetCDCHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DCDCTrackHit*> &cdchits_in, vector<const DCDCTrackHit*> &cdchits_out,int N=20) const =0;
   virtual void GetFDCHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DFDCPseudo*> &fdchits_in, vector<const DFDCPseudo*> &fdchits_out, int N=20) const =0;	

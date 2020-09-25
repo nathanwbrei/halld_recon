@@ -16,9 +16,8 @@
 //---------------------------------
 // DTrackHitSelectorTHROWN    (Constructor)
 //---------------------------------
-DTrackHitSelectorTHROWN::DTrackHitSelectorTHROWN(const std::shared_ptr<const JEvent>& event)
+DTrackHitSelectorTHROWN::DTrackHitSelectorTHROWN(const std::shared_ptr<const JEvent>& event) : DTrackHitSelector(event)
 {
-	DTrackHitSelector::Init(event);
 	auto app = event->GetJApplication();
 	HS_DEBUG_LEVEL = 0;
 	app->SetDefaultParameter("TRKFIT:HS_DEBUG_LEVEL", HS_DEBUG_LEVEL);

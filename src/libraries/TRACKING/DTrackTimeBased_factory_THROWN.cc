@@ -8,8 +8,6 @@
 #include <cmath>
 using namespace std;
 
-#include <DANA/DApplication.h>
-
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCPseudo.h>
 #include <TRACKING/DTrackWireBased.h>
