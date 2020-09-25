@@ -17,7 +17,7 @@ class DTrackFitter_factory:public JFactoryT<DTrackFitter>{
 		~DTrackFitter_factory() override = default;
 
 	private:
-		void Process(const std::shared_ptr<const JEvent>& event) {
+		void Process(const std::shared_ptr<const JEvent>& event) override {
 
 			// This is a trivial class that simply implements the
 			// ALT1 tagged factory as the default. It is here so 
