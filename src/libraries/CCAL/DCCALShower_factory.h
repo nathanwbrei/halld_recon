@@ -32,8 +32,8 @@ using namespace std;
 class DCCALShower_factory:public JFactoryT<DCCALShower>{
 
 	public:
-		DCCALShower_factory();
-		~DCCALShower_factory(){};
+		DCCALShower_factory() = default;
+		~DCCALShower_factory() override = default;
 		
 		/* 
 		store these values before passing them on to the island code
@@ -44,12 +44,12 @@ class DCCALShower_factory:public JFactoryT<DCCALShower>{
 	private:
 
 		JApplication *japp;
-		
-		jerror_t brun(JEventLoop *eventLoop, int32_t runnumber);	
-		jerror_t evnt(JEventLoop *eventLoop, uint64_t eventnumber);	
-		
-		
-		
+
+		void Init() override;
+		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
+		void Process(const std::shared_ptr<const JEvent>& event) override;
+
+
 		void getHitPatterns( vector< const DCCALHit* > hitarray, 
 				vector< vector< const DCCALHit* > > &hitPatterns );
 		

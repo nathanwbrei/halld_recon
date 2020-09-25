@@ -77,7 +77,7 @@ private:
   TF1* C2_parm;
   */
   void Init() override;
-  void Finish() override;
+  void Finish();
   
 };
 

@@ -9,12 +9,18 @@
 
 using namespace std;
 
-#include "DANA/DApplication.h"
+#include "BCAL/DBCALCluster_factory.h"
+
+#include <JANA/JEvent.h>
+#include <JANA/Calibrations/JCalibrationManager.h>
+#include <JANA/Services/JGlobalRootLock.h>
+
+#include "DANA/DGeometryManager.h"
+#include "HDGEOMETRY/DGeometry.h"
 #include "BCAL/DBCALGeometry.h"
 #include "BCAL/DBCALHit.h"
 #include "BCAL/DBCALUnifiedHit.h"
 
-#include "BCAL/DBCALCluster_factory.h"
 
 #include "units.h"
 #include <TMath.h>
@@ -51,8 +57,14 @@ DBCALCluster_factory::Finish(){
 }
 
 void DBCALCluster_factory::BeginRun(const std::shared_ptr<const JEvent>& event) {
-	DApplication* app = dynamic_cast<DApplication*>(event->GetJApplication());
-	DGeometry* geom = app->GetDGeometry(runnumber);
+
+	auto runnumber = event->GetRunNumber();
+	auto app = event->GetJApplication();
+	auto calibration = app->GetService<JCalibrationManager>()->GetJCalibration(runnumber);
+	auto root_lock = app->GetService<JGlobalRootLock>();
+	auto geo_manager = app->GetService<DGeometryManager>();
+	auto geom = geo_manager->GetDGeometry(runnumber);
+
 	geom->GetTargetZ(m_z_target_center);
 
 	// load BCAL Geometry
@@ -63,12 +75,12 @@ void DBCALCluster_factory::BeginRun(const std::shared_ptr<const JEvent>& event) 
         m_BCALGeom = BCALGeomVec[0];
 
 
-	event->GetCalib("/BCAL/effective_velocities", effective_velocities);
+	calibration->Get("/BCAL/effective_velocities", effective_velocities);
 
-	event->GetCalib("/BCAL/attenuation_parameters",attenuation_parameters);
+	calibration->Get("/BCAL/attenuation_parameters",attenuation_parameters);
 
 	BCALCLUSTERVERBOSE = 0;
-	gPARMS->SetDefaultParameter("BCALCLUSTERVERBOSE", BCALCLUSTERVERBOSE, "VERBOSE level for BCAL Cluster overlap success and conditions");
+	app->SetDefaultParameter("BCALCLUSTERVERBOSE", BCALCLUSTERVERBOSE, "VERBOSE level for BCAL Cluster overlap success and conditions");
 	//command line parameter to investigate what points are being added to clusters and what clusters are being merged together. // Track fitterer helper class
 
 
@@ -77,7 +89,7 @@ void DBCALCluster_factory::BeginRun(const std::shared_ptr<const JEvent>& event) 
 
   if(fitters.size()<1){
     _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
-    return RESOURCE_UNAVAILABLE;
+    return; // RESOURCE_UNAVAILABLE; // TODO: Verify
   }
 
   fitter = fitters[0];
@@ -86,7 +98,7 @@ void DBCALCluster_factory::BeginRun(const std::shared_ptr<const JEvent>& event) 
 }
 
 void
-DBCALCluster_factory::process( const std::shared_ptr<const JEvent>& event ){
+DBCALCluster_factory::Process( const std::shared_ptr<const JEvent>& event ){
 
 	vector< const DBCALPoint* > twoEndPoint;
 	vector< const DBCALPoint* > usedPoints;
@@ -154,9 +166,8 @@ DBCALCluster_factory::process( const std::shared_ptr<const JEvent>& event ){
 		for (unsigned int i=0;i<points.size();i++){
 		  (**clust).AddAssociatedObject(points[i]);
 		}
-		_data.push_back(*clust);
+		Insert(*clust);
 	}
-	return;
 }
 
 vector<DBCALCluster*>

@@ -63,11 +63,11 @@ set(HALLD_RECON_SOURCES
         src/libraries/BCAL/DBCALShower_factory_CURVATURE.h
         src/libraries/BCAL/DBCALClump_factory.cc
         src/libraries/BCAL/DBCALClump_factory.h
-#        src/libraries/BCAL/DBCALCluster_factory.cc   # DTrackFitter
-#        src/libraries/BCAL/DBCALCluster_factory.h
+        src/libraries/BCAL/DBCALCluster_factory.cc
+        src/libraries/BCAL/DBCALCluster_factory.h
         src/libraries/BCAL/DBCALCluster_factory_SINGLE.cc
         src/libraries/BCAL/DBCALCluster_factory_SINGLE.h
-        src/libraries/BCAL/DBCALGeometry_factory.h    # Construction logic in ctor
+        src/libraries/BCAL/DBCALGeometry_factory.h
         src/libraries/BCAL/DBCALPoint_factory.cc
         src/libraries/BCAL/DBCALPoint_factory.h
         src/libraries/BCAL/DBCALHit_factory.cc
@@ -78,8 +78,9 @@ set(HALLD_RECON_SOURCES
         src/libraries/CDC/DCDCDigiHit.h
 
         src/libraries/CCAL/DCCALShower.h
-#        src/libraries/CCAL/DCCALShower_factory.h
-#        src/libraries/CCAL/DCCALShower_factory.cc
+        src/libraries/CCAL/DCCALShower.cc
+        src/libraries/CCAL/DCCALShower_factory.h
+        src/libraries/CCAL/DCCALShower_factory.cc
         src/libraries/CCAL/DCCALDigiHit.h
         src/libraries/CCAL/DCCALRefDigiHit.h
         src/libraries/CCAL/DCCALGeometry.h
