@@ -6,6 +6,7 @@
 //
 
 #include "DChargedTrackHypothesis_factory.h"
+#include "DANA/DObjectID.h"
 
 inline bool DChargedTrackHypothesis_SortByEnergy(const DChargedTrackHypothesis* locChargedTrackHypothesis1, const DChargedTrackHypothesis* locChargedTrackHypothesis2)
 {
@@ -25,9 +26,9 @@ inline bool DChargedTrackHypothesis_SortByEnergy(const DChargedTrackHypothesis* 
 }
 
 //------------------
-// init
+// Init
 //------------------
-jerror_t DChargedTrackHypothesis_factory::init(void)
+void DChargedTrackHypothesis_factory::Init()
 {
 	//Setting this flag makes it so that JANA does not delete the objects in _data.  This factory will manage this memory. 
 	SetFactoryFlag(NOT_OBJECT_OWNER);
@@ -35,49 +36,47 @@ jerror_t DChargedTrackHypothesis_factory::init(void)
 	dResourcePool_ChargedTrackHypothesis->Set_ControlParams(30, 20, 200, 2000, 0);
 	dResourcePool_TMatrixFSym = std::make_shared<DResourcePool<TMatrixFSym>>();
 	dResourcePool_TMatrixFSym->Set_ControlParams(20, 20, 50);
-	return NOERROR;
 }
 
 //------------------
-// brun
+// BeginRun
 //------------------
-jerror_t DChargedTrackHypothesis_factory::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
+void DChargedTrackHypothesis_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-	locEventLoop->GetSingle(dPIDAlgorithm);
- 	return NOERROR;
+	event->GetSingle(dPIDAlgorithm);
 }
 
 //------------------
-// evnt
+// Process
 //------------------
-jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop* locEventLoop, uint64_t eventnumber)
+void DChargedTrackHypothesis_factory::Process(const std::shared_ptr<const JEvent>& event)
 {
 	//Recycle
 	dResourcePool_ChargedTrackHypothesis->Recycle(dCreated);
 	dCreated.clear();
-	_data.clear();
+	mData.clear();
 
  	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
-	locEventLoop->Get(locTrackTimeBasedVector);
+	event->Get(locTrackTimeBasedVector);
 
 	vector<const DEventRFBunch*> locEventRFBunches;
-	locEventLoop->Get(locEventRFBunches);
+	event->Get(locEventRFBunches);
 	if (locEventRFBunches.size() == 0)
-	   return NOERROR;
+	   return;
 
 	const DDetectorMatches* locDetectorMatches = NULL;
-	locEventLoop->GetSingle(locDetectorMatches);
+	event->GetSingle(locDetectorMatches);
 
-	map<JObject::oid_t, vector<DChargedTrackHypothesis*> > locChargedTrackHypotheses;
+	map<oid_t, vector<DChargedTrackHypothesis*> > locChargedTrackHypotheses;
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); loc_i++)
 	{
-		DChargedTrackHypothesis* locChargedTrackHypothesis = Create_ChargedTrackHypothesis(locEventLoop, locTrackTimeBasedVector[loc_i], locDetectorMatches, locEventRFBunches[0]);
+		DChargedTrackHypothesis* locChargedTrackHypothesis = Create_ChargedTrackHypothesis(event, locTrackTimeBasedVector[loc_i], locDetectorMatches, locEventRFBunches[0]);
 		locChargedTrackHypotheses[locChargedTrackHypothesis->Get_TrackTimeBased()->candidateid].push_back(locChargedTrackHypothesis);
 	}
 
 	//choose the first hypothesis from each track, and sort by increasing energy in the 1's and 0.1s digits (MeV): pseudo-random
 	vector<DChargedTrackHypothesis*> locTracksToSort;
-	map<JObject::oid_t, vector<DChargedTrackHypothesis*> >::iterator locIterator = locChargedTrackHypotheses.begin();
+	map<oid_t, vector<DChargedTrackHypothesis*> >::iterator locIterator = locChargedTrackHypotheses.begin();
 	for(; locIterator != locChargedTrackHypotheses.end(); ++locIterator)
 		locTracksToSort.push_back(locIterator->second[0]);
 	sort(locTracksToSort.begin(), locTracksToSort.end(), DChargedTrackHypothesis_SortByEnergy);
@@ -85,15 +84,14 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop* locEventLoop, u
 	//now loop through the sorted vector, grab all of the hypotheses for each of those tracks from the map, and save them all in _data
 	for(size_t loc_i = 0; loc_i < locTracksToSort.size(); loc_i++)
 	{
-		JObject::oid_t locTrackID = locTracksToSort[loc_i]->Get_TrackTimeBased()->candidateid;
-		_data.insert(_data.end(), locChargedTrackHypotheses[locTrackID].begin(), locChargedTrackHypotheses[locTrackID].end());
+		oid_t locTrackID = locTracksToSort[loc_i]->Get_TrackTimeBased()->candidateid;
+		mData.insert(mData.end(), locChargedTrackHypotheses[locTrackID].begin(), locChargedTrackHypotheses[locTrackID].end());
 	}
 
-	dCreated = _data;
-	return NOERROR;
+	dCreated = mData;
 }
 
-DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHypothesis(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, const DEventRFBunch* locEventRFBunch)
+DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHypothesis(const std::shared_ptr<const JEvent>& event, const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, const DEventRFBunch* locEventRFBunch)
 {
 	DChargedTrackHypothesis* locChargedTrackHypothesis = Get_Resource();
 	locChargedTrackHypothesis->Share_FromInput_Kinematics(static_cast<const DKinematicData*>(locTrackTimeBased));

@@ -29,6 +29,69 @@ file(GLOB DAQ_HEADERS ${PROJECT_SOURCE_DIR}/src/libraries/DAQ/*.h)
 
 set(HALLD_RECON_SOURCES
 
+#        src/libraries/ANALYSIS/ANALYSIS_init.cc
+#        src/libraries/ANALYSIS/DAnalysisAction.cc
+#        src/libraries/ANALYSIS/DAnalysisAction.h
+#        src/libraries/ANALYSIS/DAnalysisResults.h
+#        src/libraries/Analysis/DAnalysisResults_factory.cc
+#        src/libraries/Analysis/DAnalysisResults_factory.h
+#        src/libraries/Analysis/DAnalysisUtilities.cc
+#        src/libraries/Analysis/DAnalysisUtilities.h
+#        src/libraries/Analysis/DAnalysisUtilities_factory.h
+#        src/libraries/Analysis/DChargedTrack_factory_Combo.cc
+#        src/libraries/Analysis/DChargedTrack_factory_Combo.h
+#        src/libraries/Analysis/DCutActions.cc
+#        src/libraries/Analysis/DCutActions.h
+#        src/libraries/Analysis/DDetectorMatches_factory_Combo.cc
+#        src/libraries/Analysis/DDetectorMatches_factory_Combo.h
+#        src/libraries/Analysis/DEventWriterROOT.cc
+#        src/libraries/Analysis/DEventWriterROOT.h
+#        src/libraries/Analysis/DEventWriterROOT_factory.h
+#        src/libraries/Analysis/DHistogramActions.h
+#        src/libraries/Analysis/DHistogramActions_Independent.cc
+#        src/libraries/Analysis/DHistogramActions_Independent.h
+#        src/libraries/Analysis/DHistogramActions_Reaction.cc
+#        src/libraries/Analysis/DHistogramActions_Reaction.h
+#        src/libraries/Analysis/DHistogramActions_Thrown.cc
+#        src/libraries/Analysis/DHistogramActions_Thrown.h
+#        src/libraries/Analysis/DKinFitResults.h
+#        src/libraries/Analysis/DKinFitUtils_GlueX.cc
+#        src/libraries/Analysis/DKinFitUtils_GlueX.h
+#        src/libraries/Analysis/DMCThrownMatching.h
+#        src/libraries/Analysis/DMCThrownMatching_factory.cc
+#        src/libraries/Analysis/DMCThrownMatching_factory.h
+#        src/libraries/Analysis/DNeutralParticle_factory_Combo.cc
+#        src/libraries/Analysis/DNeutralParticle_factory_Combo.h
+#        src/libraries/Analysis/DParticleCombo.h
+#        src/libraries/Analysis/DParticleComboCreator.cc
+#        src/libraries/Analysis/DParticleComboCreator.h
+#        src/libraries/Analysis/DParticleComboStep.h
+#        src/libraries/Analysis/DReaction.cc
+#        src/libraries/Analysis/DReaction.h
+#        src/libraries/Analysis/DReaction_factory_Thrown.cc
+#        src/libraries/Analysis/DReaction_factory_Thrown.h
+#        src/libraries/Analysis/DReactionStep.cc
+#        src/libraries/Analysis/DReactionStep.h
+#        src/libraries/Analysis/DReactionStepVertexInfo.cc
+#        src/libraries/Analysis/DReactionStepVertexInfo.h
+#        src/libraries/Analysis/DReactionVertexInfo.h
+#        src/libraries/Analysis/DReactionVertexInfo_factory.cc
+#        src/libraries/Analysis/DReactionVertexInfo_factory.h
+#        src/libraries/Analysis/DSourceCombo.h
+#        src/libraries/Analysis/DSourceComboer.cc
+#        src/libraries/Analysis/DSourceComboer.h
+#        src/libraries/Analysis/DSourceComboP4Handler.cc
+#        src/libraries/Analysis/DSourceComboP4Handler.h
+#        src/libraries/Analysis/DSourceComboTimeHandler.cc
+#        src/libraries/Analysis/DSourceComboTimeHandler.h
+#        src/libraries/Analysis/DSourceComboVertexer.cc
+#        src/libraries/Analysis/DSourceComboVertexer.h
+#        src/libraries/Analysis/DTrackTimeBased_factory_Combo.cc
+#        src/libraries/Analysis/DTrackTimeBased_factory_Combo.h
+#        src/libraries/Analysis/DTreeInterface.cc
+#        src/libraries/Analysis/DTreeInterface.h
+#        src/libraries/Analysis/DTreeInterfaceObjects.h
+
         src/libraries/BCAL/BCAL_init.cc
         src/libraries/BCAL/DBCALClump.cc
         src/libraries/BCAL/DBCALClump.h
@@ -313,20 +376,73 @@ set(HALLD_RECON_SOURCES
         src/libraries/PAIR_SPECTROMETER/PAIR_SPECTROMETER_init.cc
 
 
-        src/libraries/PID/DChargedTrack.h
-        src/libraries/PID/DChargedTrackHypothesis.h
         src/libraries/PID/DBeamPhoton.h
-        src/libraries/PID/DVertex.h
-        src/libraries/PID/DKinematicData.h
-        src/libraries/PID/DKinematicPools.cc  # Commented out ChargedTrackHypothesis, needs DTrackFitter
-        src/libraries/PID/DMCReaction.h
-        src/libraries/PID/DNeutralShower.h
-        src/libraries/PID/DNeutralParticleHypothesis.h
+        src/libraries/PID/DBeamPhoton_factory.cc
+        src/libraries/PID/DBeamPhoton_factory.h
+#        src/libraries/PID/DBeamPhoton_factory_MCGEN.cc
+#        src/libraries/PID/DBeamPhoton_factory_MCGEN.h
+#        src/libraries/PID/DBeamPhoton_factory_TAGGEDMCGEN.cc
+#        src/libraries/PID/DBeamPhoton_factory_TAGGEDMCGEN.h
+#        src/libraries/PID/DBeamPhoton_factory_TRUTH.cc
+#        src/libraries/PID/DBeamPhoton_factory_TRUTH.h
+        src/libraries/PID/DChargedTrack.h
+#        src/libraries/PID/DChargedTrack_factory.cc
+#        src/libraries/PID/DChargedTrack_factory.h
+#        src/libraries/PID/DChargedTrack_factory_PreSelect.cc
+#        src/libraries/PID/DChargedTrack_factory_PreSelect.h
+        src/libraries/PID/DChargedTrackHypothesis.h
+        src/libraries/PID/DChargedTrackHypothesis_factory.cc
+        src/libraries/PID/DChargedTrackHypothesis_factory.h
         src/libraries/PID/DDetectorMatches.h
-        src/libraries/PID/DParticleID.h
-        src/libraries/PID/DParticleID.cc
-        src/libraries/PID/DNeutralParticle.h
+#        src/libraries/PID/DDetectorMatches_factory.cc
+#        src/libraries/PID/DDetectorMatches_factory.h
+#        src/libraries/PID/DDetectorMatches_factory_WireBased.cc
+#        src/libraries/PID/DDetectorMatches_factory_WireBased.h
         src/libraries/PID/DEventRFBunch.h
+#        src/libraries/PID/DEventRFBunch_factory.cc
+#        src/libraries/PID/DEventRFBunch_factory.h
+#        src/libraries/PID/DEventRFBunch_factory_Calibrations.cc
+#        src/libraries/PID/DEventRFBunch_factory_Calibrations.h
+#        src/libraries/PID/DEventRFBunch_factory_CalorimeterOnly.cc
+#        src/libraries/PID/DEventRFBunch_factory_CalorimeterOnly.h
+#        src/libraries/PID/DEventRFBunch_factory_Thrown.cc
+#        src/libraries/PID/DEventRFBunch_factory_Thrown.h
+        src/libraries/PID/DKinematicData.h
+        src/libraries/PID/DKinematicPools.cc
+        src/libraries/PID/DMCReaction.h
+#        src/libraries/PID/DMCThrown_factory_Decaying.cc
+#        src/libraries/PID/DMCThrown_factory_Decaying.h
+#        src/libraries/PID/DMCThrown_factory_FinalState.cc
+#        src/libraries/PID/DMCThrown_factory_FinalState.h
+#        src/libraries/PID/DMCThrown_factory_Primary.cc
+#        src/libraries/PID/DMCThrown_factory_Primary.h
+        src/libraries/PID/DNeutralParticle.h
+#        src/libraries/PID/DNeutralParticle_factory.cc
+#        src/libraries/PID/DNeutralParticle_factory.h
+#        src/libraries/PID/DNeutralParticle_factory_PreSelect.cc
+#        src/libraries/PID/DNeutralParticle_factory_PreSelect.h
+        src/libraries/PID/DNeutralParticleHypothesis.h
+        src/libraries/PID/DNeutralParticleHypothesis_factory.cc
+        src/libraries/PID/DNeutralParticleHypothesis_factory.h
+        src/libraries/PID/DNeutralShower.h
+#        src/libraries/PID/DNeutralShower_factory.cc
+#        src/libraries/PID/DNeutralShower_factory.h
+#        src/libraries/PID/DNeutralShower_factory_PreSelect.cc
+#        src/libraries/PID/DNeutralShower_factory_PreSelect.h
+#        src/libraries/PID/DNeutralShower_FCALQualityMLP.h
+        src/libraries/PID/DParticleID.cc
+        src/libraries/PID/DParticleID.h
+#        src/libraries/PID/DParticleID_factory.h
+#        src/libraries/PID/DParticleID_factory_PID1.h
+#        src/libraries/PID/DParticleID_PID1.cc
+#        src/libraries/PID/DParticleID_PID1.h
+        src/libraries/PID/DVertex.h
+#        src/libraries/PID/DVertex_factory.cc
+#        src/libraries/PID/DVertex_factory.h
+#        src/libraries/PID/DVertex_factory_THROWN.cc
+#        src/libraries/PID/DVertex_factory_THROWN.h
+#        src/libraries/PID/PID_init.cc
+
 
         src/libraries/RF/DRFDigiTime.h
         src/libraries/RF/DRFTDCDigiTime.h
