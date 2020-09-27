@@ -19,6 +19,9 @@
 #include <iostream>
 using namespace std;
 
+#include <JANA/JEvent.h>
+#include <JANA/Calibrations/JCalibrationManager.h>
+
 #include "DTOFPaddleHit_factory.h"
 #include "DTOFHit.h"
 #include "DTOFHitMC.h"
@@ -29,13 +32,25 @@ using namespace std;
 #define BuiltInNaN __builtin_nan("")
 
 //------------------
-// brun
+// Init
 //------------------
-jerror_t DTOFPaddleHit_factory::brun(JEventLoop *loop, int32_t runnumber)
+void DTOFPaddleHit_factory::Init()
 {
+	TOF_POINT_TAG="";
+	GetApplication()->SetDefaultParameter("TOF:TOF_POINT_TAG", TOF_POINT_TAG,"");
+}
+
+//------------------
+// BeginRun
+//------------------
+void DTOFPaddleHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
+{
+  auto run_number = event->GetRunNumber();
+  auto app = event->GetJApplication();
+  auto calibration = app->GetService<JCalibrationManager>()->GetJCalibration(run_number);
 
   // load values from geometry
-  loop->Get(TOFGeom);
+  event->Get(TOFGeom);
   TOF_NUM_PLANES = TOFGeom[0]->Get_NPlanes();
   TOF_NUM_BARS = TOFGeom[0]->Get_NBars();
   HALFPADDLE = TOFGeom[0]->Get_HalfLongBarLength();
@@ -43,7 +58,7 @@ jerror_t DTOFPaddleHit_factory::brun(JEventLoop *loop, int32_t runnumber)
 
   map<string, double> tofparms; 
   string locTOFParmsTable = TOFGeom[0]->Get_CCDB_DirectoryName() + "/tof_parms";
-  if( !loop->GetCalib(locTOFParmsTable.c_str(), tofparms)) {
+  if( !calibration->Get(locTOFParmsTable.c_str(), tofparms)) {
     //cout<<"DTOFPaddleHit_factory: loading values from TOF data base"<<endl;
 
     C_EFFECTIVE    =    tofparms["TOF_C_EFFECTIVE"];
@@ -63,24 +78,21 @@ jerror_t DTOFPaddleHit_factory::brun(JEventLoop *loop, int32_t runnumber)
   TIME_COINCIDENCE_CUT=2.*HALFPADDLE/C_EFFECTIVE;
 
   string locTOFPropSpeedTable = TOFGeom[0]->Get_CCDB_DirectoryName() + "/propagation_speed";
-  if(eventLoop->GetCalib(locTOFPropSpeedTable.c_str(), propagation_speed))
+  if(calibration->Get(locTOFPropSpeedTable.c_str(), propagation_speed))
     jout << "Error loading " << locTOFPropSpeedTable << " !" << endl;
   string locTOFAttenLengthTable = TOFGeom[0]->Get_CCDB_DirectoryName() + "/attenuation_lengths";
-  if(eventLoop->GetCalib(locTOFAttenLengthTable.c_str(), AttenuationLengths))
+  if(calibration->Get(locTOFAttenLengthTable.c_str(), AttenuationLengths))
     jout << "Error loading " << locTOFAttenLengthTable << " !" << endl;
-  
-  return NOERROR;
-
 }
 
 //------------------
-// evnt
+// Process
 //------------------
-jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
+void DTOFPaddleHit_factory::Process(const std::shared_ptr<const JEvent>& event)
 {
 
   vector<const DTOFHit*> hits;
-  loop->Get(hits,TOF_POINT_TAG.c_str());
+  event->Get(hits,TOF_POINT_TAG.c_str());
 
   vector<const DTOFHit*> P1hitsL;
   vector<const DTOFHit*> P1hitsR;
@@ -144,7 +156,7 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	  hit->t_south = P1hitsR[j]->t;      
 	  hit->AddAssociatedObject(P1hitsR[j]);  
 
-	  _data.push_back(hit);
+	  Insert(hit);
 	}
       }
     } 
@@ -175,7 +187,7 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	hit->t_south = 0.;  
 	hit->AddAssociatedObject(P1hitsL[i]);
 
-	_data.push_back(hit);
+	Insert(hit);
       }
     }
   }
@@ -203,8 +215,8 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	hit->E_north = 0.;
 	hit->t_north = 0.;      
 	hit->AddAssociatedObject(P1hitsR[i]);
-	
-	_data.push_back(hit);
+
+	Insert(hit);
       }
     }
   }
@@ -228,7 +240,7 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	  hit->t_south = P2hitsR[j]->t;      
 	  hit->AddAssociatedObject(P2hitsR[j]);
 	  
-	  _data.push_back(hit);
+	  Insert(hit);
 	}
       }
     }
@@ -260,7 +272,7 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	hit->t_south = 0.;      
 	hit->AddAssociatedObject(P2hitsL[i]);
 
-	_data.push_back(hit);
+	Insert(hit);
       }
     }
   }
@@ -289,16 +301,16 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	hit->t_north = 0.;      
 	hit->AddAssociatedObject(P2hitsR[i]);
 
-	_data.push_back(hit);
+	Insert(hit);
       }
     }
   }
 
 
-  for (int i=0;i<(int)_data.size(); i++) {
+  for (int i=0;i<(int)mData.size(); i++) {
     
-    DTOFPaddleHit *hit = _data[i];
-    
+    DTOFPaddleHit *hit = mData[i];
+
     int check = -1;
     if (hit->E_north > E_THRESHOLD) {
       check++;
@@ -354,7 +366,5 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
    }
 
   }
-  
-  return NOERROR;
 }
 

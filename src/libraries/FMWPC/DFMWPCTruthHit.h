@@ -8,9 +8,8 @@
 #ifndef _DFMWPCTruthHit_
 #define _DFMWPCTruthHit_
 
-#include <JANA/jerror.h>
+class DFMWPCTruthHit: public JObject{
 
-class DFMWPCTruthHit:public JObject{
 	public:
 		JOBJECT_PUBLIC(DFMWPCTruthHit);
 
@@ -20,12 +19,12 @@ class DFMWPCTruthHit:public JObject{
 		float dx;    // cm
 		float t;     // ns
 
-		void toStrings(vector<pair<string, string> >&items) const {
-			AddString(items, "layer", "%d", layer);
-			AddString(items, "wire", "%d", wire);
-			AddString(items, "dE(keV)", "%3.1f", dE*1.0E6);
-			AddString(items, "dx", "%3.2f", dx);
-			AddString(items, "t", "%3.3f", t);
+		void Summarize(JObjectSummary& summary) const override {
+			summary.add(layer, "layer", "%d");
+			summary.add(wire, "wire", "%d");
+			summary.add(dE*1.0E6, "dE(keV)", "%3.1f");
+			summary.add(dx, "dx", "%3.2f");
+			summary.add(t, "t", "%3.3f");
 		}
 
 };

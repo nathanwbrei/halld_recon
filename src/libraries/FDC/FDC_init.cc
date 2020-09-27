@@ -6,7 +6,6 @@
 //***********************************************
 
 #include <JANA/JEventLoop.h>
-using namespace jana;
 
 #include "DFDCHit_factory.h"
 #include "DFDCPseudo_factory.h"
@@ -15,22 +14,14 @@ using namespace jana;
 #include "DFDCIntersection_factory.h"
 #include "DFDCPseudo_factory_WIRESONLY.h"
 
-#include <FDC/DFDCCathodeDigiHit.h>
-#include <FDC/DFDCWireDigiHit.h>
 
-jerror_t FDC_init(JEventLoop *loop)
+void FDC_init(JFactorySet *factorySet)
 {
 	/// Create and register FDC data factories
-	loop->AddFactory(new JFactory<DFDCCathodeDigiHit>());
-	loop->AddFactory(new JFactory<DFDCWireDigiHit>());
-	loop->AddFactory(new DFDCHit_factory());
-	loop->AddFactory(new JFactory<DFDCHit>("TRUTH"));
-	loop->AddFactory(new JFactory<DFDCHit>("CALIB"));
-	loop->AddFactory(new DFDCPseudo_factory());
-	loop->AddFactory(new DFDCCathodeCluster_factory());
-	loop->AddFactory(new DFDCSegment_factory());
-	loop->AddFactory(new DFDCIntersection_factory());
-	loop->AddFactory(new DFDCPseudo_factory_WIRESONLY());
-
-	return NOERROR;
+	factorySet->Add(new DFDCHit_factory());
+	factorySet->Add(new DFDCPseudo_factory());
+	factorySet->Add(new DFDCCathodeCluster_factory());
+	factorySet->Add(new DFDCSegment_factory());
+	factorySet->Add(new DFDCIntersection_factory());
+	factorySet->Add(new DFDCPseudo_factory_WIRESONLY());
 }

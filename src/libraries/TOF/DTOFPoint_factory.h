@@ -8,8 +8,9 @@
 #ifndef _DTOFPoint_factory_
 #define _DTOFPoint_factory_
 
-#include "JANA/JFactory.h"
-#include "DTOFGeometry_factory.h"
+#include <JANA/JFactoryT.h>
+
+#include "DTOFGeometry.h"
 #include "DTOFPoint.h"
 #include "DTOFPaddleHit.h"
 #include "DTOFHit.h"
@@ -27,7 +28,7 @@
 
 using namespace std;
 
-class DTOFPoint_factory : public JFactory<DTOFPoint>
+class DTOFPoint_factory : public JFactoryT<DTOFPoint>
 {
  public:
   
@@ -71,10 +72,10 @@ class DTOFPoint_factory : public JFactory<DTOFPoint>
   tof_spacetimehit_t* Build_TOFSpacetimeHit_Vertical(const DTOFPaddleHit* locTOFHit);
   
  private:
-  jerror_t brun(JEventLoop *loop, int32_t runnumber);
-  jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);
-  jerror_t fini(void);
-  
+  void BeginRun(const std::shared_ptr<const JEvent>& event) override;
+  void Process(const std::shared_ptr<const JEvent>& event) override;
+  void Finish();
+
   tof_spacetimehit_t* Get_TOFSpacetimeHitResource(void);
   
   bool Match_Hits(tof_spacetimehit_t* locTOFSpacetimeHit_Horizontal, tof_spacetimehit_t* locTOFSpacetimeHit_Vertical, tof_spacetimehitmatch_t& locTOFSpacetimeHitMatch);

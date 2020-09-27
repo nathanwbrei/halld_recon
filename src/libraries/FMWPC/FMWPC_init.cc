@@ -5,19 +5,11 @@
 // Creator: davidl (on Darwin harriet.jlab.org 13.4.0 i386)
 //
 
-#include <JANA/JEventLoop.h>
-#include <JANA/JFactory.h>
-using namespace jana;
+#include <JANA/JFactorySet.h>
 
-#include "DFMWPCHit.h"
-#include "DFMWPCTruthHit.h"
 
-jerror_t FMWPC_init(JEventLoop *loop) {
+void FMWPC_init(JFactorySet *factorySet) {
 
 	/// Create and register FMWPC data factories
-	loop->AddFactory(new JFactory<DFMWPCHit>());
-	loop->AddFactory(new JFactory<DFMWPCTruthHit>());
-
-	return NOERROR;
 }
 

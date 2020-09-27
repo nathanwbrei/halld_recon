@@ -1,17 +1,15 @@
 #include <iostream>
-#include <iomanip>
 #include <limits>
-#include <cmath>
+
+#include <JANA/JEvent.h>
 
 #include <TRIGGER/DL1Trigger.h>
 #include <TPOL/DTPOLSectorDigiHit.h>
 #include <TPOL/DTPOLRingDigiHit.h>
-#include <DAQ/Df250PulsePedestal.h>
-#include <DAQ/Df250Config.h>
 #include "DTPOLHit_factory.h"
 
 using namespace std;
-using namespace jana;
+
 
 // static consts need initialization
 const double DTPOLHit_factory::SECTOR_DIVISION = 360. / DTPOLHit_factory::NSECTORS;
@@ -30,33 +28,32 @@ bool DTPOLRingHit_fadc_cmp(const DTPOLRingDigiHit *a,const DTPOLRingDigiHit *b){
 }
 
 //------------------
-// init
+// Init
 //------------------
-jerror_t DTPOLHit_factory::init(void)
+void DTPOLHit_factory::Init()
 {
     ADC_THRESHOLD = 40.0;
-    gPARMS->SetDefaultParameter("TPOLHit:ADC_THRESHOLD", ADC_THRESHOLD,
+    auto app = GetApplication();
+    app->SetDefaultParameter("TPOLHit:ADC_THRESHOLD", ADC_THRESHOLD,
     "ADC pulse-height threshold");
 
     /// set the base conversion scales
     a_scale    = 0.0001;
     t_scale    = 0.0625; // 62.5 ps/count
-
-    return NOERROR;
 }
 
 //------------------
-// brun
+// BeginRun
 //------------------
-jerror_t DTPOLHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
+void DTPOLHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
     /// Read in calibration constants
-    //jout << "In DTPOLHit_factory, loading constants..." << endl;
+    //jout << "In DTPOLHit_factory, loading constants..." << jendl;
     // load scale factors
     /*map<string,double> scale_factors;
     // a_scale (SC_ADC_SCALE)
-    if (eventLoop->GetCalib("/TPOL/digi_scales", scale_factors))
-    jout << "Error loading /TPOL/digi_scales !" << endl;
+    if (calibration->Get("/TPOL/digi_scales", scale_factors))
+    jout << "Error loading /TPOL/digi_scales !" << jendl;
     if (scale_factors.find("TPOL_ADC_ASCALE") != scale_factors.end())
     a_scale = scale_factors["TPOL_ADC_ASCALE"];
     else
@@ -71,8 +68,8 @@ jerror_t DTPOLHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 
     // load base time offset
     map<string,double> base_time_offset;
-    if (eventLoop->GetCalib("/TPOL/base_time_offset",base_time_offset))
-    jout << "Error loading /TPOL/base_time_offset !" << endl;
+    if (calibration->Get("/TPOL/base_time_offset",base_time_offset))
+    jout << "Error loading /TPOL/base_time_offset !" << jendl;
     if (base_time_offset.find("TPOL_BASE_TIME_OFFSET") != base_time_offset.end())
     t_base = base_time_offset["TPOL_BASE_TIME_OFFSET"];
     else
@@ -80,23 +77,22 @@ jerror_t DTPOLHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 
     // load constant tables
     // a_gains (gains)
-    if (eventLoop->GetCalib("/TPOL/gains", a_gains))
-    jout << "Error loading /TPOL/gains !" << endl;
+    if (calibration->Get("/TPOL/gains", a_gains))
+    jout << "Error loading /TPOL/gains !" << jendl;
     // a_pedestals (pedestals)
-    if (eventLoop->GetCalib("/TPOL/pedestals", a_pedestals))
-    jout << "Error loading /TPOL/pedestals !" << endl;
+    if (calibration->Get("/TPOL/pedestals", a_pedestals))
+    jout << "Error loading /TPOL/pedestals !" << jendl;
     // adc_time_offsets (adc_timing_offsets)
-    if (eventLoop->GetCalib("/TPOL/adc_timing_offsets", adc_time_offsets))
-    jout << "Error loading /TPOL/adc_timing_offsets !" << endl;*/
-    return NOERROR;
+    if (calibration->Get("/TPOL/adc_timing_offsets", adc_time_offsets))
+    jout << "Error loading /TPOL/adc_timing_offsets !" << jendl;*/
 }
 
 
 
 //------------------
-// evnt
+// Process
 //------------------
-jerror_t DTPOLHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
+void DTPOLHit_factory::Process(const std::shared_ptr<const JEvent>& event)
 {
     /// Generate DTPOLHit object for each DTPOLSectorDigiHit
     /// and DTPOLRingDigiHit object.
@@ -110,10 +106,10 @@ jerror_t DTPOLHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     //
     // Get fADC250 hits
     /*vector<const DTPOLSectorDigiHit*> sectordigihits;
-    loop->Get(sectordigihits);
+    event->Get(sectordigihits);
     sort(sectordigihits.begin(),sectordigihits.end(),DTPOLSectorHit_fadc_cmp);
     vector<const DTPOLRingDigiHit*> ringdigihits;
-    loop->Get(ringdigihits);
+    event->Get(ringdigihits);
     sort(ringdigihits.begin(),ringdigihits.end(),DTPOLRingHit_fadc_cmp);
     char str[256];
     // Loop over SECTOR hits
@@ -161,7 +157,7 @@ jerror_t DTPOLHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         //hit->t = t_scale * T - adc_time_offsets[hit->sector-1] + t_base;
         hit->t = t_scale*T;
         hit->AddAssociatedObject(sectordigihit);
-        _data.push_back(hit);
+        Insert(hit);
     }*/
     /*
     // Apply calibration constants to convert pulse integrals to energy
@@ -175,7 +171,7 @@ jerror_t DTPOLHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     const DL1Trigger *trig_words = NULL;
     uint32_t trig_mask, fp_trig_mask;
     try {
-        loop->GetSingle(trig_words);
+        event->GetSingle(trig_words);
     } catch(...) {};
     if (trig_words) {
         trig_mask = trig_words->trig_mask;
@@ -188,12 +184,12 @@ jerror_t DTPOLHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     int trig_bits = fp_trig_mask > 0 ? 10 + fp_trig_mask:trig_mask;
     // skim PS triggers
     if (trig_bits!=8) {
-        return NOERROR;
+        return;
     }
 
     // get raw samples and make TPOL hits
     vector<const DTPOLSectorDigiHit*> sectordigihits;
-    loop->Get(sectordigihits);
+    event->Get(sectordigihits);
     sort(sectordigihits.begin(),sectordigihits.end(),DTPOLSectorHit_fadc_cmp);
    
     // Loop over SECTOR hits
@@ -207,7 +203,7 @@ jerror_t DTPOLHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	const Df250WindowRawData* windowraw = windowraws[0];
 	
 	//vector<const Df250WindowRawData*> windowraws;
-	//loop->Get(windowraws);
+	//event->Get(windowraws);
 	//for(unsigned int i=0; i< windowraws.size(); i++){
 	//const Df250WindowRawData *windowraw = windowraws[i];
         //if (windowraw->rocid!=84) continue; // choose rocPS2
@@ -219,7 +215,7 @@ jerror_t DTPOLHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         const vector<uint16_t> &samplesvector = windowraw->samples;
         unsigned int nsamples=samplesvector.size();
         // loop over the samples to calculate integral, min, max
-        if (nsamples<1) jerr << "Raw samples vector is empty." << endl;
+        if (nsamples<1) jerr << "Raw samples vector is empty." << jendl;
 	
         //if (samplesvector[0] > 133.0) continue; // require first sample below readout threshold
 	unsigned int w_integral = samplesvector[0];
@@ -251,25 +247,22 @@ jerror_t DTPOLHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	hit->dE = pulse_height;
         hit->t = t_scale*GetPulseTime(samplesvector,w_min,w_max,ADC_THRESHOLD);
 	hit->AddAssociatedObject(windowraw);
-	_data.push_back(hit);
+	Insert(hit);
     }
-    return NOERROR;
 }
 
 //------------------
-// erun
+// EndRun
 //------------------
-jerror_t DTPOLHit_factory::erun(void)
+void DTPOLHit_factory::EndRun()
 {
-    return NOERROR;
 }
 
 //------------------
-// fini
+// Finish
 //------------------
-jerror_t DTPOLHit_factory::fini(void)
+void DTPOLHit_factory::Finish()
 {
-    return NOERROR;
 }
 
 double DTPOLHit_factory::GetPhi(int sector)

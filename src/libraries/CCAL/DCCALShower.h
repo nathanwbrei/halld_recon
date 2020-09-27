@@ -21,8 +21,6 @@
 using namespace std;
 
 #include <JANA/JObject.h>
-#include <JANA/JFactory.h>
-using namespace jana;
 
 #define CCAL_USER_HITS_MAX  1000
 
@@ -142,34 +140,34 @@ class DCCALShower : public JObject {
 		  else return 0;
 		}
 
-      		void toStrings(vector<pair<string,string> > &items) const {
-		  AddString(items, "E(GeV)",      "%2.3f",  E);
-		  AddString(items, "Emax(GeV)",   "%2.3f",  Emax);
-		  AddString(items, "x(cm)",       "%3.3f",  x);
-		  AddString(items, "y(cm)",       "%3.3f",  y);
-		  AddString(items, "x1(cm)",      "%3.3f",  x1);
-		  AddString(items, "y1(cm)",      "%3.3f",  y1);
-		  AddString(items, "z(cm)",       "%3.3f",  z);
-		  AddString(items, "chi2",        "%3.3f",  chi2);
-		  AddString(items, "dime",        "%3d",    dime);
-		  AddString(items, "idmax",       "%3d",    idmax);
-		  AddString(items, "id",          "%3d",    id);
-		  AddString(items, "sigma_E",     "%3.1f",  sigma_E);
-		  AddString(items, "t(ns)",       "%2.3f",  time);
-		  AddString(items, "ClusterType", "%d",     (int)ClusterType);
-		  AddString(items, "PeakType",    "%d",     (int)PeakType);
+		void Summarize(JObjectSummary& summary) const override {
+		  summary.add(E, "E(GeV)", "%2.3f");
+		  summary.add(Emax, "Emax(GeV)", "%2.3f");
+		  summary.add(x, "x(cm)", "%3.3f");
+		  summary.add(y, "y(cm)", "%3.3f");
+		  summary.add(x1, "x1(cm)", "%3.3f");
+		  summary.add(y1, "y1(cm)", "%3.3f");
+		  summary.add(z, "z(cm)", "%3.3f");
+		  summary.add(chi2, "chi2", "%3.3f");
+		  summary.add(dime, "dime", "%3d");
+		  summary.add(idmax, "idmax", "%3d");
+		  summary.add(id, "id", "%3d");
+		  summary.add(sigma_E, "sigma_E", "%3.1f");
+		  summary.add(time, "t(ns)", "%2.3f");
+		  summary.add((int)ClusterType, "ClusterType", "%d");
+		  summary.add((int)PeakType, "PeakType", "%d");
 
-		  AddString(items, "EXcorr", "%5.3f", EXcorr());
-		  AddString(items, "EYcorr", "%5.3f", EYcorr());
-		  AddString(items, "EZcorr", "%5.3f", EZcorr());
-		  AddString(items, "ETcorr", "%5.3f", ETcorr());
-		  AddString(items, "XYcorr", "%5.3f", XYcorr());
-		  AddString(items, "XZcorr", "%5.3f", XZcorr());
-		  AddString(items, "XTcorr", "%5.3f", XTcorr());
-		  AddString(items, "YZcorr", "%5.3f", YZcorr());
-		  AddString(items, "YTcorr", "%5.3f", YTcorr());
-		  AddString(items, "ZTcorr", "%5.3f", ZTcorr());
-      		}
+		  summary.add(EXcorr(), "EXcorr", "%5.3f");
+		  summary.add(EYcorr(), "EYcorr", "%5.3f");
+		  summary.add(EZcorr(), "EZcorr", "%5.3f");
+		  summary.add(ETcorr(), "ETcorr", "%5.3f");
+		  summary.add(XYcorr(), "XYcorr", "%5.3f");
+		  summary.add(XZcorr(), "XZcorr", "%5.3f");
+		  summary.add(XTcorr(), "XTcorr", "%5.3f");
+		  summary.add(YZcorr(), "YZcorr", "%5.3f");
+		  summary.add(YTcorr(), "YTcorr", "%5.3f");
+		  summary.add(ZTcorr(), "ZTcorr", "%5.3f");
+		}
       		
          private:
 

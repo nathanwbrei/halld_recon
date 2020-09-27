@@ -1,13 +1,7 @@
-#include <JANA/JEventLoop.h>
-using namespace jana;
+#include <JANA/JFactorySet.h>
 
-#include "DESSkimData.h"
-
-jerror_t EVENTSTORE_init(JEventLoop *loop)
+void EVENTSTORE_init(JFactorySet *factorySet)
 {
-	loop->AddFactory(new JFactory<DESSkimData>());
-
-	return NOERROR;
 }
 
 
