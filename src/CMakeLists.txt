@@ -174,6 +174,7 @@ set(HALLD_RECON_SOURCES
         libraries/DANA/DANARootErrorHandler.h
         libraries/DANA/DGeometryManager.cc
         libraries/DANA/DGeometryManager.h
+        libraries/DANA/DEvent.h
 #        libraries/DANA/DApplication.cc
         libraries/DANA/DApplication.h
 #        libraries/DANA/DFactoryGenerator.cc
@@ -379,17 +380,17 @@ set(HALLD_RECON_SOURCES
         libraries/PID/DBeamPhoton.h
         libraries/PID/DBeamPhoton_factory.cc
         libraries/PID/DBeamPhoton_factory.h
-#        libraries/PID/DBeamPhoton_factory_MCGEN.cc
-#        libraries/PID/DBeamPhoton_factory_MCGEN.h
-#        libraries/PID/DBeamPhoton_factory_TAGGEDMCGEN.cc
-#        libraries/PID/DBeamPhoton_factory_TAGGEDMCGEN.h
-#        libraries/PID/DBeamPhoton_factory_TRUTH.cc
-#        libraries/PID/DBeamPhoton_factory_TRUTH.h
+        libraries/PID/DBeamPhoton_factory_MCGEN.cc
+        libraries/PID/DBeamPhoton_factory_MCGEN.h
+        libraries/PID/DBeamPhoton_factory_TAGGEDMCGEN.cc
+        libraries/PID/DBeamPhoton_factory_TAGGEDMCGEN.h
+        libraries/PID/DBeamPhoton_factory_TRUTH.cc
+        libraries/PID/DBeamPhoton_factory_TRUTH.h
         libraries/PID/DChargedTrack.h
-#        libraries/PID/DChargedTrack_factory.cc
-#        libraries/PID/DChargedTrack_factory.h
-#        libraries/PID/DChargedTrack_factory_PreSelect.cc
-#        libraries/PID/DChargedTrack_factory_PreSelect.h
+        libraries/PID/DChargedTrack_factory.cc
+        libraries/PID/DChargedTrack_factory.h
+        libraries/PID/DChargedTrack_factory_PreSelect.cc
+        libraries/PID/DChargedTrack_factory_PreSelect.h
         libraries/PID/DChargedTrackHypothesis.h
         libraries/PID/DChargedTrackHypothesis_factory.cc
         libraries/PID/DChargedTrackHypothesis_factory.h
