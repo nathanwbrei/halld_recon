@@ -96,6 +96,7 @@ void DBeamPhoton_factory::Process(const std::shared_ptr<const JEvent>& event)
     for (unsigned int ih=0; ih < tagh_hits.size(); ++ih)
     {
         if (!tagh_hits[ih]->has_fADC) continue; // Skip TDC-only hits (i.e. hits with no ADC info.)
+        if (!tagh_hits[ih]->has_TDC) continue;  // Skip fADC-only hits (i.e. hits with no TDC info.)
         DBeamPhoton *gamma = nullptr;
         for (unsigned int jh=0; jh < mData.size(); ++jh)
         {

@@ -32,7 +32,7 @@ class DTRDHit_factory:public JFactoryT<DTRDHit>{
 		void EndRun() override;						///< Called everytime run number changes, provided brun has been called.
 		void Finish();						///< Called after last event of last event source has been processed.
 
-		double t_base[2];
+		double t_base[7];
 		double pulse_peak_threshold;
 };
 

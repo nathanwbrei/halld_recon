@@ -9,6 +9,7 @@
 
 #include "DFCALGeometry_factory.h"
 #include "DFCALGeometry.h"
+#include <HDGEOMETRY/DGeometry.h>
 
 //------------------
 // BeginRun

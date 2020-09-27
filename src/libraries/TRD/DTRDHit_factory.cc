@@ -56,6 +56,9 @@ void DTRDHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 	if (calibration->Get("/TRD/Wire/timing_offsets", time_offsets[0]))
 	jout << "Error loading /TRD/Wire/timing_offsets !" << jendl;
 	*/
+	for (unsigned int i=0;i<7;i++){
+	  t_base[i]=-900.;
+	}
 
 	pulse_peak_threshold = 200;
 }
@@ -103,7 +106,7 @@ void DTRDHit_factory::Process(const std::shared_ptr<const JEvent>& event)
 	    hit->strip = digihit->strip;
  
 	    // Apply calibration constants
-	    hit->t = T;
+	    hit->t = T+t_base[digihit->plane];
 	    //hit->t = hit->t + t_base[plane] - time_offsets[plane][strip];
 
 	    hit->AddAssociatedObject(digihit);

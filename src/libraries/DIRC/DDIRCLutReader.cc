@@ -20,7 +20,7 @@ DDIRCLutReader::DDIRCLutReader(JApplication *app, unsigned int run_number)
 	/////////////////////////////////////////
 	// retrieve from LUT from file or CCDB //
 	/////////////////////////////////////////
-        const int luts = 48;
+        const int luts = DDIRCGeometry::kBars;
 
         string lut_file;
         app->SetDefaultParameter("DIRC_LUT", lut_file, "DIRC LUT root file (will eventually be moved to resource)");

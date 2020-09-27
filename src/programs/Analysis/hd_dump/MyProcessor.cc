@@ -77,6 +77,9 @@ void MyProcessor::BeginRun(const std::shared_ptr<const JEvent>& event) {
 		tosummarize.insert("DMCThrown");
 		tosummarize.insert("DMCTrajectoryPoint");
 		tosummarize.insert("DMCReaction");
+
+        tosummarize.insert("DTrigger");
+        tosummarize.insert("DEventHitStatistics");
 		
 	}else{
 		// make sure factories exist for all requested data types

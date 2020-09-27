@@ -53,6 +53,7 @@ class DCDCHit_factory: public JFactoryT<DCDCHit>{
   void EndRun() override;
   void Finish();
   
+	bool USE_CDC;  
   vector<const DTranslationTable *> ttab;
 };
 

@@ -78,12 +78,21 @@ void DCCALShower_factory::Init()
 
 void DCCALShower_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-	auto runnumber = event->GetRunNumber();
-	auto dapp = event->GetJApplication();
-	auto jcalib = dapp->GetService<JCalibrationManager>()->GetJCalibration(runnumber);
-	auto geo_manager = dapp->GetService<DGeometryManager>();
-	auto geom = geo_manager->GetDGeometry(runnumber);
+    // Only print messages for one thread whenever run number change
+    static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
+    static set<int> runs_announced;
+    pthread_mutex_lock(&print_mutex);
+    bool print_messages = false;
+    if(runs_announced.find(runnumber) == runs_announced.end()){
+        print_messages = true;
+        runs_announced.insert(runnumber);
+    }
+    pthread_mutex_unlock(&print_mutex);
 
+
+	DApplication *dapp = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+    	const DGeometry *geom = dapp->GetDGeometry(runnumber);
+	
 	if (geom) {
       	  geom->GetTargetZ(m_zTarget);
       	  geom->GetCCALPosition(m_CCALdX,m_CCALdY,m_CCALfront);
@@ -92,8 +101,6 @@ void DCCALShower_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
       	  jerr << "No geometry accessible." << endl;
       	  return; // RESOURCE_UNAVAILABLE; // TODO: Reconsider
     	}
-	
-	
 	
 	
 	//------------------------------------------------------//
@@ -121,13 +128,15 @@ void DCCALShower_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 	  ccal_profile_file = jresman->GetResource(profile_file_name["map_name"]);
 	}
 	
-	jout<<"Reading CCAL profile data from "<<ccal_profile_file<<" ..."<<endl;
+	if(print_messages)
+		jout<<"Reading CCAL profile data from "<<ccal_profile_file<<" ..."<<endl;
 	
 	// check to see if we actually have a file
 	if(ccal_profile_file.empty()) 
 	{
-	  jerr << "Empty file..." << endl;
-	  return; // RESOURCE_UNAVAILABLE; // TODO: Verify
+	  if(print_messages)
+	    jerr << "Empty file..." << endl;
+	  return RESOURCE_UNAVAILABLE;
 	}
 	
 	ifstream ccal_profile(ccal_profile_file.c_str());

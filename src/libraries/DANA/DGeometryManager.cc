@@ -35,17 +35,24 @@ DGeometryManager::~DGeometryManager() {
 
 
 DGeometry *DGeometryManager::GetDGeometry(unsigned int run_number) {
-	/// Get the DGeometry object for the specified run number. The DGeometry class is Hall-D specific. It uses the
-	/// JGeometry class from JANA to access values in the HDDS XML files. However, it supplies some useful and more
+	/// Get the DGeometry object for the specified run number.
+	/// The DGeometry class is Hall-D specific. It uses the
+	/// JGeometry class from JANA to access values in the HDDS
+	/// XML files. However, it supplies some useful and more
 	/// user friendly methods for getting at some of the values.
 	///
-	/// This will first look for the DGeometry object in a list kept internal to DGeometryManager and return a pointer to the
-	/// object if found there. If it is not found there, then a new DGeometry object will be created and added to the
+	/// This will first look for the DGeometry object in a list
+	/// kept internal to DApplication and return a pointer to the
+	/// object if found there. If it is not found there, then
+	/// a new DGeometry object will be created and added to the
 	/// internal list before returning a pointer to it.
 	///
-	/// Note that since this method can change internal data members, a mutex is locked to ensure integrity. This
-	/// means that it is <b>NOT</b> efficient to call this method for every event. The pointer should be obtained
-	/// in a brun() method and kept in a local variable if needed outside of brun().
+	/// Note that since this method can change internal data
+	/// members, a mutex is locked to ensure integrity. This
+	/// means that it is <b>NOT</b> efficient to call this
+	/// method for every event. The pointer should be obtained
+	/// in a brun() method and kept in a local variable if
+	/// needed outside of brun().
 
 	// At this point in time, only simulation exists with geometry coming
 	// from a JGeometryXML object. The run range for these objects is
@@ -56,52 +63,58 @@ DGeometry *DGeometryManager::GetDGeometry(unsigned int run_number) {
 	// built on a JGeometryFile object. If so, simply return it under the
 	// assumption we are still doing development with simulated data and
 	// a single set of geometry files.
-	{
-		std::lock_guard<std::mutex> lock(mutex);
-		if (geometries.size() == 1 && string("JGeometryXML") == geometries[0]->GetJGeometry()->className()) {
-			return geometries[0];
-		}
-	}
+	//
+	// This isn't a good assumption anymore, disabling... [sdobbs, 1 June 2020]
+	//
+	//Lock();
+	//if(geometries.size()==1 && string("JGeometryXML")==geometries[0]->GetJGeometry()->className()){
+	//	Unlock();
+	//	return geometries[0];
+	//}
+	//Unlock();
 
 	// First, get the JGeometry object using our JApplication
 	// base class. Then, use that to find the correct DGeometry
 	// object if it exists.
-	JGeometry *jgeom = app->GetService<JGeometryManager>()->GetJGeometry(run_number);
-	if (!jgeom) {
-		_DBG_ << "ERROR: Unable get geometry for run " << run_number << "!" << endl;
-		_DBG_ << "Make sure you JANA_GEOMETRY_URL environment variable is set." << endl;
-		_DBG_ << "It should be set to something like:" << endl;
-		_DBG_ << endl;
-		_DBG_ << "    xmlfile://${HALLD_RECON_HOME}/src/programs/Simulation/hdds/main_HDDS.xml" << endl;
-		_DBG_ << endl;
-		_DBG_ << "Exiting now." << endl;
-		app->Quit();
+	JGeometry *jgeom = GetJGeometry(run_number);
+	if(!jgeom){
+		_DBG_<<"ERROR: Unable get geometry for run "<<run_number<<"!"<<endl;
+		_DBG_<<"Make sure you JANA_GEOMETRY_URL environment variable is set."<<endl;
+		_DBG_<<"It should be set to something like:"<<endl;
+		_DBG_<<endl;
+		_DBG_<<"    xmlfile://${HALLD_RECON_HOME}/src/programs/Simulation/hdds/main_HDDS.xml"<<endl;
+		_DBG_<<endl;
+		_DBG_<<"Exiting now."<<endl;
+		Quit();
 		exit(-1);
+		return NULL;
 	}
 
-	{
-		std::lock_guard<std::mutex> lock(mutex);
 
-		for (unsigned int i = 0; i < geometries.size(); i++) {
-			if (geometries[i]->GetJGeometry() == jgeom) {
-				DGeometry *dgeom = geometries[i];
-				return dgeom;
-			}
+	Lock();
+
+	for(unsigned int i=0; i<geometries.size(); i++){
+		if(geometries[i]->GetJGeometry() == jgeom){
+			DGeometry *dgeom = geometries[i];
+			Unlock();
+			return dgeom;
 		}
-
-		jout << "Creating DGeometry:" << endl;
-		jout << "  Run requested:" << jgeom->GetRunRequested() << "  found:" << jgeom->GetRunFound() << endl;
-		jout << "  Run validity range: " << jgeom->GetRunMin() << "-" << jgeom->GetRunMax() << endl;
-		jout << "  URL=\"" << jgeom->GetURL() << "\"" << "  context=\"" << jgeom->GetContext() << "\"" << endl;
-		jout << "  Type=\"" << jgeom->className() << "\"" << endl;
-
-		// Couldn't find a DGeometry object that uses this JGeometry object.
-		// Create one and add it to the list.
-		DGeometry *dgeom = new DGeometry(jgeom, this, app, run_number);
-		geometries.push_back(dgeom);
-		return dgeom;
 	}
 
+	jout<<"Creating DGeometry:"<<endl;
+	jout<<"  Run requested:"<<jgeom->GetRunRequested()<<"  found:"<<jgeom->GetRunFound()<<endl;
+	jout<<"  Run validity range: "<<jgeom->GetRunMin()<<"-"<<jgeom->GetRunMax()<<endl;
+	jout<<"  URL=\""<<jgeom->GetURL()<<"\""<<"  context=\""<<jgeom->GetContext()<<"\""<<endl;
+	jout<<"  Type=\""<<jgeom->className()<<"\""<<endl;
+
+	// Couldn't find a DGeometry object that uses this JGeometry object.
+	// Create one and add it to the list.
+	DGeometry *dgeom = new DGeometry(jgeom, this, run_number);
+	geometries.push_back(dgeom);
+
+	Unlock();
+
+	return dgeom;
 }
 
 

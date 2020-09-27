@@ -24,6 +24,10 @@ static double DIGI_THRESHOLD = -1.0e8;
 void DCDCHit_factory::Init()
 {
 
+  USE_CDC=true; 
+  gPARMS->SetDefaultParameter("CDC:ENABLE",USE_CDC);
+  if (USE_CDC==false) return RESOURCE_UNAVAILABLE;
+  
   LowTCut = -10000.;
   HighTCut = 10000.;
 
@@ -63,12 +67,10 @@ void DCDCHit_factory::Init()
 //------------------
 void DCDCHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
+  if (USE_CDC==false) return RESOURCE_UNAVAILABLE;
 
-  auto event_number = event->GetEventNumber();
-  auto run_number = event->GetRunNumber();
-  auto app = GetApplication();
-  auto calibration = app->GetService<JCalibrationManager>()->GetJCalibration(run_number);
-
+  /// Read in calibration constants
+  
   vector<double> cdc_timing_cuts;
   
   if (calibration->Get("/CDC/timing_cut", cdc_timing_cuts)){
@@ -100,8 +102,9 @@ void DCDCHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 //------------------
 // Process
 //------------------
-void DCDCHit_factory::Process(const std::shared_ptr<const JEvent>& event)
-{
+jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
+{ 
+  if (USE_CDC==false) return RESOURCE_UNAVAILABLE;
  
   // Clear _data vector
   mData.clear();

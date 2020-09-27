@@ -214,7 +214,7 @@ void DTOFHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
       
     case 1:  // walk corrections based on Integral values
       {
-	cout<<"TOF: USE WALK CORRECTION TYPE 1"<<endl;
+	if(print_messages) jout<<"TOF: USE WALK CORRECTION TYPE 1"<<endl;
 	string locTOFTimewalkTable = tofGeom.Get_CCDB_DirectoryName() + "/timewalk_parms";
 	if(calibration->Get(locTOFTimewalkTable.c_str(), timewalk_parameters)){
 	  jout << "Error loading "<<locTOFTimewalkTable<<" !" << jendl;
@@ -228,7 +228,7 @@ void DTOFHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 
     case 2:  // walk correction based on peak Amplitudes single function 
       {
-	cout<<"TOF: USE WALK CORRECTION TYPE 2"<<endl;
+	if(print_messages) jout<<"TOF: USE WALK CORRECTION TYPE 2"<<endl;
 	USE_AMP_4WALKCORR = 1;
 	string locTOFTimewalkAMPTable = tofGeom.Get_CCDB_DirectoryName() + "/timewalk_parms_AMP";
 	if(calibration->Get(locTOFTimewalkAMPTable.c_str(), timewalk_parameters_AMP)){
@@ -243,7 +243,7 @@ void DTOFHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
       
     case 3:
       {
-	cout<<"TOF: USE WALK CORRECTION TYPE 3"<<endl;
+	if(print_messages) jout<<"TOF: USE WALK CORRECTION TYPE 3"<<endl;
 	USE_NEWAMP_4WALKCORR = 1;
 	string locTOFChanOffsetNEWAMPTable = tofGeom.Get_CCDB_DirectoryName() + "/timing_offsets_NEWAMP";
 	if(calibration->Get(locTOFChanOffsetNEWAMPTable.c_str(), raw_tdc_offsets)) {
@@ -258,7 +258,7 @@ void DTOFHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 
     case 4:
       {
-	cout<<"TOF: USE WALK CORRECTION TYPE 4"<<endl;
+	if(print_messages) jout<<"TOF: USE WALK CORRECTION TYPE 4"<<endl;
 	USE_NEW_WALK_NEW = 1;
 	string locTOFTimewalkNEWTable = tofGeom.Get_CCDB_DirectoryName() + "/timewalk_parms_5PAR";
 	if(calibration->Get(locTOFTimewalkNEWTable.c_str(), timewalk_parameters_5PAR)){

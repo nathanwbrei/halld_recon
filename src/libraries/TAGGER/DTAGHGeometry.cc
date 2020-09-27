@@ -27,14 +27,25 @@ using std::string;
 
 const unsigned int DTAGHGeometry::kCounterCount = 274;
 
+// Only print messages for one thread whenever run number change
+static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
+static set<int> runs_announced;
+    
+
 //---------------------------------
 // DTAGHGeometry    (Constructor)
 //---------------------------------
 DTAGHGeometry::DTAGHGeometry(const std::shared_ptr<const JEvent>& event)
 {
-   auto run_number = event->GetRunNumber();
-   auto app = event->GetJApplication();
-   auto calibration = app->GetService<JCalibrationManager>()->GetJCalibration(run_number);
+   // keep track of which runs we print out messages for
+   int32_t runnumber = loop->GetJEvent().GetRunNumber();
+   pthread_mutex_lock(&print_mutex);
+   bool print_messages = false;
+   if(runs_announced.find(runnumber) == runs_announced.end()){
+	  print_messages = true;
+	  runs_announced.insert(runnumber);
+   }
+   pthread_mutex_unlock(&print_mutex);
 
    /* read tagger set endpoint energy from calibdb */
    std::map<string,double> result1;
@@ -69,7 +80,6 @@ DTAGHGeometry::DTAGHGeometry(const std::shared_ptr<const JEvent>& event)
       }
    }
 
-
    int status = 0;
    m_endpoint_energy_calib_GeV = 0.;
    
@@ -86,7 +96,8 @@ DTAGHGeometry::DTAGHGeometry(const std::shared_ptr<const JEvent>& event)
      } else {
        m_endpoint_energy_calib_GeV  = result3["TAGGER_CALIB_ENERGY"];
 
-       printf(" Correct Beam Photon Energy  (TAGH)   %f \n\n", m_endpoint_energy_calib_GeV);
+	   if(print_messages)
+       	  jout << " Correct Beam Photon Energy (TAGH) = " << m_endpoint_energy_calib_GeV << " (GeV)" << std::endl;
 
      }
    }
