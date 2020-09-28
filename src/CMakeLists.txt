@@ -395,19 +395,19 @@ set(HALLD_RECON_SOURCES
         libraries/PID/DChargedTrackHypothesis_factory.cc
         libraries/PID/DChargedTrackHypothesis_factory.h
         libraries/PID/DDetectorMatches.h
-#        libraries/PID/DDetectorMatches_factory.cc
-#        libraries/PID/DDetectorMatches_factory.h
-#        libraries/PID/DDetectorMatches_factory_WireBased.cc
-#        libraries/PID/DDetectorMatches_factory_WireBased.h
+        libraries/PID/DDetectorMatches_factory.cc
+        libraries/PID/DDetectorMatches_factory.h
+        libraries/PID/DDetectorMatches_factory_WireBased.cc
+        libraries/PID/DDetectorMatches_factory_WireBased.h
         libraries/PID/DEventRFBunch.h
-#        libraries/PID/DEventRFBunch_factory.cc
-#        libraries/PID/DEventRFBunch_factory.h
-#        libraries/PID/DEventRFBunch_factory_Calibrations.cc
+        libraries/PID/DEventRFBunch_factory.cc
+        libraries/PID/DEventRFBunch_factory.h
+#        libraries/PID/DEventRFBunch_factory_Calibrations.cc  # Depends on ANALYSIS everything
 #        libraries/PID/DEventRFBunch_factory_Calibrations.h
-#        libraries/PID/DEventRFBunch_factory_CalorimeterOnly.cc
-#        libraries/PID/DEventRFBunch_factory_CalorimeterOnly.h
-#        libraries/PID/DEventRFBunch_factory_Thrown.cc
-#        libraries/PID/DEventRFBunch_factory_Thrown.h
+        libraries/PID/DEventRFBunch_factory_CalorimeterOnly.cc
+        libraries/PID/DEventRFBunch_factory_CalorimeterOnly.h
+        libraries/PID/DEventRFBunch_factory_Thrown.cc
+        libraries/PID/DEventRFBunch_factory_Thrown.h
         libraries/PID/DKinematicData.h
         libraries/PID/DKinematicPools.cc
         libraries/PID/DMCReaction.h
