@@ -411,25 +411,25 @@ set(HALLD_RECON_SOURCES
         libraries/PID/DKinematicData.h
         libraries/PID/DKinematicPools.cc
         libraries/PID/DMCReaction.h
-#        libraries/PID/DMCThrown_factory_Decaying.cc
+#        libraries/PID/DMCThrown_factory_Decaying.cc   # Depends on ANALYSIS everything
 #        libraries/PID/DMCThrown_factory_Decaying.h
-#        libraries/PID/DMCThrown_factory_FinalState.cc
+#        libraries/PID/DMCThrown_factory_FinalState.cc  # Depends on ANALYSIS everything
 #        libraries/PID/DMCThrown_factory_FinalState.h
 #        libraries/PID/DMCThrown_factory_Primary.cc
-#        libraries/PID/DMCThrown_factory_Primary.h
+#        libraries/PID/DMCThrown_factory_Primary.h  # ANALYSIS
         libraries/PID/DNeutralParticle.h
-#        libraries/PID/DNeutralParticle_factory.cc
-#        libraries/PID/DNeutralParticle_factory.h
-#        libraries/PID/DNeutralParticle_factory_PreSelect.cc
-#        libraries/PID/DNeutralParticle_factory_PreSelect.h
+        libraries/PID/DNeutralParticle_factory.cc
+        libraries/PID/DNeutralParticle_factory.h
+        libraries/PID/DNeutralParticle_factory_PreSelect.cc
+        libraries/PID/DNeutralParticle_factory_PreSelect.h
         libraries/PID/DNeutralParticleHypothesis.h
         libraries/PID/DNeutralParticleHypothesis_factory.cc
         libraries/PID/DNeutralParticleHypothesis_factory.h
         libraries/PID/DNeutralShower.h
-#        libraries/PID/DNeutralShower_factory.cc
-#        libraries/PID/DNeutralShower_factory.h
-#        libraries/PID/DNeutralShower_factory_PreSelect.cc
-#        libraries/PID/DNeutralShower_factory_PreSelect.h
+        libraries/PID/DNeutralShower_factory.cc
+        libraries/PID/DNeutralShower_factory.h
+        libraries/PID/DNeutralShower_factory_PreSelect.cc
+        libraries/PID/DNeutralShower_factory_PreSelect.h
 #        libraries/PID/DNeutralShower_FCALQualityMLP.h
         libraries/PID/DParticleID.cc
         libraries/PID/DParticleID.h
