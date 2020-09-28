@@ -430,18 +430,18 @@ set(HALLD_RECON_SOURCES
         libraries/PID/DNeutralShower_factory.h
         libraries/PID/DNeutralShower_factory_PreSelect.cc
         libraries/PID/DNeutralShower_factory_PreSelect.h
-#        libraries/PID/DNeutralShower_FCALQualityMLP.h
+        libraries/PID/DNeutralShower_FCALQualityMLP.h
         libraries/PID/DParticleID.cc
         libraries/PID/DParticleID.h
-#        libraries/PID/DParticleID_factory.h
-#        libraries/PID/DParticleID_factory_PID1.h
-#        libraries/PID/DParticleID_PID1.cc
-#        libraries/PID/DParticleID_PID1.h
+        libraries/PID/DParticleID_factory.h
+        libraries/PID/DParticleID_factory_PID1.h
+        libraries/PID/DParticleID_PID1.cc
+        libraries/PID/DParticleID_PID1.h
         libraries/PID/DVertex.h
-#        libraries/PID/DVertex_factory.cc
-#        libraries/PID/DVertex_factory.h
-#        libraries/PID/DVertex_factory_THROWN.cc
-#        libraries/PID/DVertex_factory_THROWN.h
+#        libraries/PID/DVertex_factory.cc  # ANALYSIS
+#        libraries/PID/DVertex_factory.h   # ANALYSIS
+        libraries/PID/DVertex_factory_THROWN.cc
+        libraries/PID/DVertex_factory_THROWN.h
 #        libraries/PID/PID_init.cc
 
 

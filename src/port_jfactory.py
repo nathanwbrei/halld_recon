@@ -77,6 +77,7 @@ def main():
     r.add(re.compile(r'#include <JANA/jerror\.h>\n'), ''),
 
     r.add(re.compile(r'gPARMS'), 'app'),
+    r.add(re.compile(r'JObject::oid'), 'oid'),
 
     r.add(re.compile(r'// init'), '// Init')
     r.add(re.compile(r'// brun'), '// BeginRun')

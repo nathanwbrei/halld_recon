@@ -59,7 +59,8 @@ class DParticleID: public JObject
 	public:
 		JOBJECT_PUBLIC(DParticleID);
 
-		void Init(const std::shared_ptr<const JEvent> &loop);
+		DParticleID(const std::shared_ptr<const JEvent> &event);
+		virtual ~DParticleID() = default;
 
 		class dedx_t
 		{

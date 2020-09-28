@@ -37,9 +37,9 @@ bool static DParticleID_hypothesis_cmp(const DTrackTimeBased *a,
 
 
 //---------------------------------
-// Init
+// Constructor
 //---------------------------------
-void DParticleID::Init(const std::shared_ptr<const JEvent>& event)
+DParticleID::DParticleID(const std::shared_ptr<const JEvent>& event)
 {
   auto event_number = event->GetEventNumber();
   auto run_number = event->GetRunNumber();

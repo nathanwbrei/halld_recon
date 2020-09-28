@@ -7,14 +7,13 @@
 #include <iostream>
 #include <set>
 
-#include "JANA/JObject.h"
-#include "JANA/JEventLoop.h"
-#include "JANA/JFactory.h"
+#include <JANA/JObject.h>
+#include <JANA/JEvent.h>
+#include <JANA/JFactory.h>
 #include "particleType.h"
 #include "ANALYSIS/DReactionStep.h"
 
 using namespace std;
-using namespace jana;
 using namespace DAnalysis;
 
 namespace DAnalysis
