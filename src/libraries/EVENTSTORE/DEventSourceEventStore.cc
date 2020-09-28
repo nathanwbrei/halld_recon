@@ -15,7 +15,6 @@
 
 using namespace std;
 
-#include <DANA/DApplication.h>
 #include <DANA/DStatusBits.h>
 
 #include <TRandom3.h>
@@ -41,8 +40,18 @@ static bool TEST_MODE = false;
 //---------------------------------
 // DEventSourceEventStore    (Constructor)
 //---------------------------------
-DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSource(source_name)
-{
+DEventSourceEventStore::DEventSourceEventStore(std::string source_name):JEventSource(source_name) {
+	SetTypeName("DEventSourceEventStore");
+}
+
+//---------------------------------
+// Open
+//---------------------------------
+void DEventSourceEventStore::Open() {
+
+	auto app = GetApplication();
+	auto source_name = GetResourceName();
+
 	// initialize data members
 	es_data_loaded = false;
 	event_source = NULL;
@@ -71,11 +80,11 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 	// priority:  JANA command line -> environment variable -> default
 	if(getenv("EVENTSTORE_CONNECTION") != NULL)
 		esdb_connection = getenv("EVENTSTORE_CONNECTION");
-	gPARMS->SetDefaultParameter("ESDB:DB_CONNECTION", esdb_connection,
+	app->SetDefaultParameter("ESDB:DB_CONNECTION", esdb_connection,
 								"Specification of EventStore DB connection.");
 	
 	int test_mode_flag = 0;
-	gPARMS->SetDefaultParameter("ESDB:TEST_MODE", test_mode_flag,
+	app->SetDefaultParameter("ESDB:TEST_MODE", test_mode_flag,
 								"Toggle test mode features");
 	if(test_mode_flag != 0) {
 		TEST_MODE = true;
@@ -260,26 +269,25 @@ DEventSourceEventStore::~DEventSourceEventStore()
 //---------------------------------
 // GetEvent
 //---------------------------------
-jerror_t DEventSourceEventStore::GetEvent(JEvent &event)
+void DEventSourceEventStore::GetEvent(std::shared_ptr<JEvent> event)
 {
 
 	// FOR DEBUGGING - EMIT EVENTS FOREVER
 	if(TEST_MODE) {
 		// output some fake event with skim information
-    	event.SetEventNumber(1);
-    	event.SetRunNumber(10000);
-    	event.SetJEventSource(this);
+    	event->SetEventNumber(1);
+    	event->SetRunNumber(10000);
+    	event->SetJEventSource(this);
    		//event.SetRef(NULL);
-    	event.SetStatusBit(kSTATUS_FROM_FILE);
-    	event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
+    	event->SetStatusBit(kSTATUS_FROM_FILE);
+    	event->SetStatusBit(kSTATUS_PHYSICS_EVENT);
 
 		DEventStoreEvent *the_es_event = new DEventStoreEvent();
-		event.SetRef(the_es_event);
+		event->SetRef(the_es_event);
 		for(int i=0; i<4; i++)
 			if(gRandom->Uniform() < 0.5)
 				the_es_event->Add_Skim(skim_list[i]);
-
-		return NOERROR;
+		return; // NOERROR
 	}
 	
 	// make sure the file is open
@@ -316,16 +324,16 @@ jerror_t DEventSourceEventStore::GetEvent(JEvent &event)
 		}
 	}
 	
-	return NOERROR;
+	return; // NOERROR;
 }
 
 //---------------------------------
 // FreeEvent
 //---------------------------------
-void DEventSourceEventStore::FreeEvent(JEvent &event)
+void DEventSourceEventStore::FinishEvent(JEvent &event)
 {
 	if(event_source != NULL)
-		event_source->FreeEvent(event);
+		event_source->FinishEvent(event);
 }
 
 //---------------------------------

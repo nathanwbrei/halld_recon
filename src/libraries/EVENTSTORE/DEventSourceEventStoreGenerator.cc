@@ -36,9 +36,17 @@ DEventSourceEventStoreGenerator::~DEventSourceEventStoreGenerator()
 }
 
 //---------------------------------
-// Description
+// GetType
 //---------------------------------
-const char* DEventSourceEventStoreGenerator::Description(void)
+std::string DEventSourceEventStoreGenerator::GetType()
+{
+	return "EventStore";
+}
+
+//---------------------------------
+// GetDescription
+//---------------------------------
+std::string DEventSourceEventStoreGenerator::GetDescription()
 {
 	return "EventStore";
 }
@@ -57,5 +65,5 @@ double DEventSourceEventStoreGenerator::CheckOpenable(string source)
 //---------------------------------
 JEventSource* DEventSourceEventStoreGenerator::MakeJEventSource(string source)
 {
-	return new DEventSourceEventStore(source.c_str());
+	return new DEventSourceEventStore(source);
 }

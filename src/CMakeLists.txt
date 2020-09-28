@@ -23,6 +23,7 @@ endif()
 
 set(HDDS_INCLUDE_DIR /Users/nbrei/src/hdds/build/src)
 set(HDDS_LIBRARY /Users/nbrei/src/hdds/build/lib/libhdds.so)
+set(MYSQL_INCLUDE_DIR /usr/local/include/mysql)
 
 file(GLOB DAQ_SOURCES ${PROJECT_SOURCE_DIR}/libraries/DAQ/*.cc)
 file(GLOB DAQ_HEADERS ${PROJECT_SOURCE_DIR}/libraries/DAQ/*.h)
@@ -265,9 +266,16 @@ set(HALLD_RECON_SOURCES
         libraries/DIRC/DDIRCTruthPmtHit.h
         libraries/DIRC/DIRC_init.cc
 
-
+        libraries/EVENTSTORE/DESDBProvider.h
+#        libraries/EVENTSTORE/DESDBProviderMySQL.cc  # mysql.h
+        libraries/EVENTSTORE/DESDBProviderMySQL.h
         libraries/EVENTSTORE/DESSkimData.h
-
+#        libraries/EVENTSTORE/DEventSourceEventStore.cc
+        libraries/EVENTSTORE/DEventSourceEventStore.h
+#        libraries/EVENTSTORE/DEventSourceEventStoreGenerator.cc
+        libraries/EVENTSTORE/DEventSourceEventStoreGenerator.h
+        libraries/EVENTSTORE/DEventStoreEvent.h
+#        libraries/EVENTSTORE/EVENTSTORE_init.cc
 
         libraries/FCAL/DFCALCluster.cc
         libraries/FCAL/DFCALCluster.h
@@ -698,9 +706,9 @@ add_executable(halld_recon
 
 
 target_include_directories(halld_recon PRIVATE libraries libraries/include src/include
-        ${CCDB_INCLUDE_DIRS} ${ROOT_INCLUDE_DIRS} ${JANA_INCLUDE_DIR} ${EVIO_INCLUDE_DIR} ${HDDS_INCLUDE_DIR})
+        ${CCDB_INCLUDE_DIRS} ${ROOT_INCLUDE_DIRS} ${JANA_INCLUDE_DIR} ${EVIO_INCLUDE_DIR} ${HDDS_INCLUDE_DIR} ${MYSQL_INCLUDE_DIR})
 
 message(WARN ${EVIO_LIBS})
-target_link_libraries(halld_recon ${JANA_LIBRARY} ${EVIO_LIBS} ${EXPAT_LIBRARY} ${ROOT_LIBRARIES} ${HDDS_LIBRARY})
+target_link_libraries(halld_recon ${JANA_LIBRARY} ${EVIO_LIBS} ${EXPAT_LIBRARY} ${ROOT_LIBRARIES} ${HDDS_LIBRARY} ${MYSQL_LIB})
 
 
