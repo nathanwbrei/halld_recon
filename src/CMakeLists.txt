@@ -288,20 +288,31 @@ set(HALLD_RECON_SOURCES
         libraries/FCAL/DFCALTruthShower.h
         libraries/FCAL/FCAL_init.cc
 
-
-        libraries/FDC/DFDCCathodeDigiHit.h
-        libraries/FDC/DFDCWireDigiHit.h
-        libraries/FDC/DFDCSegment.h
-        libraries/FDC/DFDCGeometry.h
-        libraries/FDC/DFDCGeometry.cc
-        libraries/FDC/DFDCIntersection.h
-        libraries/FDC/DFDCHit.h
+        libraries/FDC/DFDCCathode.h
         libraries/FDC/DFDCCathodeCluster.h
+        libraries/FDC/DFDCCathodeCluster_factory.cc
+        libraries/FDC/DFDCCathodeCluster_factory.h
+        libraries/FDC/DFDCCathodeDigiHit.h
+        libraries/FDC/DFDCGeometry.cc
+        libraries/FDC/DFDCGeometry.h
+        libraries/FDC/DFDCHit.h
+        libraries/FDC/DFDCHit_factory.cc
+        libraries/FDC/DFDCHit_factory.h
+        libraries/FDC/DFDCIntersection.h
+        libraries/FDC/DFDCIntersection_factory.cc
+        libraries/FDC/DFDCIntersection_factory.h
         libraries/FDC/DFDCPseudo.h
-        libraries/FDC/DFDCSegment_factory.cc
-        libraries/FDC/DFDCSegment_factory.h
         libraries/FDC/DFDCPseudo_factory.cc
         libraries/FDC/DFDCPseudo_factory.h
+        libraries/FDC/DFDCPseudo_factory_WIRESONLY.cc
+        libraries/FDC/DFDCPseudo_factory_WIRESONLY.h
+        libraries/FDC/DFDCSegment.h
+        libraries/FDC/DFDCSegment_factory.cc
+        libraries/FDC/DFDCSegment_factory.h
+        libraries/FDC/DFDCWire.h
+        libraries/FDC/DFDCWireDigiHit.h
+        libraries/FDC/FDC_init.cc
+
 
         libraries/FMWPC/DFMWPCTruthHit.h
         libraries/FMWPC/DFMWPCHit.h

@@ -5,7 +5,7 @@
 // Date: Apr 2006
 //***********************************************
 
-#include <JANA/JEventLoop.h>
+#include <JANA/JFactorySet.h>
 
 #include "DFDCHit_factory.h"
 #include "DFDCPseudo_factory.h"
