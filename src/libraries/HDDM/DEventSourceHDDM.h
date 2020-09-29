@@ -21,8 +21,8 @@ using namespace std;
 #include <pthread.h>
 
 #include <JANA/JEventSource.h>
-#include <JANA/jerror.h>
-#include <JANA/JCalibration.h>
+#include <JANA/Compatibility/jerror.h>
+#include <JANA/Calibrations/JCalibration.h>
 
 #include <HDDM/hddm_s.hpp>
 

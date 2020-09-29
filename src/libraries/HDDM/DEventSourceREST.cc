@@ -10,8 +10,7 @@
 #include <fstream>
 #include <climits>
 
-#include <JANA/JFactory_base.h>
-#include <JANA/JEventLoop.h>
+#include <JANA/JFactory.h>
 #include <JANA/JEvent.h>
 #include <DANA/DStatusBits.h>
 

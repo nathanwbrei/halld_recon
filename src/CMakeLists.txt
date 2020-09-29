@@ -326,6 +326,25 @@ set(HALLD_RECON_SOURCES
         libraries/FMWPC/DFMWPCHit.h
         libraries/FMWPC/FMWPC_init.cc
 
+        libraries/HDDM/DEventHitStatistics.h
+        libraries/HDDM/DEventHitStatistics_factory.cc
+        libraries/HDDM/DEventHitStatistics_factory.h
+#        libraries/HDDM/DEventSourceHDDM.cc
+#        libraries/HDDM/DEventSourceHDDM.h
+#        libraries/HDDM/DEventSourceHDDMGenerator.cc
+#        libraries/HDDM/DEventSourceHDDMGenerator.h
+#        libraries/HDDM/DEventSourceREST.cc
+#        libraries/HDDM/DEventSourceREST.h
+#        libraries/HDDM/DEventSourceRESTGenerator.cc
+#        libraries/HDDM/DEventSourceRESTGenerator.h
+#        libraries/HDDM/DEventWriterHDDM.cc
+#        libraries/HDDM/DEventWriterHDDM.h
+#        libraries/HDDM/DEventWriterHDDM_factory.h
+#        libraries/HDDM/DEventWriterREST.cc
+#        libraries/HDDM/DEventWriterREST.h
+#        libraries/HDDM/DEventWriterREST_factory.h
+#        libraries/HDDM/DMatrixPools.cc
+
         libraries/HDGEOMETRY/DGeometry.cc
         libraries/HDGEOMETRY/DGeometry.h
         libraries/HDGEOMETRY/DLorentzDeflections.cc

@@ -9,12 +9,12 @@
 #define _DEventSourceHDDMGenerator_
 
 #include <JANA/JEventSourceGenerator.h>
-using namespace jana;
 
 class DEventSourceHDDMGenerator:public JEventSourceGenerator{
 	public:
 		DEventSourceHDDMGenerator(){}
 		~DEventSourceHDDMGenerator(){}
+
 		const char* className(void){return static_className();}
 		static const char* static_className(void){return "DEventSourceHDDMGenerator";}
 		
