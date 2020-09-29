@@ -19,7 +19,7 @@ class Replacement:
 
         with open(filename, 'w') as f:
             f.write(contents)
-            print(contents)
+            # print(contents)
 
 
 def main():
@@ -27,7 +27,10 @@ def main():
 
     r.add(re.compile(r'jana::'), '')
 
-    r.add(re.compile(r'#include <JANA/JEventLoop.h>'), '')
+    r.add(re.compile(r'#include <JANA/JEventLoop\.h>'), '#include <JANA/JEvent.h>')
+    r.add(re.compile(r'#include "JANA/JEventLoop\.h"'), '#include <JANA/JEvent.h>')
+
+    r.add(re.compile(r'#include <JANA/JFactory.h>'), r'#include <JANA/JFactoryT.h>')
 
     r.add(re.compile(r'return NOERROR;'), 'return;')
 
@@ -37,28 +40,21 @@ def main():
 
     r.add(re.compile(r"JFactory<([a-zA-Z_0-9]+)>"), r'JFactoryT<\1>')
 
-    r.add(re.compile(r'#include <JANA/JFactory.h>'), r'#include <JANA/JFactoryT.h>')
+    r.add(re.compile(r'jerror_t init\(void\);[^\n]+\n'), 'void Init() override;\n')
+    r.add(re.compile(r'jerror_t init\(\);[^\n]+\n'), 'void Init() override;\n')
 
-    r.add(re.compile(r'jerror_t init'), r'void Init')
+    r.add(re.compile(r'jerror_t brun\(JEventLoop \*[a-zA-Z_]+, int32_t runnumber\);[^\n]+\n'),
+          'void BeginRun(const std::shared_ptr<const JEvent>& event) override;\n')
 
-    r.add(re.compile(r'jerror_t init\(void\);'), r'void Init() override;')
+    r.add(re.compile(r'jerror_t evnt\(JEventLoop \*[a-zA-Z_]+, uint64_t [a-zA-Z_]+\);[^\n]+\n'),
+          'void Process(const std::shared_ptr<const JEvent>& event) override;\n')
 
-    r.add(re.compile(r'_data\.push_back\(([a-zA-Z_]+)\);'), r'Insert(\1);')
-
-    r.add(re.compile(r'jerror_t brun\(JEventLoop \*[a-zA-Z]+, int32_t runnumber\);'),
-          r'void BeginRun(const std::shared_ptr<const JEvent>& event) override;')
-
-    r.add(re.compile(r'jerror_t evnt\(JEventLoop \*[a-zA-Z_]+, uint64_t [a-zA-Z_]+\);'),
-          r'void Process(const std::shared_ptr<const JEvent>& event) override;')
+    r.add(re.compile(r'jerror_t erun\(void\);[^\n]+\n'), 'void EndRun() override;\n')
+    r.add(re.compile(r'jerror_t fini\(void\);[^\n]+\n'), 'void Finish() override;\n')
 
     r.add(re.compile(r'jerror_t brun'), r'void BeginRun')
-
     r.add(re.compile(r'jerror_t evnt'), r'void Process')
     r.add(re.compile(r'jerror_t erun'), r'void EndRun')
-
-    r.add(re.compile(r'jerror_t erun\(void\);'), r'void EndRun() override;')
-
-    r.add(re.compile(r'jerror_t fini\(void\);'), r'void Finish();')
 
     r.add(re.compile(r'jerror_t ([a-zA-Z_0-9]+)::init\(void\)'), r'void \1::Init()')
 
@@ -72,30 +68,35 @@ def main():
 
     r.add(re.compile(r'jerror_t ([a-zA-Z_0-9]+)::fini\(void\)'), r'void \1::Finish()'),
 
-    r.add(re.compile(r'using namespace jana;'), ''),
+    r.add(re.compile(r'using namespace jana;\n'), ''),
 
-    r.add(re.compile(r'#include <JANA/jerror\.h>\n'), ''),
+    r.add(re.compile(r'#include <JANA/jerror\.h>'), r'#include <JANA/Compatibility/jerror\.h>'),
 
     r.add(re.compile(r'gPARMS'), 'app'),
     r.add(re.compile(r'JObject::oid'), 'oid'),
+
+    r.add(re.compile(r'_data\.push_back\(([a-zA-Z_]+)\);'), r'Insert(\1);')
 
     r.add(re.compile(r'// init'), '// Init')
     r.add(re.compile(r'// brun'), '// BeginRun')
     r.add(re.compile(r'// evnt'), '// Process')
     r.add(re.compile(r'// erun'), '// EndRun')
     r.add(re.compile(r'// fini'), '// Finish')
-    r.add(re.compile(r'locEventLoop'), 'event')
+
+    r.add(re.compile(r'locEventLoop'), 'locEvent')
     r.add(re.compile(r'event->GetCalib'), 'calibration->Get')
+    r.add(re.compile(r'locEvent->GetCalib'), 'calibration->Get')   # TODO: Consider reversing this
+
+    r.add(re.compile(r'const char\* Tag\(void\){return \"([a-zA-Z_]+)\";}'), r'SetTag("\1")')
 
     r.add(re.compile(r'JEventLoop\*'), 'const std::shared_ptr<const JEvent>&')
     r.add(re.compile(r'JEventLoop \*'), 'const std::shared_ptr<const JEvent>& ')
-    r.add(re.compile(r'Tag'), '~~~~Tag~~~~')
     r.add(re.compile(r'dapp->Lock();'), 'root_lock->acquire_write_lock();')
     r.add(re.compile(r'dapp->Unlock();'), 'root_lock->release_lock();')
 
-
-    filename = sys.argv[1]
-    r.process(filename)
+    for filename in sys.argv[1:]:
+        print("Porting " + filename)
+        r.process(filename)
 
 
 if __name__ == '__main__':
