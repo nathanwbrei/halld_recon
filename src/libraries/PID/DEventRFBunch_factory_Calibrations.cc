@@ -90,10 +90,12 @@ void DEventRFBunch_factory_Calibrations::Process(const std::shared_ptr<const JEv
 	}
 
 	if(!locHitFoundFlag)
-		return Create_NaNRFBunch();
+		Create_NaNRFBunch();
+		return; // TODO: NWB: Verify
 
 	//Select RF Bunch:
-	return Select_RFBunch(event, locTrackWireBasedVector, locRFTime);
+	Select_RFBunch(event, locTrackWireBasedVector, locRFTime);
+	return; // TODO: Verify
 }
 
 void DEventRFBunch_factory_Calibrations::Select_GoodTracks(const std::shared_ptr<const JEvent>& event, vector<const DTrackWireBased*>& locSelectedWireBasedTracks) const

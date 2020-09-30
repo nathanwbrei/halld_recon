@@ -440,8 +440,8 @@ set(HALLD_RECON_SOURCES
         libraries/PID/DEventRFBunch.h
         libraries/PID/DEventRFBunch_factory.cc
         libraries/PID/DEventRFBunch_factory.h
-#        libraries/PID/DEventRFBunch_factory_Calibrations.cc  # Depends on ANALYSIS everything
-#        libraries/PID/DEventRFBunch_factory_Calibrations.h
+        libraries/PID/DEventRFBunch_factory_Calibrations.cc
+        libraries/PID/DEventRFBunch_factory_Calibrations.h
         libraries/PID/DEventRFBunch_factory_CalorimeterOnly.cc
         libraries/PID/DEventRFBunch_factory_CalorimeterOnly.h
         libraries/PID/DEventRFBunch_factory_Thrown.cc
@@ -449,12 +449,12 @@ set(HALLD_RECON_SOURCES
         libraries/PID/DKinematicData.h
         libraries/PID/DKinematicPools.cc
         libraries/PID/DMCReaction.h
-#        libraries/PID/DMCThrown_factory_Decaying.cc   # Depends on ANALYSIS everything
-#        libraries/PID/DMCThrown_factory_Decaying.h
-#        libraries/PID/DMCThrown_factory_FinalState.cc  # Depends on ANALYSIS everything
-#        libraries/PID/DMCThrown_factory_FinalState.h
-#        libraries/PID/DMCThrown_factory_Primary.cc
-#        libraries/PID/DMCThrown_factory_Primary.h  # ANALYSIS
+        libraries/PID/DMCThrown_factory_Decaying.cc
+        libraries/PID/DMCThrown_factory_Decaying.h
+        libraries/PID/DMCThrown_factory_FinalState.cc
+        libraries/PID/DMCThrown_factory_FinalState.h
+        libraries/PID/DMCThrown_factory_Primary.cc
+        libraries/PID/DMCThrown_factory_Primary.h
         libraries/PID/DNeutralParticle.h
         libraries/PID/DNeutralParticle_factory.cc
         libraries/PID/DNeutralParticle_factory.h
@@ -476,11 +476,11 @@ set(HALLD_RECON_SOURCES
         libraries/PID/DParticleID_PID1.cc
         libraries/PID/DParticleID_PID1.h
         libraries/PID/DVertex.h
-#        libraries/PID/DVertex_factory.cc  # ANALYSIS
-#        libraries/PID/DVertex_factory.h   # ANALYSIS
+        libraries/PID/DVertex_factory.cc
+        libraries/PID/DVertex_factory.h
         libraries/PID/DVertex_factory_THROWN.cc
         libraries/PID/DVertex_factory_THROWN.h
-#        libraries/PID/PID_init.cc
+        libraries/PID/PID_init.cc
 
 
         libraries/RF/DRFDigiTime.h

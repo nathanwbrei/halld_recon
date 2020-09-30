@@ -19,7 +19,7 @@ class DParticleID_factory:public JFactoryT<DParticleID>{
   ~DParticleID_factory(){};
   
  private:
-  void Process(const std::shared_ptr<const JEvent>& event, uint64_t eventnumber) override{
+  void Process(const std::shared_ptr<const JEvent>& event) override {
     // This is a trivial class that simply implements a default
     // factory. It is here so that the default can be changed 
     // easily by simply changing the tag here or on the command 
