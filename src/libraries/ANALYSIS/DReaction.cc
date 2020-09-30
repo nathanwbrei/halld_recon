@@ -247,11 +247,11 @@ vector<const DReaction*> Get_Reactions(const std::shared_ptr<const JEvent>& locE
 	// DReaction objects. (A simpler way to do this would be to
 	// just use locEvent->Get(...), but then only one plugin could
 	// be used at a time.)
-	vector<JFactory_base*> locFactories = locEvent->GetFactories();
+	vector<JFactoryT<DReaction>*> locFactories = locEvent->GetFactoryAll<DReaction>();
 	vector<const DReaction*> locReactions;
 	for(size_t loc_i = 0; loc_i < locFactories.size(); ++loc_i)
 	{
-		JFactoryT<DReaction>* locFactory = dynamic_cast<JFactoryT<DReaction>*>(locFactories[loc_i]);
+		JFactoryT<DReaction>* locFactory = locFactories[loc_i];
 		if(locFactory == nullptr)
 			continue;
 		if(string(locFactory->GetTag()) == "Thrown")
@@ -262,8 +262,10 @@ vector<const DReaction*> Get_Reactions(const std::shared_ptr<const JEvent>& locE
 		// processing so we can grab the list here and append it to our
 		// overall list.
 		vector<const DReaction*> locReactionsSubset;
-		locFactory->Get(locReactionsSubset);
-		locReactions.insert(locReactions.end(), locReactionsSubset.begin(), locReactionsSubset.end());
+		auto iters = locFactory->GetOrCreate(locEvent, locEvent->GetJApplication(), locEvent->GetRunNumber());
+		// TODO: NWB: There is a reason this is so ugly, but maybe we can try to make it nicer
+		// locFactory->Get(locReactionsSubset);  // NWB: This is what the previous line was before
+		locReactions.insert(locReactions.end(), iters.first, iters.second);
 	}
 	return locReactions;
 }

@@ -9,8 +9,8 @@
 class DEventWriterROOT_factory : public JFactoryT<DEventWriterROOT>
 {
 	public:
-		DEventWriterROOT_factory(){use_factory = 1;}; //prevents JANA from searching the input file for these objects
-		~DEventWriterROOT_factory(){};
+		DEventWriterROOT_factory() = default;
+		~DEventWriterROOT_factory() = default;
 		
 		DEventWriterROOT *dROOTEventWriter = nullptr;
 
@@ -31,8 +31,6 @@ class DEventWriterROOT_factory : public JFactoryT<DEventWriterROOT>
 			} else {
 				dROOTEventWriter->Run_Update(loop);
 			}
-
-			return;
 		}
 
 		//------------------
@@ -41,20 +39,17 @@ class DEventWriterROOT_factory : public JFactoryT<DEventWriterROOT>
 		 void Process(const std::shared_ptr<const JEvent>& loop, uint64_t eventnumber)
 		 {
 			// Reuse existing DBCALGeometry object.
-			if( dROOTEventWriter ) _data.push_back( dROOTEventWriter );
-			 
-			return;
+			if( dROOTEventWriter ) Insert( dROOTEventWriter );
 		 }
 
 
 		//------------------
 		// Finish
 		//------------------
-		jerror_t fini(void)
+		void Finish()
 		{
 			// Delete object: Must be "this" thread so that interfaces deleted properly
 			delete dROOTEventWriter;
-			return;
 		}
 };
 

@@ -20,6 +20,7 @@ struct DApplication {
 	void Init(JApplication *app);
 	void CheckCpuSimdSupport();
 	void CopySQLiteToLocalDisk(JApplication *app);
+
 };
 
 #endif // _DApplication_

@@ -9,7 +9,7 @@ namespace DAnalysis
 DParticleComboCreator::DParticleComboCreator(const std::shared_ptr<const JEvent>& locEvent, const DSourceComboer* locSourceComboer, DSourceComboTimeHandler* locSourceComboTimeHandler, const DSourceComboVertexer* locSourceComboVertexer) :
 		dSourceComboer(locSourceComboer), dSourceComboTimeHandler(locSourceComboTimeHandler), dSourceComboVertexer(locSourceComboVertexer)
 {
-	app->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
+	locEvent->GetJApplication()->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
 	dKinFitUtils = new DKinFitUtils_GlueX(locEvent);
 
 	Set_RunDependent_Data(locEvent);
@@ -20,15 +20,18 @@ DParticleComboCreator::DParticleComboCreator(const std::shared_ptr<const JEvent>
 
 	vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses;
 	locEvent->Get(locNeutralParticleHypotheses); //make sure that brun() is called for the default factory!!!
-	dNeutralParticleHypothesisFactory = static_cast<DNeutralParticleHypothesis_factory*>(locEvent->GetFactory("DNeutralParticleHypothesis"));
+	dNeutralParticleHypothesisFactory = dynamic_cast<DNeutralParticleHypothesis_factory*>(locEvent->GetFactory<DNeutralParticleHypothesis>());
+	// TODO: NWB: I don't like this one bit!
 
 	vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses;
 	locEvent->Get(locChargedTrackHypotheses); //make sure that brun() is called for the default factory!!!
-	dChargedTrackHypothesisFactory = static_cast<DChargedTrackHypothesis_factory*>(locEvent->GetFactory("DChargedTrackHypothesis"));
+	dChargedTrackHypothesisFactory = dynamic_cast<DChargedTrackHypothesis_factory*>(locEvent->GetFactory<DChargedTrackHypothesis>());
+	// TODO: NWB: I don't like this one bit!
 
 	vector<const DBeamPhoton*> locBeamPhotons;
 	locEvent->Get(locBeamPhotons); //make sure that brun() is called for the default factory!!!
-	dBeamPhotonfactory = static_cast<DBeamPhoton_factory*>(locEvent->GetFactory("DBeamPhoton"));
+	dBeamPhotonfactory = dynamic_cast<DBeamPhoton_factory*>(locEvent->GetFactory<DBeamPhoton>());
+	// TODO: NWB: I don't like this one bit!
 
 	//error matrix //too lazy to compute properly right now ... need to hack DAnalysisUtilities::Calc_DOCA()
 	dVertexCovMatrix.ResizeTo(4, 4);

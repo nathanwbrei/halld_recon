@@ -6,20 +6,20 @@
 void DNeutralParticle_factory_Combo::Init()
 {
 	//Get preselect tag
+	auto app = GetApplication();
 	dShowerSelectionTag = "PreSelect";
 	app->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
-
-	return;
 }
 
 //------------------
 // BeginRun
 //------------------
-void DNeutralParticle_factory_Combo::BeginRun(const std::shared_ptr<const JEvent>& event)
+void DNeutralParticle_factory_Combo::BeginRun(const std::shared_ptr<const JEvent>& locEvent)
 {
 	vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses;
 	locEvent->Get(locNeutralParticleHypotheses); //make sure that brun() is called for the default factory!!!
-	dNeutralParticleHypothesisFactory = static_cast<DNeutralParticleHypothesis_factory*>(locEvent->GetFactory("DNeutralParticleHypothesis"));
+	dNeutralParticleHypothesisFactory = dynamic_cast<DNeutralParticleHypothesis_factory*>(locEvent->GetFactory<DNeutralParticleHypothesis>());
+	// TODO: NWB: Don't do this!
 
 	//Get Needed PIDs
 	auto locReactions = DAnalysis::Get_Reactions(locEvent);
@@ -36,14 +36,12 @@ void DNeutralParticle_factory_Combo::BeginRun(const std::shared_ptr<const JEvent
 	//Setting this flag makes it so that JANA does not delete the objects in _data.  This factory will manage this memory.
 	if(dNeutralPIDs.empty())
 		SetFactoryFlag(NOT_OBJECT_OWNER);
-
-	return;
 }
 
 //------------------
 // Process
 //------------------
-void DNeutralParticle_factory_Combo::Process(const std::shared_ptr<const JEvent>& event)
+void DNeutralParticle_factory_Combo::Process(const std::shared_ptr<const JEvent>& locEvent)
 {
 	vector<const DNeutralParticle*> locNeutralParticles;
 	locEvent->Get(locNeutralParticles, dShowerSelectionTag.c_str());
@@ -51,9 +49,9 @@ void DNeutralParticle_factory_Combo::Process(const std::shared_ptr<const JEvent>
 	//Nothing to do! Pass them through
 	if(dNeutralPIDs.empty())
 	{
-		_data.clear();
+		mData.clear();
 		for(auto& locNeutralParticle : locNeutralParticles)
-			_data.push_back(const_cast<DNeutralParticle*>(locNeutralParticle));
+			mData.push_back(const_cast<DNeutralParticle*>(locNeutralParticle));
 		return;
 	}
 
@@ -78,6 +76,4 @@ void DNeutralParticle_factory_Combo::Process(const std::shared_ptr<const JEvent>
 		}
 		Insert(locNewNeutralParticle);
 	}
-
-	return;
 }

@@ -91,8 +91,9 @@ def main():
 
     r.add(re.compile(r'JEventLoop\*'), 'const std::shared_ptr<const JEvent>&')
     r.add(re.compile(r'JEventLoop \*'), 'const std::shared_ptr<const JEvent>& ')
-    r.add(re.compile(r'dapp->Lock();'), 'root_lock->acquire_write_lock();')
-    r.add(re.compile(r'dapp->Unlock();'), 'root_lock->release_lock();')
+
+    r.add(re.compile(r'japp->RootWriteLock\(\);'), 'GetLockService(locEvent)->RootWriteLock();')
+    r.add(re.compile(r'japp->RootUnLock\(\);'), 'GetLockService(locEvent)->RootUnLock();')
 
     for filename in sys.argv[1:]:
         print("Porting " + filename)

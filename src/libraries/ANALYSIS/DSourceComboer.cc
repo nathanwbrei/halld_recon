@@ -215,7 +215,7 @@ void DSourceComboer::Get_CommandLineCuts_dEdx(void)
 	//COMBO_DEDXCUT:High_9_256_FUNC="[0] + [1]*x"   //Cut pi-'s (9) in the SC (256) according to the functional form for the high-side cut //x = track momentum
 
 	map<string, string> locParameterMap; //parameter key - filter, value
-	app->GetParameters(locParameterMap, "COMBO_DEDXCUT:"); //gets all parameters with this filter at the beginning of the key
+	japp->GetParameters(locParameterMap, "COMBO_DEDXCUT:"); //gets all parameters with this filter at the beginning of the key
 	for(auto locParamPair : locParameterMap)
 	{
 		if(dDebugLevel)
@@ -252,7 +252,7 @@ void DSourceComboer::Get_CommandLineCuts_dEdx(void)
 		//get the parameter, with hack so that don't get warning message about no default
 		string locKeyValue;
 		string locFullParamName = string("COMBO_DEDXCUT:") + locParamPair.first; //have to add back on the filter
-		app->SetDefaultParameter(locFullParamName, locKeyValue);
+		japp->SetDefaultParameter(locFullParamName, locKeyValue);
 
 		//If functional form, save it and continue
 		if(locFuncIndex != string::npos)
@@ -303,7 +303,7 @@ void DSourceComboer::Get_CommandLineCuts_EOverP(void)
 	//COMBO_EOVERP:14_32=0.75_0.5             //Cut protons (14) in the FCAL (32) with the following parameters
 
 	map<string, string> locParameterMap; //parameter key - filter, value
-	app->GetParameters(locParameterMap, "COMBO_EOVERP:"); //gets all parameters with this filter at the beginning of the key
+	japp->GetParameters(locParameterMap, "COMBO_EOVERP:"); //gets all parameters with this filter at the beginning of the key
 	for(auto locParamPair : locParameterMap)
 	{
 		if(dDebugLevel)
@@ -335,7 +335,7 @@ void DSourceComboer::Get_CommandLineCuts_EOverP(void)
 		//get the parameter, with hack so that don't get warning message about no default
 		string locKeyValue;
 		string locFullParamName = string("COMBO_EOVERP:") + locParamPair.first; //have to add back on the filter
-		app->SetDefaultParameter(locFullParamName, locKeyValue);
+		japp->SetDefaultParameter(locFullParamName, locKeyValue);
 
 		//If functional form, save it and continue
 		if(locFuncIndex != string::npos)
@@ -372,7 +372,7 @@ void DSourceComboer::Get_CommandLineCuts_EOverP(void)
 void DSourceComboer::Create_CutFunctions(void)
 {
 	//No idea why this lock is necessary, but it crashes without it.  Stupid ROOT. 
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	japp->GetService<JLockService>()->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 
 	//dE/dx
 	for(auto& locPIDPair : ddEdxCuts_TF1Params)
@@ -457,7 +457,7 @@ void DSourceComboer::Create_CutFunctions(void)
 		}
 	}
 
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	japp->GetService<JLockService>()->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 /********************************************************************* CONSTRUCTOR **********************************************************************/
@@ -466,7 +466,7 @@ void DSourceComboer::Set_RunDependent_Data(const std::shared_ptr<const JEvent>& 
 {
 	// Set member data
 	//GET THE GEOMETRY
-	DGeometry* locGeometry = GetDGeometry(event);
+	DGeometry* locGeometry = GetDGeometry(locEvent);
 
 	//TARGET INFORMATION
 	double locTargetCenterZ = 65.0;
@@ -527,7 +527,7 @@ DSourceComboer::DSourceComboer(const std::shared_ptr<const JEvent>& locEvent)
 	Set_RunDependent_Data(locEvent);
 
 	//save rf bunch cuts
-	if(app->Exists("COMBO:NUM_PLUSMINUS_RF_BUNCHES"))
+	if(app->GetService<JParameterManager>()->Exists("COMBO:NUM_PLUSMINUS_RF_BUNCHES"))
 	{
 		size_t locNumPlusMinusRFBunches;
 		app->GetParameter("COMBO:NUM_PLUSMINUS_RF_BUNCHES", locNumPlusMinusRFBunches);
@@ -571,7 +571,7 @@ DSourceComboer::DSourceComboer(const std::shared_ptr<const JEvent>& locEvent)
 	}
 
 	//Setup hists
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	japp->GetService<JLockService>()->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		vector<DetectorSystem_t> locdEdxSystems {SYS_CDC, SYS_FDC, SYS_START, SYS_TOF};
 		vector<Particle_t> locPIDs {Electron, Positron, MuonPlus, MuonMinus, PiPlus, PiMinus, KPlus, KMinus, Proton, AntiProton};
@@ -687,13 +687,13 @@ DSourceComboer::DSourceComboer(const std::shared_ptr<const JEvent>& locEvent)
 		}
 		locCurrentDir->cd();
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	japp->GetService<JLockService>()->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DSourceComboer::Fill_SurvivalHistograms(void)
 {
 	auto locNumPreComboStages = 3; //"In Skim" will be first for #combos
-	japp->WriteLock("DSourceComboer_Survival");
+	japp->GetService<JLockService>()->WriteLock("DSourceComboer_Survival");
 	{
 		for(auto& locReactionPair : dNumCombosSurvivedStageTracker)
 		{
@@ -719,7 +719,7 @@ void DSourceComboer::Fill_SurvivalHistograms(void)
 			}
 		}
 	}
-	japp->Unlock("DSourceComboer_Survival");
+	japp->GetService<JLockService>()->Unlock("DSourceComboer_Survival");
 
 	//Reset for next event
 	for(auto& locReactionPair : dNumCombosSurvivedStageTracker)
@@ -1124,9 +1124,9 @@ DSourceComboUse DSourceComboer::Build_NewZDependentUse(const DReaction* locReact
 void DSourceComboer::Reset_NewEvent(const std::shared_ptr<const JEvent>& locEvent)
 {
 	//check if it's actually a new event
-	auto locEventNumber = locEvent->GetJEvent().GetEventNumber();
+	auto locEventNumber = locEvent->GetEventNumber();
 	if(locEventNumber == dEventNumber) {
-        jout << "WARNING: Calling DSourceComboer::Reset_NewEvent() with repeated run number: " << locEventNumber << endl;
+        jout << "WARNING: Calling DSourceComboer::Reset_NewEvent() with repeated event number: " << locEventNumber << endl;
 		return; //nope
     }
 	dEventNumber = locEventNumber;
@@ -1345,7 +1345,7 @@ bool DSourceComboer::Cut_dEdxAndEOverP(const DChargedTrackHypothesis* locCharged
 
 void DSourceComboer::Fill_CutHistograms(void)
 {
-	japp->WriteLock("DSourceComboer_Cuts");
+	japp->GetService<JLockService>()->WriteLock("DSourceComboer_Cuts");
 	{
 		for(auto& locPIDPair : dHistMap_dEdx)
 		{
@@ -1368,7 +1368,7 @@ void DSourceComboer::Fill_CutHistograms(void)
 			}
 		}
 	}
-	japp->Unlock("DSourceComboer_Cuts");
+	japp->GetService<JLockService>()->Unlock("DSourceComboer_Cuts");
 
 	//Reset for next event
 	for(auto& locPIDPair : ddEdxValueMap)

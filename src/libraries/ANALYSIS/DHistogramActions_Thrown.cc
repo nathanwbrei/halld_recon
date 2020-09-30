@@ -59,7 +59,7 @@ void DHistogramAction_ParticleComboGenReconComparison::Initialize(const std::sha
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
 
@@ -324,13 +324,13 @@ void DHistogramAction_ParticleComboGenReconComparison::Initialize(const std::sha
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DHistogramAction_ParticleComboGenReconComparison::Run_Update(const std::shared_ptr<const JEvent>& locEvent)
 {
 	DEvent devent(locEvent);
-	DGeometry *locGeometry = devent->GetDGeometry();
+	DGeometry *locGeometry = devent.GetDGeometry();
 	locGeometry->GetTargetZ(dTargetZCenter);
 }
 
@@ -672,7 +672,7 @@ void DHistogramAction_ThrownParticleKinematics::Initialize(const std::shared_ptr
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
 
@@ -765,7 +765,7 @@ void DHistogramAction_ThrownParticleKinematics::Initialize(const std::shared_ptr
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 bool DHistogramAction_ThrownParticleKinematics::Perform_Action(const std::shared_ptr<const JEvent>& locEvent, const DParticleCombo* locParticleCombo)
@@ -847,7 +847,7 @@ void DHistogramAction_ReconnedThrownKinematics::Initialize(const std::shared_ptr
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 
 		CreateAndChangeTo_ActionDirectory();
@@ -930,7 +930,7 @@ void DHistogramAction_ReconnedThrownKinematics::Initialize(const std::shared_ptr
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DHistogramAction_ReconnedThrownKinematics::Run_Update(const std::shared_ptr<const JEvent>& locEvent)
@@ -1029,7 +1029,7 @@ void DHistogramAction_GenReconTrackComparison::Initialize(const std::shared_ptr<
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
 
@@ -1250,13 +1250,13 @@ void DHistogramAction_GenReconTrackComparison::Initialize(const std::shared_ptr<
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DHistogramAction_GenReconTrackComparison::Run_Update(const std::shared_ptr<const JEvent>& locEvent)
 {
 	DEvent devent(locEvent);
-	DGeometry *locGeometry = devent->GetDGeometry();
+	DGeometry *locGeometry = devent.GetDGeometry();
 	locGeometry->GetTargetZ(dTargetZCenter);
 }
 
@@ -1520,7 +1520,7 @@ void DHistogramAction_TruePID::Initialize(const std::shared_ptr<const JEvent>& l
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
 
@@ -1574,7 +1574,7 @@ void DHistogramAction_TruePID::Initialize(const std::shared_ptr<const JEvent>& l
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DHistogramAction_TruePID::Run_Update(const std::shared_ptr<const JEvent>& locEvent)

@@ -24,15 +24,14 @@ class DReactionVertexInfo_factory : public JFactoryT<DReactionVertexInfo>
 	private:
 
 		//PRIMARY FUNCTIONS
-		jerror_t init(void);
-		void Process(const std::shared_ptr<const JEvent>& locEvent, uint64_t locEventNumber);
-		jerror_t fini(void)
+		void Init();
+		void Process(const std::shared_ptr<const JEvent>& locEvent);
+		void Finish()
 		{
-			for(auto locInfo : _data)
+			for(auto locInfo : mData)
 				delete locInfo;
-			_data.clear();
+			mData.clear();
 			delete dResourcePool_ReactionStepVertexInfo;
-			return;
 		}
 
 		size_t dDebugLevel = 0;

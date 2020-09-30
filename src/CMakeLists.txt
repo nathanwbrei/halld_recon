@@ -31,66 +31,66 @@ file(GLOB DAQ_HEADERS ${PROJECT_SOURCE_DIR}/libraries/DAQ/*.h)
 set(HALLD_RECON_SOURCES
 
 #        libraries/ANALYSIS/ANALYSIS_init.cc
-#        libraries/ANALYSIS/DAnalysisAction.cc
-#        libraries/ANALYSIS/DAnalysisAction.h
-#        libraries/ANALYSIS/DAnalysisResults.h
-#        libraries/Analysis/DAnalysisResults_factory.cc
-#        libraries/Analysis/DAnalysisResults_factory.h
-#        libraries/Analysis/DAnalysisUtilities.cc   # Abuses brun
+        libraries/ANALYSIS/DAnalysisAction.cc
+        libraries/ANALYSIS/DAnalysisAction.h
+        libraries/ANALYSIS/DAnalysisResults.h
+        libraries/Analysis/DAnalysisResults_factory.cc
+        libraries/Analysis/DAnalysisResults_factory.h
+        libraries/Analysis/DAnalysisUtilities.cc
         libraries/Analysis/DAnalysisUtilities.h
         libraries/Analysis/DAnalysisUtilities_factory.h
         libraries/Analysis/DChargedTrack_factory_Combo.cc
         libraries/Analysis/DChargedTrack_factory_Combo.h
-#        libraries/Analysis/DCutActions.cc   # RootWriteLock
-#        libraries/Analysis/DCutActions.h
+        libraries/Analysis/DCutActions.cc
+        libraries/Analysis/DCutActions.h
         libraries/Analysis/DDetectorMatches_factory_Combo.cc
         libraries/Analysis/DDetectorMatches_factory_Combo.h
-#        libraries/Analysis/DEventWriterROOT.cc
-#        libraries/Analysis/DEventWriterROOT.h  # RootWriteLock
-#        libraries/Analysis/DEventWriterROOT_factory.h
-#        libraries/Analysis/DHistogramActions.h
-#        libraries/Analysis/DHistogramActions_Independent.cc
-#        libraries/Analysis/DHistogramActions_Independent.h
-#        libraries/Analysis/DHistogramActions_Reaction.cc
-#        libraries/Analysis/DHistogramActions_Reaction.h
-#        libraries/Analysis/DHistogramActions_Thrown.cc
-#        libraries/Analysis/DHistogramActions_Thrown.h
-#        libraries/Analysis/DKinFitResults.h
-#        libraries/Analysis/DKinFitUtils_GlueX.cc
-#        libraries/Analysis/DKinFitUtils_GlueX.h   # DAnalysis, DANalysisUtilities
+        libraries/Analysis/DEventWriterROOT.cc
+        libraries/Analysis/DEventWriterROOT.h
+        libraries/Analysis/DEventWriterROOT_factory.h
+        libraries/Analysis/DHistogramActions.h
+        libraries/Analysis/DHistogramActions_Independent.cc
+        libraries/Analysis/DHistogramActions_Independent.h
+        libraries/Analysis/DHistogramActions_Reaction.cc
+        libraries/Analysis/DHistogramActions_Reaction.h
+        libraries/Analysis/DHistogramActions_Thrown.cc
+        libraries/Analysis/DHistogramActions_Thrown.h
+        libraries/Analysis/DKinFitResults.h
+        libraries/Analysis/DKinFitUtils_GlueX.cc
+        libraries/Analysis/DKinFitUtils_GlueX.h
         libraries/Analysis/DMCThrownMatching.h
         libraries/Analysis/DMCThrownMatching_factory.cc
         libraries/Analysis/DMCThrownMatching_factory.h
-#        libraries/Analysis/DNeutralParticle_factory_Combo.cc
-#        libraries/Analysis/DNeutralParticle_factory_Combo.h
-#        libraries/Analysis/DParticleCombo.h
-#        libraries/Analysis/DParticleComboCreator.cc
-#        libraries/Analysis/DParticleComboCreator.h
-#        libraries/Analysis/DParticleComboStep.h
-#        libraries/Analysis/DReaction.cc
-#        libraries/Analysis/DReaction.h
-#        libraries/Analysis/DReaction_factory_Thrown.cc
-#        libraries/Analysis/DReaction_factory_Thrown.h
+        libraries/Analysis/DNeutralParticle_factory_Combo.cc
+        libraries/Analysis/DNeutralParticle_factory_Combo.h
+        libraries/Analysis/DParticleCombo.h
+        libraries/Analysis/DParticleComboCreator.cc
+        libraries/Analysis/DParticleComboCreator.h
+        libraries/Analysis/DParticleComboStep.h
+        libraries/Analysis/DReaction.cc
+        libraries/Analysis/DReaction.h
+        libraries/Analysis/DReaction_factory_Thrown.cc
+        libraries/Analysis/DReaction_factory_Thrown.h
         libraries/Analysis/DReactionStep.cc
         libraries/Analysis/DReactionStep.h
-#        libraries/Analysis/DReactionStepVertexInfo.cc
-#        libraries/Analysis/DReactionStepVertexInfo.h
-#        libraries/Analysis/DReactionVertexInfo.h
-#        libraries/Analysis/DReactionVertexInfo_factory.cc
-#        libraries/Analysis/DReactionVertexInfo_factory.h
-#        libraries/Analysis/DSourceCombo.h  # DReaction
-#        libraries/Analysis/DSourceComboer.cc  # DApplication, RootLock
-#        libraries/Analysis/DSourceComboer.h   # DApplication, RootLock
-#        libraries/Analysis/DSourceComboP4Handler.cc    # DReaction, JParamterManager
-#        libraries/Analysis/DSourceComboP4Handler.h     # DReaction, JParameterManager
-#        libraries/Analysis/DSourceComboTimeHandler.cc  # DReaction, DApplication, JParameterManager filter
-#        libraries/Analysis/DSourceComboTimeHandler.h
-#        libraries/Analysis/DSourceComboVertexer.cc  # DReaction, DApplication
-#        libraries/Analysis/DSourceComboVertexer.h   # DReaction, DApplication
-#        libraries/Analysis/DTrackTimeBased_factory_Combo.cc  # DReaction
-#        libraries/Analysis/DTrackTimeBased_factory_Combo.h   # DReaction
-#        libraries/Analysis/DTreeInterface.cc  # WriteLock
-#        libraries/Analysis/DTreeInterface.h   # WriteLock
+        libraries/Analysis/DReactionStepVertexInfo.cc
+        libraries/Analysis/DReactionStepVertexInfo.h
+        libraries/Analysis/DReactionVertexInfo.h
+        libraries/Analysis/DReactionVertexInfo_factory.cc
+        libraries/Analysis/DReactionVertexInfo_factory.h
+        libraries/Analysis/DSourceCombo.h
+#        libraries/Analysis/DSourceComboer.cc  # JParameterManager
+        libraries/Analysis/DSourceComboer.h
+#        libraries/Analysis/DSourceComboP4Handler.cc  # JParameterManager
+        libraries/Analysis/DSourceComboP4Handler.h
+#        libraries/Analysis/DSourceComboTimeHandler.cc  # JParameterManager
+        libraries/Analysis/DSourceComboTimeHandler.h
+        libraries/Analysis/DSourceComboVertexer.cc
+        libraries/Analysis/DSourceComboVertexer.h
+        libraries/Analysis/DTrackTimeBased_factory_Combo.cc
+        libraries/Analysis/DTrackTimeBased_factory_Combo.h
+        libraries/Analysis/DTreeInterface.cc
+        libraries/Analysis/DTreeInterface.h
         libraries/Analysis/DTreeInterfaceObjects.h
 
         libraries/BCAL/BCAL_init.cc

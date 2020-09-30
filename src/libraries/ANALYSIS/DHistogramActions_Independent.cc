@@ -3,6 +3,7 @@
 
 #include "ANALYSIS/DHistogramActions.h"
 #include "TOF/DTOFGeometry.h"
+#include "DANA/DEvent.h"
 
 void DHistogramAction_ObjectMemory::Initialize(const std::shared_ptr<const JEvent>& locEvent)
 {
@@ -15,7 +16,7 @@ void DHistogramAction_ObjectMemory::Initialize(const std::shared_ptr<const JEven
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
 
@@ -44,7 +45,7 @@ void DHistogramAction_ObjectMemory::Initialize(const std::shared_ptr<const JEven
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 bool DHistogramAction_ObjectMemory::Perform_Action(const std::shared_ptr<const JEvent>& locEvent, const DParticleCombo* locParticleCombo)
@@ -307,7 +308,7 @@ void DHistogramAction_Reconstruction::Initialize(const std::shared_ptr<const JEv
 	string locHistName, locHistTitle;
 
 	//Check if is REST event (high-level objects only)
-	bool locIsRESTEvent = locEvent->GetJEvent().GetStatusBit(kSTATUS_REST);
+	bool locIsRESTEvent = locEvent->GetSingleStrict<DStatusBits>()->GetStatusBit(kSTATUS_REST);
 
 	Run_Update(locEvent);
 
@@ -316,7 +317,7 @@ void DHistogramAction_Reconstruction::Initialize(const std::shared_ptr<const JEv
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
 			//If another thread has already created the folder, it just changes to it.
@@ -486,7 +487,7 @@ void DHistogramAction_Reconstruction::Initialize(const std::shared_ptr<const JEv
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DHistogramAction_Reconstruction::Run_Update(const std::shared_ptr<const JEvent>& locEvent)
@@ -506,7 +507,7 @@ bool DHistogramAction_Reconstruction::Perform_Action(const std::shared_ptr<const
 	if(Get_CalledPriorWithComboFlag())
 		return true; //else double-counting!
 
-	bool locIsRESTEvent = locEvent->GetJEvent().GetStatusBit(kSTATUS_REST);
+	bool locIsRESTEvent = locEvent->GetSingleStrict<DStatusBits>()->GetStatusBit(kSTATUS_REST);
 
 	vector<const DBCALShower*> locBCALShowers;
 	locEvent->Get(locBCALShowers);
@@ -816,13 +817,13 @@ void DHistogramAction_DetectorMatching::Initialize(const std::shared_ptr<const J
 		//Objects created within a plugin (such as reaction-independent actions) can be accessed by many threads simultaneously. 
 	string locHistName, locHistTitle;
 
-	bool locIsRESTEvent = locEvent->GetJEvent().GetStatusBit(kSTATUS_REST);
+	bool locIsRESTEvent = locEvent->GetSingleStrict<DStatusBits>()->GetStatusBit(kSTATUS_REST);
 
 	Run_Update(locEvent);
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
@@ -1119,7 +1120,7 @@ void DHistogramAction_DetectorMatching::Initialize(const std::shared_ptr<const J
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DHistogramAction_DetectorMatching::Run_Update(const std::shared_ptr<const JEvent>& locEvent)
@@ -1128,7 +1129,7 @@ void DHistogramAction_DetectorMatching::Run_Update(const std::shared_ptr<const J
 	const DTOFGeometry *locTOFGeometry = nullptr;
 	locEvent->GetSingle(locTOFGeometry);
 	string locTOFParmsTable = locTOFGeometry->Get_CCDB_DirectoryName() + "/tof_parms";
-	calibration->Get(locTOFParmsTable.c_str(), tofparms);
+	GetCalib(locEvent, locTOFParmsTable.c_str(), tofparms);
 	TOF_E_THRESHOLD = tofparms["TOF_E_THRESHOLD"];
 }
 
@@ -1139,7 +1140,7 @@ bool DHistogramAction_DetectorMatching::Perform_Action(const std::shared_ptr<con
 	if(Get_CalledPriorWithComboFlag())
 		return true; //else double-counting!
 
-	bool locIsRESTEvent = locEvent->GetJEvent().GetStatusBit(kSTATUS_REST);
+	bool locIsRESTEvent = locEvent->GetSingleStrict<DStatusBits>()->GetStatusBit(kSTATUS_REST);
 
 	Fill_MatchingHists(locEvent, true); //Time-based tracks
 	if(!locIsRESTEvent)
@@ -1680,15 +1681,14 @@ void DHistogramAction_DetectorPID::Initialize(const std::shared_ptr<const JEvent
 
 	string locHistName, locHistTitle, locParticleROOTName;
 
+	auto app = locEvent->GetJApplication();
 	string locTrackSelectionTag = "NotATag", locShowerSelectionTag = "NotATag";
-	if(app->Exists("COMBO:TRACK_SELECT_TAG"))
-		app->GetParameter("COMBO:TRACK_SELECT_TAG", locTrackSelectionTag);
-	if(app->Exists("COMBO:SHOWER_SELECT_TAG"))
-		app->GetParameter("COMBO:SHOWER_SELECT_TAG", locShowerSelectionTag);
+	app->SetDefaultParameter("COMBO:TRACK_SELECT_TAG", locTrackSelectionTag);
+	app->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", locShowerSelectionTag);
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//So: Default tag is "", User can set it to something else
 		//In here, if tag is "", get from gparms, if not, leave it alone
@@ -2040,7 +2040,7 @@ void DHistogramAction_DetectorPID::Initialize(const std::shared_ptr<const JEvent
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 bool DHistogramAction_DetectorPID::Perform_Action(const std::shared_ptr<const JEvent>& locEvent, const DParticleCombo* locParticleCombo)
@@ -2262,7 +2262,7 @@ void DHistogramAction_Neutrals::Initialize(const std::shared_ptr<const JEvent>& 
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
 			//If another thread has already created the folder, it just changes to it.
@@ -2309,7 +2309,7 @@ void DHistogramAction_Neutrals::Initialize(const std::shared_ptr<const JEvent>& 
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DHistogramAction_Neutrals::Run_Update(const std::shared_ptr<const JEvent>& locEvent)
@@ -2420,13 +2420,13 @@ void DHistogramAction_DetectorMatchParams::Initialize(const std::shared_ptr<cons
 	vector<const DMCThrown*> locMCThrowns;
 	locEvent->Get(locMCThrowns);
 
+	auto app = locEvent->GetJApplication();
 	string locTrackSelectionTag = "NotATag";
-	if(app->Exists("COMBO:TRACK_SELECT_TAG"))
-		app->GetParameter("COMBO:TRACK_SELECT_TAG", locTrackSelectionTag);
+	app->SetDefaultParameter("COMBO:TRACK_SELECT_TAG", locTrackSelectionTag);
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//So: Default tag is "", User can set it to something else
 		//In here, if tag is "", get from gparms, if not, leave it alone
@@ -2519,7 +2519,7 @@ void DHistogramAction_DetectorMatchParams::Initialize(const std::shared_ptr<cons
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DHistogramAction_DetectorMatchParams::Run_Update(const std::shared_ptr<const JEvent>& locEvent)
@@ -2642,13 +2642,13 @@ void DHistogramAction_EventVertex::Initialize(const std::shared_ptr<const JEvent
 {
 	string locHistName, locHistTitle;
 
+	auto app = locEvent->GetJApplication();
 	string locTrackSelectionTag = "NotATag";
-	if(app->Exists("COMBO:TRACK_SELECT_TAG"))
-		app->GetParameter("COMBO:TRACK_SELECT_TAG", locTrackSelectionTag);
+	app->SetDefaultParameter("COMBO:TRACK_SELECT_TAG", locTrackSelectionTag);
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//So: Default tag is "", User can set it to something else
 		//In here, if tag is "", get from gparms, if not, leave it alone
@@ -2752,7 +2752,7 @@ void DHistogramAction_EventVertex::Initialize(const std::shared_ptr<const JEvent
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 bool DHistogramAction_EventVertex::Perform_Action(const std::shared_ptr<const JEvent>& locEvent, const DParticleCombo* locParticleCombo)
@@ -2778,12 +2778,13 @@ bool DHistogramAction_EventVertex::Perform_Action(const std::shared_ptr<const JE
 	//Make sure that brun() is called (to get rf period) before using.
 	//Cannot call JEventLoop->Get() because object may be in datastream (REST), bypassing factory brun() call.
 	//Must do here rather than in Initialize() function because this object is shared by all threads (which each have their own factory)
-	DRFTime_factory* locRFTimeFactory = static_cast<DRFTime_factory*>(locEvent->GetFactory("DRFTime"));
-	if(!locRFTimeFactory->brun_was_called())
-	{
-		locRFTimeFactory->brun(locEvent, locEvent->GetJEvent().GetRunNumber());
-		locRFTimeFactory->Set_brun_called();
-	}
+	DRFTime_factory* locRFTimeFactory = dynamic_cast<DRFTime_factory*>(locEvent->GetFactory<DRFTime>());
+	// if(!locRFTimeFactory->brun_was_called())
+	// {
+	// 	locRFTimeFactory->brun(locEvent, locEvent->GetJEvent().GetRunNumber());
+	// 	locRFTimeFactory->Set_brun_called();
+	// }
+	// TODO: Come back to this!
 
 	//Get time-based tracks: use best PID FOM
 		//Note that these may not be the PIDs that were used in the fit!!!
@@ -2867,15 +2868,14 @@ void DHistogramAction_DetectedParticleKinematics::Initialize(const std::shared_p
 	string locHistName, locHistTitle, locParticleName, locParticleROOTName;
 	Particle_t locPID;
 
+	auto app = locEvent->GetJApplication();
 	string locTrackSelectionTag = "NotATag", locShowerSelectionTag = "NotATag";
-	if(app->Exists("COMBO:TRACK_SELECT_TAG"))
-		app->GetParameter("COMBO:TRACK_SELECT_TAG", locTrackSelectionTag);
-	if(app->Exists("COMBO:SHOWER_SELECT_TAG"))
-		app->GetParameter("COMBO:SHOWER_SELECT_TAG", locShowerSelectionTag);
+	app->SetDefaultParameter("COMBO:TRACK_SELECT_TAG", locTrackSelectionTag);
+	app->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", locShowerSelectionTag);
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//So: Default tag is "", User can set it to something else
 		//In here, if tag is "", get from gparms, if not, leave it alone
@@ -2974,7 +2974,7 @@ void DHistogramAction_DetectedParticleKinematics::Initialize(const std::shared_p
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 bool DHistogramAction_DetectedParticleKinematics::Perform_Action(const std::shared_ptr<const JEvent>& locEvent, const DParticleCombo* locParticleCombo)
@@ -3102,15 +3102,14 @@ void DHistogramAction_TrackShowerErrors::Initialize(const std::shared_ptr<const 
 	string locHistName, locHistTitle, locParticleName, locParticleROOTName;
 	Particle_t locPID;
 
+	auto app = locEvent->GetJApplication();
 	string locTrackSelectionTag = "NotATag", locShowerSelectionTag = "NotATag";
-	if(app->Exists("COMBO:TRACK_SELECT_TAG"))
-		app->GetParameter("COMBO:TRACK_SELECT_TAG", locTrackSelectionTag);
-	if(app->Exists("COMBO:SHOWER_SELECT_TAG"))
-		app->GetParameter("COMBO:SHOWER_SELECT_TAG", locShowerSelectionTag);
+	app->SetDefaultParameter("COMBO:TRACK_SELECT_TAG", locTrackSelectionTag);
+	app->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", locShowerSelectionTag);
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//So: Default tag is "", User can set it to something else
 		//In here, if tag is "", get from gparms, if not, leave it alone
@@ -3293,7 +3292,7 @@ void DHistogramAction_TrackShowerErrors::Initialize(const std::shared_ptr<const 
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 bool DHistogramAction_TrackShowerErrors::Perform_Action(const std::shared_ptr<const JEvent>& locEvent, const DParticleCombo* locParticleCombo)
@@ -3415,11 +3414,11 @@ void DHistogramAction_NumReconstructedObjects::Initialize(const std::shared_ptr<
 {
 	string locHistName;
 
-	bool locIsRESTEvent = locEvent->GetJEvent().GetStatusBit(kSTATUS_REST);
+	bool locIsRESTEvent = locEvent->GetSingleStrict<DStatusBits>()->GetStatusBit(kSTATUS_REST);
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
 
@@ -3558,7 +3557,7 @@ void DHistogramAction_NumReconstructedObjects::Initialize(const std::shared_ptr<
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 bool DHistogramAction_NumReconstructedObjects::Perform_Action(const std::shared_ptr<const JEvent>& locEvent, const DParticleCombo* locParticleCombo)
@@ -3566,7 +3565,7 @@ bool DHistogramAction_NumReconstructedObjects::Perform_Action(const std::shared_
 	if(Get_CalledPriorWithComboFlag())
 		return true; //else double-counting!
 
-	bool locIsRESTEvent = locEvent->GetJEvent().GetStatusBit(kSTATUS_REST);
+	bool locIsRESTEvent = locEvent->GetSingleStrict<DStatusBits>()->GetStatusBit(kSTATUS_REST);
 
 	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
 	locEvent->Get(locTrackTimeBasedVector);
@@ -3792,15 +3791,15 @@ bool DHistogramAction_NumReconstructedObjects::Perform_Action(const std::shared_
 
 void DHistogramAction_TrackMultiplicity::Initialize(const std::shared_ptr<const JEvent>& locEvent)
 {
+	auto app = locEvent->GetJApplication();
+
 	string locTrackSelectionTag = "NotATag", locShowerSelectionTag = "NotATag";
-	if(app->Exists("COMBO:TRACK_SELECT_TAG"))
-		app->GetParameter("COMBO:TRACK_SELECT_TAG", locTrackSelectionTag);
-	if(app->Exists("COMBO:SHOWER_SELECT_TAG"))
-		app->GetParameter("COMBO:SHOWER_SELECT_TAG", locShowerSelectionTag);
+	app->SetDefaultParameter("COMBO:TRACK_SELECT_TAG", locTrackSelectionTag);
+	app->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", locShowerSelectionTag);
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//So: Default tag is "", User can set it to something else
 		//In here, if tag is "", get from gparms, if not, leave it alone
@@ -3851,7 +3850,7 @@ void DHistogramAction_TrackMultiplicity::Initialize(const std::shared_ptr<const 
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 bool DHistogramAction_TrackMultiplicity::Perform_Action(const std::shared_ptr<const JEvent>& locEvent, const DParticleCombo* locParticleCombo)
@@ -3978,7 +3977,7 @@ void DHistogramAction_TriggerStudies::Initialize(const std::shared_ptr<const JEv
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
 
@@ -3993,7 +3992,7 @@ void DHistogramAction_TriggerStudies::Initialize(const std::shared_ptr<const JEv
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 bool DHistogramAction_TriggerStudies::Perform_Action(const std::shared_ptr<const JEvent>& locEvent, const DParticleCombo* locParticleCombo)

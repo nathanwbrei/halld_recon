@@ -50,6 +50,8 @@ bool DAnalysisUtilities::Check_IsBDTSignalEvent(const std::shared_ptr<const JEve
 
 	if(dParticleComboCreator == nullptr) //Can't create in constructor: infinite recursion
 		dParticleComboCreator = new DParticleComboCreator(locEvent, nullptr, nullptr, nullptr);
+
+
 	DReaction_factory_Thrown* dThrownReactionFactory = dynamic_cast<DReaction_factory_Thrown*>(locEvent->GetFactory("DReaction", "Thrown"));
 
 	/// NWB: I'm commenting this out because this is not compatible with JANA2. I can't figure out how to do this in JANA2
@@ -63,9 +65,8 @@ bool DAnalysisUtilities::Check_IsBDTSignalEvent(const std::shared_ptr<const JEve
             dThrownReactionFactory->Set_brun_called();
 	}
 	 */
-
 	vector<const DReaction*> locThrownReactions;
-	locEvent->Get(locThrownReactions, "Thrown");
+	locEvent->Get(locThrownReactions, "Thrown");   // NWB: event::Get() is guaranteed to trigger BeginRun when necessary, so maybe we can just delete the above
 	if(locThrownReactions.empty())
 		return false;
 	auto locActualThrownReaction = locThrownReactions[0];

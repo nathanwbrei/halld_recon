@@ -19,9 +19,10 @@ using namespace std;
 class DNeutralParticle_factory_Combo : public JFactoryT<DNeutralParticle>
 {
 	public:
-		DNeutralParticle_factory_Combo(){};
+		DNeutralParticle_factory_Combo(){
+			SetTag("Combo");
+		}
 		~DNeutralParticle_factory_Combo(){};
-		SetTag("Combo")
 
 	private:
 		void Init() override;

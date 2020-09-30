@@ -8,6 +8,7 @@
 
 #include <JANA/JEvent.h>
 #include <JANA/Calibrations/JCalibrationManager.h>
+#include <JANA/Compatibility/JLockService.h>
 
 #include "DANA/DStatusBits.h"
 #include "DANA/DGeometryManager.h"
@@ -71,6 +72,10 @@ public:
 		return m_app->GetService<DGeometryManager>()->GetBfield(run_number);
 	}
 
+	inline std::shared_ptr<JLockService> GetLockService() {
+		return m_app->GetService<JLockService>();
+	}
+
 	// TODO: Get JGeometry
 	// TODO: Get DGeometry
 	// TODO: Get locks
@@ -83,8 +88,50 @@ inline DGeometry* GetDGeometry(const std::shared_ptr<const JEvent>& event) {
 	return event->GetJApplication()->GetService<DGeometryManager>()->GetDGeometry(event->GetRunNumber());
 }
 
+inline std::shared_ptr<JLockService> GetLockService(const std::shared_ptr<const JEvent>& event) {
+	return event->GetJApplication()->GetService<JLockService>();
+}
 
 
+template<class T>
+inline bool GetCalib(const std::shared_ptr<const JEvent>& event, string namepath, std::map<string,T> &vals)
+{
+	/// Get the JCalibration object from JApplication for the run number of
+	/// the current event and call its Get() method to get the constants.
 
+	vals.clear();
+	auto app = event->GetJApplication();
+	JCalibration *calib = app->GetService<JCalibrationManager>()->GetJCalibration(event->GetRunNumber());
+	if(!calib){ return true; }
+	return calib->Get(namepath, vals, event->GetEventNumber());
+}
+
+template<class T>
+inline bool GetCalib(const std::shared_ptr<const JEvent>& event, string namepath, vector<T> &vals)
+{
+	/// Get the JCalibration object from JApplication for the run number of
+	/// the current event and call its Get() method to get the constants.
+	vals.clear();
+	auto app = event->GetJApplication();
+	JCalibration *calib = app->GetService<JCalibrationManager>()->GetJCalibration(event->GetRunNumber());
+	if(!calib){ return true; }
+	return calib->Get(namepath, vals, event->GetEventNumber());
+}
+
+template<class T>
+inline bool GetCalib(const std::shared_ptr<const JEvent>& event, std::string namepath, T &val)
+{
+	/// This is a convenience method for getting a single entry. It
+	/// simply calls the vector version and returns the first entry.
+	/// It returns true if the vector version returns true AND there
+	/// is at least one entry in the vector. No check is made for there
+	/// there being more than one entry in the vector.
+
+	std::vector<T> vals;
+	bool ret = GetCalib(event, namepath, vals);
+	if(vals.empty()) return true;
+	val = vals[0];
+	return ret;
+}
 
 #endif //HALLD_RECON_DEVENT_H

@@ -22,7 +22,7 @@ void DReaction_factory_Thrown::Init()
 //------------------
 // BeginRun
 //------------------
-void DReaction_factory_Thrown::BeginRun(const std::shared_ptr<const JEvent>& event)
+void DReaction_factory_Thrown::BeginRun(const std::shared_ptr<const JEvent>& locEvent)
 {
  	vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
 	locEvent->Get(locAnalysisUtilitiesVector);
@@ -32,7 +32,7 @@ void DReaction_factory_Thrown::BeginRun(const std::shared_ptr<const JEvent>& eve
 //------------------
 // Process
 //------------------
-void DReaction_factory_Thrown::Process(const std::shared_ptr<const JEvent>& event)
+void DReaction_factory_Thrown::Process(const std::shared_ptr<const JEvent>& locEvent)
 {
 	// delete pool sizes if too large, preventing memory-leakage-like behavor.
 	if(dReactionStepPool_All.size() > MAX_dReactionStepPoolSize){

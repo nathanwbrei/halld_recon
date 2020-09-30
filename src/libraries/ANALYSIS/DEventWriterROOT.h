@@ -11,7 +11,6 @@
 #include "TFile.h"
 #include "TROOT.h"
 
-#include "JANA/JApplication.h"
 #include "JANA/JObject.h"
 #include <JANA/JEvent.h>
 

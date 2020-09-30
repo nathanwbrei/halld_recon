@@ -6,15 +6,14 @@ using namespace DAnalysis;
 void DReactionVertexInfo_factory::Init()
 {
 	// This is so that the created objects persist throughout the life of the program instead of being cleared each event.
-	SetFactoryFlag(PERSISTANT);
+	SetFactoryFlag(PERSISTENT);
 	dResourcePool_ReactionStepVertexInfo = new DResourcePool<DReactionStepVertexInfo>();
 
+	auto app = GetApplication();
 	app->SetDefaultParameter("VERTEXINFO:DEBUG_LEVEL", dDebugLevel);
-
-	return;
 }
 
-void DReactionVertexInfo_factory::Process(const std::shared_ptr<const JEvent>& event)
+void DReactionVertexInfo_factory::Process(const std::shared_ptr<const JEvent>& locEvent)
 {
 	dKinFitUtils = new DKinFitUtils_GlueX(locEvent);
 
@@ -48,8 +47,6 @@ void DReactionVertexInfo_factory::Process(const std::shared_ptr<const JEvent>& e
 		Insert(locVertexInfo);
 		dVertexInfoMap.emplace(locReaction, locVertexInfo);
 	}
-
-	return;
 }
 
 DReactionVertexInfo* DReactionVertexInfo_factory::Build_VertexInfo(const DReaction* locReaction)

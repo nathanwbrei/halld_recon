@@ -944,7 +944,7 @@ bool DCutAction_TrackHitPattern::Cut_TrackHitPattern(const DParticleID* locParti
 
 void DCutAction_dEdx::Initialize(const std::shared_ptr<const JEvent>& locEvent)
 {
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!! //I have no idea why this is needed, but without it it crashes.  Sigh. 
+	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!! //I have no idea why this is needed, but without it it crashes.  Sigh.
 	{
 		if(dCutMap.find(Proton) == dCutMap.end())
 		{
@@ -962,7 +962,7 @@ void DCutAction_dEdx::Initialize(const std::shared_ptr<const JEvent>& locEvent)
 			dCutMap[PiPlus].second->SetParameters(6.0, 2.80149, 2.55);
 		}
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 bool DCutAction_dEdx::Perform_Action(const std::shared_ptr<const JEvent>& locEvent, const DParticleCombo* locParticleCombo)
@@ -1371,7 +1371,7 @@ void DCutAction_OneVertexKinFit::Initialize(const std::shared_ptr<const JEvent>&
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
 		//If another thread has already created the folder, it just changes to it. 
@@ -1381,7 +1381,7 @@ void DCutAction_OneVertexKinFit::Initialize(const std::shared_ptr<const JEvent>&
 		dHist_VertexZ = GetOrCreate_Histogram<TH1I>("VertexZ", "Vertex Kinematic Fit;Vertex-Z (cm)", 500, 0.0, 200.0);
 		dHist_VertexYVsX = GetOrCreate_Histogram<TH2I>("VertexYVsX", "Vertex Kinematic Fit;Vertex-X (cm);Vertex-Y (cm)", 300, -10.0, 10.0, 300, -10.0, 10.0);
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DCutAction_OneVertexKinFit::Run_Update(const std::shared_ptr<const JEvent>& locEvent)

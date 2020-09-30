@@ -10,6 +10,7 @@
 #endif
 
 #include "DAnalysisResults_factory.h"
+#include "DANA/DStatusBits.h"
 
 //------------------
 // Init
@@ -26,7 +27,7 @@ void DAnalysisResults_factory::Init()
 //------------------
 // BeginRun
 //------------------
-void DAnalysisResults_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
+void DAnalysisResults_factory::BeginRun(const std::shared_ptr<const JEvent>& locEvent)
 {
 	// As originally written, this function and the classes that it calls work
 	// correctly when running over just one run, but when data spanning multiple
@@ -37,8 +38,9 @@ void DAnalysisResults_factory::BeginRun(const std::shared_ptr<const JEvent>& eve
 	// a JEventLoop object (i.e. most of it).  In subsequent brun() calls, only the
 	// run-dependent settings are updated
 	// - sdobbs -- 28 August 2019
-	dEvent = DEvent(event);
+	DEvent devent(locEvent);
 
+	auto app = locEvent->GetJApplication();
 	app->SetDefaultParameter("ANALYSIS:DEBUG_LEVEL", dDebugLevel);
 	app->SetDefaultParameter("ANALYSIS:KINFIT_CONVERGENCE", dRequireKinFitConvergence);
 
@@ -151,7 +153,7 @@ void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& 
 	TH1D* loc1DHist;
 	TH2D* loc2DHist;
 
-	dEvent.RootWriteLock(); //to prevent undefined behavior due to directory changes, etc.
+	dEvent.GetLockService()->RootWriteLock(); //to prevent undefined behavior due to directory changes, etc.
 	{
 		TDirectory* locCurrentDir = gDirectory;
 
@@ -303,7 +305,7 @@ void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& 
 		}
 		locCurrentDir->cd();
 	}
-	dEvent.RootUnLock(); //unlock
+	dEvent.GetLockService()->RootUnLock(); //unlock
 }
 
 //------------------
@@ -316,7 +318,7 @@ void DAnalysisResults_factory::Process(const std::shared_ptr<const JEvent>& locE
 #endif
 
 	if(dDebugLevel > 0)
-		cout << "Analyze event: " << eventnumber << endl;
+		cout << "Analyze event: " << locEvent->GetEventNumber() << endl;
 
 	// GET REACTION LIST
 	auto locReactions = DAnalysis::Get_Reactions(locEvent);
@@ -333,7 +335,7 @@ void DAnalysisResults_factory::Process(const std::shared_ptr<const JEvent>& locE
 	}
 
 	//CHECK EVENT TYPE
-	if(!locEvent->GetStatusBit(kSTATUS_PHYSICS_EVENT))
+	if(!locEvent->GetSingle<DStatusBits>()->GetStatusBit(kSTATUS_PHYSICS_EVENT))
 		return;
 
 	//CHECK TRIGGER TYPE
@@ -441,7 +443,7 @@ void DAnalysisResults_factory::Process(const std::shared_ptr<const JEvent>& locE
 				cout << "Action loop completed, # surviving combos: " << locAnalysisResults->Get_NumPassedParticleCombos() << endl;
 
 			//FILL HISTOGRAMS
-			japp->WriteLock("DAnalysisResults");
+			GetLockService(locEvent)->WriteLock("DAnalysisResults");
 			{
 				dHistMap_NumEventsSurvivedAction_All[locReaction]->Fill(locStartIndex); //initial: a new event
 				if(locTrueBeamE > 0.) {
@@ -502,7 +504,7 @@ void DAnalysisResults_factory::Process(const std::shared_ptr<const JEvent>& locE
 					}
 				}
 			}
-			japp->Unlock("DAnalysisResults");
+			GetLockService(locEvent)->Unlock("DAnalysisResults");
 
 			//SAVE ANALYSIS RESULTS
 			Insert(locAnalysisResults);
