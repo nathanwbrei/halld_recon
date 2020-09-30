@@ -38,7 +38,7 @@ void DAnalysisResults_factory::BeginRun(const std::shared_ptr<const JEvent>& loc
 	// a JEventLoop object (i.e. most of it).  In subsequent brun() calls, only the
 	// run-dependent settings are updated
 	// - sdobbs -- 28 August 2019
-	DEvent devent(locEvent);
+	dEvent = new DEvent(locEvent);
 
 	auto app = locEvent->GetJApplication();
 	app->SetDefaultParameter("ANALYSIS:DEBUG_LEVEL", dDebugLevel);
@@ -153,7 +153,7 @@ void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& 
 	TH1D* loc1DHist;
 	TH2D* loc2DHist;
 
-	dEvent.GetLockService()->RootWriteLock(); //to prevent undefined behavior due to directory changes, etc.
+	dEvent->GetLockService()->RootWriteLock(); //to prevent undefined behavior due to directory changes, etc.
 	{
 		TDirectory* locCurrentDir = gDirectory;
 
@@ -305,7 +305,7 @@ void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& 
 		}
 		locCurrentDir->cd();
 	}
-	dEvent.GetLockService()->RootUnLock(); //unlock
+	dEvent->GetLockService()->RootUnLock(); //unlock
 }
 
 //------------------

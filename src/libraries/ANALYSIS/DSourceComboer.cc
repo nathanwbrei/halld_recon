@@ -215,7 +215,7 @@ void DSourceComboer::Get_CommandLineCuts_dEdx(void)
 	//COMBO_DEDXCUT:High_9_256_FUNC="[0] + [1]*x"   //Cut pi-'s (9) in the SC (256) according to the functional form for the high-side cut //x = track momentum
 
 	map<string, string> locParameterMap; //parameter key - filter, value
-	japp->GetParameters(locParameterMap, "COMBO_DEDXCUT:"); //gets all parameters with this filter at the beginning of the key
+	japp->GetJParameterManager()->FilterParameters(locParameterMap, "COMBO_DEDXCUT:"); //gets all parameters with this filter at the beginning of the key
 	for(auto locParamPair : locParameterMap)
 	{
 		if(dDebugLevel)
@@ -303,7 +303,7 @@ void DSourceComboer::Get_CommandLineCuts_EOverP(void)
 	//COMBO_EOVERP:14_32=0.75_0.5             //Cut protons (14) in the FCAL (32) with the following parameters
 
 	map<string, string> locParameterMap; //parameter key - filter, value
-	japp->GetParameters(locParameterMap, "COMBO_EOVERP:"); //gets all parameters with this filter at the beginning of the key
+	japp->GetJParameterManager()->FilterParameters(locParameterMap, "COMBO_EOVERP:"); //gets all parameters with this filter at the beginning of the key
 	for(auto locParamPair : locParameterMap)
 	{
 		if(dDebugLevel)

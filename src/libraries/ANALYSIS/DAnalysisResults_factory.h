@@ -63,7 +63,7 @@ class DAnalysisResults_factory : public JFactoryT<DAnalysisResults>
 		DKinFitResults* Build_KinFitResults(const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, const shared_ptr<const DKinFitChain>& locKinFitChain);
 
 		unsigned int dDebugLevel = 0;
-		DEvent dEvent;
+		DEvent* dEvent = nullptr;
 		double dMinThrownMatchFOM;
 		DSourceComboer* dSourceComboer = nullptr;
 		DParticleComboCreator* dParticleComboCreator = nullptr;

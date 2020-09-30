@@ -207,7 +207,7 @@ void DSourceComboP4Handler::Get_CommandLineCuts_MM2(void)
 	//COMBO_MM2CUT:High_14=3.7_0.001
 
 	map<string, string> locParameterMap; //parameter key - filter, value
-	japp->GetParameters(locParameterMap, "COMBO_MM2CUT:"); //gets all parameters with this filter at the beginning of the key
+	japp->GetJParameterManager()->FilterParameters(locParameterMap, "COMBO_MM2CUT:"); //gets all parameters with this filter at the beginning of the key
 	for(auto locParamPair : locParameterMap)
 	{
 		if(dDebugLevel)
@@ -286,7 +286,7 @@ void DSourceComboP4Handler::Get_CommandLineCuts_IM(void)
 	//COMBO_IMCUT:High_7=0.3
 
 	map<string, string> locParameterMap; //parameter key - filter, value
-	japp->GetParameters(locParameterMap, "COMBO_IMCUT:"); //gets all parameters with this filter at the beginning of the key
+	japp->GetJParameterManager()->FilterParameters(locParameterMap, "COMBO_IMCUT:"); //gets all parameters with this filter at the beginning of the key
 	for(auto locParamPair : locParameterMap)
 	{
 		if(dDebugLevel)
@@ -355,7 +355,7 @@ void DSourceComboP4Handler::Get_CommandLineCuts_MissingEnergy(void)
 	//COMBO_MISSECUT:High=3.7_0.001
 
 	map<string, string> locParameterMap; //parameter key - filter, value
-	japp->GetParameters(locParameterMap, "COMBO_MISSECUT:"); //gets all parameters with this filter at the beginning of the key
+	japp->GetJParameterManager()->FilterParameters(locParameterMap, "COMBO_MISSECUT:"); //gets all parameters with this filter at the beginning of the key
 	for(auto locParamPair : locParameterMap)
 	{
 		if(dDebugLevel)

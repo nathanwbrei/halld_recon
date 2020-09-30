@@ -21,23 +21,23 @@
 #include "DHistogramActions.h"
 #include "DCutActions.h"
 
-jerror_t ANALYSIS_init(const std::shared_ptr<const JEvent>& loop)
+void ANALYSIS_init(JFactorySet* factorySet)
 {
 	/// Create and register ANALYSIS data factories
-	event->AddFactory(new DReaction_factory_Thrown);
+	factorySet->Add(new DReaction_factory_Thrown);
 
-	event->AddFactory(new DAnalysisUtilities_factory);
-	event->AddFactory(new DMCThrownMatching_factory);
+	factorySet->Add(new DAnalysisUtilities_factory);
+	factorySet->Add(new DMCThrownMatching_factory);
 
-	event->AddFactory(new DAnalysisResults_factory);
-	event->AddFactory(new DEventWriterROOT_factory);
+	factorySet->Add(new DAnalysisResults_factory);
+	factorySet->Add(new DEventWriterROOT_factory);
 
-	event->AddFactory(new DTrackTimeBased_factory_Combo);
-	event->AddFactory(new DDetectorMatches_factory_Combo);
-	event->AddFactory(new DChargedTrack_factory_Combo);
-	event->AddFactory(new DNeutralParticle_factory_Combo);
+	factorySet->Add(new DTrackTimeBased_factory_Combo);
+	factorySet->Add(new DDetectorMatches_factory_Combo);
+	factorySet->Add(new DChargedTrack_factory_Combo);
+	factorySet->Add(new DNeutralParticle_factory_Combo);
 
-	event->AddFactory(new DReactionVertexInfo_factory);
+	factorySet->Add(new DReactionVertexInfo_factory);
 
 	//For some reason, have difficulty linking these classes without using them somewhere within the library
 	DHistogramAction_ThrownParticleKinematics();
@@ -96,7 +96,5 @@ jerror_t ANALYSIS_init(const std::shared_ptr<const JEvent>& loop)
 	DCutAction_PIDDeltaT(NULL, false, 0.0);
 	DCutAction_PIDTimingBeta(NULL, 0.0, 0.0);
 	DCutAction_OneVertexKinFit(NULL);
-
-	return;
 }
 

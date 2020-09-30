@@ -30,7 +30,7 @@ file(GLOB DAQ_HEADERS ${PROJECT_SOURCE_DIR}/libraries/DAQ/*.h)
 
 set(HALLD_RECON_SOURCES
 
-#        libraries/ANALYSIS/ANALYSIS_init.cc
+        libraries/ANALYSIS/ANALYSIS_init.cc
         libraries/ANALYSIS/DAnalysisAction.cc
         libraries/ANALYSIS/DAnalysisAction.h
         libraries/ANALYSIS/DAnalysisResults.h
@@ -79,11 +79,11 @@ set(HALLD_RECON_SOURCES
         libraries/Analysis/DReactionVertexInfo_factory.cc
         libraries/Analysis/DReactionVertexInfo_factory.h
         libraries/Analysis/DSourceCombo.h
-#        libraries/Analysis/DSourceComboer.cc  # JParameterManager
+        libraries/Analysis/DSourceComboer.cc
         libraries/Analysis/DSourceComboer.h
-#        libraries/Analysis/DSourceComboP4Handler.cc  # JParameterManager
+        libraries/Analysis/DSourceComboP4Handler.cc
         libraries/Analysis/DSourceComboP4Handler.h
-#        libraries/Analysis/DSourceComboTimeHandler.cc  # JParameterManager
+        libraries/Analysis/DSourceComboTimeHandler.cc
         libraries/Analysis/DSourceComboTimeHandler.h
         libraries/Analysis/DSourceComboVertexer.cc
         libraries/Analysis/DSourceComboVertexer.h

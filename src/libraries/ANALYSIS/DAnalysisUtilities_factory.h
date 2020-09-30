@@ -42,7 +42,7 @@ class DAnalysisUtilities_factory : public JFactoryT<DAnalysisUtilities>
 		//------------------
 		// EndRun
 		//------------------
-		void EndRun()
+		void EndRun() override
 		{
 			if( analysisutilities ) delete analysisutilities;
 			analysisutilities = NULL;
