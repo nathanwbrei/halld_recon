@@ -14,7 +14,8 @@ class DBeamPhoton: public DKinematicData
 {
 	public:
 		JOBJECT_PUBLIC(DBeamPhoton);
-		
+
+		oid_t id; // TODO: NWB: Make sure this is used correctly
 		unsigned int dCounter = 0;
 		DetectorSystem_t dSystem = SYS_NULL; //SYS_TAGM or SYS_TAGH (SYS_NULL if tag MCGEN and misses the tagger!)
 

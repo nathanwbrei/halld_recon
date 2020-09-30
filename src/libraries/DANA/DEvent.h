@@ -66,12 +66,25 @@ public:
 		return m_app;
 	}
 
+	inline DMagneticFieldMap* GetBfield() {
+		auto run_number = m_event->GetRunNumber();
+		return m_app->GetService<DGeometryManager>()->GetBfield(run_number);
+	}
+
 	// TODO: Get JGeometry
 	// TODO: Get DGeometry
 	// TODO: Get locks
 	// TODO: Get JLargeCalibration
 
 };
+
+
+inline DGeometry* GetDGeometry(const std::shared_ptr<const JEvent>& event) {
+	return event->GetJApplication()->GetService<DGeometryManager>()->GetDGeometry(event->GetRunNumber());
+}
+
+
+
 
 
 #endif //HALLD_RECON_DEVENT_H

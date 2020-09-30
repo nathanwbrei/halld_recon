@@ -240,21 +240,21 @@ vector<size_t> Get_DefinedParticleStepIndex(const DReaction* locReaction)
 	return locDefinedParticleStepIndices;
 }
 
-vector<const DReaction*> Get_Reactions(JEventLoop* locEventLoop)
+vector<const DReaction*> Get_Reactions(const std::shared_ptr<const JEvent>& locEvent)
 {
 	// Get DReactions:
 	// Get list of factories and find all the ones producing
 	// DReaction objects. (A simpler way to do this would be to
-	// just use locEventLoop->Get(...), but then only one plugin could
+	// just use locEvent->Get(...), but then only one plugin could
 	// be used at a time.)
-	vector<JFactory_base*> locFactories = locEventLoop->GetFactories();
+	vector<JFactory_base*> locFactories = locEvent->GetFactories();
 	vector<const DReaction*> locReactions;
 	for(size_t loc_i = 0; loc_i < locFactories.size(); ++loc_i)
 	{
-		JFactory<DReaction>* locFactory = dynamic_cast<JFactory<DReaction>*>(locFactories[loc_i]);
+		JFactoryT<DReaction>* locFactory = dynamic_cast<JFactoryT<DReaction>*>(locFactories[loc_i]);
 		if(locFactory == nullptr)
 			continue;
-		if(string(locFactory->Tag()) == "Thrown")
+		if(string(locFactory->GetTag()) == "Thrown")
 			continue;
 
 		// Found a factory producing DReactions. The reaction objects are

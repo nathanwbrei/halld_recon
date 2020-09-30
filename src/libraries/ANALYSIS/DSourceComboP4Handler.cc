@@ -207,7 +207,7 @@ void DSourceComboP4Handler::Get_CommandLineCuts_MM2(void)
 	//COMBO_MM2CUT:High_14=3.7_0.001
 
 	map<string, string> locParameterMap; //parameter key - filter, value
-	gPARMS->GetParameters(locParameterMap, "COMBO_MM2CUT:"); //gets all parameters with this filter at the beginning of the key
+	app->GetParameters(locParameterMap, "COMBO_MM2CUT:"); //gets all parameters with this filter at the beginning of the key
 	for(auto locParamPair : locParameterMap)
 	{
 		if(dDebugLevel)
@@ -234,7 +234,7 @@ void DSourceComboP4Handler::Get_CommandLineCuts_MM2(void)
 		//get the parameter, with hack so that don't get warning message about no default
 		string locKeyValue;
 		string locFullParamName = string("COMBO_MM2CUT:") + locParamPair.first; //have to add back on the filter
-		gPARMS->SetDefaultParameter(locFullParamName, locKeyValue);
+		app->SetDefaultParameter(locFullParamName, locKeyValue);
 
 		//If functional form, save it and continue
 		if(locFuncIndex != string::npos)
@@ -286,7 +286,7 @@ void DSourceComboP4Handler::Get_CommandLineCuts_IM(void)
 	//COMBO_IMCUT:High_7=0.3
 
 	map<string, string> locParameterMap; //parameter key - filter, value
-	gPARMS->GetParameters(locParameterMap, "COMBO_IMCUT:"); //gets all parameters with this filter at the beginning of the key
+	app->GetParameters(locParameterMap, "COMBO_IMCUT:"); //gets all parameters with this filter at the beginning of the key
 	for(auto locParamPair : locParameterMap)
 	{
 		if(dDebugLevel)
@@ -312,7 +312,7 @@ void DSourceComboP4Handler::Get_CommandLineCuts_IM(void)
 		//get the parameter, with hack so that don't get warning message about no default
 		string locKeyValue;
 		string locFullParamName = string("COMBO_IMCUT:") + locParamPair.first; //have to add back on the filter
-		gPARMS->SetDefaultParameter(locFullParamName, locKeyValue);
+		app->SetDefaultParameter(locFullParamName, locKeyValue);
 
 		//is cut parameter: extract and save
 		istringstream locValuetream(locKeyValue);
@@ -355,7 +355,7 @@ void DSourceComboP4Handler::Get_CommandLineCuts_MissingEnergy(void)
 	//COMBO_MISSECUT:High=3.7_0.001
 
 	map<string, string> locParameterMap; //parameter key - filter, value
-	gPARMS->GetParameters(locParameterMap, "COMBO_MISSECUT:"); //gets all parameters with this filter at the beginning of the key
+	app->GetParameters(locParameterMap, "COMBO_MISSECUT:"); //gets all parameters with this filter at the beginning of the key
 	for(auto locParamPair : locParameterMap)
 	{
 		if(dDebugLevel)
@@ -371,7 +371,7 @@ void DSourceComboP4Handler::Get_CommandLineCuts_MissingEnergy(void)
 		//get the parameter, with hack so that don't get warning message about no default
 		string locKeyValue;
 		string locFullParamName = string("COMBO_MISSECUT:") + locParamPair.first; //have to add back on the filter
-		gPARMS->SetDefaultParameter(locFullParamName, locKeyValue);
+		app->SetDefaultParameter(locFullParamName, locKeyValue);
 
 		//If functional form, save it and continue
 		auto locFuncIndex = locParamPair.first.find("_FUNC");
@@ -507,9 +507,9 @@ void DSourceComboP4Handler::Create_CutFunctions(void)
 
 DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, bool locCreateHistsFlag) : dSourceComboer(locSourceComboer)
 {
-	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
-	gPARMS->SetDefaultParameter("COMBO:PRINT_CUTS", dPrintCutFlag);
-	gPARMS->SetDefaultParameter("COMBO:MAX_MASSIVE_NEUTRAL_BETA", dMaxMassiveNeutralBeta);
+	app->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
+	app->SetDefaultParameter("COMBO:PRINT_CUTS", dPrintCutFlag);
+	app->SetDefaultParameter("COMBO:MAX_MASSIVE_NEUTRAL_BETA", dMaxMassiveNeutralBeta);
 
 	Define_DefaultCuts();
 	Get_CommandLineCuts_IM();

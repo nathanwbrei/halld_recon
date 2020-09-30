@@ -27,6 +27,7 @@ class DNeutralShower : public JObject
  public:
   JOBJECT_PUBLIC(DNeutralShower);
 
+  oid_t id;  // TODO: NWB: Make sure this is being set/used properly
   oid_t dShowerID;
   DetectorSystem_t dDetectorSystem;
 
@@ -39,7 +40,6 @@ class DNeutralShower : public JObject
   // in the FCAL.  Quality = 1 for all BCAL showers.
 
   double dQuality;
-
   const JObject* dBCALFCALShower; //is either DBCALShower or DFCALShower: dynamic_cast as appropriate (based on dDetectorSystem)
 
   void Summarize(JObjectSummary& summary) const override {

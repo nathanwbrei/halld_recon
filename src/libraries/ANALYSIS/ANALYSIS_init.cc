@@ -1,7 +1,6 @@
 // $Id: ANALYSIS_init.cc 2433 2007-04-07 14:57:32Z pmatt $
 
-#include <JANA/JEventLoop.h>
-using namespace jana;
+#include <JANA/JEvent.h>
 
 //OK
 #include "DReaction_factory_Thrown.h"
@@ -22,23 +21,23 @@ using namespace jana;
 #include "DHistogramActions.h"
 #include "DCutActions.h"
 
-jerror_t ANALYSIS_init(JEventLoop *loop)
+jerror_t ANALYSIS_init(const std::shared_ptr<const JEvent>& loop)
 {
 	/// Create and register ANALYSIS data factories
-	loop->AddFactory(new DReaction_factory_Thrown);
+	event->AddFactory(new DReaction_factory_Thrown);
 
-	loop->AddFactory(new DAnalysisUtilities_factory);
-	loop->AddFactory(new DMCThrownMatching_factory);
+	event->AddFactory(new DAnalysisUtilities_factory);
+	event->AddFactory(new DMCThrownMatching_factory);
 
-	loop->AddFactory(new DAnalysisResults_factory);
-	loop->AddFactory(new DEventWriterROOT_factory);
+	event->AddFactory(new DAnalysisResults_factory);
+	event->AddFactory(new DEventWriterROOT_factory);
 
-	loop->AddFactory(new DTrackTimeBased_factory_Combo);
-	loop->AddFactory(new DDetectorMatches_factory_Combo);
-	loop->AddFactory(new DChargedTrack_factory_Combo);
-	loop->AddFactory(new DNeutralParticle_factory_Combo);
+	event->AddFactory(new DTrackTimeBased_factory_Combo);
+	event->AddFactory(new DDetectorMatches_factory_Combo);
+	event->AddFactory(new DChargedTrack_factory_Combo);
+	event->AddFactory(new DNeutralParticle_factory_Combo);
 
-	loop->AddFactory(new DReactionVertexInfo_factory);
+	event->AddFactory(new DReactionVertexInfo_factory);
 
 	//For some reason, have difficulty linking these classes without using them somewhere within the library
 	DHistogramAction_ThrownParticleKinematics();
@@ -98,6 +97,6 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DCutAction_PIDTimingBeta(NULL, 0.0, 0.0);
 	DCutAction_OneVertexKinFit(NULL);
 
-	return NOERROR;
+	return;
 }
 

@@ -215,7 +215,7 @@ void DSourceComboer::Get_CommandLineCuts_dEdx(void)
 	//COMBO_DEDXCUT:High_9_256_FUNC="[0] + [1]*x"   //Cut pi-'s (9) in the SC (256) according to the functional form for the high-side cut //x = track momentum
 
 	map<string, string> locParameterMap; //parameter key - filter, value
-	gPARMS->GetParameters(locParameterMap, "COMBO_DEDXCUT:"); //gets all parameters with this filter at the beginning of the key
+	app->GetParameters(locParameterMap, "COMBO_DEDXCUT:"); //gets all parameters with this filter at the beginning of the key
 	for(auto locParamPair : locParameterMap)
 	{
 		if(dDebugLevel)
@@ -252,7 +252,7 @@ void DSourceComboer::Get_CommandLineCuts_dEdx(void)
 		//get the parameter, with hack so that don't get warning message about no default
 		string locKeyValue;
 		string locFullParamName = string("COMBO_DEDXCUT:") + locParamPair.first; //have to add back on the filter
-		gPARMS->SetDefaultParameter(locFullParamName, locKeyValue);
+		app->SetDefaultParameter(locFullParamName, locKeyValue);
 
 		//If functional form, save it and continue
 		if(locFuncIndex != string::npos)
@@ -303,7 +303,7 @@ void DSourceComboer::Get_CommandLineCuts_EOverP(void)
 	//COMBO_EOVERP:14_32=0.75_0.5             //Cut protons (14) in the FCAL (32) with the following parameters
 
 	map<string, string> locParameterMap; //parameter key - filter, value
-	gPARMS->GetParameters(locParameterMap, "COMBO_EOVERP:"); //gets all parameters with this filter at the beginning of the key
+	app->GetParameters(locParameterMap, "COMBO_EOVERP:"); //gets all parameters with this filter at the beginning of the key
 	for(auto locParamPair : locParameterMap)
 	{
 		if(dDebugLevel)
@@ -335,7 +335,7 @@ void DSourceComboer::Get_CommandLineCuts_EOverP(void)
 		//get the parameter, with hack so that don't get warning message about no default
 		string locKeyValue;
 		string locFullParamName = string("COMBO_EOVERP:") + locParamPair.first; //have to add back on the filter
-		gPARMS->SetDefaultParameter(locFullParamName, locKeyValue);
+		app->SetDefaultParameter(locFullParamName, locKeyValue);
 
 		//If functional form, save it and continue
 		if(locFuncIndex != string::npos)
@@ -462,12 +462,11 @@ void DSourceComboer::Create_CutFunctions(void)
 
 /********************************************************************* CONSTRUCTOR **********************************************************************/
 
-void DSourceComboer::Set_RunDependent_Data(JEventLoop *locEventLoop)
+void DSourceComboer::Set_RunDependent_Data(const std::shared_ptr<const JEvent>& locEvent)
 {
 	// Set member data
 	//GET THE GEOMETRY
-	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
+	DGeometry* locGeometry = GetDGeometry(event);
 
 	//TARGET INFORMATION
 	double locTargetCenterZ = 65.0;
@@ -475,13 +474,13 @@ void DSourceComboer::Set_RunDependent_Data(JEventLoop *locEventLoop)
 	dTargetCenter.SetXYZ(0.0, 0.0, locTargetCenterZ);	
 
 	// Update linked objects
-	dSourceComboP4Handler->Set_RunDependent_Data(locEventLoop);
-	dSourceComboVertexer->Set_RunDependent_Data(locEventLoop);
-	dSourceComboTimeHandler->Set_RunDependent_Data(locEventLoop);
-	dParticleComboCreator->Set_RunDependent_Data(locEventLoop);	
+	dSourceComboP4Handler->Set_RunDependent_Data(locEvent);
+	dSourceComboVertexer->Set_RunDependent_Data(locEvent);
+	dSourceComboTimeHandler->Set_RunDependent_Data(locEvent);
+	dParticleComboCreator->Set_RunDependent_Data(locEvent);	
 }
 
-DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
+DSourceComboer::DSourceComboer(const std::shared_ptr<const JEvent>& locEvent)
 {
 	dResourcePool_SourceCombo.Set_ControlParams(100, 50, 1000, 20000, 0);
 	dResourcePool_SourceComboVector.Set_ControlParams(10, 5, 200, 1200, 0);
@@ -489,10 +488,11 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 	dCreatedComboVectors.reserve(1000);
 
 	//Get preselect tag, debug level
-	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
-	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
-	gPARMS->SetDefaultParameter("COMBO:PRINT_CUTS", dPrintCutFlag);
-	gPARMS->SetDefaultParameter("COMBO:MAX_NEUTRALS", dMaxNumNeutrals);
+	auto app = locEvent->GetJApplication();
+	app->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
+	app->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
+	app->SetDefaultParameter("COMBO:PRINT_CUTS", dPrintCutFlag);
+	app->SetDefaultParameter("COMBO:MAX_NEUTRALS", dMaxNumNeutrals);
 
 
 	//SETUP CUTS
@@ -502,11 +502,11 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 	Create_CutFunctions();
 
 	//GET THE REACTIONS
-	auto locReactions = DAnalysis::Get_Reactions(locEventLoop);
+	auto locReactions = DAnalysis::Get_Reactions(locEvent);
 
 	//CREATE DSourceComboINFO'S
 	vector<const DReactionVertexInfo*> locVertexInfos;
-	locEventLoop->Get(locVertexInfos);
+	locEvent->Get(locVertexInfos);
 	for(const auto& locVertexInfo : locVertexInfos)
 		Create_SourceComboInfos(locVertexInfo);
 
@@ -517,20 +517,20 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 
 	//CREATE HANDLERS
 	dSourceComboP4Handler = new DSourceComboP4Handler(this);
-	dSourceComboVertexer = new DSourceComboVertexer(locEventLoop, this, dSourceComboP4Handler);
-	dSourceComboTimeHandler = new DSourceComboTimeHandler(locEventLoop, this, dSourceComboVertexer);
+	dSourceComboVertexer = new DSourceComboVertexer(locEvent, this, dSourceComboP4Handler);
+	dSourceComboTimeHandler = new DSourceComboTimeHandler(locEvent, this, dSourceComboVertexer);
 	dSourceComboP4Handler->Set_SourceComboTimeHandler(dSourceComboTimeHandler);
 	dSourceComboP4Handler->Set_SourceComboVertexer(dSourceComboVertexer);
 	dSourceComboVertexer->Set_SourceComboTimeHandler(dSourceComboTimeHandler);
-	dParticleComboCreator = new DParticleComboCreator(locEventLoop, this, dSourceComboTimeHandler, dSourceComboVertexer);
+	dParticleComboCreator = new DParticleComboCreator(locEvent, this, dSourceComboTimeHandler, dSourceComboVertexer);
 
-	Set_RunDependent_Data(locEventLoop);
+	Set_RunDependent_Data(locEvent);
 
 	//save rf bunch cuts
-	if(gPARMS->Exists("COMBO:NUM_PLUSMINUS_RF_BUNCHES"))
+	if(app->Exists("COMBO:NUM_PLUSMINUS_RF_BUNCHES"))
 	{
 		size_t locNumPlusMinusRFBunches;
-		gPARMS->GetParameter("COMBO:NUM_PLUSMINUS_RF_BUNCHES", locNumPlusMinusRFBunches);
+		app->GetParameter("COMBO:NUM_PLUSMINUS_RF_BUNCHES", locNumPlusMinusRFBunches);
 		for(const auto& locReaction : locReactions)
 			dRFBunchCutsByReaction.emplace(locReaction, locNumPlusMinusRFBunches);
 	}
@@ -1121,10 +1121,10 @@ DSourceComboUse DSourceComboer::Build_NewZDependentUse(const DReaction* locReact
 
 /********************************************************************** SETUP FOR NEW EVENT ***********************************************************************/
 
-void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
+void DSourceComboer::Reset_NewEvent(const std::shared_ptr<const JEvent>& locEvent)
 {
 	//check if it's actually a new event
-	auto locEventNumber = locEventLoop->GetJEvent().GetEventNumber();
+	auto locEventNumber = locEvent->GetJEvent().GetEventNumber();
 	if(locEventNumber == dEventNumber) {
         jout << "WARNING: Calling DSourceComboer::Reset_NewEvent() with repeated run number: " << locEventNumber << endl;
 		return; //nope
@@ -1177,27 +1177,27 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 
 	//GET JANA OBJECTS
 	vector<const DNeutralShower*> locNeutralShowers;
-	locEventLoop->Get(locNeutralShowers, dShowerSelectionTag.c_str());
+	locEvent->Get(locNeutralShowers, dShowerSelectionTag.c_str());
 
 	vector<const DChargedTrack*> locChargedTracks;
-	locEventLoop->Get(locChargedTracks, "Combo");
+	locEvent->Get(locChargedTracks, "Combo");
 
 	vector<const DBeamPhoton*> locBeamPhotons;
-	locEventLoop->Get(locBeamPhotons);
+	locEvent->Get(locBeamPhotons);
 
 	const DEventRFBunch* locInitialRFBunch = nullptr;
-	locEventLoop->GetSingle(locInitialRFBunch);
+	locEvent->GetSingle(locInitialRFBunch);
 
 	const DDetectorMatches* locDetectorMatches = nullptr;
-	locEventLoop->GetSingle(locDetectorMatches, "Combo");
+	locEvent->GetSingle(locDetectorMatches, "Combo");
 
 //COMPARE:
 const DVertex* locVertex = nullptr;
-locEventLoop->GetSingle(locVertex);
+locEvent->GetSingle(locVertex);
 dSourceComboVertexer->Set_Vertex(locVertex);
 
     vector<const DESSkimData*> locESSkimDataVector;
-    locEventLoop->Get(locESSkimDataVector);
+    locEvent->Get(locESSkimDataVector);
     dESSkimData = locESSkimDataVector.empty() ? NULL : locESSkimDataVector[0];
 
 	//SETUP NEUTRAL SHOWERS

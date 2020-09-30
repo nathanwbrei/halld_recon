@@ -22,8 +22,8 @@ dPerformAntiCut(false), dReaction(locReaction), dActionName(locActionBaseName), 
 		dActionName += string("_") + locActionUniqueString;
 
 	dOutputFileName = "hd_root.root";
-	if(gPARMS->Exists("OUTPUT_FILENAME"))
-		gPARMS->GetParameter("OUTPUT_FILENAME", dOutputFileName);
+	if(app->Exists("OUTPUT_FILENAME"))
+		app->GetParameter("OUTPUT_FILENAME", dOutputFileName);
 
 	string locLockName = dActionName;
 	if(dReaction != NULL)

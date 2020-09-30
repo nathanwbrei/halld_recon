@@ -13,6 +13,7 @@
 #include "TMatrixFSym.h"
 #include "DResettable.h"
 #include "DResourcePool.h"
+#include <DANA/DObjectID.h>
 
 #ifndef SPEED_OF_LIGHT
 #define SPEED_OF_LIGHT 29.9792458

@@ -13,7 +13,7 @@
 
 #include "JANA/JApplication.h"
 #include "JANA/JObject.h"
-#include "JANA/JEventLoop.h"
+#include <JANA/JEvent.h>
 
 #include "TRIGGER/DTrigger.h"
 #include "BCAL/DBCALShower.h"
@@ -41,7 +41,6 @@
 #include "ANALYSIS/DReactionVertexInfo.h"
 
 using namespace std;
-using namespace jana;
 
 class DEventWriterROOT : public JObject
 {
@@ -49,23 +48,23 @@ class DEventWriterROOT : public JObject
 		JOBJECT_PUBLIC(DEventWriterROOT);
 
 		virtual ~DEventWriterROOT(void);
-		void Initialize(JEventLoop* locEventLoop);
-		void Run_Update(JEventLoop* locEventLoop);
+		void Initialize(const std::shared_ptr<const JEvent>& locEvent);
+		void Run_Update(const std::shared_ptr<const JEvent>& locEvent);
 
-		void Create_ThrownTree(JEventLoop* locEventLoop, string locOutputFileName) const;
+		void Create_ThrownTree(const std::shared_ptr<const JEvent>& locEvent, string locOutputFileName) const;
 
-		void Fill_DataTrees(JEventLoop* locEventLoop, string locDReactionTag) const; //fills all from this factory tag
-		void Fill_DataTree(JEventLoop* locEventLoop, const DReaction* locReaction, deque<const DParticleCombo*>& locParticleCombos) const;
-		void Fill_ThrownTree(JEventLoop* locEventLoop) const;
+		void Fill_DataTrees(const std::shared_ptr<const JEvent>& locEvent, string locDReactionTag) const; //fills all from this factory tag
+		void Fill_DataTree(const std::shared_ptr<const JEvent>& locEvent, const DReaction* locReaction, deque<const DParticleCombo*>& locParticleCombos) const;
+		void Fill_ThrownTree(const std::shared_ptr<const JEvent>& locEvent) const;
 
 	protected:
 
 		//CUSTOM FUNCTIONS: //Inherit from this class and write custom code in these functions
 			//DO NOT: Write any code that requires a lock of ANY KIND. No reading calibration constants, accessing gParams, etc. This can cause deadlock.
-		virtual void Create_CustomBranches_ThrownTree(DTreeBranchRegister& locBranchRegister, JEventLoop* locEventLoop) const{};
-		virtual void Fill_CustomBranches_ThrownTree(DTreeFillData* locTreeFillData, JEventLoop* locEventLoop, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns) const{};
-		virtual void Create_CustomBranches_DataTree(DTreeBranchRegister& locBranchRegister, JEventLoop* locEventLoop, const DReaction* locReaction, bool locIsMCDataFlag) const{};
-		virtual void Fill_CustomBranches_DataTree(DTreeFillData* locTreeFillData, JEventLoop* locEventLoop, const DReaction* locReaction, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
+		virtual void Create_CustomBranches_ThrownTree(DTreeBranchRegister& locBranchRegister, const std::shared_ptr<const JEvent>& locEvent) const{};
+		virtual void Fill_CustomBranches_ThrownTree(DTreeFillData* locTreeFillData, const std::shared_ptr<const JEvent>& locEvent, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns) const{};
+		virtual void Create_CustomBranches_DataTree(DTreeBranchRegister& locBranchRegister, const std::shared_ptr<const JEvent>& locEvent, const DReaction* locReaction, bool locIsMCDataFlag) const{};
+		virtual void Fill_CustomBranches_DataTree(DTreeFillData* locTreeFillData, const std::shared_ptr<const JEvent>& locEvent, const DReaction* locReaction, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
 				const DMCThrownMatching* locMCThrownMatching, const DDetectorMatches* locDetectorMatches,
 				const vector<const DBeamPhoton*>& locBeamPhotons, const vector<const DChargedTrackHypothesis*>& locChargedHypos,
 				const vector<const DNeutralParticleHypothesis*>& locNeutralHypos, const deque<const DParticleCombo*>& locParticleCombos) const{};
@@ -109,8 +108,8 @@ class DEventWriterROOT : public JObject
 		map<const DReaction*, const DReactionVertexInfo*> dVertexInfoMap;
 
 		//TREE CREATION:
-		void Create_DataTree(const DReaction* locReaction, JEventLoop* locEventLoop, bool locIsMCDataFlag);
-		TMap* Create_UserInfoMaps(DTreeBranchRegister& locTreeBranchRegister, JEventLoop* locEventLoop, const DReaction* locReaction) const;
+		void Create_DataTree(const DReaction* locReaction, const std::shared_ptr<const JEvent>& locEvent, bool locIsMCDataFlag);
+		TMap* Create_UserInfoMaps(DTreeBranchRegister& locTreeBranchRegister, const std::shared_ptr<const JEvent>& locEvent, const DReaction* locReaction) const;
 		void Create_UserTargetInfo(DTreeBranchRegister& locTreeBranchRegister, Particle_t locTargetPID) const;
 		void Create_Branches_Thrown(DTreeBranchRegister& locTreeBranchRegister, bool locIsOnlyThrownFlag) const;
 
@@ -140,10 +139,10 @@ class DEventWriterROOT : public JObject
 
 		//TREE FILLING: GET HYPOTHESES/BEAM
 		vector<const DBeamPhoton*> Get_BeamPhotons(const deque<const DParticleCombo*>& locParticleCombos) const;
-		vector<const DChargedTrackHypothesis*> Get_ChargedHypotheses(JEventLoop* locEventLoop) const;
-		vector<const DChargedTrackHypothesis*> Get_ChargedHypotheses_Used(JEventLoop* locEventLoop, const DReaction* locReaction, const deque<const DParticleCombo*>& locParticleCombos) const;
-		vector<const DNeutralParticleHypothesis*> Get_NeutralHypotheses(JEventLoop* locEventLoop, const set<Particle_t>& locReactionPIDs) const;
-		vector<const DNeutralParticleHypothesis*> Get_NeutralHypotheses_Used(JEventLoop* locEventLoop, const DReaction* locReaction, const set<Particle_t>& locReactionPIDs, const deque<const DParticleCombo*>& locParticleCombos) const;
+		vector<const DChargedTrackHypothesis*> Get_ChargedHypotheses(const std::shared_ptr<const JEvent>& locEvent) const;
+		vector<const DChargedTrackHypothesis*> Get_ChargedHypotheses_Used(const std::shared_ptr<const JEvent>& locEvent, const DReaction* locReaction, const deque<const DParticleCombo*>& locParticleCombos) const;
+		vector<const DNeutralParticleHypothesis*> Get_NeutralHypotheses(const std::shared_ptr<const JEvent>& locEvent, const set<Particle_t>& locReactionPIDs) const;
+		vector<const DNeutralParticleHypothesis*> Get_NeutralHypotheses_Used(const std::shared_ptr<const JEvent>& locEvent, const DReaction* locReaction, const set<Particle_t>& locReactionPIDs, const deque<const DParticleCombo*>& locParticleCombos) const;
 
 		//TREE FILLING: INDEPENDENT PARTICLES
 		void Fill_BeamData(DTreeFillData* locTreeFillData, unsigned int locArrayIndex, const DBeamPhoton* locBeamPhoton, const DVertex* locVertex, const DMCThrownMatching* locMCThrownMatching) const;

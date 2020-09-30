@@ -1,28 +1,28 @@
 #include "DNeutralParticle_factory_Combo.h"
 
 //------------------
-// init
+// Init
 //------------------
-jerror_t DNeutralParticle_factory_Combo::init(void)
+void DNeutralParticle_factory_Combo::Init()
 {
 	//Get preselect tag
 	dShowerSelectionTag = "PreSelect";
-	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
+	app->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
 
-	return NOERROR;
+	return;
 }
 
 //------------------
-// brun
+// BeginRun
 //------------------
-jerror_t DNeutralParticle_factory_Combo::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
+void DNeutralParticle_factory_Combo::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
 	vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses;
-	locEventLoop->Get(locNeutralParticleHypotheses); //make sure that brun() is called for the default factory!!!
-	dNeutralParticleHypothesisFactory = static_cast<DNeutralParticleHypothesis_factory*>(locEventLoop->GetFactory("DNeutralParticleHypothesis"));
+	locEvent->Get(locNeutralParticleHypotheses); //make sure that brun() is called for the default factory!!!
+	dNeutralParticleHypothesisFactory = static_cast<DNeutralParticleHypothesis_factory*>(locEvent->GetFactory("DNeutralParticleHypothesis"));
 
 	//Get Needed PIDs
-	auto locReactions = DAnalysis::Get_Reactions(locEventLoop);
+	auto locReactions = DAnalysis::Get_Reactions(locEvent);
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 	{
 		auto locNeutralPIDs = locReactions[loc_i]->Get_FinalPIDs(-1, false, false, d_Neutral, false);
@@ -37,16 +37,16 @@ jerror_t DNeutralParticle_factory_Combo::brun(jana::JEventLoop *locEventLoop, in
 	if(dNeutralPIDs.empty())
 		SetFactoryFlag(NOT_OBJECT_OWNER);
 
-	return NOERROR;
+	return;
 }
 
 //------------------
-// evnt
+// Process
 //------------------
-jerror_t DNeutralParticle_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
+void DNeutralParticle_factory_Combo::Process(const std::shared_ptr<const JEvent>& event)
 {
 	vector<const DNeutralParticle*> locNeutralParticles;
-	locEventLoop->Get(locNeutralParticles, dShowerSelectionTag.c_str());
+	locEvent->Get(locNeutralParticles, dShowerSelectionTag.c_str());
 
 	//Nothing to do! Pass them through
 	if(dNeutralPIDs.empty())
@@ -54,14 +54,14 @@ jerror_t DNeutralParticle_factory_Combo::evnt(jana::JEventLoop *locEventLoop, ui
 		_data.clear();
 		for(auto& locNeutralParticle : locNeutralParticles)
 			_data.push_back(const_cast<DNeutralParticle*>(locNeutralParticle));
-		return NOERROR;
+		return;
 	}
 
 	const DEventRFBunch* locEventRFBunch = nullptr;
-	locEventLoop->GetSingle(locEventRFBunch);
+	locEvent->GetSingle(locEventRFBunch);
 
 	const DVertex* locVertex = nullptr;
-	locEventLoop->GetSingle(locVertex);
+	locEvent->GetSingle(locVertex);
 
 	dNeutralParticleHypothesisFactory->Recycle_Hypotheses(dCreatedHypotheses);
 
@@ -76,8 +76,8 @@ jerror_t DNeutralParticle_factory_Combo::evnt(jana::JEventLoop *locEventLoop, ui
 			dCreatedHypotheses.push_back(locNewHypothesis);
 			locNewNeutralParticle->dNeutralParticleHypotheses.push_back(locNewHypothesis);
 		}
-		_data.push_back(locNewNeutralParticle);
+		Insert(locNewNeutralParticle);
 	}
 
-	return NOERROR;
+	return;
 }
