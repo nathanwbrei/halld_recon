@@ -44,7 +44,7 @@ class DTrackCandidate_factory_THROWN:public JFactoryT<DTrackCandidate>{
 		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
 		void Process(const std::shared_ptr<const JEvent>& event) override;
 		//void EndRun() override;
-		//void Finish();
+		//void Finish() override;
 
 		DTrackFitter *fitter;
 		const DTrackHitSelector *hitselector;

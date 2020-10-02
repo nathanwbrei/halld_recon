@@ -207,11 +207,11 @@ class DL1MCTrigger_factory:public JFactoryT<DL1MCTrigger>{
 		float  BCAL_ADC_PER_MEV_CORRECT;
 		
  private:
-		void Init() override;						///< Called once at program start.
-		void BeginRun(const std::shared_ptr<const JEvent>& event) override;	///< Called everytime a new run number is detected.
-		void Process(const std::shared_ptr<const JEvent>& event) override;	///< Called every event.
-		void EndRun() override;						///< Called everytime run number changes, provided brun has been called.
-		void Finish();						///< Called after last event of last event source has been processed.
+		void Init() override;
+		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
+		void Process(const std::shared_ptr<const JEvent>& event) override;
+		void EndRun() override;
+		void Finish() override;
 		
 		
 		void LoadFCALConst( fcal_constants_t &table, 

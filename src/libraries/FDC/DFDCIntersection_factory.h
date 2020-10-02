@@ -24,7 +24,7 @@ class DFDCIntersection_factory:public JFactoryT<DFDCIntersection>{
 		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
 		void Process(const std::shared_ptr<const JEvent>& event) override;
 		//void EndRun() override;
-		//void Finish();
+		//void Finish() override;
 
 		void MakeIntersectionPoints(vector<vector<const DFDCHit*> >&hits_by_layer);
 		void MakeRestrictedIntersectionPoints(vector<vector<const DFDCHit*> >&hits_by_layer);

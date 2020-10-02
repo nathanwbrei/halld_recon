@@ -49,8 +49,8 @@ class DBeamCurrent_factory:public JFactoryT<DBeamCurrent>{
 		void Init() override;
 		jerror_t brun(JEventLoop *eventLoop,  int32_t runnumber);	///< Called everytime a new run number is detected.
 		void Process(const std::shared_ptr<const JEvent>& aEvent) override;
-		void EndRun();
-		void Finish();
+		void EndRun() override;
+		void Finish() override;
 };
 
 #endif // _DBeamCurrent_factory_
