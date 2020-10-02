@@ -10,6 +10,7 @@
 
 #include <JANA/JFactoryT.h>
 #include "DBeamCurrent.h"
+using std::vector;
 
 class DBeamCurrent_factory:public JFactoryT<DBeamCurrent>{
 	public:
@@ -47,7 +48,7 @@ class DBeamCurrent_factory:public JFactoryT<DBeamCurrent>{
 		double IntegratedTime(void);
 		
 		void Init() override;
-		jerror_t brun(JEventLoop *eventLoop,  int32_t runnumber);	///< Called everytime a new run number is detected.
+		void BeginRun(const std::shared_ptr<const JEvent>& aEvent) override;
 		void Process(const std::shared_ptr<const JEvent>& aEvent) override;
 		void EndRun() override;
 		void Finish() override;

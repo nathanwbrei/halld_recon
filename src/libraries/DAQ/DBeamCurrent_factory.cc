@@ -13,37 +13,39 @@
 #include <mutex>
 using namespace std;
 
+#include "DBeamCurrent_factory.h"
+
+#include <DANA/DEvent.h>
+
 #include <DAQ/DCODAEventInfo.h>
 #include <DAQ/DCODAROCInfo.h>
-#include "DBeamCurrent_factory.h"
-using namespace jana;
 
 
 
 //------------------
-// init
+// Init
 //------------------
 void DBeamCurrent_factory::Init()
 {
+	auto app = GetApplication();
+
 	BEAM_ON_MIN_nA  = 10.0;  // nA
 	BEAM_TRIP_MIN_T = 3.0;   // seconds
 	SYNCSKIM_ROCID  = 34;    // rocBCAL4
 	
-	gPARMS->SetDefaultParameter("BEAM_ON_MIN_nA", BEAM_ON_MIN_nA, "Minimum current in nA to consider the beam \"on\" by DBeamCurrent");
-	gPARMS->SetDefaultParameter("BEAM_TRIP_MIN_T", BEAM_TRIP_MIN_T, "Minimum amount of time in seconds that event is away from beam trips to be considered fiducial");
-	gPARMS->SetDefaultParameter("SYNCSKIM:ROCID", SYNCSKIM_ROCID, "ROC id from which to use timestamp. Set to 0 to use average timestamp from CODA EB. Default is 34 (rocBCAL4)");
+	app->SetDefaultParameter("BEAM_ON_MIN_nA", BEAM_ON_MIN_nA, "Minimum current in nA to consider the beam \"on\" by DBeamCurrent");
+	app->SetDefaultParameter("BEAM_TRIP_MIN_T", BEAM_TRIP_MIN_T, "Minimum amount of time in seconds that event is away from beam trips to be considered fiducial");
+	app->SetDefaultParameter("SYNCSKIM:ROCID", SYNCSKIM_ROCID, "ROC id from which to use timestamp. Set to 0 to use average timestamp from CODA EB. Default is 34 (rocBCAL4)");
 
 	ticks_per_sec      = 250.011E6; // 250MHz clock (may be overwritten with calib constant in brun)
 	rcdb_start_time    = 0;       // unix time of when 250MHz clock was reset. (overwritten below)
 	rcdb_250MHz_offset_tics = 0;  // offset between 250MHz clock zero and RCDB recorded start time of event (overwritten below)
-
-	return NOERROR;
 }
 
 //------------------
-// brun
+// BeginRun
 //------------------
-jerror_t DBeamCurrent_factory::brun(JEventLoop *loop, int32_t runnumber)
+void DBeamCurrent_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
 	// Clear maps in case we are called more than once
 	boundaries.clear();
@@ -65,12 +67,12 @@ jerror_t DBeamCurrent_factory::brun(JEventLoop *loop, int32_t runnumber)
 	// method in JEventLoop, it will try parsing the string and 
 	// return more than a 1 element map.
 	map<string,string> mstr;
-	loop->GetJCalibration()->GetCalib("/ELECTRON_BEAM/current_map_epics", mstr);
-	if(mstr.empty()) return NOERROR;
+	GetCalib(event, "/ELECTRON_BEAM/current_map_epics", mstr);
+	if(mstr.empty()) return;
 	string &electron_beam_current = mstr.begin()->second;
 	
 	map<string,string> mcalib;
-	loop->GetJCalibration()->GetCalib("/ELECTRON_BEAM/timestamp_to_unix", mcalib);
+	GetCalib(event, "/ELECTRON_BEAM/timestamp_to_unix", mcalib);
 	if(mcalib.size() == 3){
 		//ticks_per_sec           = atof(mcalib["tics_per_sec"].c_str());
 		rcdb_250MHz_offset_tics = stoull(mcalib["rcdb_250MHz_offset_tics"].c_str());
@@ -132,27 +134,26 @@ jerror_t DBeamCurrent_factory::brun(JEventLoop *loop, int32_t runnumber)
 	static mutex mtx;
 	lock_guard<mutex> lck(mtx);
 	static set<int32_t> runs_loaded;
+	auto runnumber = event->GetRunNumber();
 	if(runs_loaded.find(runnumber) == runs_loaded.end()){
 		jout << "Electron beam current trip map for run " << runnumber << " loaded with " << boundaries.size() << " boundaries (" << trip.size() << " trips over " << t_max << " sec)" << jendl;
 		runs_loaded.insert(runnumber);
 	}
-
-	return NOERROR;
 }
 
 //------------------
-// evnt
+// Process
 //------------------
 void DBeamCurrent_factory::Process(const std::shared_ptr<const JEvent>& event)
 {
-	if(boundaries.empty()) return NOERROR;
+	if(boundaries.empty()) return;
 
 	// Get time of this event relative to start of run in seconds
-	// n.b. don't use loop->GetSingle() here. It results in infinite
+	// n.b. don't use event->GetSingle() here. It results in infinite
 	// recursion.
 	vector<const DCODAEventInfo*> codainfos;
-	loop->Get(codainfos);
-	if(codainfos.empty()) return NOERROR;
+	event->Get(codainfos);
+	if(codainfos.empty()) return;
 	const DCODAEventInfo *codainfo = codainfos[0];
 
 	// Get timestamp
@@ -166,7 +167,7 @@ void DBeamCurrent_factory::Process(const std::shared_ptr<const JEvent>& event)
 		// Use timestamp from the specified ROC. The default is 
 		// ROCID=34 which is the rocBCAL4 crate.
 		vector<const DCODAROCInfo*> codarocinfos;
-		loop->Get(codarocinfos);
+		event->Get(codarocinfos);
 		for( auto codarocinfo : codarocinfos ){
 			if( codarocinfo->rocid == SYNCSKIM_ROCID ){
 				mytimestamp = codarocinfo->timestamp;
@@ -203,26 +204,23 @@ void DBeamCurrent_factory::Process(const std::shared_ptr<const JEvent>& event)
 			}
 		}
 		
-		_data.push_back(bc);
+		Insert(bc);
 	}
 
-	return NOERROR;
 }
 
 //------------------
-// erun
+// EndRun
 //------------------
 void DBeamCurrent_factory::EndRun()
 {
-	return NOERROR;
 }
 
 //------------------
-// fini
+// Finish
 //------------------
 void DBeamCurrent_factory::Finish()
 {
-	return NOERROR;
 }
 
 //------------------

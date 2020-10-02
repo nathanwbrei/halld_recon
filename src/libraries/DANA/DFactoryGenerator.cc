@@ -65,18 +65,18 @@ void DFactoryGenerator::GenerateFactories(JFactorySet *factory_set)
 	TAGGER_init(factory_set);
 	TOF_init(factory_set);
 	TRACKING_init(factory_set);
-	HDDM_init(factory_set);
+	// HDDM_init(factory_set);   // TODO: NWB: Re-enable
 	PID_init(factory_set);
 	ANALYSIS_init(factory_set);
 	DAQ_init(factory_set);
 	TTAB_init(factory_set);
 	CERE_init(factory_set);
 	DIRC_init(factory_set);
-	TRIGGER_init(factory_set);
+	// TRIGGER_init(factory_set);  // TODO: NWB: Re-enable
 	PAIR_SPECTROMETER_init(factory_set);
 	TPOL_init(factory_set);
 	FMWPC_init(factory_set);
-	EVENTSTORE_init(factory_set);
+	// EVENTSTORE_init(factory_set);  // TODO: NWB: Re-enable
 	TAC_init(factory_set);
 	TRD_init(factory_set);	
 }

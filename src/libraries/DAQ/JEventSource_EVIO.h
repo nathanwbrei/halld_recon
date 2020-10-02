@@ -84,7 +84,7 @@ typedef pair<int,int> tagNum;
 
 #include "Df125EmulatorAlgorithm.h"
 #include "Df250EmulatorAlgorithm.h"
-#include "jerror.h"
+#include <JANA/Compatibility/jerror.h>
 
 #include <PID/DVertex.h>
 #include <DANA/DStatusBits.h>

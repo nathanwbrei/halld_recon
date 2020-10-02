@@ -178,7 +178,7 @@ set(HALLD_RECON_SOURCES
         libraries/DANA/DEvent.h
 #        libraries/DANA/DApplication.cc
         libraries/DANA/DApplication.h
-#        libraries/DANA/DFactoryGenerator.cc
+        libraries/DANA/DFactoryGenerator.cc
         libraries/DANA/DFactoryGenerator.h
         libraries/DANA/DObjectID.h
         libraries/DANA/DStatusBits.h
@@ -186,66 +186,94 @@ set(HALLD_RECON_SOURCES
         libraries/DANA/ReadWriteLock.cc
         libraries/DANA/ReadWriteLock.h
 
-#        libraries/DAQ/JEventSource_EVIO.cc
-        libraries/DAQ/JEventSource_EVIO.h
-#        libraries/DAQ/JEventSourceGenerator_EVIO.cc
-        libraries/DAQ/JEventSourceGenerator_EVIO.h
-#        libraries/DAQ/JEventSource_EVIO.cc
-
-        libraries/DAQ/DF1TDCConfig.h
-        libraries/DAQ/Df250EmulatorAlgorithm_v3.h  # JEventLoop
-        libraries/DAQ/DF1TDCHit.h
-        libraries/DAQ/Df125EmulatorAlgorithm.h
-        libraries/DAQ/Df125Config.h
-        libraries/DAQ/Df125PulseIntegral.h
-        libraries/DAQ/DCAEN1290TDCConfig.h
-        libraries/DAQ/Df250Scaler.h
-        libraries/DAQ/Df250TriggerTime.h
-        libraries/DAQ/Df125BORConfig.h
-        libraries/DAQ/Df125FDCPulse.h
-        libraries/DAQ/Df250BORConfig.h
-        libraries/DAQ/DCAEN1290TDCHit.h
-        libraries/DAQ/DTSscalers.h
-        libraries/DAQ/DCODAROCInfo.h
-        libraries/DAQ/DGEMSRSWindowRawData.h
-        libraries/DAQ/DDIRCTDCHit.h
-        libraries/DAQ/DCODAControlEvent.h
-        libraries/DAQ/Df250Config.h
-        libraries/DAQ/Df250WindowRawData.h
-        libraries/DAQ/DF1TDCTriggerTime.h
-        libraries/DAQ/DCODAEventInfo.h
-        libraries/DAQ/Df125PulsePedestal.h
-        libraries/DAQ/Df250AsyncPedestal.h
-        libraries/DAQ/DTSGBORConfig.h
-        libraries/DAQ/Df125PulseRawData.h
-        libraries/DAQ/Df250StreamingRawData.h
-        libraries/DAQ/Df125PulseTime.h
-        libraries/DAQ/Df125CDCPulse.h
-        libraries/DAQ/DEPICSvalue.h
-        libraries/DAQ/Df250PulseTime.h
-        libraries/DAQ/DCAEN1290TDCBORConfig.h
-        libraries/DAQ/DL1Info.h
-        libraries/DAQ/DF1TDCBORConfig.h
-        libraries/DAQ/Df250EmulatorAlgorithm_v1.h
-        libraries/DAQ/Df250EmulatorAlgorithm.h
-        libraries/DAQ/Df125TriggerTime.h
-        libraries/DAQ/DEventTag.h
-        libraries/DAQ/Df250PulseIntegral.h
+        libraries/DAQ/async_filebuf.cc
+        libraries/DAQ/async_filebuf.h
+        libraries/DAQ/bor_roc.h
+        libraries/DAQ/DAQ_init.cc
+        libraries/DAQ/daq_param_type.h
         libraries/DAQ/DBeamCurrent.h
-        libraries/DAQ/DDIRCADCHit.h
-        libraries/DAQ/Df250PulseRawData.h
-        libraries/DAQ/DDIRCTriggerTime.h
-        libraries/DAQ/Df250PulseData.h
-        libraries/DAQ/DDAQConfig.h
-        libraries/DAQ/Df250PulsePedestal.h
-        libraries/DAQ/Df250WindowSum.h
-        libraries/DAQ/Df250EmulatorAlgorithm_v2.h
-        libraries/DAQ/Df250EmulatorAlgorithm_v2.cc
-        libraries/DAQ/DParsedEvent.h
-        libraries/DAQ/Df125WindowRawData.h
+        libraries/DAQ/DBeamCurrent_factory.cc
+        libraries/DAQ/DBeamCurrent_factory.h
+        libraries/DAQ/DBORptrs.h
+        libraries/DAQ/DCAEN1290TDCBORConfig.h
+        libraries/DAQ/DCAEN1290TDCConfig.h
+        libraries/DAQ/DCAEN1290TDCHit.h
+        libraries/DAQ/DCODAControlEvent.h
+        libraries/DAQ/DCODAEventInfo.h
+        libraries/DAQ/DCODAROCInfo.h
         libraries/DAQ/DDAQAddress.h
-        libraries/DAQ/HDEVIO.h
+        libraries/DAQ/DDAQConfig.h
+        libraries/DAQ/DDIRCADCHit.h
+        libraries/DAQ/DDIRCTDCHit.h
+        libraries/DAQ/DDIRCTriggerTime.h
+        libraries/DAQ/DEPICSvalue.h
+        libraries/DAQ/DEventTag.h
+#        libraries/DAQ/DEVIOWorkerThread.cc
+#        libraries/DAQ/DEVIOWorkerThread.h
+        libraries/DAQ/DF1TDCBORConfig.h
+        libraries/DAQ/DF1TDCConfig.h
+        libraries/DAQ/DF1TDCHit.h
+        libraries/DAQ/DF1TDCTriggerTime.h
+        libraries/DAQ/Df125BORConfig.h
+        libraries/DAQ/Df125CDCPulse.h
+        libraries/DAQ/Df125Config.h
+        libraries/DAQ/Df125EmulatorAlgorithm.h
+        libraries/DAQ/Df125EmulatorAlgorithm_factory.h
+        libraries/DAQ/Df125EmulatorAlgorithm_factory_v2.h
+        libraries/DAQ/Df125EmulatorAlgorithm_v2.cc
+        libraries/DAQ/Df125EmulatorAlgorithm_v2.h
+        libraries/DAQ/Df125FDCPulse.h
+        libraries/DAQ/Df125PulseIntegral.h
+        libraries/DAQ/Df125PulsePedestal.h
+        libraries/DAQ/Df125PulseRawData.h
+        libraries/DAQ/Df125PulseTime.h
+        libraries/DAQ/Df125TriggerTime.h
+        libraries/DAQ/Df125WindowRawData.h
+        libraries/DAQ/Df250AsyncPedestal.h
+        libraries/DAQ/Df250BORConfig.h
+        libraries/DAQ/Df250Config.h
+        libraries/DAQ/Df250EmulatorAlgorithm.h
+        libraries/DAQ/Df250EmulatorAlgorithm_factory.h
+        libraries/DAQ/Df250EmulatorAlgorithm_factory_v1.h
+        libraries/DAQ/Df250EmulatorAlgorithm_factory_v2.h
+        libraries/DAQ/Df250EmulatorAlgorithm_factory_v3.h
+        libraries/DAQ/Df250EmulatorAlgorithm_v1.cc
+        libraries/DAQ/Df250EmulatorAlgorithm_v1.h
+        libraries/DAQ/Df250EmulatorAlgorithm_v2.cc
+        libraries/DAQ/Df250EmulatorAlgorithm_v2.h
+        libraries/DAQ/Df250EmulatorAlgorithm_v3.cc
+        libraries/DAQ/Df250EmulatorAlgorithm_v3.h
+        libraries/DAQ/Df250PulseData.h
+        libraries/DAQ/Df250PulseIntegral.h
+        libraries/DAQ/Df250PulsePedestal.h
+        libraries/DAQ/Df250PulseRawData.h
+        libraries/DAQ/Df250PulseTime.h
+        libraries/DAQ/Df250Scaler.h
+        libraries/DAQ/Df250StreamingRawData.h
+        libraries/DAQ/Df250TriggerTime.h
+        libraries/DAQ/Df250WindowRawData.h
+        libraries/DAQ/Df250WindowSum.h
+        libraries/DAQ/DGEMSRSWindowRawData.h
+        libraries/DAQ/DL1Info.h
+        libraries/DAQ/DModuleType.h
+#        libraries/DAQ/DParsedEvent.h
+        libraries/DAQ/DTSGBORConfig.h
+        libraries/DAQ/DTSscalers.h
+        libraries/DAQ/HDET.cc
+        libraries/DAQ/HDET.h
         libraries/DAQ/HDEVIO.cc
+        libraries/DAQ/HDEVIO.h
+#        libraries/DAQ/JEventSource_EVIO.cc
+#        libraries/DAQ/JEventSource_EVIO.h
+#        libraries/DAQ/JEventSource_EVIOpp.cc
+#        libraries/DAQ/JEventSource_EVIOpp.h
+#        libraries/DAQ/JEventSourceGenerator_EVIO.cc
+#        libraries/DAQ/JEventSourceGenerator_EVIO.h
+#        libraries/DAQ/JEventSourceGenerator_EVIOpp.cc
+#        libraries/DAQ/JEventSourceGenerator_EVIOpp.h
+#        libraries/DAQ/JFactoryGenerator_DAQ.h
+        libraries/DAQ/swap_bank.cc
+        libraries/DAQ/swap_bank.h
 
         libraries/DIRC/DDIRCGeometry.cc
         libraries/DIRC/DDIRCGeometry.h

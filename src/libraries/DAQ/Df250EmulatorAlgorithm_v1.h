@@ -1,6 +1,7 @@
 #ifndef _Df250EmulatorAlgorithm_v1_
 #define _Df250EmulatorAlgorithm_v1_
 #include <JANA/JObject.h>
+#include <JANA/JEvent.h>
 
 #include <stdint.h>
 #include <vector>
@@ -17,7 +18,7 @@ using namespace std;
 class Df250EmulatorAlgorithm_v1:public Df250EmulatorAlgorithm{
     public:
 
-        Df250EmulatorAlgorithm_v1();
+        Df250EmulatorAlgorithm_v1(const std::shared_ptr<const JEvent>& event);
         ~Df250EmulatorAlgorithm_v1(){};
 
         //Only the emulation routines need to be overwritten

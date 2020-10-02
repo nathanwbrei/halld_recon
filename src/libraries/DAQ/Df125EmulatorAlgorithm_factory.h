@@ -9,6 +9,8 @@
 #define _Df125EmulatorAlgorithm_factory_
 
 #include <JANA/JFactoryT.h>
+#include <JANA/JEvent.h>
+
 #include <DAQ/Df125EmulatorAlgorithm.h>
 
 class Df125EmulatorAlgorithm_factory:public JFactoryT<Df125EmulatorAlgorithm>{
