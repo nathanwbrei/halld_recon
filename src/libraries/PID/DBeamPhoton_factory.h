@@ -43,7 +43,7 @@ class DBeamPhoton_factory:public JFactoryT<DBeamPhoton>
 
 	private:
 		void Process(const std::shared_ptr<const JEvent>& event) override;
-		void Finish()
+		void Finish() override
 		{
 			for(auto locBeam : mData)
 				Recycle_Resource(locBeam);

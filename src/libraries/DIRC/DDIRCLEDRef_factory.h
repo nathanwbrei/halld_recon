@@ -40,7 +40,7 @@ class DDIRCLEDRef_factory:public JFactoryT<DDIRCLEDRef>{
   void BeginRun(const std::shared_ptr<const JEvent>& event) override;
   void Process(const std::shared_ptr<const JEvent>& event) override;
   void EndRun() override;
-  void Finish();
+  void Finish() override;
   
   double CalcWalkCorrIntegral(DDIRCLEDRef* hit);
   double CalcWalkCorrAmplitude(DDIRCLEDRef* hit);

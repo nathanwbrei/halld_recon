@@ -70,7 +70,7 @@ class DBCALHit_factory:public JFactoryT<DBCALHit>{
 		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
 		void Process(const std::shared_ptr<const JEvent>& event) override;
 		void EndRun() override;
-		void Finish();
+		void Finish() override;
 		
 		void FillCalibTable( bcal_digi_constants_t &table, 
 				     const vector<double> &raw_table);

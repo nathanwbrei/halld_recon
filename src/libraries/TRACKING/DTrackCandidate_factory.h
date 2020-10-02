@@ -60,7 +60,7 @@ class DTrackCandidate_factory:public JFactoryT<DTrackCandidate>{
   void Process(const std::shared_ptr<const JEvent>& event) override;
   void BeginRun(const std::shared_ptr<const JEvent>& event) override;
   void EndRun() override;
-  void Finish();
+  void Finish() override;
 
   double DocaToHelix(const DCDCTrackHit *hit,double q,const DVector3 &pos,
 		     const DVector3 &mom);

@@ -57,11 +57,11 @@ class DSCHit_factory:public JFactoryT<DSCHit>{
 		//			 const int in_rocid, const int in_slot, const int in_channel) const;
 
 	private:
-		void Init() override;						///< Called once at program start.
-		void BeginRun(const std::shared_ptr<const JEvent>& event) override;	///< Called everytime a new run number is detected.
-		void Process(const std::shared_ptr<const JEvent>& event) override;	///< Called every event.
-		void EndRun() override;						///< Called everytime run number changes, provided brun has been called.
-		void Finish();						///< Called after last event of last event source has been processed.
+		void Init() override;
+		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
+		void Process(const std::shared_ptr<const JEvent>& event) override;
+		void EndRun() override;
+		void Finish() override;
 
         bool CHECK_FADC_ERRORS;
 	bool REQUIRE_ADC_TDC_MATCH;

@@ -37,7 +37,7 @@ class DNeutralShower_factory:public JFactoryT<DNeutralShower>
   void BeginRun(const std::shared_ptr<const JEvent>& event) override;
   void Process(const std::shared_ptr<const JEvent>& event) override;
   void EndRun() override;
-  void Finish();
+  void Finish() override;
 
   shared_ptr<DResourcePool<TMatrixFSym>> dResourcePool_TMatrixFSym;
   DVector3 dTargetCenter;

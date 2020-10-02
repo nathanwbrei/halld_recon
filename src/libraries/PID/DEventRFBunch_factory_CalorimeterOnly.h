@@ -78,7 +78,7 @@ class DEventRFBunch_factory_CalorimeterOnly : public JFactoryT<DEventRFBunch>
 		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
 		void Process(const std::shared_ptr<const JEvent>& event) override;
 		void EndRun() override;
-		void Finish();
+		void Finish() override;
 };
 
 #endif // _DEventRFBunch_factory_

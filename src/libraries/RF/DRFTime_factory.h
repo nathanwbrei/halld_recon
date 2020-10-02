@@ -39,7 +39,7 @@ class DRFTime_factory : public JFactoryT<DRFTime>
 		void Init() override;
 		void Process(const std::shared_ptr<const JEvent>& event) override;
 		void EndRun() override;
-		void Finish();
+		void Finish() override;
 
 		double Calc_WeightedAverageRFTime(map<DetectorSystem_t, vector<double> >& locRFTimesMap, double& locRFTimeVariance) const;
 

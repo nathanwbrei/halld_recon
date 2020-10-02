@@ -24,7 +24,7 @@ class DVertex_factory_THROWN : public JFactoryT<DVertex>{
 		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
 		void Process(const std::shared_ptr<const JEvent>& event) override;
 		void EndRun() override;
-		void Finish();
+		void Finish() override;
 };
 
 #endif // _DVertex_factory_THROWN_

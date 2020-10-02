@@ -31,7 +31,7 @@ class DBCALCluster_factory_SINGLE:public JFactoryT<DBCALCluster>{
 		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
 		void Process(const std::shared_ptr<const JEvent>& event) override;
 		void EndRun() override;
-		void Finish();
+		void Finish() override;
 
 		double m_z_target_center;
 		const DBCALGeometry *dBCALGeom;

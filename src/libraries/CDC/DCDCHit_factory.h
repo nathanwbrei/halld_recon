@@ -51,7 +51,7 @@ class DCDCHit_factory: public JFactoryT<DCDCHit>{
   void BeginRun(const std::shared_ptr<const JEvent>& event) override;
   void Process(const std::shared_ptr<const JEvent>& event) override;
   void EndRun() override;
-  void Finish();
+  void Finish() override;
   
 	bool USE_CDC;  
   vector<const DTranslationTable *> ttab;

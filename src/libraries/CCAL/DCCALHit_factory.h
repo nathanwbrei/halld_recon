@@ -39,7 +39,7 @@ class DCCALHit_factory:public JFactoryT<DCCALHit>{
 		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
 		void Process(const std::shared_ptr<const JEvent>& event) override;
 		void EndRun() override;
-		void Finish();
+		void Finish() override;
 
 		void LoadCCALConst( ccal_constants_t &table, 
                                     const vector<double> &ccal_const_ch, 

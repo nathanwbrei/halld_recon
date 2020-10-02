@@ -54,7 +54,7 @@ class DFDCHit_factory:public JFactoryT<DFDCHit>{
 		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
 		void Process(const std::shared_ptr<const JEvent>& event) override;
 		void EndRun() override;
-		void Finish();
+		void Finish() override;
 	
 		bool USE_FDC;
 		void LoadPackageCalibTables(const std::shared_ptr<const JEvent>& event, string ccdb_prefix);

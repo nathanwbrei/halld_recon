@@ -41,7 +41,7 @@ class DTrackCandidate_factory_CDC_or_FDCpseudo:public JFactoryT<DTrackCandidate>
 		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
 		void Process(const std::shared_ptr<const JEvent>& event) override;
 		void EndRun() override;
-		void Finish();
+		void Finish() override;
 		
 		int DEBUG_LEVEL;
 };

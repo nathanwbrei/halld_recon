@@ -51,7 +51,7 @@ class DPSHit_factory:public JFactoryT<DPSHit>{
   void BeginRun(const std::shared_ptr<const JEvent>& event) override;
   void Process(const std::shared_ptr<const JEvent>& event) override;
   void EndRun() override;
-  void Finish();
+  void Finish() override;
 
   void FillCalibTable(JCalibration* calib, ps_digi_constants_t &table, string table_name,
 		      const DPSGeometry &psGeom);

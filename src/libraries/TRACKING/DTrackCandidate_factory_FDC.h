@@ -104,8 +104,8 @@ class DTrackCandidate_factory_FDC:public JFactoryT<DTrackCandidate>{
 	protected:
 		virtual void Init() override;
 		virtual void BeginRun(const std::shared_ptr<const JEvent>& event) override;
-		virtual void Process(const std::shared_ptr<const JEvent>& event) override;	///< Invoked via JEventProcessor virtual method
-		virtual void Finish();	///< Invoked via JEventProcessor virtual method
+		virtual void Process(const std::shared_ptr<const JEvent>& event) override;
+		virtual void Finish() override;
 
 		DHoughFind hough;
 

@@ -59,7 +59,7 @@ class DFCALHit_factory:public JFactoryT<DFCALHit>{
 		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
 		void Process(const std::shared_ptr<const JEvent>& event) override;
 		void EndRun() override;
-		void Finish();
+		void Finish() override;
 
 		void FillCalibTable( fcal_digi_constants_t &table, 
 				     const vector<double> &raw_table, 

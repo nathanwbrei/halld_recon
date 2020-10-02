@@ -22,7 +22,7 @@ class DNeutralParticle_factory:public JFactoryT<DNeutralParticle>{
 		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
 		void Process(const std::shared_ptr<const JEvent>& event) override;
 		void EndRun() override;
-		void Finish();
+		void Finish() override;
 };
 
 #endif // _DNeutralParticle_factory_

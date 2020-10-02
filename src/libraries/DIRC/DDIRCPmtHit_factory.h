@@ -40,7 +40,7 @@ class DDIRCPmtHit_factory:public JFactoryT<DDIRCPmtHit>{
 		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
 		void Process(const std::shared_ptr<const JEvent>& event) override;
 		void EndRun() override;
-		void Finish();
+		void Finish() override;
 
 		double t_base[2];
 		bool DIRC_TIME_OFFSET, DIRC_TIMEWALK;

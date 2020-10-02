@@ -29,7 +29,7 @@ class DChargedTrack_factory_PreSelect : public JFactoryT<DChargedTrack>
 		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
 		void Process(const std::shared_ptr<const JEvent>& event) override;
 		void EndRun() override;
-		void Finish();
+		void Finish() override;
 
 		bool Cut_HasDetectorMatch(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DDetectorMatches* locDetectorMatches) const;
 		bool Cut_TrackingFOM(const DChargedTrackHypothesis* locChargedTrackHypothesis) const;

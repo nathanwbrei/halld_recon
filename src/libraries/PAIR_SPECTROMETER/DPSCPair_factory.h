@@ -23,7 +23,7 @@ class DPSCPair_factory:public JFactoryT<DPSCPair>{
   void BeginRun(const std::shared_ptr<const JEvent>& event) override;
   void Process(const std::shared_ptr<const JEvent>& event) override;
   void EndRun() override;
-  void Finish();
+  void Finish() override;
 };
 
 #endif // _DPSCPair_factory_

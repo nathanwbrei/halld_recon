@@ -36,7 +36,7 @@ class DDetectorMatches_factory_Combo : public JFactoryT<DDetectorMatches>
 		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
 		void Process(const std::shared_ptr<const JEvent>& event) override;
 		void EndRun() override;
-		void Finish();
+		void Finish() override;
 
 		pair<double, double> Calc_EnergyRatio(const DTrackTimeBased* locTrackTimeBased, const DTrackTimeBased* locOriginalTrackTimeBased) const;
 		double Calc_PVariance(const DTrackTimeBased* locTrack) const;

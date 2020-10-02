@@ -54,7 +54,7 @@ class DChargedTrackHypothesis_factory:public JFactoryT<DChargedTrackHypothesis>
 		void Init() override;
 		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
 		void Process(const std::shared_ptr<const JEvent>& event) override;
-		void Finish()
+		void Finish() override
 		{
 			for(auto locHypo : mData)
 				Recycle_Hypothesis(locHypo);

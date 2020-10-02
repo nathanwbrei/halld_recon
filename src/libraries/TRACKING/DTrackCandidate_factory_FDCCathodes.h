@@ -52,7 +52,7 @@ class DTrackCandidate_factory_FDCCathodes:public JFactoryT<DTrackCandidate>{
   void BeginRun(const std::shared_ptr<const JEvent>& event) override;
   void Process(const std::shared_ptr<const JEvent>& event) override;
   void EndRun() override;
-  void Finish();
+  void Finish() override;
 
   jerror_t GetPositionAndMomentum(const DFDCSegment *segment);
   jerror_t GetPositionAndMomentum(DVector3 &pos,DVector3 &mom);

@@ -24,7 +24,7 @@ class DBeamPhoton_factory_MCGEN:public JFactoryT<DBeamPhoton>{
 	private:
 		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
 		void Process(const std::shared_ptr<const JEvent>& event) override;
-		void Finish();
+		void Finish() override;
 };
 
 #endif // _DBeamPhoton_factory_MCGEN_

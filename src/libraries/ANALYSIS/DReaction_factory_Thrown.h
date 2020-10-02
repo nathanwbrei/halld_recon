@@ -35,7 +35,7 @@ class DReaction_factory_Thrown:public JFactoryT<DReaction>
 		void Init() override;
 		void Process(const std::shared_ptr<const JEvent>& event) override;
 		void EndRun() override;
-		void Finish();
+		void Finish() override;
 
 		const DAnalysisUtilities* dAnalysisUtilities = nullptr;
 

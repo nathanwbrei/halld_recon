@@ -31,7 +31,7 @@ class DTAGMHit_factory: public JFactoryT<DTAGMHit> {
       void BeginRun(const std::shared_ptr<const JEvent>& event) override;
       void Process(const std::shared_ptr<const JEvent>& event) override;
       void EndRun() override;
-      void Finish();
+      void Finish() override;
 
       void Reset_Data(void);
 };

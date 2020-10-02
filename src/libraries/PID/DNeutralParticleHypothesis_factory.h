@@ -57,7 +57,7 @@ class DNeutralParticleHypothesis_factory : public JFactoryT<DNeutralParticleHypo
 		void Init() override;
 		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
 		void Process(const std::shared_ptr<const JEvent>& event) override;
-		void Finish()
+		void Finish() override
 		{
 			for(auto locHypo : mData)
 				Recycle_Hypothesis(locHypo);

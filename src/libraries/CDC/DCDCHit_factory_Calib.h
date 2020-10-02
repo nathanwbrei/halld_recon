@@ -57,7 +57,7 @@ class DCDCHit_factory_Calib:public JFactoryT<DCDCHit>{
   void BeginRun(const std::shared_ptr<const JEvent>& event) override;
   void Process(const std::shared_ptr<const JEvent>& event) override;
   void EndRun() override;
-  void Finish();
+  void Finish() override;
   
   void CalcNstraws(const std::shared_ptr<const JEvent>& event, int32_t runnumber, vector<unsigned int> &Nstraws);
   void FillCalibTable(vector< vector<double> > &table, vector<double> &raw_table, 

@@ -55,7 +55,7 @@ public:
 	void BeginRun(const std::shared_ptr<const JEvent> &aEvent) override;
 	void Process(const std::shared_ptr<const JEvent>& aEvent) override;
 	void EndRun() override;
-	void Finish();
+	void Finish() override;
 
 	std::string getTagString() { return ""; }
 

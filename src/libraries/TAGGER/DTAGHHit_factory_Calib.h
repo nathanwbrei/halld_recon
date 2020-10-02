@@ -56,7 +56,7 @@ class DTAGHHit_factory_Calib:public JFactoryT<DTAGHHit>{
         void BeginRun(const std::shared_ptr<const JEvent>& event) override;
         void Process(const std::shared_ptr<const JEvent>& event) override;
         void EndRun() override;
-        void Finish();
+        void Finish() override;
 
         bool CHECK_FADC_ERRORS;
 };

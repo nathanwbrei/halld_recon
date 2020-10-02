@@ -30,7 +30,7 @@ class DGEMHit_factory:public JFactoryT<DGEMHit>{
 		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
 		void Process(const std::shared_ptr<const JEvent>& event) override;
 		void EndRun() override;
-		void Finish();
+		void Finish() override;
 
 		double t_base[2];
 		double pulse_peak_threshold;

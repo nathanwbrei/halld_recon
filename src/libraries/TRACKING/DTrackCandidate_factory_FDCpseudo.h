@@ -98,7 +98,7 @@ class DTrackCandidate_factory_FDCpseudo:public JFactoryT<DTrackCandidate>{
 		void Init() override;
 		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
 		void Process(const std::shared_ptr<const JEvent>& event) override;
-		void Finish();
+		void Finish() override;
 
 		DHoughFind hough;
 

@@ -74,7 +74,7 @@ class DTOFPoint_factory : public JFactoryT<DTOFPoint>
  private:
   void BeginRun(const std::shared_ptr<const JEvent>& event) override;
   void Process(const std::shared_ptr<const JEvent>& event) override;
-  void Finish();
+  void Finish() override;
 
   tof_spacetimehit_t* Get_TOFSpacetimeHitResource(void);
   
