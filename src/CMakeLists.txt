@@ -208,8 +208,8 @@ set(HALLD_RECON_SOURCES
         libraries/DAQ/DDIRCTriggerTime.h
         libraries/DAQ/DEPICSvalue.h
         libraries/DAQ/DEventTag.h
-#        libraries/DAQ/DEVIOWorkerThread.cc
-#        libraries/DAQ/DEVIOWorkerThread.h
+        libraries/DAQ/DEVIOWorkerThread.cc
+        libraries/DAQ/DEVIOWorkerThread.h
         libraries/DAQ/DF1TDCBORConfig.h
         libraries/DAQ/DF1TDCConfig.h
         libraries/DAQ/DF1TDCHit.h
@@ -256,7 +256,7 @@ set(HALLD_RECON_SOURCES
         libraries/DAQ/DGEMSRSWindowRawData.h
         libraries/DAQ/DL1Info.h
         libraries/DAQ/DModuleType.h
-#        libraries/DAQ/DParsedEvent.h
+        libraries/DAQ/DParsedEvent.h
         libraries/DAQ/DTSGBORConfig.h
         libraries/DAQ/DTSscalers.h
         libraries/DAQ/HDET.cc

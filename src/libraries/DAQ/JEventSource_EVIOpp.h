@@ -26,7 +26,6 @@
 #include <DAQ/Df250EmulatorAlgorithm.h>
 #include <DAQ/Df125EmulatorAlgorithm.h>
 
-#include <DANA/DApplication.h>
 #include <DANA/DStatusBits.h>
 
 /// How this Event Source Works
@@ -127,7 +126,7 @@ class JEventSource_EVIOpp: public JEventSource{
 		
 		           void GetEvent(std::shared_ptr<JEvent> event) override;
 		               void FinishEvent(JEvent &event) override;
-		           void GetObjects(JEvent &event, JFactory* factory) override;
+		           bool GetObjects(const std::shared_ptr<const JEvent> &event, JFactory* factory) override;
 
 		               void LinkBORassociations(DParsedEvent *pe);
 		           uint64_t SearchFileForRunNumber(void);
@@ -141,7 +140,7 @@ class JEventSource_EVIOpp: public JEventSource{
 		               void DumpBinary(const uint32_t *iptr, const uint32_t *iend, uint32_t MaxWords=0, const uint32_t *imark=NULL);
 
 
-		DApplication *dapp = NULL;
+		// DApplication *dapp = NULL;  // TODO: NWB: Get rid of me completely
 		bool DONE;
 		bool DISPATCHER_END;
 		std::chrono::high_resolution_clock::time_point tstart;
