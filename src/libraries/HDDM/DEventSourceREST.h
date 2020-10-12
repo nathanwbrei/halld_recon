@@ -14,8 +14,8 @@
 #include <pthread.h>
 
 #include <JANA/JEventSource.h>
-#include <JANA/jerror.h>
-#include <JANA/JCalibration.h>
+#include <JANA/Compatibility/jerror.h>
+#include <JANA/Calibrations/JCalibration.h>
 
 #include "hddm_r.hpp"
 
@@ -60,41 +60,41 @@ class DEventSourceREST:public JEventSource
 
    jerror_t GetEvent(JEvent &event);
    void FreeEvent(JEvent &event);
-   jerror_t GetObjects(JEvent &event, JFactory_base *factory);
+   jerror_t GetObjects(JEvent &event, JFactory *factory);
 		
    jerror_t Extract_DMCReaction(hddm_r::HDDM *record,
-                    JFactory<DMCReaction> *factory, JEventLoop* locEventLoop);
+                    JFactoryT<DMCReaction> *factory, JEvent* locEventLoop);
    jerror_t Extract_DRFTime(hddm_r::HDDM *record,
-                    JFactory<DRFTime> *factory, JEventLoop* locEventLoop);
+                    JFactoryT<DRFTime> *factory, JEvent* locEventLoop);
    jerror_t Extract_DBeamPhoton(hddm_r::HDDM *record,
-                    JFactory<DBeamPhoton> *factory,
-                    JEventLoop *eventLoop);
+                    JFactoryT<DBeamPhoton> *factory,
+                    JEvent *eventLoop);
    jerror_t Extract_DMCThrown(hddm_r::HDDM *record,
-                    JFactory<DMCThrown> *factory);
+                    JFactoryT<DMCThrown> *factory);
    jerror_t Extract_DSCHit(hddm_r::HDDM *record,
-                    JFactory<DSCHit>* factory);
+                    JFactoryT<DSCHit>* factory);
    jerror_t Extract_DTOFPoint(hddm_r::HDDM *record,
-                    JFactory<DTOFPoint>* factory);
+                    JFactoryT<DTOFPoint>* factory);
    jerror_t Extract_DFCALShower(hddm_r::HDDM *record,
-                    JFactory<DFCALShower>* factory);
+                    JFactoryT<DFCALShower>* factory);
    jerror_t Extract_DBCALShower(hddm_r::HDDM *record,
-                    JFactory<DBCALShower>* factory);
+                    JFactoryT<DBCALShower>* factory);
    jerror_t Extract_DCCALShower(hddm_r::HDDM *record,
-                    JFactory<DCCALShower>* factory);
+                    JFactoryT<DCCALShower>* factory);
    jerror_t Extract_DTrackTimeBased(hddm_r::HDDM *record,
-                    JFactory<DTrackTimeBased>* factory, JEventLoop* locEventLoop);
+                    JFactoryT<DTrackTimeBased>* factory, JEvent* locEventLoop);
    jerror_t Extract_DTrigger(hddm_r::HDDM *record,
-                    JFactory<DTrigger>* factory);
-   jerror_t Extract_DDetectorMatches(JEventLoop* locEventLoop, hddm_r::HDDM *record,
-                    JFactory<DDetectorMatches>* factory);
+                    JFactoryT<DTrigger>* factory);
+   jerror_t Extract_DDetectorMatches(JEvent* locEventLoop, hddm_r::HDDM *record,
+                    JFactoryT<DDetectorMatches>* factory);
 #if 0
    jerror_t Extract_DRFTime(hddm_r::HDDM *record,
-                    JFactory<DRFTime>* factory);
+                    JFactoryT<DRFTime>* factory);
 #endif
    jerror_t Extract_DDIRCPmtHit(hddm_r::HDDM *record,
-                    JFactory<DDIRCPmtHit>* factory, JEventLoop* locEventLoop);
+                    JFactoryT<DDIRCPmtHit>* factory, JEvent* locEventLoop);
    jerror_t Extract_DEventHitStatistics(hddm_r::HDDM *record,
-                    JFactory<DEventHitStatistics> *factory);
+                    JFactoryT<DEventHitStatistics> *factory);
 
    void Get7x7ErrorMatrix(double mass, const double vec[5], const TMatrixFSym* C5x5, TMatrixFSym* loc7x7ErrorMatrix);
  private:

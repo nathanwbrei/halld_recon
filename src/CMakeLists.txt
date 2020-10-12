@@ -26,7 +26,11 @@ set(HDDM_INCLUDE_DIR /Users/nbrei/gluex_data/hddm)
 set(HDDS_LIBRARY /Users/nbrei/src/hdds/build/lib/libhdds.so)
 set(MYSQL_INCLUDE_DIR /usr/local/include/mysql)
 set(XSTREAM_INCLUDE_DIR external/xstream/include)
-#set(XSTREAM_LIB  # Should be installed via make
+
+find_package(zlib)
+find_package(bzip2)
+set(XSTREAM_LIB /lib/libxstream.a ${ZLIB_LIBRARIES} ${BZIP2_LIBRARIES})
+# TODO: Improve how we do this via CMake
 
 file(GLOB DAQ_SOURCES ${PROJECT_SOURCE_DIR}/libraries/DAQ/*.cc)
 file(GLOB DAQ_HEADERS ${PROJECT_SOURCE_DIR}/libraries/DAQ/*.h)
@@ -362,6 +366,9 @@ set(HALLD_RECON_SOURCES
         libraries/HDDM/DEventHitStatistics_factory.h
         libraries/HDDM/DEventSourceHDDM.cc
         libraries/HDDM/DEventSourceHDDM.h
+        libraries/HDDM/hddm_s++.cpp   # TODO: This doesn't really belong here
+        libraries/HDDM/hddm_r++.cpp   # TODO: This doesn't really belong here
+
 #        libraries/HDDM/DEventSourceHDDMGenerator.cc
 #        libraries/HDDM/DEventSourceHDDMGenerator.h
 #        libraries/HDDM/DEventSourceREST.cc
@@ -374,7 +381,7 @@ set(HALLD_RECON_SOURCES
 #        libraries/HDDM/DEventWriterREST.cc
 #        libraries/HDDM/DEventWriterREST.h
 #        libraries/HDDM/DEventWriterREST_factory.h
-#        libraries/HDDM/DMatrixPools.cc
+        libraries/HDDM/DMatrixPools.cc
 
         libraries/HDGEOMETRY/DGeometry.cc
         libraries/HDGEOMETRY/DGeometry.h
