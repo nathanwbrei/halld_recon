@@ -370,8 +370,8 @@ set(HALLD_RECON_SOURCES
         libraries/HDDM/hddm_r++.cpp   # TODO: This doesn't really belong here
         libraries/HDDM/DEventSourceHDDMGenerator.cc
         libraries/HDDM/DEventSourceHDDMGenerator.h
-#        libraries/HDDM/DEventSourceREST.cc
-#        libraries/HDDM/DEventSourceREST.h
+        libraries/HDDM/DEventSourceREST.cc
+        libraries/HDDM/DEventSourceREST.h
 #        libraries/HDDM/DEventSourceRESTGenerator.cc
 #        libraries/HDDM/DEventSourceRESTGenerator.h
 #        libraries/HDDM/DEventWriterHDDM.cc

@@ -58,35 +58,38 @@ class DEventSourceREST:public JEventSource
       return "DEventSourceREST";
    }
 
-   jerror_t GetEvent(JEvent &event);
-   void FreeEvent(JEvent &event);
-   jerror_t GetObjects(JEvent &event, JFactory *factory);
-		
-   jerror_t Extract_DMCReaction(hddm_r::HDDM *record,
-                    JFactoryT<DMCReaction> *factory, JEvent* locEventLoop);
-   jerror_t Extract_DRFTime(hddm_r::HDDM *record,
-                    JFactoryT<DRFTime> *factory, JEvent* locEventLoop);
-   jerror_t Extract_DBeamPhoton(hddm_r::HDDM *record,
-                    JFactoryT<DBeamPhoton> *factory,
-                    JEvent *eventLoop);
-   jerror_t Extract_DMCThrown(hddm_r::HDDM *record,
-                    JFactoryT<DMCThrown> *factory);
-   jerror_t Extract_DSCHit(hddm_r::HDDM *record,
-                    JFactoryT<DSCHit>* factory);
-   jerror_t Extract_DTOFPoint(hddm_r::HDDM *record,
-                    JFactoryT<DTOFPoint>* factory);
-   jerror_t Extract_DFCALShower(hddm_r::HDDM *record,
-                    JFactoryT<DFCALShower>* factory);
-   jerror_t Extract_DBCALShower(hddm_r::HDDM *record,
-                    JFactoryT<DBCALShower>* factory);
-   jerror_t Extract_DCCALShower(hddm_r::HDDM *record,
-                    JFactoryT<DCCALShower>* factory);
-   jerror_t Extract_DTrackTimeBased(hddm_r::HDDM *record,
-                    JFactoryT<DTrackTimeBased>* factory, JEvent* locEventLoop);
-   jerror_t Extract_DTrigger(hddm_r::HDDM *record,
-                    JFactoryT<DTrigger>* factory);
-   jerror_t Extract_DDetectorMatches(JEvent* locEventLoop, hddm_r::HDDM *record,
-                    JFactoryT<DDetectorMatches>* factory);
+   void GetEvent(std::shared_ptr<JEvent> event) override;
+
+   void FinishEvent(JEvent &event) override;
+
+   bool GetObjects(const std::shared_ptr<const JEvent> &event, JFactory *factory) override;
+
+   // TODO: NWB: We use a lot of raw JEvent pointers here and we probably shouldn't
+
+   jerror_t Extract_DMCReaction(hddm_r::HDDM *record, JFactoryT<DMCReaction> *factory, JEvent* locEventLoop);
+
+   jerror_t Extract_DRFTime(hddm_r::HDDM *record, JFactoryT<DRFTime> *factory, JEvent* locEventLoop);
+
+   jerror_t Extract_DBeamPhoton(hddm_r::HDDM *record, JFactoryT<DBeamPhoton> *factory, JEvent *eventLoop);
+
+   jerror_t Extract_DMCThrown(hddm_r::HDDM *record, JFactoryT<DMCThrown> *factory);
+
+   jerror_t Extract_DSCHit(hddm_r::HDDM *record, JFactoryT<DSCHit>* factory);
+
+   jerror_t Extract_DTOFPoint(hddm_r::HDDM *record, JFactoryT<DTOFPoint>* factory);
+
+   jerror_t Extract_DFCALShower(hddm_r::HDDM *record, JFactoryT<DFCALShower>* factory);
+
+   jerror_t Extract_DBCALShower(hddm_r::HDDM *record, JFactoryT<DBCALShower>* factory);
+
+   jerror_t Extract_DCCALShower(hddm_r::HDDM *record, JFactoryT<DCCALShower>* factory);
+
+   jerror_t Extract_DTrackTimeBased(hddm_r::HDDM *record, JFactoryT<DTrackTimeBased>* factory, JEvent* locEventLoop);
+
+   jerror_t Extract_DTrigger(hddm_r::HDDM *record, JFactoryT<DTrigger>* factory);
+
+   jerror_t Extract_DDetectorMatches(JEvent* locEventLoop, hddm_r::HDDM *record, JFactoryT<DDetectorMatches>* factory);
+
 #if 0
    jerror_t Extract_DRFTime(hddm_r::HDDM *record,
                     JFactoryT<DRFTime>* factory);
@@ -124,6 +127,8 @@ class DEventSourceREST:public JEventSource
 
    std::ifstream *ifs;		// input hddm file ifstream
    hddm_r::istream *fin;	// provides hddm layer on top of ifstream
+
+   std::mutex readMutex;   // This is no longer provided by JANA
 };
 
 #endif //_JEVENT_SOURCEREST_H_
