@@ -22,8 +22,11 @@ if (EVIO_FOUND)
 endif()
 
 set(HDDS_INCLUDE_DIR /Users/nbrei/src/hdds/build/src)
+set(HDDM_INCLUDE_DIR /Users/nbrei/gluex_data/hddm)
 set(HDDS_LIBRARY /Users/nbrei/src/hdds/build/lib/libhdds.so)
 set(MYSQL_INCLUDE_DIR /usr/local/include/mysql)
+set(XSTREAM_INCLUDE_DIR external/xstream/include)
+#set(XSTREAM_LIB  # Should be installed via make
 
 file(GLOB DAQ_SOURCES ${PROJECT_SOURCE_DIR}/libraries/DAQ/*.cc)
 file(GLOB DAQ_HEADERS ${PROJECT_SOURCE_DIR}/libraries/DAQ/*.h)
@@ -357,8 +360,8 @@ set(HALLD_RECON_SOURCES
         libraries/HDDM/DEventHitStatistics.h
         libraries/HDDM/DEventHitStatistics_factory.cc
         libraries/HDDM/DEventHitStatistics_factory.h
-#        libraries/HDDM/DEventSourceHDDM.cc
-#        libraries/HDDM/DEventSourceHDDM.h
+        libraries/HDDM/DEventSourceHDDM.cc
+        libraries/HDDM/DEventSourceHDDM.h
 #        libraries/HDDM/DEventSourceHDDMGenerator.cc
 #        libraries/HDDM/DEventSourceHDDMGenerator.h
 #        libraries/HDDM/DEventSourceREST.cc
@@ -753,9 +756,9 @@ add_executable(halld_recon
 
 
 target_include_directories(halld_recon PRIVATE libraries libraries/include src/include
-        ${CCDB_INCLUDE_DIRS} ${ROOT_INCLUDE_DIRS} ${JANA_INCLUDE_DIR} ${EVIO_INCLUDE_DIR} ${HDDS_INCLUDE_DIR} ${MYSQL_INCLUDE_DIR})
+        ${CCDB_INCLUDE_DIRS} ${ROOT_INCLUDE_DIRS} ${JANA_INCLUDE_DIR} ${EVIO_INCLUDE_DIR} ${HDDS_INCLUDE_DIR} ${HDDM_INCLUDE_DIR} ${MYSQL_INCLUDE_DIR} ${XSTREAM_INCLUDE_DIR})
 
 message(WARN ${EVIO_LIBS})
-target_link_libraries(halld_recon ${JANA_LIBRARY} ${EVIO_LIBS} ${EXPAT_LIBRARY} ${ROOT_LIBRARIES} ${HDDS_LIBRARY} ${MYSQL_LIB})
+target_link_libraries(halld_recon ${JANA_LIBRARY} ${EVIO_LIBS} ${EXPAT_LIBRARY} ${ROOT_LIBRARIES} ${HDDS_LIBRARY} ${MYSQL_LIB} ${XSTREAM_LIB})
 
 

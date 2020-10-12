@@ -465,7 +465,7 @@ class DTranslationTable:public JObject{
 		//-----------------------------------------------------------------------
 
 		// Methods
-		void ApplyTranslationTable(JEvent *event) const;
+		void ApplyTranslationTable(const std::shared_ptr<const JEvent>& event) const;
 		
 		// fADC250 -- Fall 2016 -> ?
 		DBCALDigiHit*       MakeBCALDigiHit(       const BCALIndex_t &idx,       const Df250PulseData *pd) const;

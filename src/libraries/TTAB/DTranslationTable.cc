@@ -329,7 +329,7 @@ std::set<uint32_t> DTranslationTable::GetSystemsToParse(string systems, int syst
 //---------------------------------
 // ApplyTranslationTable
 //---------------------------------
-void DTranslationTable::ApplyTranslationTable(JEvent *event) const
+void DTranslationTable::ApplyTranslationTable(const std::shared_ptr<const JEvent> &event) const
 {
    /// This will get all of the low level objects and
    /// generate detector hit objects from them, placing
@@ -787,7 +787,7 @@ void DTranslationTable::ApplyTranslationTable(JEvent *event) const
    // Copy pointers to all objects produced to their appropriate
    // factories. This hands ownership of them over to the factories
    // so JANA will delete them.
-   CopyToFactories(event);
+   CopyToFactories(const_cast<JEvent*>(&(*event))); // TODO: NWB: Make this less hacky
    
    
 	if (VERBOSE > 3) PrintVectorSizes();

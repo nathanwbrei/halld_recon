@@ -9,6 +9,7 @@
 #define _DCCALHit_
 
 #include <JANA/JObject.h>
+#include <DANA/DObjectID.h>
 
 class DCCALHit: public JObject {
 	public:
@@ -16,7 +17,8 @@ class DCCALHit: public JObject {
 		JOBJECT_PUBLIC(DCCALHit);
 		
 		DCCALHit(){}
-		
+
+		oid_t id; // TODO: NWB: This is set in DEventSourceHDDM, but I don't think it is used anywhere
 		int row;
 		int column;
 		float x;
