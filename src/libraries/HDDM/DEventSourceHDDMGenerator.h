@@ -12,16 +12,11 @@
 
 class DEventSourceHDDMGenerator:public JEventSourceGenerator{
 	public:
-		DEventSourceHDDMGenerator(){}
-		~DEventSourceHDDMGenerator(){}
+		std::string GetType() const override { return "DEventSourceHDDM"; }
+		std::string GetDescription() const override;
 
-		const char* className(void){return static_className();}
-		static const char* static_className(void){return "DEventSourceHDDMGenerator";}
-		
-		const char* Description(void);
-		double CheckOpenable(string source);
-		JEventSource* MakeJEventSource(string source);
-		
+		double CheckOpenable(std::string source) override;
+		JEventSource* MakeJEventSource(std::string source) override;
 };
 
 #endif // _DEventSourceHDDMGenerator_

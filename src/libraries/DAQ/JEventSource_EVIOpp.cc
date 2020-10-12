@@ -587,8 +587,7 @@ void JEventSource_EVIOpp::GetEvent(std::shared_ptr<JEvent> event)
 			auto it = in_progess_events.find(Ncalls_to_GetEvent);
 			if( it != in_progess_events.end() )in_progess_events.erase(it);
 			pthread_mutex_unlock(&in_progress_mutex);
-			throw
-			return NO_MORE_EVENTS_IN_SOURCE;
+			throw RETURN_STATUS::kNO_MORE_EVENTS;
 		}
 		NEVENTBUFF_STALLED++;
 		PARSED_EVENTS_CV.wait_for(lck,std::chrono::milliseconds(1));
@@ -613,17 +612,17 @@ void JEventSource_EVIOpp::GetEvent(std::shared_ptr<JEvent> event)
 
 	// Set event status bits
 	DStatusBits* statusBits = new DStatusBits;
-	statusBits->
-	(pe->event_status_bits);
+	statusBits->SetAllBits(pe->event_status_bits);
 
-	event.SetStatus(pe->event_status_bits);
-	event.SetStatusBit(kSTATUS_EVIO);
-	if( source_type == kFileSource ) event.SetStatusBit(kSTATUS_FROM_FILE);
-	if( source_type == kETSource   ) event.SetStatusBit(kSTATUS_FROM_ET);
+	statusBits->SetStatusBit(kSTATUS_EVIO);
+	if( source_type == kFileSource ) statusBits->SetStatusBit(kSTATUS_FROM_FILE);
+	if( source_type == kETSource   ) statusBits->SetStatusBit(kSTATUS_FROM_ET);
+
+	event->Insert(statusBits);
 
 	// EPICS and BOR events are barrier events
-	if(event.GetStatusBit(kSTATUS_EPICS_EVENT)) event.SetSequential();
-	if(event.GetStatusBit(kSTATUS_BOR_EVENT  )) event.SetSequential();
+	if(statusBits->GetStatusBit(kSTATUS_EPICS_EVENT)) event.SetSequential();
+	if(statusBits->GetStatusBit(kSTATUS_BOR_EVENT  )) event.SetSequential();
 	
 	// Only add BOR events to physics events
 	if(pe->borptrs==NULL)

@@ -135,7 +135,7 @@ void DEventSourceHDDM::GetEvent(std::shared_ptr<JEvent> event)
       fin = NULL;
       delete ifs;
       ifs = NULL;
-      return; // NO_MORE_EVENTS_IN_SOURCE;  // TODO: NWB: Throw kNO_MORE_EVTS
+      throw RETURN_STATUS::kNO_MORE_EVENTS;
    }
    
    hddm_s::HDDM *record = new hddm_s::HDDM();
@@ -145,7 +145,7 @@ void DEventSourceHDDM::GetEvent(std::shared_ptr<JEvent> event)
          fin = NULL;
          delete ifs;
          ifs = NULL;
-         return; // NO_MORE_EVENTS_IN_SOURCE; // TODO: Throw NO_MORE_EVENTS
+         throw RETURN_STATUS::kNO_MORE_EVENTS;
       }
    }
 
