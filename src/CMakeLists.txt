@@ -738,9 +738,9 @@ set(HALLD_RECON_SOURCES
         libraries/TRIGGER/DL3Trigger_factory.h
         libraries/TRIGGER/DL1Trigger_factory.cc
         libraries/TRIGGER/DL1Trigger_factory.h
-#        libraries/TRIGGER/DL1MCTrigger_factory.cc     # DEventSource_HDDM
+        libraries/TRIGGER/DL1MCTrigger_factory.cc
         libraries/TRIGGER/DL1MCTrigger_factory.h
-#        libraries/TRIGGER/TRIGGER_init.cc
+        libraries/TRIGGER/TRIGGER_init.cc
 
         libraries/TTAB/DTranslationTable.h
         libraries/TTAB/DTranslationTable.cc

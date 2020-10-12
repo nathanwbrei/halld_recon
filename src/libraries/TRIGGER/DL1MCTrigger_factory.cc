@@ -6,6 +6,7 @@
 using namespace std;
 
 #include <JANA/JEvent.h>
+#include <DANA/DEvent.h>
 #include <DAQ/DCODAROCInfo.h>
 #include <DAQ/DL1Info.h>
 #include <DANA/DStatusBits.h>
@@ -235,6 +236,8 @@ void DL1MCTrigger_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
   const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
   
   if(print_messages) jout << "In DL1MCTrigger_factory, loading constants..." << jendl;
+
+  auto calibration = GetJCalibration(event);
   
   vector< double > fcal_gains_ch;
   vector< double > fcal_pedestals_ch;
@@ -350,9 +353,10 @@ void DL1MCTrigger_factory::Process(const std::shared_ptr<const JEvent>& event){
 
 	DRandom2 gDRandom(0); // declared extern in DRandom2.h
 
+
 	// This is temporary, to allow this simulation to be run on data
 	// to help out with trigger efficiency studies - sdobbs (Aug. 26, 2020)
-	if( loop->GetJEvent().GetStatusBit(kSTATUS_EVIO) ){
+	if( event->GetSingleStrict<DStatusBits>()->GetStatusBit(kSTATUS_EVIO) ){
 		if(print_data_message) {
 			jout << "WARNING: Running L1 trigger simulation on EVIO data" << endl; 
 			print_data_message = false;
@@ -371,7 +375,7 @@ void DL1MCTrigger_factory::Process(const std::shared_ptr<const JEvent>& event){
 		UInt_t seed2 = 0;
 		UInt_t seed3 = 0;
 	
-		GetSeeds(loop, eventnumber, seed1, seed2, seed3);
+		GetSeeds(event, event->GetEventNumber(), seed1, seed2, seed3);
 	
 		gDRandom.SetSeeds(seed1, seed2, seed3);
 	}
@@ -1466,7 +1470,9 @@ void DL1MCTrigger_factory::GetSeeds(const std::shared_ptr<const JEvent>& event, 
     seed3 = 709975946 + eventnumber;
   } else {
   
-    hddm_s::HDDM *record = (hddm_s::HDDM*)event.GetRef();
+    hddm_s::HDDM *record = const_cast<hddm_s::HDDM*>(event->GetSingleStrict<hddm_s::HDDM>());
+    // TODO: NWB: Don't like this const cast
+
     if (!record){
       seed1 = 259921049 + eventnumber;
       seed2 = 442249570 + eventnumber;
