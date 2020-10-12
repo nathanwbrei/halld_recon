@@ -376,11 +376,12 @@ set(HALLD_RECON_SOURCES
         libraries/HDDM/DEventSourceRESTGenerator.h
         libraries/HDDM/DEventWriterHDDM.cc
         libraries/HDDM/DEventWriterHDDM.h
-#        libraries/HDDM/DEventWriterHDDM_factory.h
-#        libraries/HDDM/DEventWriterREST.cc
-#        libraries/HDDM/DEventWriterREST.h
-#        libraries/HDDM/DEventWriterREST_factory.h
+        libraries/HDDM/DEventWriterHDDM_factory.h
+        libraries/HDDM/DEventWriterREST.cc
+        libraries/HDDM/DEventWriterREST.h
+        libraries/HDDM/DEventWriterREST_factory.h
         libraries/HDDM/DMatrixPools.cc
+        libraries/HDDM/HDDM_init.cc
 
         libraries/HDGEOMETRY/DGeometry.cc
         libraries/HDGEOMETRY/DGeometry.h
