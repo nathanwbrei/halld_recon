@@ -366,8 +366,6 @@ set(HALLD_RECON_SOURCES
         libraries/HDDM/DEventHitStatistics_factory.h
         libraries/HDDM/DEventSourceHDDM.cc
         libraries/HDDM/DEventSourceHDDM.h
-        libraries/HDDM/hddm_s++.cpp   # TODO: This doesn't really belong here
-        libraries/HDDM/hddm_r++.cpp   # TODO: This doesn't really belong here
         libraries/HDDM/DEventSourceHDDMGenerator.cc
         libraries/HDDM/DEventSourceHDDMGenerator.h
         libraries/HDDM/DEventSourceREST.cc
@@ -382,6 +380,8 @@ set(HALLD_RECON_SOURCES
         libraries/HDDM/DEventWriterREST_factory.h
         libraries/HDDM/DMatrixPools.cc
         libraries/HDDM/HDDM_init.cc
+        libraries/HDDM/hddm_s++.cpp   # TODO: This doesn't really belong here
+        libraries/HDDM/hddm_r++.cpp   # TODO: This doesn't really belong here
 
         libraries/HDGEOMETRY/DGeometry.cc
         libraries/HDGEOMETRY/DGeometry.h
