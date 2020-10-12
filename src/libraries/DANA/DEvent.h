@@ -84,6 +84,10 @@ public:
 };
 
 
+inline JCalibration* GetJCalibration(const std::shared_ptr<const JEvent>& event) {
+	return event->GetJApplication()->GetService<JCalibrationManager>()->GetJCalibration(event->GetRunNumber());
+}
+
 inline DGeometry* GetDGeometry(const std::shared_ptr<const JEvent>& event) {
 	return event->GetJApplication()->GetService<DGeometryManager>()->GetDGeometry(event->GetRunNumber());
 }

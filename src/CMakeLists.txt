@@ -374,8 +374,8 @@ set(HALLD_RECON_SOURCES
         libraries/HDDM/DEventSourceREST.h
         libraries/HDDM/DEventSourceRESTGenerator.cc
         libraries/HDDM/DEventSourceRESTGenerator.h
-#        libraries/HDDM/DEventWriterHDDM.cc
-#        libraries/HDDM/DEventWriterHDDM.h
+        libraries/HDDM/DEventWriterHDDM.cc
+        libraries/HDDM/DEventWriterHDDM.h
 #        libraries/HDDM/DEventWriterHDDM_factory.h
 #        libraries/HDDM/DEventWriterREST.cc
 #        libraries/HDDM/DEventWriterREST.h
