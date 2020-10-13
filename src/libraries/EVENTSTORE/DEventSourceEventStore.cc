@@ -15,6 +15,7 @@
 
 using namespace std;
 
+#include <JANA/JEventSourceGenerator.h>
 #include <DANA/DStatusBits.h>
 
 #include <TRandom3.h>
@@ -279,22 +280,24 @@ void DEventSourceEventStore::GetEvent(std::shared_ptr<JEvent> event)
     	event->SetRunNumber(10000);
     	event->SetJEventSource(this);
    		//event.SetRef(NULL);
-    	event->SetStatusBit(kSTATUS_FROM_FILE);
-    	event->SetStatusBit(kSTATUS_PHYSICS_EVENT);
+
+   		auto statusBits = new DStatusBits;
+   		statusBits->SetStatusBit(kSTATUS_FROM_FILE);
+    	statusBits->SetStatusBit(kSTATUS_PHYSICS_EVENT);
+    	event->Insert(statusBits);
 
 		DEventStoreEvent *the_es_event = new DEventStoreEvent();
-		event->SetRef(the_es_event);
+		event->Insert(the_es_event);
 		for(int i=0; i<4; i++)
 			if(gRandom->Uniform() < 0.5)
 				the_es_event->Add_Skim(skim_list[i]);
-		return; // NOERROR
 	}
 	
 	// make sure the file is open
 	while(event_source == NULL) {
 		while(OpenNextFile() != NOERROR) {}  // keep trying to open files until none are left
 		if(event_source == NULL)
-			return NO_MORE_EVENTS_IN_SOURCE;
+			throw RETURN_STATUS::kNO_MORE_EVENTS;
 	
 		// skip to next event
 		jerror_t retval;
@@ -309,7 +312,8 @@ void DEventSourceEventStore::GetEvent(std::shared_ptr<JEvent> event)
 			DEventStoreEvent *the_es_event = new DEventStoreEvent();
 			the_es_event->Set_EventSource(event_source);
 			the_es_event->Set_SourceRef(event.GetRef());    // save the actual event data
-			event.SetRef(the_es_event);
+			event->Insert(the_es_event);
+
 		    event.SetStatusBit(kSTATUS_FROM_FILE);
 		    event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
 
@@ -323,8 +327,6 @@ void DEventSourceEventStore::GetEvent(std::shared_ptr<JEvent> event)
 			return retval;
 		}
 	}
-	
-	return; // NOERROR;
 }
 
 //---------------------------------
@@ -339,7 +341,7 @@ void DEventSourceEventStore::FinishEvent(JEvent &event)
 //---------------------------------
 // GetObjects
 //---------------------------------
-jerror_t DEventSourceEventStore::GetObjects(JEvent &event, JFactory_base *factory)
+bool DEventSourceEventStore::GetObjects(const std::shared_ptr<const JEvent> &event, JFactory *factory)
 {
 	/// This gets called through the virtual method of the
 	/// JEventSource base class. It creates the objects of the type
@@ -349,25 +351,25 @@ jerror_t DEventSourceEventStore::GetObjects(JEvent &event, JFactory_base *factor
 	if(!factory) throw RESOURCE_UNAVAILABLE;
 
 	// return meta-EventStore information
-    string dataClassName = factory->GetDataClassName();
+    string dataClassName = factory->GetObjectName();
 	
 	if (dataClassName =="DESSkimData") {
-		JFactory<DESSkimData> *essd_factory = dynamic_cast<JFactory<DESSkimData>*>(factory);
+		JFactoryT<DESSkimData> *essd_factory = dynamic_cast<JFactoryT<DESSkimData>*>(factory);
 		
-		DEventStoreEvent *the_es_event = static_cast<DEventStoreEvent *>(event.GetRef());
+		DEventStoreEvent *the_es_event = const_cast<DEventStoreEvent*>(event->GetSingleStrict<DEventStoreEvent>());
 		DESSkimData *skim_data = new DESSkimData(the_es_event->Get_Skims(), skim_list);
 
 		vector<DESSkimData*> skim_data_vec(1, skim_data);
-		essd_factory->CopyTo(skim_data_vec);
+		essd_factory->Set(skim_data_vec);
 
-		return NOERROR;
+		return true;
 	}
 	
 	if(!event_source) throw RESOURCE_UNAVAILABLE;
 	
 	// See GetEvent() for the motivation for this
 	// Unwrap the event...
-	DEventStoreEvent *the_es_event = static_cast<DEventStoreEvent *>(event.GetRef());
+	DEventStoreEvent *the_es_event = const_cast<DEventStoreEvent*>(event->GetSingleStrict<DEventStoreEvent>());
 	event.SetRef(the_es_event->Get_SourceRef());
 	// ..now grab the objects...
 	jerror_t retval = event_source->GetObjects(event, factory);
@@ -444,7 +446,7 @@ jerror_t DEventSourceEventStore::OpenNextFile()
 
 		if(locEventSourceGenerator != NULL)
 		{
-			jout<<"Opening source \""<<locFileName<<"\" of type: "<<locEventSourceGenerator->Description()<<endl;
+			jout<<"Opening source \""<<locFileName<<"\" of type: "<<locEventSourceGenerator->GetDescription()<<endl;
 			event_source = locEventSourceGenerator->MakeJEventSource(locFileName);
 		}
 

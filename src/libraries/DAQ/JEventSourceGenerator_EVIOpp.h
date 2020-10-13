@@ -17,12 +17,9 @@
 
 class JEventSourceGenerator_EVIOpp: public JEventSourceGenerator{
 	public:
-		JEventSourceGenerator_EVIOpp(){}
-		virtual ~JEventSourceGenerator_EVIOpp(){}
-		virtual const char* className(void){return static_className();}
-		static const char* static_className(void){return "JEventSourceGenerator_EVIOpp";}
 
-		std::string GetDescription() override;
+		std::string GetType() const override { return "JEventSource_EVIOpp"; }
+		std::string GetDescription() const override;
 		double CheckOpenable(string source) override;
 		JEventSource* MakeJEventSource(string source) override;
 };

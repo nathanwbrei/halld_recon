@@ -271,14 +271,14 @@ set(HALLD_RECON_SOURCES
         libraries/DAQ/HDEVIO.cc
         libraries/DAQ/HDEVIO.h
 #        libraries/DAQ/JEventSource_EVIO.cc
-#        libraries/DAQ/JEventSource_EVIO.h
+        libraries/DAQ/JEventSource_EVIO.h
 #        libraries/DAQ/JEventSource_EVIOpp.cc
-#        libraries/DAQ/JEventSource_EVIOpp.h
+        libraries/DAQ/JEventSource_EVIOpp.h
 #        libraries/DAQ/JEventSourceGenerator_EVIO.cc
 #        libraries/DAQ/JEventSourceGenerator_EVIO.h
 #        libraries/DAQ/JEventSourceGenerator_EVIOpp.cc
 #        libraries/DAQ/JEventSourceGenerator_EVIOpp.h
-#        libraries/DAQ/JFactoryGenerator_DAQ.h
+        libraries/DAQ/JFactoryGenerator_DAQ.h
         libraries/DAQ/swap_bank.cc
         libraries/DAQ/swap_bank.h
 

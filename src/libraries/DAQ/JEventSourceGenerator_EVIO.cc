@@ -9,14 +9,13 @@
 #include <string>
 using std::string;
 #include "JEventSourceGenerator_EVIO.h"
-using namespace jana;
 
 #include "HDEVIO.h"
 
 //---------------------------------
 // Description
 //---------------------------------
-const char* JEventSourceGenerator_EVIO::Description(void)
+std::string JEventSourceGenerator_EVIO::GetDescription() const
 {
 	return "EVIO  - Reads EVIO formatted data from file or ET system";
 }
