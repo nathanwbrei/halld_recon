@@ -23,7 +23,7 @@ class Df250EmulatorAlgorithm_factory_v1:public JFactoryT<Df250EmulatorAlgorithm>
 
 			// Create single Df250EmulatorAlgorithm object and mark the factory as
 			// persistent so it doesn't get deleted every event.
-			Df250EmulatorAlgorithm *emulator = new Df250EmulatorAlgorithm_v1(event);
+			Df250EmulatorAlgorithm *emulator = new Df250EmulatorAlgorithm_v1(event->GetJApplication());
 			SetFactoryFlag(PERSISTENT);
 			ClearFactoryFlag(WRITE_TO_OUTPUT);
 			Insert(emulator);

@@ -238,7 +238,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	// Create emulator objects
 
 	if(F250_EMULATION_VERSION == 1) {
-		f250Emulator = new Df250EmulatorAlgorithm_v1();
+		f250Emulator = new Df250EmulatorAlgorithm_v1(japp);
 	} else if(F250_EMULATION_VERSION == 2) {
 		f250Emulator = new Df250EmulatorAlgorithm_v2(NULL);
 	} else {
@@ -1192,7 +1192,7 @@ void JEventSource_EVIOpp::EmulateDf125Firmware(DParsedEvent *pe)
 //----------------
 // AddToCallStack
 //----------------
-void JEventSource_EVIOpp::AddToCallStack(DParsedEvent *pe, JEventLoop *loop)
+void JEventSource_EVIOpp::AddToCallStack(DParsedEvent *pe, const std::shared_ptr<const JEvent>& loop)
 {
 	/// Add information to JANA's call stack so that the janadot
 	/// plugin can better display the actual relationship of the
@@ -1209,7 +1209,7 @@ void JEventSource_EVIOpp::AddToCallStack(DParsedEvent *pe, JEventLoop *loop)
 //----------------
 // AddSourceObjectsToCallStack
 //----------------
-void JEventSource_EVIOpp::AddSourceObjectsToCallStack(JEventLoop *loop, string className)
+void JEventSource_EVIOpp::AddSourceObjectsToCallStack(const std::shared *loop, string className)
 {
 	/// This is used to give information to JANA regarding the origin of objects
 	/// that *should* come from the source. We add them in explicitly because

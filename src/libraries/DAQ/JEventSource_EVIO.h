@@ -26,7 +26,7 @@ using std::set;
 #include <JANA/JEventSource.h>
 #include <JANA/JEvent.h>
 #include <JANA/JFactoryT.h>
-#include <JANA/JLogger.h>
+#include <JANA/Compatibility/JStreamLog.h>
 
 #include "HDEVIO.h"
 
@@ -181,10 +181,12 @@ class JEventSource_EVIO: public JEventSource {
 				          JEventSource_EVIO(std::string source_name, JApplication* app);
 		         virtual ~JEventSource_EVIO();
 
-		            void GetEvent(JEvent &event);
-				    void GetObjects(JEvent &event, JFactory *factory);
+		            void GetEvent(std::shared_ptr<JEvent> event) override;
+				    bool GetObjects(const std::shared_ptr<const JEvent> &event, JFactory *factory) override;
+					void FinishEvent(JEvent &event) override;
 
-                    bool quit_on_next_ET_timeout;
+
+	bool quit_on_next_ET_timeout;
 
 		     inline double GetTime(void);
                     void ReadOptionalModuleTypeTranslation(void);
@@ -221,7 +223,7 @@ class JEventSource_EVIO: public JEventSource {
 		map<tagNum, MODULE_TYPE> module_type;
 		map<MODULE_TYPE, MODULE_TYPE> modtype_translate;
 
-		JLogger evioout;
+		JStreamLog evioout;
 
 		bool  AUTODETECT_MODULE_TYPES;
 		bool  DUMP_MODULE_MAP;
@@ -370,9 +372,9 @@ class JEventSource_EVIO: public JEventSource {
 		pthread_rwlock_t BOR_lock;
 		vector<JObject*> BORobjs;
 
-		void CopyBOR(JEvent& event, map<string, vector<JObject*> > &hit_objs_by_type);
-		//void AddSourceObjectsToCallStack(JEventLoop *loop, string className);
-		//void AddEmulatedObjectsToCallStack(JEventLoop *loop, string caller, string callee);
+		void CopyBOR(const std::shared_ptr<const JEvent>& event, map<string, vector<JObject*> > &hit_objs_by_type);
+		void AddSourceObjectsToCallStack(const std::shared_ptr<const JEvent>& loop, string className);
+		void AddEmulatedObjectsToCallStack(const std::shared_ptr<const JEvent>& loop, string caller, string callee);
         void EmulateDf250Firmware(JEvent &event, vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs, vector<JObject*> &pi_objs);
         void EmulateDf125Firmware(JEvent &event, vector<JObject*> &wrd_objs, vector<JObject*> &cp_objs, vector<JObject*> &fp_objs); 
 
@@ -472,7 +474,7 @@ void JEventSource_EVIO::GetEVIOBuffer(JEvent &jevent, uint32_t* &buff, uint32_t 
 
 	// Make sure this JEvent actually came from this source
 	if(jevent.GetJEventSource() != this){
-		jerr<<" ERROR: Attempting to get EVIO buffer for event not produced by this source!!"<<jendl;
+		jerr<<" ERROR: Attempting to get EVIO buffer for event not produced by this source!!"<<endl;
 		return;
 	}
 
@@ -499,7 +501,7 @@ evioDOMTree* JEventSource_EVIO::GetEVIODOMTree(JEvent &jevent) const
 
 	// Make sure this JEvent actually came from this source
 	if(jevent.GetJEventSource() != this){
-		jerr<<" ERROR: Attempting to get EVIO buffer for event not produced by this source!!"<<jendl;
+		jerr<<" ERROR: Attempting to get EVIO buffer for event not produced by this source!!"<<endl;
 		return NULL;
 	}
 

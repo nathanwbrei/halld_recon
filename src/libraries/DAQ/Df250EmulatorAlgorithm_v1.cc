@@ -1,6 +1,6 @@
 #include <DAQ/Df250EmulatorAlgorithm_v1.h>
 
-Df250EmulatorAlgorithm_v1::Df250EmulatorAlgorithm_v1(const std::shared_ptr<const JEvent>& event){
+Df250EmulatorAlgorithm_v1::Df250EmulatorAlgorithm_v1(JApplication* app){
     // Enables forced use of default values
     FORCE_DEFAULT = 0;
     // Default values for the essential parameters
@@ -10,7 +10,6 @@ Df250EmulatorAlgorithm_v1::Df250EmulatorAlgorithm_v1(const std::shared_ptr<const
     // Set verbosity
     VERBOSE = 0;
 
-    auto app = event->GetJApplication();
     app->SetDefaultParameter("EMULATION250:FORCE_DEFAULT", FORCE_DEFAULT,"Set to >0 to force use of default values");
     app->SetDefaultParameter("EMULATION250:NSA", NSA_DEF,"Set NSA for firmware emulation, will be overwritten by BORConfig if present");
     app->SetDefaultParameter("EMULATION250:NSB", NSB_DEF,"Set NSB for firmware emulation, will be overwritten by BORConfig if present");

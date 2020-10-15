@@ -17,7 +17,7 @@ class JEventSourceGenerator_EVIO: public JEventSourceGenerator{
 	public:
 
 		std::string GetType() const override { return "JEventSource_EVIO"; }
-		std::string GetDescription() const;
+		std::string GetDescription() const override;
 
 		double CheckOpenable(string source) override;
 		JEventSource* MakeJEventSource(string source) override;
