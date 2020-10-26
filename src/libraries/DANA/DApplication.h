@@ -12,14 +12,16 @@ class JApplication;
 class JEventSourceGenerator;
 class JFactoryGenerator;
 
-struct DApplication {
+class DApplication {
 
 	JEventSourceGenerator *event_source_generator;
 	JFactoryGenerator *factory_generator;
 
-	void Init(JApplication *app);
 	void CheckCpuSimdSupport();
 	void CopySQLiteToLocalDisk(JApplication *app);
+
+public:
+	DApplication(JApplication *app);
 
 };
 

@@ -183,7 +183,7 @@ set(HALLD_RECON_SOURCES
         libraries/DANA/DGeometryManager.cc
         libraries/DANA/DGeometryManager.h
         libraries/DANA/DEvent.h
-#        libraries/DANA/DApplication.cc
+        libraries/DANA/DApplication.cc
         libraries/DANA/DApplication.h
         libraries/DANA/DFactoryGenerator.cc
         libraries/DANA/DFactoryGenerator.h
@@ -753,19 +753,31 @@ set(HALLD_RECON_SOURCES
 
         )
 
-add_executable(halld_recon
-        programs/Analysis/hd_port/hd_port.cc
-#        programs/Analysis/hd_dump/hd_dump.cc
-#        programs/Analysis/hd_dump/MyProcessor.cc
-#        programs/Analysis/hd_dump/MyProcessor.h
+add_library(halld_recon
         ${HALLD_RECON_SOURCES}
         )
-
 
 target_include_directories(halld_recon PRIVATE libraries libraries/include src/include
         ${CCDB_INCLUDE_DIRS} ${ROOT_INCLUDE_DIRS} ${JANA_INCLUDE_DIR} ${EVIO_INCLUDE_DIR} ${HDDS_INCLUDE_DIR} ${HDDM_INCLUDE_DIR} ${MYSQL_INCLUDE_DIR} ${XSTREAM_INCLUDE_DIR})
 
-message(WARN ${EVIO_LIBS})
 target_link_libraries(halld_recon ${JANA_LIBRARY} ${EVIO_LIBS} ${EXPAT_LIBRARY} ${ROOT_LIBRARIES} ${HDDS_LIBRARY} ${MYSQL_LIB} ${XSTREAM_LIB})
+
+
+add_executable(hd_root
+        programs/Analysis/hd_root/hd_root.cc
+        programs/Analysis/hd_root/MyProcessor.cc
+        programs/Analysis/hd_root/MyProcessor.h
+        )
+
+target_include_directories(hd_root PRIVATE libraries libraries/include src/include ${ROOT_INCLUDE_DIRS} ${JANA_INCLUDE_DIR})
+
+target_link_libraries(hd_root halld_recon ${JANA_LIBRARY} ${ROOT_LIBRARIES})
+
+#add_executable(hd_dump
+#        programs/Analysis/hd_dump/hd_dump.cc
+#        programs/Analysis/hd_dump/MyProcessor.cc
+#        programs/Analysis/hd_dump/MyProcessor.h
+#        )
+
 
 

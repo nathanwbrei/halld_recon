@@ -36,6 +36,8 @@ def main():
 
     r.add(re.compile(r'eventLoop'), 'event')
 
+    r.add(re.compile(r'JFactory_base'), 'JFactory')
+
     r.add(re.compile(r'loop->'), 'event->')
 
     r.add(re.compile(r"JFactory<([a-zA-Z_0-9]+)>"), r'JFactoryT<\1>')
