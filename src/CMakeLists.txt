@@ -1,5 +1,6 @@
-#DYLD_LIBRARY_PATH=/Users/nbrei/gluex_top/evio/4.4.6/Darwin-x86_64/lib
 
+# To run on macOS:
+#DYLD_LIBRARY_PATH=/Users/nbrei/gluex_top/evio/4.4.6/Darwin-x86_64/lib:/Users/nbrei/src/hdds/.build
 
 cmake_minimum_required(VERSION 3.15)
 project(halld_recon)
@@ -771,7 +772,7 @@ add_executable(hd_root
 
 target_include_directories(hd_root PRIVATE libraries libraries/include src/include ${ROOT_INCLUDE_DIRS} ${JANA_INCLUDE_DIR})
 
-target_link_libraries(hd_root halld_recon ${JANA_LIBRARY} ${ROOT_LIBRARIES})
+target_link_libraries(hd_root halld_recon)
 
 #add_executable(hd_dump
 #        programs/Analysis/hd_dump/hd_dump.cc

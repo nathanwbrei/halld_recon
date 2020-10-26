@@ -33,11 +33,11 @@ This will define the following variables:
 
 if (DEFINED EVIOROOT)
     set(EVIO_ROOT_DIR ${EVIOROOT})
-    message(STATUS "Using EVIO_ROOT = ${EVIO_ROOT_DIR} (From CMake EVIOROOT variable)")
+    message(STATUS "Using EVIO_ROOT_DIR = ${EVIO_ROOT_DIR} (From CMake EVIOROOT variable)")
 
 elseif (DEFINED ENV{EVIOROOT})
     set(EVIO_ROOT_DIR $ENV{EVIOROOT})
-    message(STATUS "Using EVIO_ROOT = ${EVIO_ROOT_DIR} (From EVIOROOT environment variable)")
+    message(STATUS "Using EVIO_ROOT_DIR = ${EVIO_ROOT_DIR} (From EVIOROOT environment variable)")
 
 else()
     message(FATAL_ERROR "Missing $EVIOROOT")
