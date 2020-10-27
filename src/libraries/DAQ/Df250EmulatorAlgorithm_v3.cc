@@ -2,7 +2,7 @@
 
 // corresponds to version 0x0C12 of the fADC250 firmware
 
-Df250EmulatorAlgorithm_v3::Df250EmulatorAlgorithm_v3(const std::shared_ptr<const JEvent>& event){
+Df250EmulatorAlgorithm_v3::Df250EmulatorAlgorithm_v3(JApplication* app){
     // Enables forced use of default values 
     FORCE_DEFAULT = 0;
 
@@ -28,7 +28,6 @@ Df250EmulatorAlgorithm_v3::Df250EmulatorAlgorithm_v3(const std::shared_ptr<const
     // Set verbosity
     VERBOSE = 0;
 
-    auto app = event->GetJApplication();
     app->SetDefaultParameter("EMULATION250:USE_CRATE_DEFAULTS", USE_CRATE_DEFAULTS,"Set to >0 to force use of crate-dependent default values");
     app->SetDefaultParameter("EMULATION250:FORCE_DEFAULT", FORCE_DEFAULT,"Set to >0 to force use of default values");
     app->SetDefaultParameter("EMULATION250:NSA", NSA_DEF,"Set NSA for firmware emulation, will be overwritten by BORConfig if present");

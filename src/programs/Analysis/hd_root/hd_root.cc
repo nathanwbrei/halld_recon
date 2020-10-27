@@ -35,9 +35,10 @@ int main(int narg, char *argv[])
 
 	auto options = jana::ParseCommandLineOptions(narg, argv);
 	auto app = jana::CreateJApplication(options);
+	japp = app; // TODO: NWB: Remove me when possible
 
 	// Ensure that halld-specific parameters, factories, and sources have been set
-	DApplication dapp(app);  // TODO: This really ought to not be
+	DApplication dapp(app);  // TODO: NWB: This really ought to not be a ctor
 
 	DecideOutputFilename(app); // Ensure that the command-line flag overrides the OUTPUT_FILENAME parameter
 

@@ -17,7 +17,7 @@ using namespace std;
 class Df250EmulatorAlgorithm_v3:public Df250EmulatorAlgorithm{
     public:
 
-        Df250EmulatorAlgorithm_v3(const std::shared_ptr<const JEvent>& loop);
+        Df250EmulatorAlgorithm_v3(JApplication* app);
         ~Df250EmulatorAlgorithm_v3(){};
 
         //Only the emulation routines need to be overwritten

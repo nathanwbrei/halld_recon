@@ -29,7 +29,7 @@ using namespace std;
 //----------------
 DFCALShower_factory::DFCALShower_factory()
 {
-  auto app = GetApplication();
+  auto app = japp; // GetApplication();
 
   // should we use CCDB constants?
   LOAD_NONLIN_CCDB = 1.;

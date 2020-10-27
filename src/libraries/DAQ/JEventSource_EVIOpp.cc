@@ -162,7 +162,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	if(japp->GetJParameterManager()->Exists("RECORD_CALL_STACK")) japp->GetParameter("RECORD_CALL_STACK", RECORD_CALL_STACK);
 
 	// Set rocids of all systems to parse (if specified)
-	DTranslationTable::GetSystemsToParse(SYSTEMS_TO_PARSE, SYSTEMS_TO_PARSE_FORCE, this);
+	ROCIDS_TO_PARSE = DTranslationTable::GetSystemsToParse(SYSTEMS_TO_PARSE, SYSTEMS_TO_PARSE_FORCE);
 
 	jobtype = DEVIOWorkerThread::JOB_NONE;
 	if( PARSE ) jobtype |= DEVIOWorkerThread::JOB_FULL_PARSE;
@@ -185,7 +185,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 		hdet = new HDET(source_name, ET_STATION_NEVENTS, ET_STATION_CREATE_BLOCKING);
 		if( ! hdet->is_connected ){
 			cerr << hdet->err_mess.str() << endl;
-			throw JException("Failed to open ET system: " + source_name, __FILE__, __LINE__);
+			throw JException("Failed to open ET system: %s", source_name);
 		}
 		hdet->VERBOSE = VERBOSE_ET;
 		source_type = kETSource;
@@ -198,7 +198,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 		hdevio = new HDEVIO(source_name, true, VERBOSE);
 		if( ! hdevio->is_open ){
 			cerr << hdevio->err_mess.str() << endl;
-			throw JException("Failed to open EVIO file: " + source_name, __FILE__, __LINE__); // throw exception indicating error
+			throw JException("Failed to open EVIO file: %s", source_name); // throw exception indicating error
 		}
 		source_type = kFileSource;
 		hdevio->IGNORE_EMPTY_BOR = IGNORE_EMPTY_BOR;
@@ -246,7 +246,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 		if(F250_EMULATION_VERSION != 3) 
 				jerr << "Invalid fADC250 firmware version specified for emulation == " << F250_EMULATION_VERSION
 				     << " ,  Using v3 firmware as default ..." << endl;
-		f250Emulator = new Df250EmulatorAlgorithm_v3(NULL);
+		f250Emulator = new Df250EmulatorAlgorithm_v3(japp);
 	}
 
 	f125Emulator = new Df125EmulatorAlgorithm_v2();
@@ -572,8 +572,7 @@ void JEventSource_EVIOpp::GetEvent(std::shared_ptr<JEvent> event)
 	unique_lock<std::mutex> lck(PARSED_EVENTS_MUTEX);
 	while(parsed_events.empty()){
 		if(DONE){
-			done_reading = true;
-			
+
 			// There is a bug in JANA where an event id is inserted into
 			// the in_progress member before checking that this call
 			// succeeded. Normally, ids are removed via JEventSource::FreeEvent
@@ -583,10 +582,12 @@ void JEventSource_EVIOpp::GetEvent(std::shared_ptr<JEvent> event)
 			// since that is what JEventSource::GetEvent stores there.
 			// In principle, if this ever gets fixed in JANA then it
 			// will not break this code.
-			pthread_mutex_lock(&in_progress_mutex);
-			auto it = in_progess_events.find(Ncalls_to_GetEvent);
-			if( it != in_progess_events.end() )in_progess_events.erase(it);
-			pthread_mutex_unlock(&in_progress_mutex);
+			// TODO: NWB: Probably need to bring this back
+			// done_reading = true;
+			// pthread_mutex_lock(&in_progress_mutex);
+			// auto it = in_progess_events.find(Ncalls_to_GetEvent);
+			// if( it != in_progess_events.end() )in_progess_events.erase(it);
+			// pthread_mutex_unlock(&in_progress_mutex);
 			throw RETURN_STATUS::kNO_MORE_EVENTS;
 		}
 		NEVENTBUFF_STALLED++;
@@ -608,11 +609,11 @@ void JEventSource_EVIOpp::GetEvent(std::shared_ptr<JEvent> event)
 	// Copy info for this parsed event into the JEvent
 	event->SetEventNumber(pe->event_number);
 	event->SetRunNumber(USER_RUN_NUMBER>0 ? USER_RUN_NUMBER:pe->run_number);
-	event->Insert(pe);
+	event->Insert(pe)->SetFactoryFlag(JFactory::NOT_OBJECT_OWNER);   // Returned to pool in FinishEvent
 
 	// Set event status bits
 	DStatusBits* statusBits = new DStatusBits;
-	statusBits->SetAllBits(pe->event_status_bits);
+	statusBits->SetStatus(pe->event_status_bits);
 
 	statusBits->SetStatusBit(kSTATUS_EVIO);
 	if( source_type == kFileSource ) statusBits->SetStatusBit(kSTATUS_FROM_FILE);
@@ -621,8 +622,8 @@ void JEventSource_EVIOpp::GetEvent(std::shared_ptr<JEvent> event)
 	event->Insert(statusBits);
 
 	// EPICS and BOR events are barrier events
-	if(statusBits->GetStatusBit(kSTATUS_EPICS_EVENT)) event.SetSequential();
-	if(statusBits->GetStatusBit(kSTATUS_BOR_EVENT  )) event.SetSequential();
+	if(statusBits->GetStatusBit(kSTATUS_EPICS_EVENT)) event->SetSequential(true);
+	if(statusBits->GetStatusBit(kSTATUS_BOR_EVENT  )) event->SetSequential(true);
 	
 	// Only add BOR events to physics events
 	if(pe->borptrs==NULL)
@@ -1209,29 +1210,30 @@ void JEventSource_EVIOpp::AddToCallStack(DParsedEvent *pe, const std::shared_ptr
 //----------------
 // AddSourceObjectsToCallStack
 //----------------
-void JEventSource_EVIOpp::AddSourceObjectsToCallStack(const std::shared *loop, string className)
+void JEventSource_EVIOpp::AddSourceObjectsToCallStack(const std::shared_ptr<const JEvent>& loop, string className)
 {
 	/// This is used to give information to JANA regarding the origin of objects
 	/// that *should* come from the source. We add them in explicitly because
 	/// the file may not have any, but factories may ask for them. We want those
 	/// links to indicate that the "0" objects in the factory came from the source
 	/// so that janadot draws these objects correctly.
+	// TODO: NWB: Re-add me
 
-	JEventLoop::call_stack_t cs;
-	cs.caller_name = "<ignore>"; // tells janadot this object wasn't actually requested by anybody
-	cs.caller_tag = "";
-	cs.callee_name = className;
-	cs.callee_tag = "";
-	cs.start_time = 0.0;
-	cs.end_time = 0.0;
-	cs.data_source = JEventLoop::DATA_FROM_SOURCE;
-	loop->AddToCallStack(cs);
+	// JEventLoop::call_stack_t cs;
+	// cs.caller_name = "<ignore>"; // tells janadot this object wasn't actually requested by anybody
+	// cs.caller_tag = "";
+	// cs.callee_name = className;
+	// cs.callee_tag = "";
+	// cs.start_time = 0.0;
+	// cs.end_time = 0.0;
+	// cs.data_source = JEventLoop::DATA_FROM_SOURCE;
+	// loop->AddToCallStack(cs);
 }
 
 //----------------
 // AddEmulatedObjectsToCallStack
 //----------------
-void JEventSource_EVIOpp::AddEmulatedObjectsToCallStack(JEventLoop *loop, string caller, string callee)
+void JEventSource_EVIOpp::AddEmulatedObjectsToCallStack(const std::shared_ptr<const JEvent>& loop, string caller, string callee)
 {
 	/// This is used to give information to JANA regarding the relationship and
 	/// origin of some of these data objects. This is really just needed so that
@@ -1239,15 +1241,16 @@ void JEventSource_EVIOpp::AddEmulatedObjectsToCallStack(JEventLoop *loop, string
 	/// of how this plugin works, JANA can't record the correct call stack (at
 	/// least not easily!) Therefore, we have to give it a little help here.
 
-	JEventLoop::call_stack_t cs;
-	cs.caller_name = caller;
-	cs.callee_name = callee;
-	cs.data_source = JEventLoop::DATA_FROM_SOURCE;
-	loop->AddToCallStack(cs);
-	cs.callee_name = cs.caller_name;
-	cs.caller_name = "<ignore>";
-	cs.data_source = JEventLoop::DATA_FROM_FACTORY;
-	loop->AddToCallStack(cs);
+	// TODO: NWB: Re-add me
+	// JEventLoop::call_stack_t cs;
+	// cs.caller_name = caller;
+	// cs.callee_name = callee;
+	// cs.data_source = JEventLoop::DATA_FROM_SOURCE;
+	// loop->AddToCallStack(cs);
+	// cs.callee_name = cs.caller_name;
+	// cs.caller_name = "<ignore>";
+	// cs.data_source = JEventLoop::DATA_FROM_FACTORY;
+	// loop->AddToCallStack(cs);
 }
 
 

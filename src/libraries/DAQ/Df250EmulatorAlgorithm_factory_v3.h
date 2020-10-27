@@ -30,7 +30,7 @@ class Df250EmulatorAlgorithm_factory_v3:public JFactoryT<Df250EmulatorAlgorithm>
 			ClearFactoryFlag(WRITE_TO_OUTPUT);
 			
 			delete emulator;
-			emulator = new Df250EmulatorAlgorithm_v3(event);
+			emulator = new Df250EmulatorAlgorithm_v3(event->GetJApplication());
 		}
 
 		//------------------

@@ -273,12 +273,12 @@ set(HALLD_RECON_SOURCES
         libraries/DAQ/HDEVIO.h
 #        libraries/DAQ/JEventSource_EVIO.cc
         libraries/DAQ/JEventSource_EVIO.h
-#        libraries/DAQ/JEventSource_EVIOpp.cc
+        libraries/DAQ/JEventSource_EVIOpp.cc
         libraries/DAQ/JEventSource_EVIOpp.h
 #        libraries/DAQ/JEventSourceGenerator_EVIO.cc
 #        libraries/DAQ/JEventSourceGenerator_EVIO.h
-#        libraries/DAQ/JEventSourceGenerator_EVIOpp.cc
-#        libraries/DAQ/JEventSourceGenerator_EVIOpp.h
+        libraries/DAQ/JEventSourceGenerator_EVIOpp.cc
+        libraries/DAQ/JEventSourceGenerator_EVIOpp.h
         libraries/DAQ/JFactoryGenerator_DAQ.h
         libraries/DAQ/swap_bank.cc
         libraries/DAQ/swap_bank.h
@@ -779,6 +779,10 @@ target_link_libraries(hd_root halld_recon)
 #        programs/Analysis/hd_dump/MyProcessor.cc
 #        programs/Analysis/hd_dump/MyProcessor.h
 #        )
+#
+#target_include_directories(hd_dump PRIVATE libraries libraries/include src/include ${ROOT_INCLUDE_DIRS} ${JANA_INCLUDE_DIR})
+#
+#target_link_libraries(hd_dump halld_recon)
 
 
 

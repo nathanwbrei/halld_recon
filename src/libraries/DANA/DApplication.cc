@@ -27,10 +27,14 @@ using std::string;
 #include "DFactoryGenerator.h"
 
 #include <DANA/DApplication.h>
+#include <JANA/Compatibility/JLockService.h>
 
 /// The DApplication class adds HALL-D specific event source and factory generators to a JApplication
 /// factory generators that are HAll-D specific.
 DApplication::DApplication(JApplication *app) {
+
+	// Add services
+	app->ProvideService(std::make_shared<JLockService>());
 
 	// Disable inherently (and horrorifically)-unsafe registration of EVERY TObject with the global TObjectTable //multithreading!!
 	// Simply setting/checking a bool is not thread-safe due to cache non-coherence and operation re-shuffling by the compiler
@@ -62,8 +66,8 @@ DApplication::DApplication(JApplication *app) {
 	// TODO: Verify this does the same thing as the old version
 	string thread_timeout; // = "30 seconds";
 	auto thread_timeout_param = app->GetParameter("THREAD_TIMEOUT", thread_timeout);
-	if (thread_timeout_param->has_default && thread_timeout_param->default_value == thread_timeout_param->value) {
-		thread_timeout_param->default_value = "30 seconds";
+	if (thread_timeout_param && thread_timeout_param->default_value == thread_timeout_param->value) {
+		app->SetParameterValue("THREAD_TIMEOUT", "30 seconds");
 	}
 
 	CheckCpuSimdSupport();
@@ -79,7 +83,7 @@ DApplication::DApplication(JApplication *app) {
 		event_source_generator = new DEventSourceHDDMGenerator();
 		app->Add(event_source_generator);
 		app->Add(new DEventSourceRESTGenerator());
-		// app->Add(new JEventSourceGenerator_EVIOpp());
+		app->Add(new JEventSourceGenerator_EVIOpp());
 		// app->Add(new JEventSourceGenerator_EVIO());
 		// app->Add(new DEventSourceEventStoreGenerator());  // TODO: NWB: Re-add
 	}

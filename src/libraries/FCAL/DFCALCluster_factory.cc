@@ -41,18 +41,16 @@ const DFCALHit *GetDFCALHitFromClusterHit(const DFCALCluster::DFCALClusterHit_t 
 //----------------
 DFCALCluster_factory::DFCALCluster_factory()
 {
-	auto app = GetApplication();
-
 	// Set defaults
 	MIN_CLUSTER_BLOCK_COUNT = 2;
 	MIN_CLUSTER_SEED_ENERGY = 0.035; // GeV
 	TIME_CUT = 15.0 ; //ns
 	MAX_HITS_FOR_CLUSTERING = 250;
 
-	app->SetDefaultParameter("FCAL:MIN_CLUSTER_BLOCK_COUNT", MIN_CLUSTER_BLOCK_COUNT);
-	app->SetDefaultParameter("FCAL:MIN_CLUSTER_SEED_ENERGY", MIN_CLUSTER_SEED_ENERGY);
-	app->SetDefaultParameter("FCAL:MAX_HITS_FOR_CLUSTERING", MAX_HITS_FOR_CLUSTERING);
-	app->SetDefaultParameter("FCAL:TIME_CUT",TIME_CUT,"time cut for associating FCAL hits together into a cluster");
+	japp->SetDefaultParameter("FCAL:MIN_CLUSTER_BLOCK_COUNT", MIN_CLUSTER_BLOCK_COUNT);
+	japp->SetDefaultParameter("FCAL:MIN_CLUSTER_SEED_ENERGY", MIN_CLUSTER_SEED_ENERGY);
+	japp->SetDefaultParameter("FCAL:MAX_HITS_FOR_CLUSTERING", MAX_HITS_FOR_CLUSTERING);
+	japp->SetDefaultParameter("FCAL:TIME_CUT",TIME_CUT,"time cut for associating FCAL hits together into a cluster");
 }
 
 //------------------
