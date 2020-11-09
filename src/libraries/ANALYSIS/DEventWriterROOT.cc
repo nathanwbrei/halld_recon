@@ -1,5 +1,7 @@
 #include "DEventWriterROOT.h"
 
+#include <TObjString.h>
+
 static bool BCAL_VERBOSE_OUTPUT = false;
 static bool FCAL_VERBOSE_OUTPUT = false;
 static bool CCAL_VERBOSE_OUTPUT = false;

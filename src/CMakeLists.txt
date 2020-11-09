@@ -774,15 +774,15 @@ target_include_directories(hd_root PRIVATE libraries libraries/include src/inclu
 
 target_link_libraries(hd_root halld_recon)
 
-#add_executable(hd_dump
-#        programs/Analysis/hd_dump/hd_dump.cc
-#        programs/Analysis/hd_dump/MyProcessor.cc
-#        programs/Analysis/hd_dump/MyProcessor.h
-#        )
-#
-#target_include_directories(hd_dump PRIVATE libraries libraries/include src/include ${ROOT_INCLUDE_DIRS} ${JANA_INCLUDE_DIR})
-#
-#target_link_libraries(hd_dump halld_recon)
+add_executable(hd_dump
+        programs/Analysis/hd_dump/hd_dump.cc
+        programs/Analysis/hd_dump/MyProcessor.cc
+        programs/Analysis/hd_dump/MyProcessor.h
+        )
+
+target_include_directories(hd_dump PRIVATE libraries libraries/include src/include ${ROOT_INCLUDE_DIRS} ${JANA_INCLUDE_DIR})
+
+target_link_libraries(hd_dump halld_recon)
 
 
 
