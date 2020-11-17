@@ -246,8 +246,8 @@ class DParsedEvent{
 		#define copytofactorynonempty(A)    if(!v##A.empty()) facptrs.fac_##A->Set(v##A);
 		#define keepownershipnonempty(A)    if(!v##A.empty()) facptrs.fac_##A->SetFactoryFlag(JFactory::NOT_OBJECT_OWNER);
 
-		#define insertintofactory(A)            event->Insert(v##A)->SetFactoryFlag(JFactory::NOT_OBJECT_OWNER);
-		#define insertborintofactory(A)         event->Insert(borptrs->v##A)->SetFactoryFlag(JFactory::NOT_OBJECT_OWNER);
+		#define insertintofactory(A)            {auto fac=event->Insert(v##A); fac->SetFactoryFlag(JFactory::NOT_OBJECT_OWNER); fac->EnableGetAs<JObject>(); }
+		#define insertborintofactory(A)         {auto fac=event->Insert(borptrs->v##A); fac->SetFactoryFlag(JFactory::NOT_OBJECT_OWNER); fac->EnableGetAs<JObject>(); }
 		#define insertintofactorynonempty(A)    if(!v##A.empty()) event->Insert(v##A)->SetFactoryFlag(JFactory::NOT_OBJECT_OWNER);
 
 		// TODO: NWB: Should these be PERSISTENT as well seeing as we maintain a pool?

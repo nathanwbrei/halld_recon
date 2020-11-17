@@ -27,7 +27,9 @@ using std::string;
 #include "DFactoryGenerator.h"
 
 #include <DANA/DApplication.h>
+#include <DANA/DGeometryManager.h>
 #include <JANA/Compatibility/JLockService.h>
+#include <JANA/Calibrations/JCalibrationManager.h>
 
 /// The DApplication class adds HALL-D specific event source and factory generators to a JApplication
 /// factory generators that are HAll-D specific.
@@ -35,6 +37,8 @@ DApplication::DApplication(JApplication *app) {
 
 	// Add services
 	app->ProvideService(std::make_shared<JLockService>());
+	app->ProvideService(std::make_shared<JCalibrationManager>());
+	app->ProvideService(std::make_shared<DGeometryManager>(app));
 
 	// Disable inherently (and horrorifically)-unsafe registration of EVERY TObject with the global TObjectTable //multithreading!!
 	// Simply setting/checking a bool is not thread-safe due to cache non-coherence and operation re-shuffling by the compiler

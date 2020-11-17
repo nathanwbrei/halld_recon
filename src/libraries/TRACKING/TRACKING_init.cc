@@ -55,4 +55,9 @@ void TRACKING_init(JFactorySet *factorySet)
    factorySet->Add(new DTrackFitter_factory_KalmanSIMD());   
    factorySet->Add(new DTrackFitter_factory_KalmanSIMD_ALT1());
    factorySet->Add(new DTrackFitter_factory_StraightTrack());
+
+   factorySet->Add(new JFactoryT<DMCThrown>());
+   // TODO: NWB: We need this but not the other JFactoryT's because a lot of code relies on `event->Get<DMCThrown>("")`
+   //      silently returning the empty vector even when event sources (such as EVIO) don't insert anything because they
+   //      don't even know about DMCThrowns. So this is an old-style 'dummy factory' which I had hoped to get rid of.
 }

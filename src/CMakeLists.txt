@@ -16,9 +16,11 @@ find_package(JANA REQUIRED)
 #etroot = os.getenv('ETROOT')
 #if(etroot != None) :
 
+
 find_package(evio)
 if (EVIO_FOUND)
-    list(APPEND CMAKE_CXX_FLAGS -DHAVE_EVIO=1)
+#    set(CMAKE_CXX_FLAGS "-DHAVE_EVIO=1 -fsanitize=address")
+    set(CMAKE_CXX_FLAGS "-DHAVE_EVIO=1")
     find_package(expat REQUIRED)
 endif()
 
@@ -785,4 +787,10 @@ target_include_directories(hd_dump PRIVATE libraries libraries/include src/inclu
 target_link_libraries(hd_dump halld_recon)
 
 
+add_executable(hd_port
+        programs/Analysis/hd_port/hd_port.cc
+        )
 
+target_include_directories(hd_port PRIVATE libraries libraries/include src/include ${ROOT_INCLUDE_DIRS} ${JANA_INCLUDE_DIR})
+
+target_link_libraries(hd_port halld_recon)
