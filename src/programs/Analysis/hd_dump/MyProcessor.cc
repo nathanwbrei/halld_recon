@@ -47,6 +47,7 @@ set<string> tosummarize;
 //------------------------------------------------------------------
 void MyProcessor::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
+	cout << "Beginning run" << endl;
 	vector<string> factory_names;
 	for (auto factory : event->GetFactorySet()->GetAllFactories()) {
 		factory_names.push_back(factory->GetObjectName());

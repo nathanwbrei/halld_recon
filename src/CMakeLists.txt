@@ -20,15 +20,24 @@ find_package(JANA REQUIRED)
 find_package(evio)
 if (EVIO_FOUND)
 #    set(CMAKE_CXX_FLAGS "-DHAVE_EVIO=1 -fsanitize=address")
-    set(CMAKE_CXX_FLAGS "-DHAVE_EVIO=1")
+    add_definitions(-DHAVE_EVIO)
     find_package(expat REQUIRED)
 endif()
+
 
 set(HDDS_INCLUDE_DIR /Users/nbrei/src/hdds/build/src)
 set(HDDM_INCLUDE_DIR /Users/nbrei/gluex_data/hddm)
 set(HDDS_LIBRARY /Users/nbrei/src/hdds/build/lib/libhdds.so)
 set(MYSQL_INCLUDE_DIR /usr/local/include/mysql)
+set(MYSQL_LIBRARY -L/usr/local/Cellar/mysql/8.0.22/lib -lmysqlclient)
+set(SQLITE_LIBRARY -L/usr/local/Cellar/sqlite/3.33.0/lib -lsqlite3)
 set(XSTREAM_INCLUDE_DIR external/xstream/include)
+set(XSTREAM_INCLUDE_DIR external/xstream/include)
+set(CCDB_INCLUDE_DIRS /Users/nbrei/src/ccdb/include)
+set(CCDB_LIBRARY /Users/nbrei/src/ccdb/lib/libccdb.a /Users/nbrei/src/ccdb/lib/)
+
+
+add_definitions(-DHAVE_CCDB)
 
 find_package(zlib)
 find_package(bzip2)
@@ -305,7 +314,7 @@ set(HALLD_RECON_SOURCES
         libraries/DIRC/DIRC_init.cc
 
         libraries/EVENTSTORE/DESDBProvider.h
-#        libraries/EVENTSTORE/DESDBProviderMySQL.cc  # mysql.h
+        libraries/EVENTSTORE/DESDBProviderMySQL.cc  # mysql.h
         libraries/EVENTSTORE/DESDBProviderMySQL.h
         libraries/EVENTSTORE/DESSkimData.h
 #        libraries/EVENTSTORE/DEventSourceEventStore.cc
@@ -763,7 +772,7 @@ add_library(halld_recon
 target_include_directories(halld_recon PRIVATE libraries libraries/include src/include
         ${CCDB_INCLUDE_DIRS} ${ROOT_INCLUDE_DIRS} ${JANA_INCLUDE_DIR} ${EVIO_INCLUDE_DIR} ${HDDS_INCLUDE_DIR} ${HDDM_INCLUDE_DIR} ${MYSQL_INCLUDE_DIR} ${XSTREAM_INCLUDE_DIR})
 
-target_link_libraries(halld_recon ${JANA_LIBRARY} ${EVIO_LIBS} ${EXPAT_LIBRARY} ${ROOT_LIBRARIES} ${HDDS_LIBRARY} ${MYSQL_LIB} ${XSTREAM_LIB})
+target_link_libraries(halld_recon ${CCDB_LIBRARY} ${MYSQL_LIBRARY} ${SQLITE_LIBRARY} ${JANA_LIBRARY} ${EVIO_LIBS} ${EXPAT_LIBRARY} ${ROOT_LIBRARIES} ${HDDS_LIBRARY} ${XSTREAM_LIB})
 
 
 add_executable(hd_root

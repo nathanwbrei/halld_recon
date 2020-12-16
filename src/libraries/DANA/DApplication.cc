@@ -30,6 +30,7 @@ using std::string;
 #include <DANA/DGeometryManager.h>
 #include <JANA/Compatibility/JLockService.h>
 #include <JANA/Calibrations/JCalibrationManager.h>
+#include <JANA/Calibrations/JCalibrationGeneratorCCDB.h>
 
 /// The DApplication class adds HALL-D specific event source and factory generators to a JApplication
 /// factory generators that are HAll-D specific.
@@ -37,6 +38,8 @@ DApplication::DApplication(JApplication *app) {
 
 	// Add services
 	app->ProvideService(std::make_shared<JLockService>());
+	auto calib_man = make_shared<JCalibrationManager>();
+	calib_man->AddCalibrationGenerator(new JCalibrationGeneratorCCDB);
 	app->ProvideService(std::make_shared<JCalibrationManager>());
 	app->ProvideService(std::make_shared<DGeometryManager>(app));
 
