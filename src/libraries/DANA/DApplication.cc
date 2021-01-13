@@ -40,7 +40,7 @@ DApplication::DApplication(JApplication *app) {
 	app->ProvideService(std::make_shared<JLockService>());
 	auto calib_man = make_shared<JCalibrationManager>();
 	calib_man->AddCalibrationGenerator(new JCalibrationGeneratorCCDB);
-	app->ProvideService(std::make_shared<JCalibrationManager>());
+	app->ProvideService(calib_man);
 	app->ProvideService(std::make_shared<DGeometryManager>(app));
 
 	// Disable inherently (and horrorifically)-unsafe registration of EVERY TObject with the global TObjectTable //multithreading!!
