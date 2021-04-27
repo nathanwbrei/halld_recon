@@ -24,6 +24,8 @@
 #include "TH2.h"
 #include "TF1.h"
 
+#include <queue>
+
 class DDIRCLut: public JObject {
 
 public:
@@ -68,7 +70,7 @@ private:
 
 	TH1I *hDiff, *hDiffT, *hDiffD, *hDiffR, *hTime, *hCalc, *hNph, *hNphC;
 	TH2I *hDiff_Pixel[2];
-	deque<Particle_t> dFinalStatePIDs;
+	std::deque<Particle_t> dFinalStatePIDs;
 	map<Particle_t, TH1I*> hDeltaThetaC;
 	map<Particle_t, TH2I*> hDeltaThetaC_Pixel;
 
