@@ -191,7 +191,7 @@ class DL1MCTrigger_factory:public JFactoryT<DL1MCTrigger>{
 		int simu_gain_bcal;
 
 
-		int Read_RCDB(int32_t runnumber, bool print_messages=true);		
+		int Read_RCDB(const std::shared_ptr<const JEvent>& event, int32_t runnumber, bool print_messages=true);
 		int SignalPulse(double en, double time, double amp_array[sample], int type);
 
 		void AddBaseline(double adc_amp[sample], double pedestal, DRandom2 &gDRandom);

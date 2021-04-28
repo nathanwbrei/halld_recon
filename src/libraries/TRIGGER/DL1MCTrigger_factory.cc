@@ -206,7 +206,7 @@ void DL1MCTrigger_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
   //  runnumber = 30942;
 
   if(use_rcdb == 1){
-    status = Read_RCDB(runnumber, print_messages);
+    status = Read_RCDB(event, runnumber, print_messages);
     if(print_messages) PrintTriggers();
   }
 
@@ -674,7 +674,7 @@ void DL1MCTrigger_factory::Finish()
 // Read RCDB 
 //*********************
 
-int  DL1MCTrigger_factory::Read_RCDB(int32_t runnumber, bool print_messages)
+int  DL1MCTrigger_factory::Read_RCDB(const std::shared_ptr<const JEvent>& event, int32_t runnumber, bool print_messages)
 {
 
 #if HAVE_RCDB
