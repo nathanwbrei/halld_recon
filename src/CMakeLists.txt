@@ -10,6 +10,8 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 find_package(ROOT REQUIRED COMPONENTS Geom)
+find_package(XercesC REQUIRED)
+set(HAVE_XERCES)
 find_package(JANA REQUIRED)
 
 # Only add ET if ETROOT is set
@@ -19,19 +21,19 @@ find_package(JANA REQUIRED)
 
 find_package(evio)
 if (EVIO_FOUND)
-#    set(CMAKE_CXX_FLAGS "-DHAVE_EVIO=1 -fsanitize=address")
+    set(CMAKE_CXX_FLAGS "-DHAVE_EVIO=1 -fsanitize=address -O1 -fno-omit-frame-pointer")
     add_definitions(-DHAVE_EVIO)
     find_package(expat REQUIRED)
 endif()
 
+add_definitions(-DHAVE_RCDB)
 
 set(HDDS_INCLUDE_DIR /Users/nbrei/src/hdds/build/src)
 set(HDDM_INCLUDE_DIR /Users/nbrei/gluex_data/hddm)
 set(HDDS_LIBRARY /Users/nbrei/src/hdds/build/lib/libhdds.so)
 set(MYSQL_INCLUDE_DIR /usr/local/include/mysql)
-set(MYSQL_LIBRARY -L/usr/local/Cellar/mysql/8.0.22_1/lib -lmysqlclient)
-set(SQLITE_LIBRARY -L/usr/local/Cellar/sqlite/3.33.0/lib -lsqlite3)
-set(XSTREAM_INCLUDE_DIR external/xstream/include)
+set(MYSQL_LIBRARY -L/usr/local/Cellar/mysql/8.0.23_1/lib -lmysqlclient)
+set(SQLITE_LIBRARY -L/usr/local/Cellar/sqlite/3.34.0/lib -lsqlite3)
 set(XSTREAM_INCLUDE_DIR external/xstream/include)
 set(CCDB_INCLUDE_DIRS /Users/nbrei/src/ccdb/include)
 set(CCDB_LIBRARY /Users/nbrei/src/ccdb/lib/libccdb.a)

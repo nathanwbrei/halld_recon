@@ -29,8 +29,10 @@ using std::string;
 #include <DANA/DApplication.h>
 #include <DANA/DGeometryManager.h>
 #include <JANA/Compatibility/JLockService.h>
+#include <JANA/Services/JGlobalRootLock.h>
 #include <JANA/Calibrations/JCalibrationManager.h>
 #include <JANA/Calibrations/JCalibrationGeneratorCCDB.h>
+#include <JANA/Compatibility/JGeometryManager.h>
 
 /// The DApplication class adds HALL-D specific event source and factory generators to a JApplication
 /// factory generators that are HAll-D specific.
@@ -38,10 +40,12 @@ DApplication::DApplication(JApplication *app) {
 
 	// Add services
 	app->ProvideService(std::make_shared<JLockService>());
+	app->ProvideService(std::make_shared<JGlobalRootLock>());  // TODO: NWB: Probably should use JLockService instead
 	auto calib_man = make_shared<JCalibrationManager>();
 	calib_man->AddCalibrationGenerator(new JCalibrationGeneratorCCDB);
 	app->ProvideService(calib_man);
 	app->ProvideService(std::make_shared<DGeometryManager>(app));
+	app->ProvideService(std::make_shared<JGeometryManager>());
 
 	// Disable inherently (and horrorifically)-unsafe registration of EVERY TObject with the global TObjectTable //multithreading!!
 	// Simply setting/checking a bool is not thread-safe due to cache non-coherence and operation re-shuffling by the compiler
