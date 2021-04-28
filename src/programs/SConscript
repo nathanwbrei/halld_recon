@@ -5,6 +5,9 @@ Import('*')
 
 Import('env osname')
 
-subdirs = ['Analysis', 'Utilities']
+#subdirs = ['Analysis', 'Utilities']
+#TODO: NWB: Reenable me!
+
+subdirs = ['Utilities']
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 

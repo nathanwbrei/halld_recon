@@ -4,11 +4,16 @@ import sbms
 Import('*')
 
 # Default targets (always built)
-subdirs = ['analysis', 'root_merge', 'root2email']
-subdirs.extend( ['hddm', 'hddm_cull_events', 'hddm_merge_files'])
+#subdirs = ['analysis', 'root_merge', 'root2email']
+subdirs = ['analysis']
+#subdirs.extend( ['hddm', 'hddm_cull_events', 'hddm_merge_files'])
+#subdirs.extend( ['hddm'])
 subdirs.extend( ['mkplugin', 'mkfactory_plugin'] )
-subdirs.extend( ['hdevio_scan', 'hdbeam_current', 'hdevio_sample', 'hdskims'] )
-subdirs.extend( ['mergeTrees','hd_rsai_gen'] )
+#subdirs.extend( ['hdevio_scan', 'hdbeam_current', 'hdevio_sample', 'hdskims'] )
+#subdirs.extend( ['hdevio_scan', 'hdevio_sample', 'hdskims'] )
+#subdirs.extend( ['mergeTrees','hd_rsai_gen'] )
+subdirs.extend( ['mergeTrees'] )
+
 
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 
