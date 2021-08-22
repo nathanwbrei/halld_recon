@@ -8,15 +8,9 @@
  *  	Oct 9 2012, Yi Qiang, add general Cerenkov hit
  */
 
-#include <JANA/JEventLoop.h>
-using namespace jana;
+#include <JANA/JFactorySet.h>
 
-#include "DCereHit.h"
-
-jerror_t CERE_init(JEventLoop *loop) {
+void CERE_init(JFactorySet *factorySet) {
 	/// Create and register Cherenkov data factories
-	loop->AddFactory(new JFactory<DCereHit>());
-
-	return NOERROR;
 }
 

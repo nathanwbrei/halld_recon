@@ -3,12 +3,13 @@
 // -----------------------------------------
 
 #include "DEventProcessor_dirc_hists.h"
+#include <DANA/DEvent.h>
 
 // Routine used to create our DEventProcessor
 extern "C" {
   void InitPlugin(JApplication *app) {
     InitJANAPlugin(app);
-    app->AddProcessor(new DEventProcessor_dirc_hists());
+    app->Add(new DEventProcessor_dirc_hists());
   }
 }
 
@@ -18,15 +19,16 @@ DEventProcessor_dirc_hists::DEventProcessor_dirc_hists() {
 DEventProcessor_dirc_hists::~DEventProcessor_dirc_hists() {
 }
 
-jerror_t DEventProcessor_dirc_hists::init(void) {
-  
+void DEventProcessor_dirc_hists::Init() {
+
+	auto params = GetApplication()->GetJParameterManager();
   DIRC_TRUTH_BARHIT = false;
-  if(gPARMS->Exists("DIRC:TRUTH_BARHIT"))
-	  gPARMS->GetParameter("DIRC:TRUTH_BARHIT",DIRC_TRUTH_BARHIT);
+  if(params->Exists("DIRC:TRUTH_BARHIT"))
+	  params->GetParameter("DIRC:TRUTH_BARHIT",DIRC_TRUTH_BARHIT);
 
   DIRC_CUT_TDIFF = 3.0;
-  if(gPARMS->Exists("DIRC:HIST_CUT_TDIFF"))
-          gPARMS->GetParameter("DIRC:HIST_CUT_TDIFF",DIRC_CUT_TDIFF);
+  if(params->Exists("DIRC:HIST_CUT_TDIFF"))
+          params->GetParameter("DIRC:HIST_CUT_TDIFF",DIRC_CUT_TDIFF);
 
   TDirectory *dir = new TDirectoryFile("DIRC","DIRC");
   dir->cd();
@@ -169,45 +171,43 @@ jerror_t DEventProcessor_dirc_hists::init(void) {
   }
 
   gDirectory->cd("/");
- 
-  return NOERROR;
 }
 
-jerror_t DEventProcessor_dirc_hists::brun(jana::JEventLoop *loop, int32_t runnumber)
+void DEventProcessor_dirc_hists::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-
-   return NOERROR;
 }
 
-jerror_t DEventProcessor_dirc_hists::evnt(JEventLoop *loop, uint64_t eventnumber) {
+void DEventProcessor_dirc_hists::Process(const std::shared_ptr<const JEvent>& event) {
+
+  auto eventnumber = event->GetEventNumber();
 
   // check trigger type
   const DTrigger* locTrigger = NULL;
-  loop->GetSingle(locTrigger);
+  event->GetSingle(locTrigger);
   if(!locTrigger->Get_IsPhysicsEvent())
-	  return NOERROR;
+	  return;
 
    // get PID algos
    const DParticleID* locParticleID = NULL;
-   loop->GetSingle(locParticleID);
+   event->GetSingle(locParticleID);
 
    vector<const DDIRCGeometry*> locDIRCGeometryVec;
-   loop->Get(locDIRCGeometryVec);
+   event->Get(locDIRCGeometryVec);
    auto locDIRCGeometry = locDIRCGeometryVec[0];
 
    // Initialize DIRC LUT
    const DDIRCLut* dDIRCLut = nullptr;
-  loop->GetSingle(dDIRCLut);
+  event->GetSingle(dDIRCLut);
 
   // retrieve tracks and detector matches 
   vector<const DTrackTimeBased*> locTimeBasedTracks;
-  loop->Get(locTimeBasedTracks);
+  event->Get(locTimeBasedTracks);
 
   vector<const DDIRCPmtHit*> locDIRCPmtHits;
-  loop->Get(locDIRCPmtHits);
+  event->Get(locDIRCPmtHits);
 
   const DDetectorMatches* locDetectorMatches = NULL;
-  loop->GetSingle(locDetectorMatches);
+  event->GetSingle(locDetectorMatches);
   DDetectorMatches locDetectorMatch = (DDetectorMatches)locDetectorMatches[0];
 
   // plot DIRC LUT variables for specific tracks  
@@ -258,10 +258,10 @@ jerror_t DEventProcessor_dirc_hists::evnt(JEventLoop *loop, uint64_t eventnumber
 		  if(locBar > 23) //continue; // skip north box for now
 			  locBox = 0;
 
-		  japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+		  GetLockService(event)->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
                   hExtrapolatedBarHitXY[locPID]->Fill(posInBar.X(), posInBar.Y());
 		  hExtrapolatedBarHitTime[locPID]->Fill(locExtrapolatedTime);
-        	  japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK          
+        	  GetLockService(event)->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 		  double locAngle = dDIRCLut->CalcAngle(locP, locMass);
 		  map<Particle_t, double> locExpectedAngle = dDIRCLut->CalcExpectedAngles(locP);
@@ -288,13 +288,13 @@ jerror_t DEventProcessor_dirc_hists::evnt(JEventLoop *loop, uint64_t eventnumber
 			  int locXbin = (int)(posInBar.X()/5.0) + 19;
 			  if(locXbin >= 0 && locXbin < 40 && locBar == 3 && locPID == PiPlus && momInBar.Mag() > 4.0) {
 				  
-				  japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+				  GetLockService(event)->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 				  hHitTimeMap[locXbin]->Fill(locHitTime);
 				  if(locHitTime < 38)
 					  hPixelHitMap[locXbin]->Fill(pixel_row, pixel_col);
 				  else
 					  hPixelHitMapReflected[locXbin]->Fill(pixel_row, pixel_col);	  
-				  japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+				  GetLockService(event)->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 			  }
 
 			  if(locDIRCPhotons.size() > 0) {
@@ -304,7 +304,7 @@ jerror_t DEventProcessor_dirc_hists::evnt(JEventLoop *loop, uint64_t eventnumber
 					  double locDeltaT = locDIRCPhotons[loc_j].first - locHitTime;
 					  double locThetaC = locDIRCPhotons[loc_j].second;
 
-					  japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+					  GetLockService(event)->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
 					  if(fabs(locDeltaT + 15.) < 5.)
 						  hDeltaThetaC_BadTime[locPID][locBox]->Fill(locThetaC-locExpectedThetaC);
@@ -353,7 +353,7 @@ jerror_t DEventProcessor_dirc_hists::evnt(JEventLoop *loop, uint64_t eventnumber
 						  }
 					  }
 					  
-					  japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+					  GetLockService(event)->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 				  }
 			  }
 		  }
@@ -362,7 +362,7 @@ jerror_t DEventProcessor_dirc_hists::evnt(JEventLoop *loop, uint64_t eventnumber
 		  if(std::find(dFinalStatePIDs.begin(),dFinalStatePIDs.end(),locPID) == dFinalStatePIDs.end())
 			  continue;
 		    
-		  japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+		  GetLockService(event)->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
 		  // fill histograms with per-track quantities
 		  hNphC[locPID][locBox]->Fill(locDIRCMatchParams->dNPhotons);
@@ -401,17 +401,13 @@ jerror_t DEventProcessor_dirc_hists::evnt(JEventLoop *loop, uint64_t eventnumber
 			  hLikelihoodDiffVsP[locPID][locBox]->Fill(locP, locDIRCMatchParams->dLikelihoodProton - locDIRCMatchParams->dLikelihoodKaon);
 		  }
 
-		  japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+		  GetLockService(event)->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	  }
   }
-  
-  return NOERROR;
 }
 
-jerror_t DEventProcessor_dirc_hists::erun(void) {
-  return NOERROR;
+void DEventProcessor_dirc_hists::EndRun() {
 }
 
-jerror_t DEventProcessor_dirc_hists::fini(void) {
-  return NOERROR;
+void DEventProcessor_dirc_hists::Finish() {
 }

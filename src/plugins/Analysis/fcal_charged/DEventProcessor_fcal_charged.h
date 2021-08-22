@@ -19,23 +19,23 @@
 #include "TMatrixD.h"
 
 
-using namespace jana;
 using namespace std;
 
-class DEventProcessor_fcal_charged : public jana::JEventProcessor
+class DEventProcessor_fcal_charged : public JEventProcessor
 {
 	public:
-		DEventProcessor_fcal_charged(){};
+		DEventProcessor_fcal_charged(){
+			SetTypeName("DEventProcessor_fcal_charged");
+		};
 		~DEventProcessor_fcal_charged(){};
-		const char* className(void){return "DEventProcessor_fcal_charged";}
 
 	private:
 		const DAnalysisUtilities* dAnalysisUtilities;
-		jerror_t init(void);						///< Called once at program start.
-		jerror_t brun(jana::JEventLoop* locEventLoop, int locRunNumber);	///< Called every time a new run number is detected.
-		jerror_t evnt(jana::JEventLoop* locEventLoop, int locEventNumber);	///< Called every event.
-		jerror_t erun(void);						///< Called every time run number changes, provided brun has been called.
-		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+		void Init() override;
+		void BeginRun(const std::shared_ptr<const JEvent>& locEvent) override;
+		void Process(const std::shared_ptr<const JEvent>& locEvent) override;
+		void EndRun() override;
+		void Finish() override;
 
 		TMatrixD m_mC;
 		TMatrixD m_mD;

@@ -6,40 +6,38 @@
 //
 
 #include "DNeutralParticle_factory_PreSelect.h"
+#include <JANA/JEvent.h>
 
 //------------------
-// init
+// Init
 //------------------
-jerror_t DNeutralParticle_factory_PreSelect::init(void)
+void DNeutralParticle_factory_PreSelect::Init()
 {
 	//Setting this flag makes it so that JANA does not delete the objects in _data.  This factory will manage this memory. 
 		//This is because some/all of these pointers are just copied from earlier objects, and should not be deleted.  
 	SetFactoryFlag(NOT_OBJECT_OWNER);
-
-	return NOERROR;
 }
 
 //------------------
-// brun
+// BeginRun
 //------------------
-jerror_t DNeutralParticle_factory_PreSelect::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
+void DNeutralParticle_factory_PreSelect::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-	return NOERROR;
 }
 
 //------------------
-// evnt
+// Process
 //------------------
-jerror_t DNeutralParticle_factory_PreSelect::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
+void DNeutralParticle_factory_PreSelect::Process(const std::shared_ptr<const JEvent>& event)
 {
 	//Clear objects from last event
-	_data.clear();
+	mData.clear();
 
 	vector<const DNeutralParticle*> locNeutralParticles;
-	locEventLoop->Get(locNeutralParticles);
+	event->Get(locNeutralParticles);
 
 	vector<const DNeutralShower*> locNeutralShowers;
-	locEventLoop->Get(locNeutralShowers, "PreSelect");
+	event->Get(locNeutralShowers, "PreSelect");
 
 	set<const DNeutralShower*> locNeutralShowerSet;
 	for(size_t loc_i = 0; loc_i < locNeutralShowers.size(); ++loc_i)
@@ -49,26 +47,22 @@ jerror_t DNeutralParticle_factory_PreSelect::evnt(jana::JEventLoop *locEventLoop
 	for(size_t loc_i = 0; loc_i < locNeutralParticles.size(); ++loc_i)
 	{
 		if(locNeutralShowerSet.find(locNeutralParticles[loc_i]->dNeutralShower) != locNeutralShowerSet.end())
-			_data.push_back(const_cast<DNeutralParticle*>(locNeutralParticles[loc_i]));
+			mData.push_back(const_cast<DNeutralParticle*>(locNeutralParticles[loc_i]));
 	}
-
-	return NOERROR;
 }
 
 //------------------
-// erun
+// EndRun
 //------------------
-jerror_t DNeutralParticle_factory_PreSelect::erun(void)
+void DNeutralParticle_factory_PreSelect::EndRun()
 {
-	return NOERROR;
 }
 
 //------------------
-// fini
+// Finish
 //------------------
-jerror_t DNeutralParticle_factory_PreSelect::fini(void)
+void DNeutralParticle_factory_PreSelect::Finish()
 {
-	return NOERROR;
 }
 
 

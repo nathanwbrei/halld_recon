@@ -8,6 +8,10 @@
 
 #include "CCAL/DCCALShower_factory.h"
 
+#include <JANA/JEvent.h>
+#include <JANA/Calibrations/JCalibrationManager.h>
+#include "DANA/DGeometryManager.h"
+#include "HDGEOMETRY/DGeometry.h"
 
 static mutex CCAL_MUTEX;
 //static bool CCAL_PROFILE_LOADED = false;
@@ -19,13 +23,13 @@ static mutex CCAL_MUTEX;
 //
 //==========================================================
 
-DCCALShower_factory::DCCALShower_factory()
+void DCCALShower_factory::Init()
 {
 	// Set defaults:
 	
-    	MIN_CLUSTER_BLOCK_COUNT   =  2;
+	MIN_CLUSTER_BLOCK_COUNT   =  2;
 	MAX_HITS_FOR_CLUSTERING   =  80;
-    	MIN_CLUSTER_SEED_ENERGY   =  0.035;  /* [GeV] */
+	MIN_CLUSTER_SEED_ENERGY   =  0.035;  /* [GeV] */
 	MIN_CLUSTER_ENERGY        =  0.05;   /* [GeV] */
 	MAX_CLUSTER_ENERGY        =  15.9;   /* [GeV] */
 	TIME_CUT                  =  15.0;   /*  [ns] */
@@ -38,28 +42,29 @@ DCCALShower_factory::DCCALShower_factory()
 	
 	LOG_POS_CONST             =  4.2;
 	
-	
-	gPARMS->SetDefaultParameter( "CCAL:SHOWER_DEBUG", SHOWER_DEBUG );
-	gPARMS->SetDefaultParameter( "CCAL:MIN_CLUSTER_BLOCK_COUNT", MIN_CLUSTER_BLOCK_COUNT, 
+	auto app = GetApplication();
+
+	app->SetDefaultParameter( "CCAL:SHOWER_DEBUG", SHOWER_DEBUG );
+	app->SetDefaultParameter( "CCAL:MIN_CLUSTER_BLOCK_COUNT", MIN_CLUSTER_BLOCK_COUNT, 
 			"minimum number of blocks to form a cluster" );
-	gPARMS->SetDefaultParameter( "CCAL:MIN_CLUSTER_SEED_ENERGY", MIN_CLUSTER_SEED_ENERGY, 
+	app->SetDefaultParameter( "CCAL:MIN_CLUSTER_SEED_ENERGY", MIN_CLUSTER_SEED_ENERGY, 
 			"minimum energy for a block to be considered as a seed for a cluster" );
-	gPARMS->SetDefaultParameter( "CCAL:MIN_CLUSTER_ENERGY", MIN_CLUSTER_ENERGY, 
+	app->SetDefaultParameter( "CCAL:MIN_CLUSTER_ENERGY", MIN_CLUSTER_ENERGY, 
 			"minimum allowed cluster energy" );
-	gPARMS->SetDefaultParameter( "CCAL:MAX_CLUSTER_ENERGY", MAX_CLUSTER_ENERGY, 
+	app->SetDefaultParameter( "CCAL:MAX_CLUSTER_ENERGY", MAX_CLUSTER_ENERGY, 
 			"maximum allowed cluster energy" );
-	gPARMS->SetDefaultParameter( "CCAL:MAX_HITS_FOR_CLUSTERING", MAX_HITS_FOR_CLUSTERING, 
+	app->SetDefaultParameter( "CCAL:MAX_HITS_FOR_CLUSTERING", MAX_HITS_FOR_CLUSTERING, 
 			"maximum hits allowed to call clustering algorithm" );
-	gPARMS->SetDefaultParameter( "CCAL:TIME_CUT", TIME_CUT, 
+	app->SetDefaultParameter( "CCAL:TIME_CUT", TIME_CUT, 
 			"time cut for associating CCAL hits together into a cluster" );
-	gPARMS->SetDefaultParameter( "CCAL:DO_NONLINEAR_CORRECTION", DO_NONLINEAR_CORRECTION, 
+	app->SetDefaultParameter( "CCAL:DO_NONLINEAR_CORRECTION", DO_NONLINEAR_CORRECTION, 
 			"set this to zero when no nonlinear correction is desired" );
-	gPARMS->SetDefaultParameter( "CCAL:CCAL_RADIATION_LENGTH", CCAL_RADIATION_LENGTH );
-	gPARMS->SetDefaultParameter( "CCAL:CCAL_CRITICAL_ENERGY", CCAL_CRITICAL_ENERGY );
-	gPARMS->SetDefaultParameter( "CCAL:LOG_POS_CONST", LOG_POS_CONST );
+	app->SetDefaultParameter( "CCAL:CCAL_RADIATION_LENGTH", CCAL_RADIATION_LENGTH );
+	app->SetDefaultParameter( "CCAL:CCAL_CRITICAL_ENERGY", CCAL_CRITICAL_ENERGY );
+	app->SetDefaultParameter( "CCAL:LOG_POS_CONST", LOG_POS_CONST );
 
 	VERBOSE = 0;              ///< >0 once off info ; >2 event by event ; >3 everything
-	gPARMS->SetDefaultParameter("DFCALShower:VERBOSE", VERBOSE, "Verbosity level for DFCALShower objects and factories");
+	app->SetDefaultParameter("DFCALShower:VERBOSE", VERBOSE, "Verbosity level for DFCALShower objects and factories");
 }
 
 
@@ -67,12 +72,19 @@ DCCALShower_factory::DCCALShower_factory()
 
 //==========================================================
 //
-//   brun
+//   BeginRun
 //
 //==========================================================
 
-jerror_t DCCALShower_factory::brun(JEventLoop *locEventLoop, int32_t runnumber)
+void DCCALShower_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
+    auto runnumber = event->GetRunNumber();
+    auto app = event->GetJApplication();
+    auto calib_man = app->GetService<JCalibrationManager>();
+    auto jcalib = calib_man->GetJCalibration(runnumber);
+    auto geo_manager = app->GetService<DGeometryManager>();
+    auto geom = geo_manager->GetDGeometry(runnumber);
+
     // Only print messages for one thread whenever run number change
     static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
     static set<int> runs_announced;
@@ -84,17 +96,13 @@ jerror_t DCCALShower_factory::brun(JEventLoop *locEventLoop, int32_t runnumber)
     }
     pthread_mutex_unlock(&print_mutex);
 
-
-	DApplication *dapp = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
-    	const DGeometry *geom = dapp->GetDGeometry(runnumber);
-	
 	if (geom) {
       	  geom->GetTargetZ(m_zTarget);
       	  geom->GetCCALPosition(m_CCALdX,m_CCALdY,m_CCALfront);
     	}
     	else{
       	  jerr << "No geometry accessible." << endl;
-      	  return RESOURCE_UNAVAILABLE;
+      	  return; // RESOURCE_UNAVAILABLE; // TODO: Reconsider
     	}
 	
 	
@@ -104,14 +112,13 @@ jerror_t DCCALShower_factory::brun(JEventLoop *locEventLoop, int32_t runnumber)
 	std::unique_lock<std::mutex> lck(CCAL_MUTEX);
 	
 	string ccal_profile_file;
-	gPARMS->SetDefaultParameter("CCAL_PROFILE_FILE", ccal_profile_file, 
+	app->SetDefaultParameter("CCAL_PROFILE_FILE", ccal_profile_file,
 		"CCAL profile data file name");
 	
 	// follow similar procedure as other resources (DMagneticFieldMapFineMesh)
 	
 	map< string,string > profile_file_name;
-	JCalibration *jcalib = dapp->GetJCalibration(runnumber);
-	
+
 	if( jcalib->GetCalib("/CCAL/profile_data/profile_data_map", profile_file_name) ) 
 	{
 	  jout << "Can't find requested /CCAL/profile_data/profile_data_map in CCDB for this run!"
@@ -120,7 +127,7 @@ jerror_t DCCALShower_factory::brun(JEventLoop *locEventLoop, int32_t runnumber)
 	} else if( profile_file_name.find("map_name") != profile_file_name.end() 
 		&& profile_file_name["map_name"] != "None" ) 
 	{
-	  JResourceManager *jresman = dapp->GetJResourceManager(runnumber);
+	  JLargeCalibration *jresman = calib_man->GetLargeCalibration(runnumber);
 	  ccal_profile_file = jresman->GetResource(profile_file_name["map_name"]);
 	}
 	
@@ -132,7 +139,7 @@ jerror_t DCCALShower_factory::brun(JEventLoop *locEventLoop, int32_t runnumber)
 	{
 	  if(print_messages)
 	    jerr << "Empty file..." << endl;
-	  return RESOURCE_UNAVAILABLE;
+	  return; // RESOURCE_UNAVAILABLE; // TODO: Verify
 	}
 	
 	ifstream ccal_profile(ccal_profile_file.c_str());
@@ -173,7 +180,7 @@ jerror_t DCCALShower_factory::brun(JEventLoop *locEventLoop, int32_t runnumber)
 	//----------  Read shower timewalk parameters ----------//
 	
 	vector< vector<double> > timewalk_params;
-	if( eventLoop->GetCalib("/CCAL/shower_timewalk_correction",timewalk_params) )
+	if( jcalib->Get("/CCAL/shower_timewalk_correction",timewalk_params) )
 	  jout << "Error loading /CCAL/shower_timewalk_correction !" << endl;
 	else {
 	  if( (int)timewalk_params.size() != 2 ) {
@@ -208,7 +215,7 @@ jerror_t DCCALShower_factory::brun(JEventLoop *locEventLoop, int32_t runnumber)
 	//---------  Read in non-linearity parameters ----------//
 	
 	vector< vector<double> > nonlin_params;
-	if( eventLoop->GetCalib("/CCAL/nonlinear_energy_correction",nonlin_params) )
+	if( jcalib->Get("/CCAL/nonlinear_energy_correction",nonlin_params) )
 	  jout << "Error loading /CCAL/nonlinear_energy_correction !" << endl;
 	else {
 	  if( (int)nonlin_params.size() != CCAL_CHANS ) {
@@ -244,11 +251,6 @@ jerror_t DCCALShower_factory::brun(JEventLoop *locEventLoop, int32_t runnumber)
 	  }
 	  cout << "\n\n";
 	}
-	
-	
-	
-	
-	return NOERROR;
 }
 
 
@@ -256,18 +258,18 @@ jerror_t DCCALShower_factory::brun(JEventLoop *locEventLoop, int32_t runnumber)
 
 //==========================================================
 //
-//   evnt
+//   Process
 //
 //==========================================================
 
-jerror_t DCCALShower_factory::evnt(JEventLoop *locEventLoop, uint64_t eventnumber)
+void DCCALShower_factory::Process(const std::shared_ptr<const JEvent>& event)
 {
 	
 	
 	vector< const DCCALGeometry* > ccalGeomVect;
-    	locEventLoop->Get( ccalGeomVect );
+    	event->Get( ccalGeomVect );
 	if (ccalGeomVect.size() < 1)
-      	  return OBJECT_NOT_AVAILABLE;
+      	  return; // OBJECT_NOT_AVAILABLE; // TODO: Verify
     	const DCCALGeometry& ccalGeom = *(ccalGeomVect[0]);
 	
 	
@@ -277,17 +279,17 @@ jerror_t DCCALShower_factory::evnt(JEventLoop *locEventLoop, uint64_t eventnumbe
 	
 	
 	vector< const DCCALHit* > ccalhits;
-	locEventLoop->Get( ccalhits );
+	event->Get( ccalhits );
 	
 	int n_hits = static_cast<int>( ccalhits.size() );
-	if( n_hits < 1 || n_hits > MAX_HITS_FOR_CLUSTERING ) return NOERROR;
+	if( n_hits < 1 || n_hits > MAX_HITS_FOR_CLUSTERING ) return;
 	
 	
 	vector< vector< const DCCALHit* > > hitPatterns;
 	getHitPatterns( ccalhits, hitPatterns );
 	
 	int n_patterns = static_cast<int>( hitPatterns.size() );
-	if( n_patterns < 1 ) return NOERROR;
+	if( n_patterns < 1 ) return;
 	
 	vector< ccalcluster_t > ccalClusters; // will hold all clusters
 	vector< cluster_t > clusterStorage;   // will hold the constituents of every cluster
@@ -337,7 +339,7 @@ jerror_t DCCALShower_factory::evnt(JEventLoop *locEventLoop, uint64_t eventnumbe
 	  int init_clusters = static_cast<int>( gammas.size() );
 	  if( !init_clusters ) continue;
 	  
-	  processShowers( gammas, ccalGeom, locHitPattern, eventnumber, 
+	  processShowers( gammas, ccalGeom, locHitPattern, event->GetEventNumber(),
 	  	ccalClusters, clusterStorage );
 	  
 	  
@@ -418,12 +420,8 @@ jerror_t DCCALShower_factory::evnt(JEventLoop *locEventLoop, uint64_t eventnumbe
 	    
 	  }
 
-	  _data.push_back( shower );
+	  Insert( shower );
 	}
-
-
-	return NOERROR;
-	
 }
 
 

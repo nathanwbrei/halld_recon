@@ -32,8 +32,11 @@ map<string, pthread_t>& DEventWriterEVIO::Get_EVIOOutputThreads(void) const
 	return locEVIOOutputThreads;
 }
 
-DEventWriterEVIO::DEventWriterEVIO(JEventLoop* locEventLoop)
+DEventWriterEVIO::DEventWriterEVIO(const std::shared_ptr<const JEvent>& locEvent)
 {
+	auto app = locEvent->GetJApplication();
+	lockService = app->GetService<JLockService>();
+
 	COMPACT = true;
 	PREFER_EMULATED = false;
 	DEBUG_FILES = false; // n.b. also defined in HDEVIOWriter
@@ -43,22 +46,22 @@ DEventWriterEVIO::DEventWriterEVIO(JEventLoop* locEventLoop)
 	ofs_debug_input = NULL;
 	ofs_debug_output = NULL;
 
-	gPARMS->SetDefaultParameter("EVIOOUT:COMPACT" , COMPACT,  "Drop words where we can to reduce output file size. This shouldn't loose any vital information, but can be turned off to help with debugging.");
-	gPARMS->SetDefaultParameter("EVIOOUT:PREFER_EMULATED" , PREFER_EMULATED,  "If true, then sample data will not be written to output, but emulated hits will. Otherwise, do exactly the opposite.");
-	gPARMS->SetDefaultParameter("EVIOOUT:DEBUG_FILES" , DEBUG_FILES,  "Write input and output debug files in addition to the standard output.");
+	app->SetDefaultParameter("EVIOOUT:COMPACT" , COMPACT,  "Drop words where we can to reduce output file size. This shouldn't loose any vital information, but can be turned off to help with debugging.");
+	app->SetDefaultParameter("EVIOOUT:PREFER_EMULATED" , PREFER_EMULATED,  "If true, then sample data will not be written to output, but emulated hits will. Otherwise, do exactly the opposite.");
+	app->SetDefaultParameter("EVIOOUT:DEBUG_FILES" , DEBUG_FILES,  "Write input and output debug files in addition to the standard output.");
 
     //buffer_writer = new DEVIOBufferWriter(COMPACT, PREFER_EMULATED);
 
     // save a pointer to the translation table
     ttab = NULL;
-    locEventLoop->GetSingle(ttab);
+    locEvent->GetSingle(ttab);
 
-	// initialize file-level variables
-	japp->WriteLock("EVIOWriter");
+	// Initialize file-level variables
+	lockService->WriteLock("EVIOWriter");
 	{
 		++Get_NumEVIOOutputThreads();
 	}
-	japp->Unlock("EVIOWriter");
+	lockService->Unlock("EVIOWriter");
 
 	if(DEBUG_FILES){
 		ofs_debug_input = new ofstream("hdevio_debug_input.evio");
@@ -94,13 +97,13 @@ void DEventWriterEVIO::SetDetectorsToWriteOut(string detector_list, string locOu
     }
 
     // sanity check
-	japp->WriteLock("EVIOWriter");
+	lockService->WriteLock("EVIOWriter");
     if(Get_EVIOBufferWriters().find(locOutputFileNameSubString) == Get_EVIOBufferWriters().end()) {
-        japp->Unlock("EVIOWriter");
+        lockService->Unlock("EVIOWriter");
         // file must not have been created?
         return;
     }
-	japp->Unlock("EVIOWriter");
+	lockService->Unlock("EVIOWriter");
 
     
     // create new roc output list
@@ -108,9 +111,9 @@ void DEventWriterEVIO::SetDetectorsToWriteOut(string detector_list, string locOu
 
     // if given a blank list, assume we should write everything out
     if(detector_list == "") {
-        japp->WriteLock("EVIOWriter");
+        lockService->WriteLock("EVIOWriter");
         Get_EVIOBufferWriters()[locOutputFileNameSubString]->SetROCsToWriteOut(rocs_to_write_out);
-        japp->Unlock("EVIOWriter");
+        lockService->Unlock("EVIOWriter");
         return;
     }
 
@@ -147,26 +150,24 @@ void DEventWriterEVIO::SetDetectorsToWriteOut(string detector_list, string locOu
     }
 
     // save results
-	japp->WriteLock("EVIOWriter");
+	lockService->WriteLock("EVIOWriter");
     Get_EVIOBufferWriters()[locOutputFileNameSubString]->SetROCsToWriteOut(rocs_to_write_out);
-	japp->Unlock("EVIOWriter");
+	lockService->Unlock("EVIOWriter");
 }
 
 
-bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutputFileNameSubString) const
+bool DEventWriterEVIO::Write_EVIOEvent(const std::shared_ptr<const JEvent>& locEvent, string locOutputFileNameSubString) const
 {
     vector<const JObject *> locObjectsToSaveNull;
-    return Write_EVIOEvent(locEventLoop, locOutputFileNameSubString, locObjectsToSaveNull);
+    return Write_EVIOEvent(locEvent, locOutputFileNameSubString, locObjectsToSaveNull);
 }
 
 
-bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutputFileNameSubString,
+bool DEventWriterEVIO::Write_EVIOEvent(const std::shared_ptr<const JEvent>& locEvent, string locOutputFileNameSubString,
                                        vector<const JObject *> &locObjectsToSave) const
 {
-	JEvent& locEvent = locEventLoop->GetJEvent();
-
 	// Get pointer to JEventSource and make sure it is the right type
-	JEventSource* locEventSource = locEvent.GetJEventSource();
+	JEventSource* locEventSource = locEvent->GetJEventSource();
 	if(locEventSource == NULL)
 		return false;
 	
@@ -175,9 +176,7 @@ bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutpu
     // since JEventSource_EVIOpp (new parser) doesn't have access to the 
     // raw EVIO buffer
 	if(DEBUG_FILES){
-		JEvent &jevent = locEventLoop->GetJEvent();
-		JEventSource *jes = jevent.GetJEventSource();
-		JEventSource_EVIO *jesevio = dynamic_cast<JEventSource_EVIO*>(jes);
+		JEventSource_EVIO *jesevio = dynamic_cast<JEventSource_EVIO*>(locEventSource);
 		if(!jesevio){
 			static bool warned = false;
 			if(!warned) jerr << "Event source not a JEventSource_EVIO type!" << endl;
@@ -185,18 +184,20 @@ bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutpu
 		}else{
 			uint32_t *buff;
 			uint32_t buff_size;
-			jesevio->GetEVIOBuffer(jevent, buff, buff_size);
+			// TODO: NWB: GetEVIOBuffer should accept const std::shared_ptr<const JEvent>& because
+			//       Once that happens I can kill the const cast hopefully
+			jesevio->GetEVIOBuffer(const_cast<JEvent&>(*locEvent), buff, buff_size);
 			if(ofs_debug_input) ofs_debug_input->write((char*)buff, buff_size*sizeof(uint32_t));
 		}
 	}
 
-	string locOutputFileName = Get_OutputFileName(locEventLoop, locOutputFileNameSubString);
-	japp->WriteLock("EVIOWriter");
+	string locOutputFileName = Get_OutputFileName(locEvent, locOutputFileNameSubString);
+	lockService->WriteLock("EVIOWriter");
 	{
 		//check to see if the EVIO file is open
 		if(Get_EVIOOutputters().find(locOutputFileName) == Get_EVIOOutputters().end()) {
 			//not open, open it
-			if(!Open_OutputFile(locEventLoop, locOutputFileName))
+			if(!Open_OutputFile(locEvent, locOutputFileName))
 				return false; //failed to open
 		}
 
@@ -206,9 +207,9 @@ bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutpu
 		// Write event into buffer
 		vector<uint32_t> *buff = locEVIOWriter->GetBufferFromPool();
         if(locObjectsToSave.size() == 0)
-            locBufferWriter->WriteEventToBuffer(locEventLoop, *buff);
+            locBufferWriter->WriteEventToBuffer(locEvent, *buff);
         else
-            locBufferWriter->WriteEventToBuffer(locEventLoop, *buff, locObjectsToSave);
+            locBufferWriter->WriteEventToBuffer(locEvent, *buff, locObjectsToSave);
 
 		// Optionally write buffer to output file
 		if(ofs_debug_output) ofs_debug_output->write((const char*)&(*buff)[0], buff->size()*sizeof(uint32_t));
@@ -216,12 +217,12 @@ bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutpu
 		// Add event to output queue
 		locEVIOWriter->AddBufferToOutput(buff);
 	}
-	japp->Unlock("EVIOWriter");
+	lockService->Unlock("EVIOWriter");
 
     return true;
 }
 
-bool DEventWriterEVIO::Write_EVIOBuffer(JEventLoop* locEventLoop, uint32_t *locOutputBuffer, uint32_t locOutputBufferSize, string locOutputFileNameSubString) const
+bool DEventWriterEVIO::Write_EVIOBuffer(const std::shared_ptr<const JEvent>& locEvent, uint32_t *locOutputBuffer, uint32_t locOutputBufferSize, string locOutputFileNameSubString) const
 {
     vector<uint32_t> *locOutputBufferVec = new vector<uint32_t>();
     locOutputBufferVec->reserve(locOutputBufferSize);
@@ -239,18 +240,16 @@ bool DEventWriterEVIO::Write_EVIOBuffer(JEventLoop* locEventLoop, uint32_t *locO
 
     //cout << "Write_EVIOBuffer() locOutputBufferSize = " << locOutputBufferSize << "  vector size = " << locOutputBufferVec->size() << endl;
 
-    return Write_EVIOBuffer(locEventLoop, locOutputBufferVec, locOutputFileNameSubString);
+    return Write_EVIOBuffer(locEvent, locOutputBufferVec, locOutputFileNameSubString);
 }
 
 
-bool DEventWriterEVIO::Write_EVIOBuffer(JEventLoop* locEventLoop, vector<uint32_t> *locOutputBuffer, string locOutputFileNameSubString) const
+bool DEventWriterEVIO::Write_EVIOBuffer(const std::shared_ptr<const JEvent>& locEvent, vector<uint32_t> *locOutputBuffer, string locOutputFileNameSubString) const
 {
     // write out raw EVIO buffer
 
-	JEvent& locEvent = locEventLoop->GetJEvent();
-
 	// Get pointer to JEventSource and make sure it is the right type
-	JEventSource* locEventSource = locEvent.GetJEventSource();
+	JEventSource* locEventSource = locEvent->GetJEventSource();
 	if(locEventSource == NULL)
 		return false;
 
@@ -260,16 +259,16 @@ bool DEventWriterEVIO::Write_EVIOBuffer(JEventLoop* locEventLoop, vector<uint32_
 		return false;
 	}
 
-	string locOutputFileName = Get_OutputFileName(locEventLoop, locOutputFileNameSubString);
-	japp->WriteLock("EVIOWriter");
+	string locOutputFileName = Get_OutputFileName(locEvent, locOutputFileNameSubString);
+	lockService->WriteLock("EVIOWriter");
 	{
 		//check to see if the EVIO file is open
 		if(Get_EVIOOutputters().find(locOutputFileName) == Get_EVIOOutputters().end())  {
 			//not open, open it
-			if(!Open_OutputFile(locEventLoop, locOutputFileName)){
+			if(!Open_OutputFile(locEvent, locOutputFileName)){
 				jerr << "Unable to open EVIO file \""<< locOutputFileName << "\" for writing!" << endl;
 				japp->Quit();
-				japp->Unlock("EVIOWriter");
+				lockService->Unlock("EVIOWriter");
 				return false; //failed to open
 			}
 		}
@@ -279,12 +278,12 @@ bool DEventWriterEVIO::Write_EVIOBuffer(JEventLoop* locEventLoop, vector<uint32_
 		// Add event to output queue
 		locEVIOWriter->AddBufferToOutput(locOutputBuffer);
 	}
-	japp->Unlock("EVIOWriter");
+	lockService->Unlock("EVIOWriter");
 
     return true;
 }
 
-string DEventWriterEVIO::Get_OutputFileName(JEventLoop* locEventLoop, string locOutputFileNameSubString) const
+string DEventWriterEVIO::Get_OutputFileName(const std::shared_ptr<const JEvent>& locEvent, string locOutputFileNameSubString) const
 {
     // if we're merging input files, write everything to the specified file
     if(dMergeFiles) {
@@ -292,13 +291,12 @@ string DEventWriterEVIO::Get_OutputFileName(JEventLoop* locEventLoop, string loc
     }
 
 	//get the event source
-	JEvent& locEvent = locEventLoop->GetJEvent();
-	JEventSource* locEventSource = locEvent.GetJEventSource();
+	JEventSource* locEventSource = locEvent->GetJEventSource();
 	if(locEventSource == NULL)
 		return "no_name.evio";
 
 	//get the source file name (strip the path)
-	string locSourceFileName = locEventSource->GetSourceName();
+	string locSourceFileName = locEventSource->GetResourceName();
 	size_t locSlashIndex = locSourceFileName.find_last_of("/");
 	string locSourceFileName_Pathless = (locSlashIndex != string::npos) ? locSourceFileName.substr(locSlashIndex + 1) : locSourceFileName;
 
@@ -314,14 +312,15 @@ string DEventWriterEVIO::Get_OutputFileName(JEventLoop* locEventLoop, string loc
 	return (locSourceFileName_Pathless + string(".") + locOutputFileNameSubString + string(".evio"));
 }
 
-bool DEventWriterEVIO::Open_OutputFile(JEventLoop* locEventLoop, string locOutputFileName) const
+bool DEventWriterEVIO::Open_OutputFile(const std::shared_ptr<const JEvent>& locEvent, string locOutputFileName) const
 {
 	//ASSUMES A LOCK HAS ALREADY BEEN ACQUIRED (by WriteEVIOEvent)
 	// and assume that it doesn't exist
 
 	// Create object to write the selected events to a file or ET system
 	// Run each connection in their own thread
-	HDEVIOWriter *locEVIOout = new HDEVIOWriter(locOutputFileName);
+	HDEVIOWriter *locEVIOout = new HDEVIOWriter(locOutputFileName, japp);
+	// TODO: NWB: Using japp here because climate change will kill us all anyway
     DEVIOBufferWriter *locEVIOwriter = new DEVIOBufferWriter(COMPACT, PREFER_EMULATED);
 	pthread_t locEVIOout_thr;
 	int result = pthread_create(&locEVIOout_thr, NULL, HDEVIOOutputThread, locEVIOout);
@@ -343,12 +342,12 @@ bool DEventWriterEVIO::Open_OutputFile(JEventLoop* locEventLoop, string locOutpu
 
 DEventWriterEVIO::~DEventWriterEVIO(void)
 {
-	japp->WriteLock("EVIOWriter");
+	lockService->WriteLock("EVIOWriter");
 	{
 		--Get_NumEVIOOutputThreads();
 		if(Get_NumEVIOOutputThreads() > 0)
 		{
-			japp->Unlock("EVIOWriter");
+			lockService->Unlock("EVIOWriter");
 			return; //not the last thread writing to EVIO files
 		}
 
@@ -360,7 +359,7 @@ DEventWriterEVIO::~DEventWriterEVIO(void)
 			HDEVIOWriter *locEVIOOutputter = locIterator->second;
 			pthread_t locEVIOOutputThread = Get_EVIOOutputThreads()[locOutputFileName];
 			
-			// finish writing out to the event source
+			// Finishsh writing out to the event source
 			locEVIOOutputter->Quit();
 			// clean up the output thread
 			void *retval=NULL;
@@ -373,6 +372,6 @@ DEventWriterEVIO::~DEventWriterEVIO(void)
 		Get_EVIOOutputters().clear();
 		Get_EVIOOutputThreads().clear();
 	}
-	japp->Unlock("EVIOWriter");
+	lockService->Unlock("EVIOWriter");
 }
 

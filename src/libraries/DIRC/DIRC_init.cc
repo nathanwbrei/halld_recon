@@ -6,30 +6,19 @@
  *  Modified on: 0ct 7, 2013, yqiang, added DIRCTruthHit factory
  */
 
-#include <JANA/JEventLoop.h>
-using namespace jana;
+#include <JANA/JFactorySet.h>
 
-#include "DDIRCTDCDigiHit.h"
-#include "DDIRCPmtHit.h"
-#include "DDIRCLEDRef.h"
-#include "DDIRCTruthBarHit.h"
-#include "DDIRCTruthPmtHit.h"
 #include "DDIRCLut_factory.h"
 #include "DDIRCPmtHit_factory.h"
 #include "DDIRCLEDRef_factory.h"
 #include "DDIRCGeometry_factory.h"
 
-jerror_t DIRC_init(JEventLoop *loop) {
+void DIRC_init(JFactorySet *factorySet) {
 
 	/// Create and register DIRC data factories
-	loop->AddFactory(new JFactory<DDIRCTDCDigiHit>());
-	loop->AddFactory(new DDIRCGeometry_factory());
-	loop->AddFactory(new DDIRCPmtHit_factory());
-	loop->AddFactory(new DDIRCLEDRef_factory());
-	loop->AddFactory(new JFactory<DDIRCTruthPmtHit>());
-	loop->AddFactory(new JFactory<DDIRCTruthBarHit>());
-	loop->AddFactory(new DDIRCLut_factory());
-
-	return NOERROR;
+	factorySet->Add(new DDIRCGeometry_factory());
+	factorySet->Add(new DDIRCPmtHit_factory());
+	factorySet->Add(new DDIRCLEDRef_factory());
+	factorySet->Add(new DDIRCLut_factory());
 }
 

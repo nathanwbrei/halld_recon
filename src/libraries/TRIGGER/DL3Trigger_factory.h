@@ -11,14 +11,16 @@
 #include <mutex>
 using std::mutex;
 
-#include <JANA/JFactory.h>
+#include <JANA/JFactoryT.h>
 #include "DL3Trigger.h"
+
+#include <TDataType.h>
 
 #ifdef HAVE_TMVA
 #include <TMVA/Reader.h>
 #endif
 
-class DL3Trigger_factory:public jana::JFactory<DL3Trigger>{
+class DL3Trigger_factory:public JFactoryT<DL3Trigger>{
 	public:
 		DL3Trigger_factory(){};
 		~DL3Trigger_factory(){};
@@ -47,11 +49,11 @@ class DL3Trigger_factory:public jana::JFactory<DL3Trigger>{
 		Float_t Ptot_candidates;
 
 	private:
-		jerror_t init(void);						///< Called once at program start.
-		jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
-		jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);	///< Called every event.
-		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
-		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+		void Init() override;
+		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
+		void Process(const std::shared_ptr<const JEvent>& event) override;
+		void EndRun() override;
+		void Finish() override;
 };
 
 #endif // _DL3Trigger_factory_

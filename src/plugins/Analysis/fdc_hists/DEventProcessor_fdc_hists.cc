@@ -16,7 +16,7 @@ using namespace std;
 #include "DEventProcessor_fdc_hists.h"
 
 #include <JANA/JApplication.h>
-#include <JANA/JEventLoop.h>
+#include <JANA/JEvent.h>
 #include <JANA/JCalibration.h>
 
 #include <DANA/DApplication.h>
@@ -44,7 +44,7 @@ using namespace std;
 extern "C"{
 void InitPlugin(JApplication *app){
 	InitJANAPlugin(app);
-	app->AddProcessor(new DEventProcessor_fdc_hists());
+	app->Add(new DEventProcessor_fdc_hists());
 }
 } // "C"
 
@@ -73,9 +73,9 @@ DEventProcessor_fdc_hists::~DEventProcessor_fdc_hists()
 }
 
 //------------------
-// init
+// Init
 //------------------
-jerror_t DEventProcessor_fdc_hists::init(void)
+void DEventProcessor_fdc_hists::Init()
 {
   cout << "initializing" <<endl;
 
@@ -105,16 +105,14 @@ jerror_t DEventProcessor_fdc_hists::init(void)
 
 	// Go back up to the parent directory
 	dir->cd("../");
-	
-	return NOERROR;
 }
 
 //------------------
-// brun
+// BeginRun
 //------------------
-jerror_t DEventProcessor_fdc_hists::brun(JEventLoop *loop, int32_t runnumber)
+void DEventProcessor_fdc_hists::BeginRun(const std::shared_ptr<const JEvent>& event)
 {	
-  DApplication* dapp=dynamic_cast<DApplication*>(loop->GetJApplication());
+  DApplication* dapp=dynamic_cast<DApplication*>(event->GetJApplication());
   const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
   dgeom->GetFDCWires(fdcwires);
 
@@ -123,7 +121,7 @@ jerror_t DEventProcessor_fdc_hists::brun(JEventLoop *loop, int32_t runnumber)
   dgeom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
   endplate_z+=0.5*endplate_dz;
 
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
+	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK
 
   Hqratio_vs_wire= (TH2F *)gROOT->FindObject("Hqratio_vs_wire");
   if (!Hqratio_vs_wire)
@@ -238,7 +236,7 @@ jerror_t DEventProcessor_fdc_hists::brun(JEventLoop *loop, int32_t runnumber)
       HdEdx=new TH1F("HdEdx","dEdx",100,0,10e-6);
     }  
   
-	japp->RootUnLock(); //RELEASE ROOT LOCK
+	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK
 
   JCalibration *jcalib = dapp->GetJCalibration(0);  // need run number here
   vector< map<string, float> > tvals;
@@ -263,43 +261,38 @@ jerror_t DEventProcessor_fdc_hists::brun(JEventLoop *loop, int32_t runnumber)
     exit(0);
   }
 
-
-
-  return NOERROR;
 }
 
 //------------------
-// erun
+// EndRun
 //------------------
-jerror_t DEventProcessor_fdc_hists::erun(void)
+void DEventProcessor_fdc_hists::EndRun()
 {
  
 
-	return NOERROR;
+	return;
 }
 
 //------------------
-// fini
+// Finish
 //------------------
-jerror_t DEventProcessor_fdc_hists::fini(void)
+void DEventProcessor_fdc_hists::Finish()
 {
-
-	return NOERROR;
 }
 
 //------------------
-// evnt
+// Process
 //------------------
-jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, uint64_t eventnumber){
+void DEventProcessor_fdc_hists::Process(const std::shared_ptr<const JEvent>& event){
   myevt++;
   
   // Get BCAL showers, FCAL showers and FDC space points
   vector<const DFCALShower*>fcalshowers;
-  loop->Get(fcalshowers);
+  event->Get(fcalshowers);
   vector<const DBCALShower*>bcalshowers;
-  //loop->Get(bcalshowers);
+  //event->Get(bcalshowers);
   vector<const DFDCPseudo*>pseudos;
-  loop->Get(pseudos);
+  event->Get(pseudos);
 
   for (unsigned int i=0;i<pseudos.size();i++){
     vector<const DFDCCathodeCluster*>cathode_clusters;
@@ -494,8 +487,6 @@ jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
       }
     }
   }
-   
-  return NOERROR;
 }
 
 // Steering routine for the kalman filter
@@ -589,7 +580,7 @@ DEventProcessor_fdc_hists::DoFilter(DMatrix4x1 &S,
       FindOffsets(hits,smoothed_updates);
       
 		// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
-		japp->RootWriteLock(); //ACQUIRE ROOT LOCK
+		GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK
 
       for (unsigned int layer=0;layer<24;layer++){
 	// Set up to fill tree
@@ -610,7 +601,7 @@ DEventProcessor_fdc_hists::DoFilter(DMatrix4x1 &S,
 	
       }
 
-   	japp->RootUnLock(); //RELEASE ROOT LOCK
+   	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK
 
     }
    
@@ -623,7 +614,6 @@ DEventProcessor_fdc_hists::DoFilter(DMatrix4x1 &S,
 	     alignments[i].A(kDPhi));
     */
 
-    return NOERROR;
   }
 
   return VALUE_OUT_OF_RANGE;
@@ -712,7 +702,6 @@ DEventProcessor_fdc_hists::LinkSegments(vector<segment_t>segments[4],
     } // loop over first set of segments
   } // loop over packages
   
-  return NOERROR;
 }
 
 // Find segments by associating adjacent hits within a package together.
@@ -807,7 +796,6 @@ jerror_t DEventProcessor_fdc_hists::FindSegments(vector<const DFDCPseudo*>&point
 
   }
 
-  return NOERROR;
 }
 
 
@@ -1009,7 +997,7 @@ jerror_t DEventProcessor_fdc_hists::Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
   Ss=trajectory[0].Skk+A*(Ss-S);
   Cs=trajectory[0].Ckk+A*(Cs-C)*A.Transpose();
 
-  return NOERROR;
+  return;
 }
 
 // Kalman smoother 
@@ -1117,7 +1105,7 @@ jerror_t DEventProcessor_fdc_hists::Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
   Ss=trajectory[0].Skk+A*(Ss-S);
   Cs=trajectory[0].Ckk+A*(Cs-C)*A.Transpose();
 
-  return NOERROR;
+  return;
 }
 
 // Perform Kalman Filter for the current trajectory
@@ -1300,7 +1288,7 @@ DEventProcessor_fdc_hists::KalmanFilter(double anneal_factor,
 
   ndof-=4;
 
-  return NOERROR;
+  return;
 }
 
 
@@ -1518,7 +1506,7 @@ DEventProcessor_fdc_hists::KalmanFilter(double anneal_factor,
   chi2*=anneal_factor;
   ndof-=4;
 
-  return NOERROR;
+  return;
 }
 
 // Reference trajectory for the track
@@ -1618,7 +1606,7 @@ jerror_t DEventProcessor_fdc_hists
     }
   }
 
-  return NOERROR;
+  return;
 }
 
 // Crude approximation for the variance in drift distance due to smearing
@@ -1744,7 +1732,7 @@ DEventProcessor_fdc_hists::FindOffsets(vector<const DFDCPseudo *>&hits,
     }
   }
 
-  return NOERROR;
+  return;
 }
 
 jerror_t 
@@ -1831,5 +1819,5 @@ DEventProcessor_fdc_hists::FindOffsets(vector<const DFDCPseudo *>&hits,
     }
   }
 
-  return NOERROR;
+  return;
 }

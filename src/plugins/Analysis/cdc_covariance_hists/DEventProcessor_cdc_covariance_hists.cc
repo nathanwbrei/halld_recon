@@ -15,8 +15,7 @@ using namespace std;
 #include <TROOT.h>
 
 #include <JANA/JApplication.h>
-#include <JANA/JEventLoop.h>
-using namespace jana;
+#include <JANA/JEvent.h>
 
 #include <DANA/DApplication.h>
 #include <TRACKING/DMCThrown.h>
@@ -32,7 +31,7 @@ using namespace jana;
 extern "C"{
 void InitPlugin(JApplication *app){
 	InitJANAPlugin(app);
-	app->AddProcessor(new DEventProcessor_cdc_covariance_hists());
+	app->Add(new DEventProcessor_cdc_covariance_hists());
 }
 } // "C"
 
@@ -56,9 +55,9 @@ DEventProcessor_cdc_covariance_hists::~DEventProcessor_cdc_covariance_hists()
 }
 
 //------------------
-// init
+// Init
 //------------------
-jerror_t DEventProcessor_cdc_covariance_hists::init(void)
+void DEventProcessor_cdc_covariance_hists::Init()
 {
 	// Create TRACKING directory
 	TDirectory *dir = (TDirectory*)gROOT->FindObject("TRACKING");
@@ -73,17 +72,15 @@ jerror_t DEventProcessor_cdc_covariance_hists::init(void)
 	cdc_cov_calc->SetTitle("CDC Covariance calculated from materials");
 
 	dir->cd("../");
-	
-	return NOERROR;
 }
 
 //------------------
-// brun
+// BeginRun
 //------------------
-jerror_t DEventProcessor_cdc_covariance_hists::brun(JEventLoop *loop, int32_t runnumber)
+void DEventProcessor_cdc_covariance_hists::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
 	// We need to make a DReferenceTrajectory which means we need the B-field
-	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+	DApplication* dapp = dynamic_cast<DApplication*>(event->GetJApplication());
 	if(!dapp){
 		_DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program perhaps?)"<<endl;
 		return RESOURCE_UNAVAILABLE;
@@ -98,47 +95,43 @@ jerror_t DEventProcessor_cdc_covariance_hists::brun(JEventLoop *loop, int32_t ru
 		R_cdc1 = 10.960;
 	}
 	UnlockState();
-
-	return NOERROR;
 }
 
 //------------------
-// erun
+// EndRun
 //------------------
-jerror_t DEventProcessor_cdc_covariance_hists::erun(void)
+void DEventProcessor_cdc_covariance_hists::EndRun()
 {
-	return NOERROR;
 }
 
 //------------------
-// fini
+// Finish
 //------------------
-jerror_t DEventProcessor_cdc_covariance_hists::fini(void)
+void DEventProcessor_cdc_covariance_hists::Finish()
 {
-	return NOERROR;
 }
 
 //------------------
-// evnt
+// Process
 //------------------
-jerror_t DEventProcessor_cdc_covariance_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
+void DEventProcessor_cdc_covariance_hists::Process(const std::shared_ptr<const JEvent>& event)
 {
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DMCTrackHit*> mctrackhits;
 	vector<const DMCTrajectoryPoint*> mctrajectorypoints;
 	vector<const DCDCTrackHit*> cdctrackhits;	
 	
-	loop->Get(mcthrowns);
-	loop->Get(mctrackhits);
-	loop->Get(mctrajectorypoints);
-	loop->Get(cdctrackhits);
+	event->Get(mcthrowns);
+	event->Get(mctrackhits);
+	event->Get(mctrajectorypoints);
+	event->Get(cdctrackhits);
 	
 	Nevents++;
 	
 	// Only look at events with one thrown and one reconstructed particle
 	if(mcthrowns.size() !=1){
 		_DBG_<<" mcthrowns.size()="<<mcthrowns.size()<<endl;
-		return NOERROR;
+		return;
 	}
 	
 	// Look for truth point corresponding to hit of innermost
@@ -153,7 +146,7 @@ jerror_t DEventProcessor_cdc_covariance_hists::evnt(JEventLoop *loop, uint64_t e
 			}
 		}
 	}
-	if(!mctrackhit1)return NOERROR;
+	if(!mctrackhit1)return;
 	DVector3 pos_mctrackhit1;
 	pos_mctrackhit1.SetXYZ(mctrackhit1->r*cos(mctrackhit1->phi), mctrackhit1->r*sin(mctrackhit1->phi), mctrackhit1->z);
 	
@@ -179,7 +172,7 @@ jerror_t DEventProcessor_cdc_covariance_hists::evnt(JEventLoop *loop, uint64_t e
 	s1 = s1_min;
 
 	DReferenceTrajectory *rt = new DReferenceTrajectory(bfield);
-	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+	DApplication* dapp = dynamic_cast<DApplication*>(event->GetJApplication());
 	rt->SetDRootGeom(dapp->GetRootGeom());
 	rt->Swim(pos_cdc1, mom_cdc1);
 
@@ -259,7 +252,5 @@ jerror_t DEventProcessor_cdc_covariance_hists::evnt(JEventLoop *loop, uint64_t e
 	RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	delete rt;
-
-	return NOERROR;
 }
 

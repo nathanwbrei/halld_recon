@@ -8,14 +8,10 @@
 #include <math.h>
 
 #include "JEventProcessor_pi0fcaltofskim.h"
-using namespace jana;
 
 // Routine used to create our JEventProcessor
-#include "JANA/JApplication.h"
 #include <TLorentzVector.h>
 #include "TMath.h"
-#include "JANA/JApplication.h"
-#include "DANA/DApplication.h"
 #include "FCAL/DFCALShower.h"
 #include "FCAL/DFCALCluster.h"
 #include "FCAL/DFCALHit.h"
@@ -39,7 +35,7 @@ using namespace jana;
 extern "C"{
   void InitPlugin(JApplication *app){
     InitJANAPlugin(app);
-    app->AddProcessor(new JEventProcessor_pi0fcaltofskim());
+    app->Add(new JEventProcessor_pi0fcaltofskim());
   }
 } // "C"
 
@@ -49,12 +45,29 @@ extern "C"{
 //------------------
 JEventProcessor_pi0fcaltofskim::JEventProcessor_pi0fcaltofskim()
 {
+  SetTypeName("JEventProcessor_pi0fcaltofskim");
+}
 
-  WRITE_EVIO = 1;
-  WRITE_HDDM = 0;
+//------------------
+// ~JEventProcessor_pi0fcaltofskim (Destructor)
+//------------------
+JEventProcessor_pi0fcaltofskim::~JEventProcessor_pi0fcaltofskim()
+{
 
-  gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:WRITE_EVIO", WRITE_EVIO );
-  gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:WRITE_HDDM", WRITE_HDDM );
+}
+
+//------------------
+// Init
+//------------------
+void JEventProcessor_pi0fcaltofskim::Init()
+{
+	auto app = GetApplication();
+
+	WRITE_EVIO = 1;
+	WRITE_HDDM = 0;
+
+	app->SetDefaultParameter( "PI0FCALTOFSKIM:WRITE_EVIO", WRITE_EVIO );
+	app->SetDefaultParameter( "PI0FCALTOFSKIM:WRITE_HDDM", WRITE_HDDM );
 
 
 /*
@@ -69,31 +82,17 @@ JEventProcessor_pi0fcaltofskim::JEventProcessor_pi0fcaltofskim()
   WRITE_ROOT = 0;
   WRITE_EVIO = 1;
 
-  gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:MIN_MASS", MIN_MASS );
-  gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:MAX_MASS", MAX_MASS );
-  gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:MIN_E", MIN_E );                
-  gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:MIN_R", MIN_R );
-  gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:MAX_DT", MAX_DT );
-  gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:MAX_ETOT", MAX_ETOT );
-  gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:MIN_BLOCKS", MIN_BLOCKS );
-  gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:WRITE_ROOT", WRITE_ROOT );
+  app->SetDefaultParameter( "PI0FCALTOFSKIM:MIN_MASS", MIN_MASS );
+  app->SetDefaultParameter( "PI0FCALTOFSKIM:MAX_MASS", MAX_MASS );
+  app->SetDefaultParameter( "PI0FCALTOFSKIM:MIN_E", MIN_E );
+  app->SetDefaultParameter( "PI0FCALTOFSKIM:MIN_R", MIN_R );
+  app->SetDefaultParameter( "PI0FCALTOFSKIM:MAX_DT", MAX_DT );
+  app->SetDefaultParameter( "PI0FCALTOFSKIM:MAX_ETOT", MAX_ETOT );
+  app->SetDefaultParameter( "PI0FCALTOFSKIM:MIN_BLOCKS", MIN_BLOCKS );
+  app->SetDefaultParameter( "PI0FCALTOFSKIM:WRITE_ROOT", WRITE_ROOT );
   */
-}
 
-//------------------
-// ~JEventProcessor_pi0fcaltofskim (Destructor)
-//------------------
-JEventProcessor_pi0fcaltofskim::~JEventProcessor_pi0fcaltofskim()
-{
-
-}
-
-//------------------
-// init
-//------------------
-jerror_t JEventProcessor_pi0fcaltofskim::init(void)
-{
-  num_epics_events = 0;
+	num_epics_events = 0;
 /*
   if( ! ( WRITE_ROOT || WRITE_EVIO ) ){
 
@@ -103,7 +102,7 @@ jerror_t JEventProcessor_pi0fcaltofskim::init(void)
 
   if( WRITE_ROOT ){
 
-    japp->RootWriteLock();
+    lockService->RootWriteLock();
 
     m_tree = new TTree( "cluster", "Cluster Tree for Pi0 Calibration" );
     m_tree->Branch( "nClus", &m_nClus, "nClus/I" );
@@ -116,39 +115,34 @@ jerror_t JEventProcessor_pi0fcaltofskim::init(void)
     m_tree->Branch( "chan", m_chan, "chan[nHit]/I" );
     m_tree->Branch( "e", m_e, "e[nHit]/F" );
 
-    japp->RootUnLock();
+    lockService->RootUnLock();
   }
 */
-  return NOERROR;
 }
 
 //------------------
-// brun
+// BeginRun
 //------------------
-jerror_t JEventProcessor_pi0fcaltofskim::brun(JEventLoop *eventLoop, int32_t runnumber)
+void JEventProcessor_pi0fcaltofskim::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-  DGeometry* dgeom = NULL;
-  DApplication* dapp = dynamic_cast< DApplication* >(eventLoop->GetJApplication());
-  if (dapp) dgeom = dapp->GetDGeometry(runnumber);
+  DGeometry* dgeom = GetDGeometry(event);
   if (dgeom) {
     dgeom->GetTargetZ(m_targetZ);
   } else {
     cerr << "No geometry accessbile to ccal_timing monitoring plugin." << endl;
-    return RESOURCE_UNAVAILABLE;
+    return;
   }	
-  jana::JCalibration *jcalib = japp->GetJCalibration(runnumber);
+  JCalibration *jcalib = GetJCalibration(event);
   std::map<string, float> beam_spot;
   jcalib->Get("PHOTON_BEAM/beam_spot", beam_spot);
   m_beamSpotX = beam_spot.at("x");
   m_beamSpotY = beam_spot.at("y");
-
-  return NOERROR;
 }
 
 //------------------
-// evnt
+// Process
 //------------------
-jerror_t JEventProcessor_pi0fcaltofskim::evnt(JEventLoop *loop, uint64_t eventnumber)
+void JEventProcessor_pi0fcaltofskim::Process(const std::shared_ptr<const JEvent>& event)
 {
  
   vector< const DFCALShower* > locFCALShowers;
@@ -157,32 +151,32 @@ jerror_t JEventProcessor_pi0fcaltofskim::evnt(JEventLoop *loop, uint64_t eventnu
   vector< const DBeamPhoton* > locBeamPhotons;
   vector<const DL1Trigger *> locL1Triggers;
 
-  loop->Get(locFCALShowers);
-  loop->Get(kinfitVertex);
-  loop->Get(tof_points);
-  loop->Get(locL1Triggers);
+  event->Get(locFCALShowers);
+  event->Get(kinfitVertex);
+  event->Get(tof_points);
+  event->Get(locL1Triggers);
   
   vector< const DTrackTimeBased* > locTrackTimeBased;
-  loop->Get(locTrackTimeBased);
+  event->Get(locTrackTimeBased);
 
   vector < const DFCALShower * > matchedShowers;
 
 	const DEventWriterEVIO* locEventWriterEVIO = NULL;
-	loop->GetSingle(locEventWriterEVIO);
+	event->GetSingle(locEventWriterEVIO);
 
   // always write out BOR events
-  if(loop->GetJEvent().GetStatusBit(kSTATUS_BOR_EVENT)) {
+  if(GetStatusBit(event, kSTATUS_BOR_EVENT)) {
       //jout << "Found BOR!" << endl;
-      locEventWriterEVIO->Write_EVIOEvent( loop, "pi0fcaltofskim" );
-      return NOERROR;
+      locEventWriterEVIO->Write_EVIOEvent( event, "pi0fcaltofskim" );
+      return;
   }
 
   // write out the first few EPICS events to save run number & other meta info
-  if(loop->GetJEvent().GetStatusBit(kSTATUS_EPICS_EVENT) && (num_epics_events<5)) {
+  if(GetStatusBit(event, kSTATUS_EPICS_EVENT) && (num_epics_events<5)) {
       //jout << "Found EPICS!" << endl;
-      locEventWriterEVIO->Write_EVIOEvent( loop, "pi0fcaltofskim" );
+      locEventWriterEVIO->Write_EVIOEvent( event, "pi0fcaltofskim" );
       num_epics_events++;
-      return NOERROR;
+      return;
   }
 
   
@@ -210,7 +204,7 @@ jerror_t JEventProcessor_pi0fcaltofskim::evnt(JEventLoop *loop, uint64_t eventnu
   }
   
   vector<const DEventRFBunch*> locEventRFBunches;
-  loop->Get(locEventRFBunches);
+  event->Get(locEventRFBunches);
   if(locEventRFBunches.size() > 0) {
     locObjectsToSave.push_back(static_cast<const JObject *>(locEventRFBunches[0]));
   }
@@ -224,7 +218,7 @@ jerror_t JEventProcessor_pi0fcaltofskim::evnt(JEventLoop *loop, uint64_t eventnu
   DVector3 norm(0.0,0.0,-1);
   DVector3 pos,mom;
  // Double_t radius = 0;
-  //japp->RootWriteLock();
+  //lockService->RootWriteLock();
   //Double_t p;
   for (unsigned int i=0; i < locTrackTimeBased.size() ; ++i){
     vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackTimeBased[i]->extrapolations.at(SYS_FCAL);
@@ -324,12 +318,12 @@ jerror_t JEventProcessor_pi0fcaltofskim::evnt(JEventLoop *loop, uint64_t eventnu
  if( Candidate ){
 
     if( WRITE_EVIO ){
-        locEventWriterEVIO->Write_EVIOEvent( loop, "pi0fcaltofskim", locObjectsToSave );
+        locEventWriterEVIO->Write_EVIOEvent( event, "pi0fcaltofskim", locObjectsToSave );
     }
     if( WRITE_HDDM ) {
       vector<const DEventWriterHDDM*> locEventWriterHDDMVector;
-      loop->Get(locEventWriterHDDMVector);
-      locEventWriterHDDMVector[0]->Write_HDDMEvent(loop, ""); 
+      event->Get(locEventWriterHDDMVector);
+      locEventWriterHDDMVector[0]->Write_HDDMEvent(event, "");
     }
 
  }
@@ -337,9 +331,9 @@ jerror_t JEventProcessor_pi0fcaltofskim::evnt(JEventLoop *loop, uint64_t eventnu
  
  /*
   vector< const DFCALCluster* > clusterVec;
-  loop->Get( clusterVec );
+  event->Get( clusterVec );
 
-  if( clusterVec.size() < 2 ) return NOERROR;
+  if( clusterVec.size() < 2 ) return;
 
   bool hasCandidate = false;
   double eTot = 0;
@@ -405,33 +399,30 @@ jerror_t JEventProcessor_pi0fcaltofskim::evnt(JEventLoop *loop, uint64_t eventnu
 
     if( WRITE_ROOT ){
 
-      japp->RootWriteLock();
+      lockService->RootWriteLock();
       writeClustersToRoot( clusterVec );
-      japp->RootUnLock();
+      lockService->RootUnLock();
     }
   }
 */
-  return NOERROR;
 }
 
 //------------------
-// erun
+// EndRun
 //------------------
-jerror_t JEventProcessor_pi0fcaltofskim::erun(void)
+void JEventProcessor_pi0fcaltofskim::EndRun()
 {
   // This is called whenever the run number changes, before it is
   // changed to give you a chance to clean up before processing
   // events from the next run number.
-  return NOERROR;
 }
 
 //------------------
 // Fin
 //------------------
-jerror_t JEventProcessor_pi0fcaltofskim::fini(void)
+void JEventProcessor_pi0fcaltofskim::Finish()
 {
   // Called before program exit after event processing is finished.
-  return NOERROR;
 }
 
 

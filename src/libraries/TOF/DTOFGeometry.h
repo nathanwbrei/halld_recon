@@ -16,8 +16,6 @@
 #include <math.h>
 
 #include "JANA/JObject.h"
-#include "JANA/JFactory.h"
-using namespace jana;
 
 class DTOFGeometry : public JObject {
 
@@ -62,13 +60,13 @@ class DTOFGeometry : public JObject {
   float bar2y(int bar, int end=0) const;  
   int y2bar(double y) const;
 
-  void toStrings(vector<pair<string,string> > &items) const {
-		AddString(items, "NBARS", "%d", Get_NBars() );
-		AddString(items, "NLONGBARS", "%d",  Get_NLongBars() );
-		AddString(items, "NSHORTBARS", "%d", Get_NShortBars() );
-		AddString(items, "LONGBARLENGTH", "%6.3f", Get_LongBarLength() );
-		AddString(items, "SHORTBARLENGTH", "%6.3f", Get_ShortBarLength() );
-		AddString(items, "BARWIDTH", "%6.3f", Get_BarWidth(0) );
+  void Summarize(JObjectSummary& summary) const override {
+		summary.add(Get_NBars() , "NBARS", "%d");
+		summary.add(Get_NLongBars() , "NLONGBARS", "%d");
+		summary.add(Get_NShortBars() , "NSHORTBARS", "%d");
+		summary.add(Get_LongBarLength() , "LONGBARLENGTH", "%6.3f");
+		summary.add(Get_ShortBarLength() , "SHORTBARLENGTH", "%6.3f");
+		summary.add(Get_BarWidth(0) , "BARWIDTH", "%6.3f");
   }
   
  private:

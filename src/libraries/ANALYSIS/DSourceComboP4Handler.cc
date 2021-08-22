@@ -207,7 +207,7 @@ void DSourceComboP4Handler::Get_CommandLineCuts_MM2(void)
 	//COMBO_MM2CUT:High_14=3.7_0.001
 
 	map<string, string> locParameterMap; //parameter key - filter, value
-	gPARMS->GetParameters(locParameterMap, "COMBO_MM2CUT:"); //gets all parameters with this filter at the beginning of the key
+	japp->GetJParameterManager()->FilterParameters(locParameterMap, "COMBO_MM2CUT:"); //gets all parameters with this filter at the beginning of the key
 	for(auto locParamPair : locParameterMap)
 	{
 		if(dDebugLevel)
@@ -234,7 +234,7 @@ void DSourceComboP4Handler::Get_CommandLineCuts_MM2(void)
 		//get the parameter, with hack so that don't get warning message about no default
 		string locKeyValue;
 		string locFullParamName = string("COMBO_MM2CUT:") + locParamPair.first; //have to add back on the filter
-		gPARMS->SetDefaultParameter(locFullParamName, locKeyValue);
+		japp->SetDefaultParameter(locFullParamName, locKeyValue);
 
 		//If functional form, save it and continue
 		if(locFuncIndex != string::npos)
@@ -286,7 +286,7 @@ void DSourceComboP4Handler::Get_CommandLineCuts_IM(void)
 	//COMBO_IMCUT:High_7=0.3
 
 	map<string, string> locParameterMap; //parameter key - filter, value
-	gPARMS->GetParameters(locParameterMap, "COMBO_IMCUT:"); //gets all parameters with this filter at the beginning of the key
+	japp->GetJParameterManager()->FilterParameters(locParameterMap, "COMBO_IMCUT:"); //gets all parameters with this filter at the beginning of the key
 	for(auto locParamPair : locParameterMap)
 	{
 		if(dDebugLevel)
@@ -312,7 +312,7 @@ void DSourceComboP4Handler::Get_CommandLineCuts_IM(void)
 		//get the parameter, with hack so that don't get warning message about no default
 		string locKeyValue;
 		string locFullParamName = string("COMBO_IMCUT:") + locParamPair.first; //have to add back on the filter
-		gPARMS->SetDefaultParameter(locFullParamName, locKeyValue);
+		japp->SetDefaultParameter(locFullParamName, locKeyValue);
 
 		//is cut parameter: extract and save
 		istringstream locValuetream(locKeyValue);
@@ -355,7 +355,7 @@ void DSourceComboP4Handler::Get_CommandLineCuts_MissingEnergy(void)
 	//COMBO_MISSECUT:High=3.7_0.001
 
 	map<string, string> locParameterMap; //parameter key - filter, value
-	gPARMS->GetParameters(locParameterMap, "COMBO_MISSECUT:"); //gets all parameters with this filter at the beginning of the key
+	japp->GetJParameterManager()->FilterParameters(locParameterMap, "COMBO_MISSECUT:"); //gets all parameters with this filter at the beginning of the key
 	for(auto locParamPair : locParameterMap)
 	{
 		if(dDebugLevel)
@@ -371,7 +371,7 @@ void DSourceComboP4Handler::Get_CommandLineCuts_MissingEnergy(void)
 		//get the parameter, with hack so that don't get warning message about no default
 		string locKeyValue;
 		string locFullParamName = string("COMBO_MISSECUT:") + locParamPair.first; //have to add back on the filter
-		gPARMS->SetDefaultParameter(locFullParamName, locKeyValue);
+		japp->SetDefaultParameter(locFullParamName, locKeyValue);
 
 		//If functional form, save it and continue
 		auto locFuncIndex = locParamPair.first.find("_FUNC");
@@ -418,7 +418,7 @@ void DSourceComboP4Handler::Get_CommandLineCuts_MissingEnergy(void)
 void DSourceComboP4Handler::Create_CutFunctions(void)
 {
 	//No idea why this lock is necessary, but it crashes without it.  Stupid ROOT. 
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	japp->GetService<JLockService>()->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 
 	//Missing mass squared
 	for(auto& locPIDPair : dMissingMassSquaredCuts_TF1Params)
@@ -502,14 +502,14 @@ void DSourceComboP4Handler::Create_CutFunctions(void)
 
 	dMissingECuts = std::make_pair(locFunc_Low, locFunc_High);
 
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	japp->GetService<JLockService>()->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, bool locCreateHistsFlag) : dSourceComboer(locSourceComboer)
 {
-	gPARMS->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
-	gPARMS->SetDefaultParameter("COMBO:PRINT_CUTS", dPrintCutFlag);
-	gPARMS->SetDefaultParameter("COMBO:MAX_MASSIVE_NEUTRAL_BETA", dMaxMassiveNeutralBeta);
+	japp->SetDefaultParameter("COMBO:DEBUG_LEVEL", dDebugLevel);
+	japp->SetDefaultParameter("COMBO:PRINT_CUTS", dPrintCutFlag);
+	japp->SetDefaultParameter("COMBO:MAX_MASSIVE_NEUTRAL_BETA", dMaxMassiveNeutralBeta);
 
 	Define_DefaultCuts();
 	Get_CommandLineCuts_IM();
@@ -521,7 +521,7 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 		return;
 
 	//MISSING MASS CUTS & MASS HISTOGRAMS
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!! //I have no idea why this is needed (for the cuts), but without it it crashes.  Sigh. 
+	japp->GetService<JLockService>()->RootWriteLock(); //ACQUIRE ROOT LOCK!! //I have no idea why this is needed (for the cuts), but without it it crashes.  Sigh.
 	{
 		//HISTOGRAMS
 		//get and change to the base (file/global) directory
@@ -668,7 +668,7 @@ DSourceComboP4Handler::DSourceComboP4Handler(DSourceComboer* locSourceComboer, b
 
 		locCurrentDir->cd();
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	japp->GetService<JLockService>()->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 DLorentzVector DSourceComboP4Handler::Get_P4_NotMassiveNeutral(Particle_t locPID, const JObject* locObject, const DVector3& locVertex, bool locAccuratePhotonsFlag) const
@@ -1390,7 +1390,7 @@ bool DSourceComboP4Handler::Cut_InvariantMass_AccuratePhotonKinematics(const DRe
 
 void DSourceComboP4Handler::Fill_Histograms(void)
 {
-	japp->WriteLock("DSourceComboP4Handler");
+	japp->GetService<JLockService>()->WriteLock("DSourceComboP4Handler");
 	{
 		for(auto& locPIDPair : dInvariantMasses)
 		{
@@ -1417,7 +1417,7 @@ void DSourceComboP4Handler::Fill_Histograms(void)
 		for(auto& locMissingPair : dMissingPtVsMissingE_PostMissMassSqCut)
 			dHist_NoneMissing_MissingPtVsMissingE_PostMissMassSqCut->Fill(locMissingPair.first, locMissingPair.second);
 	}
-	japp->Unlock("DSourceComboP4Handler");
+	japp->GetService<JLockService>()->Unlock("DSourceComboP4Handler");
 
 	vector<pair<float, float>>().swap(dMissingEVsBeamEnergy_PreMissMassSqCut);
 	vector<pair<float, float>>().swap(dMissingEVsBeamEnergy_PostMissMassSqCut);

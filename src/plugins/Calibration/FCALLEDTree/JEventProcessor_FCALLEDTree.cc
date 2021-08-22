@@ -6,7 +6,6 @@
 //
 
 #include "JEventProcessor_FCALLEDTree.h"
-using namespace jana;
 
 #include "FCAL/DFCALGeometry.h"
 #include "FCAL/DFCALHit.h"
@@ -15,12 +14,10 @@ using namespace jana;
 #include "TTree.h"
 
 // Routine used to create our JEventProcessor
-#include <JANA/JApplication.h>
-#include <JANA/JFactory.h>
 extern "C"{
   void InitPlugin(JApplication *app){
     InitJANAPlugin(app);
-    app->AddProcessor(new JEventProcessor_FCALLEDTree());
+    app->Add(new JEventProcessor_FCALLEDTree());
   }
 } // "C"
 
@@ -30,7 +27,7 @@ extern "C"{
 //------------------
 JEventProcessor_FCALLEDTree::JEventProcessor_FCALLEDTree()
 {
-
+	SetTypeName("JEventProcessor_FCALLEDTree");
 }
 
 //------------------
@@ -42,12 +39,14 @@ JEventProcessor_FCALLEDTree::~JEventProcessor_FCALLEDTree()
 }
 
 //------------------
-// init
+// Init
 //------------------
-jerror_t JEventProcessor_FCALLEDTree::init(void)
+void JEventProcessor_FCALLEDTree::Init()
 {
-  // This is called once at program startup. 
-  japp->RootWriteLock();
+  // This is called once at program startup.
+  auto app = GetApplication();
+  lockService = app->GetService<JLockService>();
+  lockService->RootWriteLock();
 
   m_tree = new TTree( "fcalBlockHits", "FCAL Block Hits" );
 
@@ -65,45 +64,40 @@ jerror_t JEventProcessor_FCALLEDTree::init(void)
   m_tree->Branch( "event", &m_event, "event/L" );
   m_tree->Branch( "eTot", &m_eTot, "eTot/F" );
 
-  japp->RootUnLock();
-  
-  return NOERROR;
+  lockService->RootUnLock();
 }
 
 //------------------
-// brun
+// BeginRun
 //------------------
-jerror_t JEventProcessor_FCALLEDTree::brun(JEventLoop *eventLoop, int32_t runnumber)
+void JEventProcessor_FCALLEDTree::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
 
   // this is not thread safe and may lead to an incorrect run number for
   // a few events in the worst case scenario -- I don't think it is a major problem
-  m_run = runnumber;
-  
-  // This is called whenever the run number changes
-  return NOERROR;
+  m_run = event->GetRunNumber();
 }
 
 //------------------
-// evnt
+// Process
 //------------------
-jerror_t JEventProcessor_FCALLEDTree::evnt(JEventLoop *loop, uint64_t eventnumber)
+void JEventProcessor_FCALLEDTree::Process(const std::shared_ptr<const JEvent>& event)
 {
  
   vector< const DFCALHit* > hits;
-  loop->Get( hits );
+  event->Get( hits );
 
-  if( hits.size() > kMaxHits ) return NOERROR;
+  if( hits.size() > kMaxHits ) return;
   
   vector<const DFCALGeometry*> fcalGeomVect;
-  loop->Get( fcalGeomVect );
-  if (fcalGeomVect.size() < 1)
-    return OBJECT_NOT_AVAILABLE;
+  event->Get( fcalGeomVect );
+  if (fcalGeomVect.size() < 1) throw JException("Missing FCAL geometry!");
+
   const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
   
-  japp->RootFillLock(this);
+  lockService->RootFillLock(this);
 
-  m_event = eventnumber;
+  m_event = event->GetEventNumber();
   
   m_nHits = 0;
   m_eTot = 0;
@@ -136,32 +130,27 @@ jerror_t JEventProcessor_FCALLEDTree::evnt(JEventLoop *loop, uint64_t eventnumbe
 
   m_tree->Fill();
   
-  japp->RootFillUnLock(this);
-
-  return NOERROR;
+  lockService->RootFillUnLock(this);
 }
 
 //------------------
-// erun
+// EndRun
 //------------------
-jerror_t JEventProcessor_FCALLEDTree::erun(void)
+void JEventProcessor_FCALLEDTree::EndRun()
 {
   // This is called whenever the run number changes, before it is
   // changed to give you a chance to clean up before processing
   // events from the next run number.
-  return NOERROR;
 }
 
 //------------------
-// fini
+// Finish
 //------------------
-jerror_t JEventProcessor_FCALLEDTree::fini(void)
+void JEventProcessor_FCALLEDTree::Finish()
 {
   // Called before program exit after event processing is finished.
-  japp->RootWriteLock();
+  lockService->RootWriteLock();
   m_tree->Write();
-  japp->RootUnLock();
-
-  return NOERROR;
+  lockService->RootUnLock();
 }
 

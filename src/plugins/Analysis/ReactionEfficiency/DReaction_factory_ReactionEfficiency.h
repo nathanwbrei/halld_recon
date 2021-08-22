@@ -11,7 +11,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include <JANA/JFactory.h>
+#include <JANA/JFactoryT.h>
 #include <ANALYSIS/DReaction.h>
 #include <ANALYSIS/DHistogramActions.h>
 #include <ANALYSIS/DCutActions.h>
@@ -19,21 +19,20 @@
 #include "DCustomAction_RecoilMass.h"
 
 using namespace std;
-using namespace jana;
 
-class DReaction_factory_ReactionEfficiency : public jana::JFactory<DReaction>
+class DReaction_factory_ReactionEfficiency : public JFactoryT<DReaction>
 {
 	public:
 		DReaction_factory_ReactionEfficiency()
 		{
-			// This is so that the created DReaction objects persist throughout the life of the program instead of being cleared each event. 
-			SetFactoryFlag(PERSISTANT);
+			SetTag("ReactionEfficiency");
+			// This is so that the created DReaction objects persist throughout the life of the program instead of being cleared each event.
+			SetFactoryFlag(PERSISTENT);
 		}
-		const char* Tag(void){return "ReactionEfficiency";}
 
 	private:
-		jerror_t evnt(JEventLoop* locEventLoop, uint64_t locEventNumber);
-		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+		void Process(const std::shared_ptr<const JEvent>& locEvent) override;
+		void Finish() override;
 
 		deque<DReactionStep*> dReactionStepPool; //to prevent memory leaks
 };

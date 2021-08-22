@@ -5,8 +5,11 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
-//#include <JANA/JEventProcessor.h>
 #include <HDDM/hddm_s.hpp>
+
+#include <JANA/JEvent.h>
+#include <JANA/JObject.h>
+#include <JANA/Compatibility/JLockService.h>
 
 #include <CDC/DCDCHit.h>
 #include <TOF/DTOFHit.h>
@@ -24,17 +27,16 @@
 #include <RF/DRFTime.h>
 #include <DIRC/DDIRCPmtHit.h>
 using namespace std;
-using namespace jana;
 
 class DEventWriterHDDM : public JObject
 {
 	public:
 		JOBJECT_PUBLIC(DEventWriterHDDM);
 
-		DEventWriterHDDM(JEventLoop* locEventLoop, string locOutputFileBaseName);
+		DEventWriterHDDM(const std::shared_ptr<const JEvent>& locEventLoop, string locOutputFileBaseName);
 		~DEventWriterHDDM(void);
 
-		bool Write_HDDMEvent(JEventLoop* locEventLoop, string locOutputFileNameSubString) const;
+		bool Write_HDDMEvent(const std::shared_ptr<const JEvent>& locEventLoop, string locOutputFileNameSubString) const;
 		string Get_OutputFileName(string locOutputFileNameSubString) const;
 
 	private:
@@ -60,6 +62,8 @@ class DEventWriterHDDM : public JObject
         string FDC_TAG;
         string TAGM_TAG;
         string TAGH_TAG;
+
+        std::shared_ptr<JLockService> lockService;
 };
 
 #endif //_DEventWriterHDDM_

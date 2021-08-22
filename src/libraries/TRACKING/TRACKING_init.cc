@@ -1,6 +1,6 @@
 // $Id$
 
-#include "JANA/JEventLoop.h"
+#include "JANA/JFactorySet.h"
 #include "DTrackWireBased_factory.h"
 #include "DTrackTimeBased_factory.h"
 #include "DTrackWireBased_factory_StraightLine.h"
@@ -27,41 +27,37 @@
 #include "DTrackFitter_factory_KalmanSIMD.h"
 #include "DTrackFitter_factory_KalmanSIMD_ALT1.h"
 
-#include "DMCThrown.h"
-#include "DMCTrackHit.h"
-#include "DMCTrajectoryPoint.h"
-
-jerror_t TRACKING_init(JEventLoop *loop)
+void TRACKING_init(JFactorySet *factorySet)
 {
    /// Create and register TRACKING data factories
-   loop->AddFactory(new DTrackFinder_factory());   
-   loop->AddFactory(new DTrackWireBased_factory());
-   loop->AddFactory(new DTrackTimeBased_factory());
-   loop->AddFactory(new DTrackCandidate_factory());
-   loop->AddFactory(new DTrackCandidate_factory_CDC());
-   loop->AddFactory(new DTrackCandidate_factory_FDC());
-   loop->AddFactory(new DTrackCandidate_factory_FDCCathodes());
-   loop->AddFactory(new DTrackCandidate_factory_FDCpseudo());
-   loop->AddFactory(new DTrackCandidate_factory_CDC_or_FDCpseudo());
-   loop->AddFactory(new DTrackCandidate_factory_THROWN());
-   loop->AddFactory(new DTrackCandidate_factory_StraightLine());
-   loop->AddFactory(new JFactory<DMCTrackHit>());
-   loop->AddFactory(new JFactory<DMCThrown>());
-   loop->AddFactory(new JFactory<DMCTrajectoryPoint>());
-   loop->AddFactory(new DTrackWireBased_factory_THROWN());
-   loop->AddFactory(new DTrackTimeBased_factory_THROWN()); 
-   loop->AddFactory(new DTrackWireBased_factory_StraightLine());
-   loop->AddFactory(new DTrackTimeBased_factory_StraightLine());
-   loop->AddFactory(new DTrackFitter_factory());
-   loop->AddFactory(new DTrackFitter_factory_ALT1());
-   loop->AddFactory(new DTrackFitter_factory_Riemann());
-   loop->AddFactory(new DTrackHitSelector_factory());
-   loop->AddFactory(new DTrackHitSelector_factory_ALT1());
-   loop->AddFactory(new DTrackHitSelector_factory_ALT2());
-   loop->AddFactory(new DTrackHitSelector_factory_THROWN());
-   loop->AddFactory(new DTrackFitter_factory_KalmanSIMD());   
-   loop->AddFactory(new DTrackFitter_factory_KalmanSIMD_ALT1());
-   loop->AddFactory(new DTrackFitter_factory_StraightTrack());
+   factorySet->Add(new DTrackFinder_factory());   
+   factorySet->Add(new DTrackWireBased_factory());
+   factorySet->Add(new DTrackTimeBased_factory());
+   factorySet->Add(new DTrackCandidate_factory());
+   factorySet->Add(new DTrackCandidate_factory_CDC());
+   factorySet->Add(new DTrackCandidate_factory_FDC());
+   factorySet->Add(new DTrackCandidate_factory_FDCCathodes());
+   factorySet->Add(new DTrackCandidate_factory_FDCpseudo());
+   factorySet->Add(new DTrackCandidate_factory_CDC_or_FDCpseudo());
+   factorySet->Add(new DTrackCandidate_factory_THROWN());
+   factorySet->Add(new DTrackCandidate_factory_StraightLine());
+   factorySet->Add(new DTrackWireBased_factory_THROWN());
+   factorySet->Add(new DTrackTimeBased_factory_THROWN()); 
+   factorySet->Add(new DTrackWireBased_factory_StraightLine());
+   factorySet->Add(new DTrackTimeBased_factory_StraightLine());
+   factorySet->Add(new DTrackFitter_factory());
+   factorySet->Add(new DTrackFitter_factory_ALT1());
+   factorySet->Add(new DTrackFitter_factory_Riemann());
+   factorySet->Add(new DTrackHitSelector_factory());
+   factorySet->Add(new DTrackHitSelector_factory_ALT1());
+   factorySet->Add(new DTrackHitSelector_factory_ALT2());
+   factorySet->Add(new DTrackHitSelector_factory_THROWN());
+   factorySet->Add(new DTrackFitter_factory_KalmanSIMD());   
+   factorySet->Add(new DTrackFitter_factory_KalmanSIMD_ALT1());
+   factorySet->Add(new DTrackFitter_factory_StraightTrack());
 
-   return NOERROR;
+   factorySet->Add(new JFactoryT<DMCThrown>());
+   // TODO: NWB: We need this but not the other JFactoryT's because a lot of code relies on `event->Get<DMCThrown>("")`
+   //      silently returning the empty vector even when event sources (such as EVIO) don't insert anything because they
+   //      don't even know about DMCThrowns. So this is an old-style 'dummy factory' which I had hoped to get rid of.
 }

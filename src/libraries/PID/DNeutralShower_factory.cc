@@ -7,6 +7,7 @@
 
 #include "DNeutralShower_factory.h"
 #include "DEventRFBunch.h"
+#include "DANA/DEvent.h"
 
 inline bool DNeutralShower_SortByEnergy(const DNeutralShower* locNeutralShower1, const DNeutralShower* locNeutralShower2)
 {
@@ -39,49 +40,45 @@ DNeutralShower_factory::DNeutralShower_factory()
 
 
 //------------------
-// init
+// Init
 //------------------
-jerror_t DNeutralShower_factory::init(void)
+void DNeutralShower_factory::Init()
 {
   dResourcePool_TMatrixFSym->Set_ControlParams(20, 20, 20);
-  return NOERROR;
 }
 
 //------------------
-// brun
+// BeginRun
 //------------------
-jerror_t DNeutralShower_factory::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
+void DNeutralShower_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-
-  DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-  DGeometry* locGeometry = locApplication->GetDGeometry(runnumber);
+  DEvent devent(event);
+  DGeometry* locGeometry = devent.GetDGeometry();
 
   double locTargetCenterZ;
   locGeometry->GetTargetZ(locTargetCenterZ);
   dTargetCenter.SetXYZ(0.0, 0.0, locTargetCenterZ);
-	
-  return NOERROR;
 }
 
 //------------------
-// evnt
+// Process
 //------------------
-jerror_t DNeutralShower_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
+void DNeutralShower_factory::Process(const std::shared_ptr<const JEvent>& event)
 {
   const DDetectorMatches* locDetectorMatches = NULL;
-  locEventLoop->GetSingle(locDetectorMatches);
+  event->GetSingle(locDetectorMatches);
 
   vector<const DBCALShower*> locBCALShowers;
-  locEventLoop->Get(locBCALShowers);
+  event->Get(locBCALShowers);
 
   vector<const DFCALShower*> locFCALShowers;
-  locEventLoop->Get(locFCALShowers);
+  event->Get(locFCALShowers);
 
   vector<const DCCALShower*> locCCALShowers;
-  locEventLoop->Get(locCCALShowers);
+  event->Get(locCCALShowers);
 
   vector< const DEventRFBunch* > eventRFBunches;
-  locEventLoop->Get(eventRFBunches);
+  event->Get(eventRFBunches);
   // there should always be one and only one object or else it is a coding error
   assert( eventRFBunches.size() == 1 );
   double rfTime = eventRFBunches[0]->dTime; // this is the RF time at the center of the target
@@ -92,7 +89,7 @@ jerror_t DNeutralShower_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t e
     }*/ 
   // Loop over all DBCALShowers, create DNeutralShower if didn't match to any tracks
   // The chance of an actual neutral shower matching to a bogus track is very small
-  JObject::oid_t locShowerID = 0;
+  oid_t locShowerID = 0;
   for(size_t loc_i = 0; loc_i < locBCALShowers.size(); ++loc_i)
     {
       if(locDetectorMatches->Get_IsMatchedToTrack(locBCALShowers[loc_i]))
@@ -118,7 +115,7 @@ jerror_t DNeutralShower_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t e
       
       locNeutralShower->AddAssociatedObject(locBCALShowers[loc_i]);
 
-      _data.push_back(locNeutralShower);
+      Insert(locNeutralShower);
     }
 
   // Loop over all DFCALShowers, create DNeutralShower if didn't match to any tracks
@@ -148,7 +145,7 @@ jerror_t DNeutralShower_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t e
 
       locNeutralShower->AddAssociatedObject(locFCALShowers[loc_i]);
 
-      _data.push_back(locNeutralShower);
+      Insert(locNeutralShower);
     }
   
   // Loop over all DCCALShowers, create DNeutralShower if didn't match to any tracks
@@ -177,28 +174,24 @@ jerror_t DNeutralShower_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t e
 
       locNeutralShower->AddAssociatedObject(locCCALShowers[loc_i]);
       
-      _data.push_back(locNeutralShower);
+      Insert(locNeutralShower);
     }
   
-  sort(_data.begin(), _data.end(), DNeutralShower_SortByEnergy);
-
-  return NOERROR;
+  sort(mData.begin(), mData.end(), DNeutralShower_SortByEnergy);
 }
 
 //------------------
-// erun
+// EndRun
 //------------------
-jerror_t DNeutralShower_factory::erun(void)
+void DNeutralShower_factory::EndRun()
 {
-  return NOERROR;
 }
 
 //------------------
-// fini
+// Finish
 //------------------
-jerror_t DNeutralShower_factory::fini(void)
+void DNeutralShower_factory::Finish()
 {
-  return NOERROR;
 }
 
 double DNeutralShower_factory::getFCALQuality( const DFCALShower* fcalShower, double rfTime ) const {

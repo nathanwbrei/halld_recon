@@ -16,7 +16,7 @@ using namespace std;
 #include <TVector3.h>
 
 #include <JANA/JApplication.h>
-#include <JANA/JEventLoop.h>
+#include <JANA/JEvent.h>
 
 #include <DANA/DApplication.h>
 #include <TRACKING/DMCThrown.h>
@@ -38,7 +38,7 @@ using namespace std;
 extern "C"{
 void InitPlugin(JApplication *app){
 	InitJANAPlugin(app);
-	app->AddProcessor(new DEventProcessor_track_hists());
+	app->Add(new DEventProcessor_track_hists());
 }
 } // "C"
 
@@ -77,9 +77,9 @@ DEventProcessor_track_hists::~DEventProcessor_track_hists()
 }
 
 //------------------
-// init
+// Init
 //------------------
-jerror_t DEventProcessor_track_hists::init(void)
+void DEventProcessor_track_hists::Init()
 {
 	// Create TRACKING directory
 	TDirectory *dir = (TDirectory*)gROOT->FindObject("TRACKING");
@@ -97,37 +97,37 @@ jerror_t DEventProcessor_track_hists::init(void)
 
 	dir->cd("../");
 	
-	return NOERROR;
+	return;
 }
 
 //------------------
-// brun
+// BeginRun
 //------------------
-jerror_t DEventProcessor_track_hists::brun(JEventLoop *loop, int32_t runnumber)
+void DEventProcessor_track_hists::BeginRun(const std::shared_ptr<const JEvent>& event)
 {	
-	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+	DApplication* dapp = dynamic_cast<DApplication*>(event->GetJApplication());
 	if(!dapp){
 		_DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program perhaps?)"<<endl;
 		return RESOURCE_UNAVAILABLE;
 	}
 	lorentz_def=dapp->GetLorentzDeflections();
 
-	return NOERROR;
+	return;
 }
 
 //------------------
-// erun
+// EndRun
 //------------------
-jerror_t DEventProcessor_track_hists::erun(void)
+void DEventProcessor_track_hists::EndRun()
 {
 
-	return NOERROR;
+	return;
 }
 
 //------------------
-// fini
+// Finish
 //------------------
-jerror_t DEventProcessor_track_hists::fini(void)
+void DEventProcessor_track_hists::Finish()
 {
 	char str[256];
 	sprintf(str,"%3.4f%%", 100.0*(double)NLRbad/(double)(NLRbad+NLRgood));
@@ -140,30 +140,30 @@ jerror_t DEventProcessor_track_hists::fini(void)
 	cout<<"       Nevents: "<<Nevents<<endl;
 	cout<<endl;
 
-	return NOERROR;
+	return;
 }
 
 //------------------
-// evnt
+// Process
 //------------------
-jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
+void DEventProcessor_track_hists::Process(const std::shared_ptr<const JEvent>& event)
 {
 	vector<const DChargedTrack*> chargedtracks;
 	vector<const DTrackCandidate*> candidates;
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DMCTrackHit*> mctrackhits;
 	
-	loop->Get(chargedtracks);
-	loop->Get(candidates);
-	loop->Get(mcthrowns);
-	loop->Get(mctrackhits);
+	event->Get(chargedtracks);
+	event->Get(candidates);
+	event->Get(mcthrowns);
+	event->Get(mctrackhits);
 	
 	Nevents++;
 	
 	// Only look at events with one thrown and one reconstructed particle
 	if(chargedtracks.size() <1 || mcthrowns.size() !=1 || candidates.size()<1 || chargedtracks[0]->hypotheses.size()<1){
 		_DBG_<<"chargedtracks.size()="<<chargedtracks.size()<<" mcthrowns.size()="<<mcthrowns.size()<<" candidates.size()="<<candidates.size()<<endl;
-		return NOERROR;
+		return;
 	}
 	const DTrackCandidate *candidate = candidates[0]; // technically, this could have more than 1 candidate!
 	const DMCThrown *thrown = mcthrowns[0];
@@ -207,7 +207,7 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, uint64_t eventnumbe
 	DReferenceTrajectory *rt = const_cast<DReferenceTrajectory*>(recon->rt);
 
 	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
+	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK
 
 	// Loop over CDC hits
 	int NLRcorrect_this_track = 0;
@@ -333,9 +333,9 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, uint64_t eventnumbe
 	
 	ttrack->Fill();
 
-	japp->RootUnLock(); //RELEASE ROOT LOCK
+	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK
 	
-	return NOERROR;
+	return;
 }
 
 //------------------

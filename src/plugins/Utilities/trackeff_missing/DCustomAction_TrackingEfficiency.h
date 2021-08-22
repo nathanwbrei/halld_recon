@@ -11,7 +11,7 @@
 #include <string>
 #include <iostream>
 
-#include "JANA/JEventLoop.h"
+#include <JANA/JEvent.h>
 #include "JANA/JApplication.h"
 
 #include "DANA/DStatusBits.h"
@@ -27,7 +27,6 @@
 #include "ANALYSIS/DTreeInterface.h"
 
 using namespace std;
-using namespace jana;
 
 class DCustomAction_TrackingEfficiency : public DAnalysisAction
 {
@@ -39,10 +38,10 @@ class DCustomAction_TrackingEfficiency : public DAnalysisAction
 			dTreeInterface = NULL;
 		}
 
-		void Initialize(JEventLoop* locEventLoop);
-		void Run_Update(JEventLoop* locEventLoop) {
-			locEventLoop->GetSingle(dAnalysisUtilities);
-			locEventLoop->GetSingle(dParticleID);
+		void Initialize(const std::shared_ptr<const JEvent>& locEvent);
+		void Run_Update(const std::shared_ptr<const JEvent>& locEvent) {
+			locEvent->GetSingle(dAnalysisUtilities);
+			locEvent->GetSingle(dParticleID);
 		}
 		~DCustomAction_TrackingEfficiency(void)
 		{
@@ -52,7 +51,7 @@ class DCustomAction_TrackingEfficiency : public DAnalysisAction
 
 	private:
 
-		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+		bool Perform_Action(const std::shared_ptr<const JEvent>& locEvent, const DParticleCombo* locParticleCombo);
 		double Calc_MatchFOM(const DVector3& locDeltaP3, TMatrixDSym locInverse3x3Matrix) const;
 
 		Particle_t dMissingPID;

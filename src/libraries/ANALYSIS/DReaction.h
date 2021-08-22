@@ -7,14 +7,12 @@
 #include <iostream>
 #include <set>
 
-#include "JANA/JObject.h"
-#include "JANA/JEventLoop.h"
-#include "JANA/JFactory.h"
+#include <JANA/JObject.h>
+#include <JANA/JEvent.h>
 #include "particleType.h"
 #include "ANALYSIS/DReactionStep.h"
 
 using namespace std;
-using namespace jana;
 using namespace DAnalysis;
 
 namespace DAnalysis
@@ -144,7 +142,7 @@ int Get_DecayStepIndex(const DReaction* locReaction, size_t locStepIndex, size_t
 pair<int, int> Get_InitialParticleDecayFromIndices(const DReaction* locReaction, int locStepIndex);
 vector<Particle_t> Get_ChainPIDs(const DReaction* locReaction, size_t locStepIndex, int locUpToStepIndex, vector<Particle_t> locUpThroughPIDs, bool locExpandDecayingFlag, bool locExcludeMissingFlag);
 vector<size_t> Get_DefinedParticleStepIndex(const DReaction* locReaction);
-vector<const DReaction*> Get_Reactions(JEventLoop* locEventLoop);
+vector<const DReaction*> Get_Reactions(const std::shared_ptr<const JEvent>& locEvent);
 size_t Get_ParticleInstanceIndex(const DReactionStep* locStep, size_t locParticleIndex);
 
 /****************************************************** CONSTRUCTORS AND DESTRUCTORS *******************************************************/

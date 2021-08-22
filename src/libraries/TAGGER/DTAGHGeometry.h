@@ -9,9 +9,7 @@
 
 #include <string>
 
-#include <JANA/JFactory.h>
 #include <JANA/JObject.h>
-using namespace jana;
 
 #include "units.h"
 
@@ -22,7 +20,7 @@ class DTAGHGeometry : public JObject {
    
    JOBJECT_PUBLIC(DTAGHGeometry);
 
-   DTAGHGeometry(JEventLoop *loop);
+   DTAGHGeometry(const std::shared_ptr<const JEvent>& loop);
    ~DTAGHGeometry();
 
    static const unsigned int kCounterCount;
@@ -32,8 +30,8 @@ class DTAGHGeometry : public JObject {
    double getEhigh(unsigned int counter) const;
    bool E_to_counter(double E, unsigned int &counter) const;
 
-   void toStrings(vector<pair<string,string> > &items) const {
-      AddString(items, "kCounterCount", "%d", kCounterCount);
+   void Summarize(JObjectSummary& summary) const override {
+      summary.add(kCounterCount, "kCounterCount", "%d");
    }
    
  private:

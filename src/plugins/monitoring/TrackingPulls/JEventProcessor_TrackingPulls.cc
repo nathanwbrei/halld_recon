@@ -11,30 +11,31 @@
 #include "TRACKING/DTrackTimeBased.h"
 #include "TRIGGER/DTrigger.h"
 
-using namespace jana;
 
 // Routine used to create our JEventProcessor
-#include <JANA/JApplication.h>
-#include <JANA/JFactory.h>
 extern "C" {
 void InitPlugin(JApplication *app) {
   InitJANAPlugin(app);
-  app->AddProcessor(new JEventProcessor_TrackingPulls());
+  app->Add(new JEventProcessor_TrackingPulls());
 }
 }  // "C"
 
 //------------------
 // JEventProcessor_TrackingPulls (Constructor)
 //------------------
-JEventProcessor_TrackingPulls::JEventProcessor_TrackingPulls() {}
+JEventProcessor_TrackingPulls::JEventProcessor_TrackingPulls() {
+	SetTypeName("JEventProcessor_TrackingPulls");
+}
 
 //------------------
 // ~JEventProcessor_TrackingPulls (Destructor)
 //------------------
 JEventProcessor_TrackingPulls::~JEventProcessor_TrackingPulls() {}
 
-jerror_t JEventProcessor_TrackingPulls::init(void) {
+void JEventProcessor_TrackingPulls::Init() {
   // This is called once at program startup.
+  auto app = GetApplication();
+  lockService = app->GetService<JLockService>();
 
   tree_ = new TTree("tracking_pulls", "tracking_pulls");
   tree_->SetAutoSave(1000);
@@ -78,18 +79,14 @@ jerror_t JEventProcessor_TrackingPulls::init(void) {
                 Form("cdc_left_right[%d]/I", kNumCdcRings));
   tree_->Branch("cdc_phi_intersect", cdc_phi_intersect_,
                 Form("cdc_phi_intersect[%d]/D", kNumCdcRings));
-
-  return NOERROR;
 }
 
-jerror_t JEventProcessor_TrackingPulls::brun(JEventLoop *eventLoop,
-                                             int32_t runnumber) {
+void JEventProcessor_TrackingPulls::BeginRun(const std::shared_ptr<const JEvent> &event) {
   // This is called whenever the run number changes
-  return NOERROR;
 }
 
-jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop,
-                                             uint64_t eventnumber) {
+void JEventProcessor_TrackingPulls::Process(const std::shared_ptr<const JEvent> &event) {
+  auto eventnumber = event->GetEventNumber();
   unsigned int numstraws[28] = {
       42,  42,  54,  54,  66,  66,  80,  80,  93,  93,  106, 106, 123, 123,
       135, 135, 146, 146, 158, 158, 170, 170, 182, 182, 197, 197, 209, 209};
@@ -99,11 +96,11 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop,
   // Easy peasy
 
   const DTrigger *locTrigger = NULL;
-  loop->GetSingle(locTrigger);
-  if (locTrigger->Get_L1FrontPanelTriggerBits() != 0) return NOERROR;
+  event->GetSingle(locTrigger);
+  if (locTrigger->Get_L1FrontPanelTriggerBits() != 0) return;
 
   vector<const DChargedTrack *> chargedTrackVector;
-  loop->Get(chargedTrackVector);
+  event->Get(chargedTrackVector);
 
   for (size_t i = 0; i < chargedTrackVector.size(); i++) {
     // TODO: Should be changed to use PID FOM when ready
@@ -632,17 +629,17 @@ jerror_t JEventProcessor_TrackingPulls::evnt(JEventLoop *loop,
 #endif
   }
 
-  return NOERROR;
+  return;
 }
 
-jerror_t JEventProcessor_TrackingPulls::erun(void) {
+void JEventProcessor_TrackingPulls::EndRun() {
   // This is called whenever the run number changes, before it is
   // changed to give you a chance to clean up before processing
   // events from the next run number.
-  return NOERROR;
+  return;
 }
 
-jerror_t JEventProcessor_TrackingPulls::fini(void) {
+void JEventProcessor_TrackingPulls::Finish() {
   // Called before program exit after event processing is finished.
-  return NOERROR;
+  return;
 }

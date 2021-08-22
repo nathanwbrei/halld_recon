@@ -86,20 +86,20 @@ extern "C"
 	void InitPlugin(JApplication *locApplication)
 	{
 		InitJANAPlugin(locApplication);
-		locApplication->AddProcessor(new DEventProcessor_fcal_charged()); //register this plugin
+		locApplication->Add(new DEventProcessor_fcal_charged()); //register this plugin
 	}
 } // "C"
    
 //------------------
-// init
+// Init
 //------------------
-jerror_t DEventProcessor_fcal_charged::init(void)
+void DEventProcessor_fcal_charged::Init()
 {
 	// First thread to get here makes all histograms. If one pointer is
 	// already not NULL, assume all histograms are defined and return now
 	if(h1_deltaX != NULL){
 	  printf ("TEST>> DEventProcessor_fcal_charged::init - Other threads continue\n");
-		return NOERROR;
+		return;
 	}
 
 	
@@ -242,62 +242,60 @@ jerror_t DEventProcessor_fcal_charged::init(void)
 	// back to main dir
 	printf ("TEST>> DEventProcessor_fcal_charged::init - First thread created histograms\n");
 	main->cd();
-
-	return NOERROR;
 }
 
 
 //------------------
-// brun
+// BeginRun
 //------------------
-jerror_t DEventProcessor_fcal_charged::brun(jana::JEventLoop* locEventLoop, int locRunNumber)
+void DEventProcessor_fcal_charged::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
 	// This is called whenever the run number changes
 	//BCAL_Neutrals->Fill();
 	//cout << " run number = " << RunNumber << endl;
 	/*
 	//Optional: Retrieve REST writer for writing out skims
-	locEventLoop->GetSingle(dEventWriterREST);
+	locEvent->GetSingle(dEventWriterREST);
 	*/
 
 	//vector<const DTrackFinder *> finders;
-	//locEventLoop->Get(finders);
+	//locEvent->Get(finders);
 	//finder = const_cast<DTrackFinder*>(finders[0]);
 
 	/*
 	//Recommeded: Create output ROOT TTrees (nothing is done if already created)
-	locEventLoop->GetSingle(dEventWriterROOT);
-	dEventWriterROOT->Create_DataTrees(locEventLoop);
+	locEvent->GetSingle(dEventWriterROOT);
+	dEventWriterROOT->Create_DataTrees(locEvent);
 	*/
-
-	return NOERROR;
 }
 
 //------------------
-// evnt
+// Process
 //------------------
 
 
-jerror_t DEventProcessor_fcal_charged::evnt(jana::JEventLoop* locEventLoop, int locEventNumber)
+void DEventProcessor_fcal_charged::Process(const std::shared_ptr<const JEvent>& locEvent)
 {
 
 	// This is called for every event. Use of common resources like writing
 	// to a file or filling a histogram should be mutex protected. Using
-	// locEventLoop->Get(...) to get reconstructed objects (and thereby activating the
+	// locEvent->Get(...) to get reconstructed objects (and thereby activating the
 	// reconstruction algorithm) should be done outside of any mutex lock
 	// since multiple threads may call this method at the same time.
 	//
 	// Here's an example:
 	//
 	// vector<const MyDataClass*> mydataclasses;
-	// locEventLoop->Get(mydataclasses);
+	// locEvent->Get(mydataclasses);
 	//
-	// japp->RootWriteLock();
+	// GetLockService(locEvent)->RootWriteLock();
 	//  ... fill historgrams or trees ...
-	// japp->RootUnLock();
+	// GetLockService(locEvent)->RootUnLock();
 
 	// DOCUMENTATION:
 	// ANALYSIS library: https://halldweb1.jlab.org/wiki/index.php/GlueX_Analysis_Software
+
+	auto locEventNumber = locEvent->GetEventNumber();
 
 	vector<const DFCALShower*> locFCALShowers;
 	vector<const DBCALPoint*> bcalpoints;
@@ -306,22 +304,22 @@ jerror_t DEventProcessor_fcal_charged::evnt(jana::JEventLoop* locEventLoop, int 
 	vector<const DFCALCluster*> locFCALClusters;
 	vector<const DVertex*> kinfitVertex;
 	//const DDetectorMatches* locDetectorMatches = NULL;
-	//locEventLoop->GetSingle(locDetectorMatches);
-	locEventLoop->Get(locFCALShowers);
-	locEventLoop->Get(bcalpoints);;
-	locEventLoop->Get(tofpoints);
-	locEventLoop->Get(fcalhits);
-	locEventLoop->Get(locFCALClusters);
-	locEventLoop->Get(kinfitVertex);
+	//locEvent->GetSingle(locDetectorMatches);
+	locEvent->Get(locFCALShowers);
+	locEvent->Get(bcalpoints);;
+	locEvent->Get(tofpoints);
+	locEvent->Get(fcalhits);
+	locEvent->Get(locFCALClusters);
+	locEvent->Get(kinfitVertex);
 
 	vector<const DChargedTrack*> locChargedTrack;
-	locEventLoop->Get(locChargedTrack);
+	locEvent->Get(locChargedTrack);
 
 	const DFCALGeometry *fcalgeom=NULL;
-	locEventLoop->GetSingle(fcalgeom);
+	locEvent->GetSingle(fcalgeom);
 	if (fcalgeom==NULL){
 	  jerr << "FCAL geometry not found!" << endl;
-	  return RESOURCE_UNAVAILABLE;
+	  throw JException("FCAL geometry not found!");
 	}
 
 	DVector3 trkpos(0.0,0.0,0.0);
@@ -346,7 +344,7 @@ jerror_t DEventProcessor_fcal_charged::evnt(jana::JEventLoop* locEventLoop, int 
 
 	// FILL HISTOGRAMS
 	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
-	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+	GetLockService(locEvent)->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
 	double p;
 	double dEdx;
@@ -571,37 +569,29 @@ jerror_t DEventProcessor_fcal_charged::evnt(jana::JEventLoop* locEventLoop, int 
 	  }   // end track intersection if statement
 	}
 
-	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
-
+	GetLockService(locEvent)->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	/*
 	//Optional: Save event to output REST file. Use this to create skims.
-	dEventWriterREST->Write_RESTEvent(locEventLoop, "FCAL_Shower"); //string is part of output file name
+	dEventWriterREST->Write_RESTEvent(locEvent, "FCAL_Shower"); //string is part of output file name
 	*/
-
-	return NOERROR;
 }
 
 //------------------
-// erun
+// EndRun
 //------------------
-jerror_t DEventProcessor_fcal_charged::erun(void)
+void DEventProcessor_fcal_charged::EndRun()
 {
 	// This is called whenever the run number changes, before it is
 	// changed to give you a chance to clean up before processing
 	// events from the next run number.
-
-
-	return NOERROR;
 }
 
 //------------------
-// fini
+// Finish
 //------------------
-jerror_t DEventProcessor_fcal_charged::fini(void)
+void DEventProcessor_fcal_charged::Finish()
 {
 	// Called before program exit after event processing is finished.  
-
-	return NOERROR;
 }
 
