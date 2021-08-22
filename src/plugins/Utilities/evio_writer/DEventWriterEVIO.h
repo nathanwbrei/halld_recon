@@ -1,4 +1,3 @@
-
 #ifndef _DEventWriterEVIO_
 #define _DEventWriterEVIO_
 
@@ -7,7 +6,8 @@
 #include <string>
 
 #include <JANA/JObject.h>
-#include <JANA/JEvent.h>
+#include <JANA/JEventLoop.h>
+#include <JANA/JEventSource.h>
 #include <JANA/JApplication.h>
 #include <JANA/Compatibility/JLockService.h>
 
@@ -59,8 +59,8 @@ class DEventWriterEVIO : public JObject
 		bool Write_EVIOBuffer(const std::shared_ptr<const JEvent>& locEvent, vector<uint32_t> *locOutputBuffer, string locOutputFileNameSubString) const;
 		bool Write_EVIOBuffer(const std::shared_ptr<const JEvent>& locEvent, uint32_t *locOutputBuffer, uint32_t locOutputBufferSize, string locOutputFileNameSubString) const;
 
-		string Get_OutputFileName(const std::shared_ptr<const JEvent>& locEvent, string locOutputFileNameSubString) const;
-        void SetDetectorsToWriteOut(string detector_list, string locOutputFileNameSubString) const;
+		string Get_OutputFileName(JEventLoop* locEventLoop, string locOutputFileNameSubString) const;
+        void SetDetectorsToWriteOut(JEventLoop* locEventLoop, string detector_list, string locOutputFileNameSubString) const;
 
         bool Is_MergingFiles() const { return dMergeFiles; }
         void Set_MergeFiles(bool in_flag) { dMergeFiles = in_flag; }
@@ -70,7 +70,8 @@ class DEventWriterEVIO : public JObject
 		bool COMPACT;
 		bool PREFER_EMULATED;
 		bool DEBUG_FILES;
-
+        bool CLOSE_FILES;
+        
 	protected:
 		bool Open_OutputFile(const std::shared_ptr<const JEvent>& locEvent, string locOutputFileName) const;
 		

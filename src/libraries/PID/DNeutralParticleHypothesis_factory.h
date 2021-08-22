@@ -28,7 +28,7 @@
 class DNeutralParticleHypothesis_factory : public JFactoryT<DNeutralParticleHypothesis>
 {
 	public:
-		DNeutralParticleHypothesis* Create_DNeutralParticleHypothesis(const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch, const DLorentzVector& dSpacetimeVertex, const TMatrixFSym* locVertexCovMatrix);
+		DNeutralParticleHypothesis* Create_DNeutralParticleHypothesis(const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch, const DLorentzVector& dSpacetimeVertex, const TMatrixFSym* locVertexCovMatrix, bool locPerfomBetaCut=true);
 
 		void Calc_ParticleCovariance_Photon(const DNeutralShower* locNeutralShower, const TMatrixFSym* locVertexCovMatrix, const DVector3& locMomentum, const DVector3& locPathVector, TMatrixFSym* locParticleCovariance) const;
 		void Calc_ParticleCovariance_Massive(const DNeutralShower* locNeutralShower, const TMatrixFSym* locVertexCovMatrix, double locMass, double locDeltaT, const DVector3& locMomentum, const DVector3& locPathVector, TMatrixFSym* locParticleCovariance) const;
@@ -46,7 +46,6 @@ class DNeutralParticleHypothesis_factory : public JFactoryT<DNeutralParticleHypo
 
 	private:
 		double dTargetCenterZ;
-		double dMaxMassiveNeutralBeta = 0.99999;
 		const DParticleID* dParticleID = nullptr;
 
 		//RESOURCE POOL

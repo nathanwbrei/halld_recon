@@ -11,7 +11,14 @@
 #include <string>
 
 #include <JANA/JObject.h>
+#include <JANA/JApplication.h>
 #include <JANA/JEvent.h>
+#include <JANA/JCalibration.h>
+#include <JANA/JCalibrationCCDB.h>
+#include <JANA/JCalibrationGeneratorCCDB.h>
+using namespace jana;
+
+#include <DANA/DApplication.h>
 
 #include "units.h"
 
@@ -24,8 +31,11 @@ class DTAGMGeometry : public JObject {
    
    JOBJECT_PUBLIC(DTAGMGeometry);
 
-   DTAGMGeometry(const std::shared_ptr<const JEvent>& event);
+   DTAGMGeometry(JEventLoop *loop);
+   DTAGMGeometry(JCalibration *jcalib, int32_t runnumber);
    ~DTAGMGeometry();
+
+   void Initialize(JCalibration *jcalib, bool print_messages);
 
    static const unsigned int kRowCount;
    static const unsigned int kColumnCount;

@@ -64,6 +64,9 @@ DEventSourceREST::DEventSourceREST(const char* source_name)
    USE_CCDB_FCAL_COVARIANCE = false;
    japp->SetDefaultParameter("REST:USE_CCDB_FCAL_COVARIANCE", USE_CCDB_FCAL_COVARIANCE,
    		"Load REST BFAL Shower covariance matrices from CCDB instead of the file.");
+   		
+   gPARMS->SetDefaultParameter("REST:JANACALIBCONTEXT", REST_JANA_CALIB_CONTEXT);
+   calib_generator = new JCalibrationGeneratorCCDB;  // keep this around in case we need to use it
 }
 
 //----------------
@@ -77,6 +80,13 @@ DEventSourceREST::~DEventSourceREST()
   if (ifs) {
     delete ifs;
   }
+  
+  for(auto &entry : dJCalib_olds)
+  	delete entry.second;
+  for(auto &entry : dTAGHGeoms)
+  	delete entry.second;
+  for(auto &entry : dTAGMGeoms)
+  	delete entry.second;
 }
 
 //----------------
@@ -166,13 +176,16 @@ void DEventSourceREST::GetEvent(std::shared_ptr<JEvent> event)
 	     break;
          }
 
-         //set REST calib context
-         const hddm_r::CcdbContextList& locContextStrings = re.getCcdbContexts();
-         hddm_r::CcdbContextList::iterator Contextiter;
-         for (Contextiter = locContextStrings.begin(); Contextiter != locContextStrings.end(); ++Contextiter) {
-        	 string REST_JANA_CALIB_CONTEXT = Contextiter->getText();
-             japp->SetDefaultParameter("REST:JANACALIBCONTEXT", REST_JANA_CALIB_CONTEXT);
-         }
+         // set REST calib context - use this to load calibration constants that were used
+         // to create the REST files, if needed, but let this be overridden by command-line options
+         if( REST_JANA_CALIB_CONTEXT == "" ) {
+			 const hddm_r::CcdbContextList& locContextStrings = re.getCcdbContexts();
+			 hddm_r::CcdbContextList::iterator Contextiter;
+			 for (Contextiter = locContextStrings.begin(); Contextiter != locContextStrings.end(); ++Contextiter) {
+				 REST_JANA_CALIB_CONTEXT = Contextiter->getText();
+				 jout << " REST file next CCDB context = " << REST_JANA_CALIB_CONTEXT << endl;  // DEBUG?
+			 }
+		 }
 
          record->clear();
          while (record->getReconstructedPhysicsEvents().size() == 0) {
@@ -230,12 +243,15 @@ bool DEventSourceREST::GetObjects(const std::shared_ptr<const JEvent> &event, JF
    hddm_r::HDDM *record = const_cast<hddm_r::HDDM*>(event->GetSingleStrict<hddm_r::HDDM>());
    // TODO: NWB: Remove const cast if possible
 
-	JEvent* locEventLoop = const_cast<JEvent*>(&(*event)); // TODO: NWB: Make this less hacky
+   JEventLoop* locEventLoop = event.GetJEventLoop();
+   string dataClassName = factory->GetDataClassName();
 
-	string dataClassName = factory->GetObjectName();
+   DApplication* dapp = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
+   JCalibration *jcalib = dapp->GetJCalibration(event.GetRunNumber());
 
+     
 	//Get target center
-		//multiple reader threads can access this object: need lock
+	//multiple reader threads can access this object: need lock
 	bool locNewRunNumber = false;
 	unsigned int locRunNumber = event->GetRunNumber();
 	{
@@ -244,7 +260,7 @@ bool DEventSourceREST::GetObjects(const std::shared_ptr<const JEvent> &event, JF
 	}
 	if(locNewRunNumber)
 	{
-		DGeometry* locGeometry = GetDGeometry(event);
+		DGeometry* locGeometry = dapp->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
 		double locTargetCenterZ = 0.0;
 		locGeometry->GetTargetZ(locTargetCenterZ);
 		
@@ -268,6 +284,8 @@ bool DEventSourceREST::GetObjects(const std::shared_ptr<const JEvent> &event, JF
 				jout << "Error loading /DIRC/South/channel_status !" << endl;
 		}
 		
+
+		LockRead();
 		{
 			std::lock_guard<std::mutex> lock(readMutex);
 			dTargetCenterZMap[locRunNumber] = locTargetCenterZ;
@@ -288,8 +306,16 @@ bool DEventSourceREST::GetObjects(const std::shared_ptr<const JEvent> &event, JF
 			     << " dy/dz=" << dBeamDirMap[locRunNumber].Y() 
 			     << endl;
 
+			// tagger related configs for reverse mapping tagger energy to counter number
+			if( REST_JANA_CALIB_CONTEXT != "" ) {
+				JCalibration *jcalib_old = calib_generator->MakeJCalibration(jcalib->GetURL(), locRunNumber, REST_JANA_CALIB_CONTEXT );
+				dTAGHGeoms[locRunNumber] = new DTAGHGeometry(jcalib_old, locRunNumber);
+				dTAGMGeoms[locRunNumber] = new DTAGMGeometry(jcalib_old, locRunNumber);
+				dJCalib_olds[locRunNumber] = jcalib_old;
+			}
 		}
-
+		UnlockRead();
+				
 		// do multiple things to limit the number of locks
 		// make sure that we have a handle to the FCAL shower factory
 		if(USE_CCDB_FCAL_COVARIANCE) {
@@ -583,25 +609,61 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
    hddm_r::TagmBeamPhotonList::iterator locTAGMiter;
    for(locTAGMiter = locTagmBeamPhotonList.begin(); locTAGMiter != locTagmBeamPhotonList.end(); ++locTAGMiter)
    {
-      if (locTAGMiter->getJtag() != tag)
-         continue;
+		if (locTAGMiter->getJtag() != tag)
+		 continue;
 
-      DBeamPhoton* gamma = new DBeamPhoton();
+		DBeamPhoton* gamma = new DBeamPhoton();
+		
+		// load the counter number (if it exists) and set the energy based on the counter
+		unsigned int column = 0;
+		hddm_r::TagmChannelList &locTagmChannelList = locTAGMiter->getTagmChannels();
+		if (locTagmChannelList.size() > 0) {
+			// it's easy if the column is already set 
+			column = locTagmChannelList().getColumn();
+		} else {
+			// if the TAGM column isn't saved in the REST file, then we do one of two things
+			//   1) if there's no special CCDB context associated with the file, we can just
+			//      reverse engineer the counter, assuming the latest CCDB
+			//   2) If there is a special CCDB context specified, then use that instead
+			if (dJCalib_olds[locRunNumber] == nullptr) {
+				if (!tagmGeom->E_to_column(locTAGMiter->getE(), column)) {
+					column = 0;
+				}
+			} else {
+				if (!dTAGMGeoms[locRunNumber]->E_to_column(locTAGMiter->getE(), column)) {
+					column = 0;
+				}
+			}
 
-		DVector3 mom(0.0, 0.0, locTAGMiter->getE());
+			if(column == 0)
+				std::cerr << "Error in DEventSourceREST - tagger microscope could not look up column for energy "
+				    << locTAGMiter->getE() << std::endl;
+		}
+		
+		// sometimes the simulation will set photons that miss the tagger counters to have a column of zero - skip these
+		if(column == 0) {
+			continue;
+		}
+
+		double Elo = tagmGeom->getElow(column);
+		double Ehi = tagmGeom->getEhigh(column);
+		double Ebeam = (Elo + Ehi)/2.;
+
+		// read the rest of the data from the REST file
+		DVector3 mom(0.0, 0.0, Ebeam);
 		gamma->setPID(Gamma);
 		gamma->setMomentum(mom);
 		gamma->setPosition(pos);
 		gamma->setTime(locTAGMiter->getT());
 		gamma->dSystem = SYS_TAGM;
+		gamma->dCounter = column;
 
-	      auto locCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
-	      locCovarianceMatrix->ResizeTo(7, 7);
-	      locCovarianceMatrix->Zero();
+		auto locCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+		locCovarianceMatrix->ResizeTo(7, 7);
+		locCovarianceMatrix->Zero();
 		gamma->setErrorMatrix(locCovarianceMatrix);
-
-        tagmGeom->E_to_column(locTAGMiter->getE(), gamma->dCounter);
-		dbeam_photons.push_back(gamma);
+      
+      	dbeam_photons.push_back(gamma);
    }
 
    const hddm_r::TaghBeamPhotonList &locTaghBeamPhotonList = record->getTaghBeamPhotons();
@@ -613,20 +675,51 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 
       DBeamPhoton* gamma = new DBeamPhoton();
 
+		// load the counter number (if it exists) and set the energy based on the counter
+		unsigned int counter = 0;
+		hddm_r::TaghChannelList &locTaghChannelList = locTAGHiter->getTaghChannels();
+		if (locTaghChannelList.size() > 0) {
+			// it's easy if the column is already set 
+			counter = locTaghChannelList().getCounter();
+		} else {
+			// if the TAGM column isn't saved in the REST file, then we do one of two things
+			//   1) if there's no special CCDB context associated with the file, we can just
+			//      reverse engineer the counter, assuming the latest CCDB
+			//   2) If there is a special CCDB context specified, then use that instead
+			if (dJCalib_olds[locRunNumber] == nullptr) {
+				if (!taghGeom->E_to_counter(locTAGHiter->getE(), counter)) {
+					counter = 0;
+				}
+			} else {
+				if (!dTAGHGeoms[locRunNumber]->E_to_counter(locTAGHiter->getE(), counter)) {
+					counter = 0;
+				}
+			}
+
+			if(counter == 0)
+				std::cerr << "Error in DEventSourceREST - tagger hodoscope could not look up counter for energy "
+				    << locTAGHiter->getE() << std::endl;
+		}
+
+		// sometimes the simulation will set photons that miss the tagger counters to have a column of zero - skip these
+		if(counter == 0) {
+			continue;
+		}
+
 		DVector3 mom(0.0, 0.0, locTAGHiter->getE());
 		gamma->setPID(Gamma);
 		gamma->setMomentum(mom);
 		gamma->setPosition(pos);
 		gamma->setTime(locTAGHiter->getT());
 		gamma->dSystem = SYS_TAGH;
+		gamma->dCounter = counter;
 
 	      auto locCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
 	      locCovarianceMatrix->ResizeTo(7, 7);
 	      locCovarianceMatrix->Zero();
 		gamma->setErrorMatrix(locCovarianceMatrix);
 
-		taghGeom->E_to_counter(locTAGHiter->getE(), gamma->dCounter);
-		dbeam_photons.push_back(gamma);
+      dbeam_photons.push_back(gamma);
    }
 
 	if((tag == "TAGGEDMCGEN") && dbeam_photons.empty())

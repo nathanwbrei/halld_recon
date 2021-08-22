@@ -1787,6 +1787,51 @@ bool DGeometry::GetCCALZ(double &z_ccal) const
 }
 
 //---------------------------------
+// GetFMWPCZ
+//---------------------------------
+bool DGeometry::GetFMWPCZ_vec(vector<double>&zvec_fmwpc) const
+{
+  vector<double> ForwardMWPCpos;
+  bool good = Get("//section/composition/posXYZ[@volume='ForwardMWPC']/@X_Y_Z", ForwardMWPCpos);
+  if (!good){  
+    //_DBG_<<"Unable to retrieve ForwardMWPC position."<<endl;
+    return false;
+  }
+
+  vector<double>CPPChamberPos;
+  Get("//posXYZ[@volume='CPPChamber']/@X_Y_Z/layer[@value='1']", CPPChamberPos);
+  zvec_fmwpc.push_back(ForwardMWPCpos[2]+CPPChamberPos[2]);
+  Get("//posXYZ[@volume='CPPChamber']/@X_Y_Z/layer[@value='2']", CPPChamberPos);
+  zvec_fmwpc.push_back(ForwardMWPCpos[2]+CPPChamberPos[2]); 
+  Get("//posXYZ[@volume='CPPChamber']/@X_Y_Z/layer[@value='3']", CPPChamberPos);
+  zvec_fmwpc.push_back(ForwardMWPCpos[2]+CPPChamberPos[2]);
+  Get("//posXYZ[@volume='CPPChamber']/@X_Y_Z/layer[@value='4']", CPPChamberPos);
+  zvec_fmwpc.push_back(ForwardMWPCpos[2]+CPPChamberPos[2]);
+  Get("//posXYZ[@volume='CPPChamber']/@X_Y_Z/layer[@value='5']", CPPChamberPos);
+  zvec_fmwpc.push_back(ForwardMWPCpos[2]+CPPChamberPos[2]);
+  Get("//posXYZ[@volume='CPPChamber']/@X_Y_Z/layer[@value='6']", CPPChamberPos);
+  zvec_fmwpc.push_back(ForwardMWPCpos[2]+CPPChamberPos[2]);
+ 
+  return true;
+}
+
+//---------------------------------
+// GetFMWPCSize -- use the dimensions of the frame
+//---------------------------------
+bool DGeometry::GetFMWPCSize(double &xy_fmwpc) const
+{
+  vector<double> ForwardMWPCdimensions;
+  bool good = Get("//section[@name='ForwardMWPC']/box[@name='CPPF']/@X_Y_Z", ForwardMWPCdimensions);
+  if (!good){  
+    xy_fmwpc=0.0;
+    return false;
+  }
+  xy_fmwpc=0.5*ForwardMWPCdimensions[0];
+
+  return true;
+}
+
+//---------------------------------
 // GetFCALZ
 //---------------------------------
 bool DGeometry::GetFCALZ(double &z_fcal) const
@@ -1812,7 +1857,7 @@ bool DGeometry::GetFCALPosition(double &x,double &y,double &z) const
 {
   vector<double> ForwardEMcalpos;
   bool good = Get("//section/composition/posXYZ[@volume='ForwardEMcal']/@X_Y_Z", ForwardEMcalpos);
-  
+
   if(!good){
     _DBG_<<"Unable to retrieve ForwardEMcal position."<<endl;
     x=0.,y=0.,z=0.;
@@ -2229,7 +2274,8 @@ bool DGeometry::GetTargetZ(double &z_target) const
    if(primex_target_exists) {
 
      z_target = xyz_BETG[2] + xyz_target[2] + xyz_detector[2];
-     cout << " PrimEx Be targer selected. Z target =   = " << z_target << endl;
+
+     //     cout << " PrimEx Be targer selected. Z target =   = " << z_target << endl;
      
      jgeom->SetVerbose(1);   // reenable error messages
      return true;

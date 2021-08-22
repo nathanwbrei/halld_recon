@@ -126,12 +126,17 @@ void JEventProcessor_PSC_TW::Init()
 //------------------
 void JEventProcessor_PSC_TW::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-	// This is called whenever the run number changes
-
-   //////////////
-   // RF
-   //////////////
-
+  // This is called whenever the run number changes
+  
+  //////////////
+  // Initialize RF time factory
+  locRFTimeFactory = static_cast<DRFTime_factory*>(eventLoop->GetFactory("DRFTime"));
+  
+  // be sure that DRFTime_factory::init() and brun() are called
+  vector<const DRFTime*> locRFTimes;
+  eventLoop->Get(locRFTimes);
+  
+  return NOERROR;
 }
 
 //------------------
@@ -153,20 +158,20 @@ void JEventProcessor_PSC_TW::Process(const std::shared_ptr<const JEvent>& event)
 	//  ... fill historgrams or trees ...
 	// GetLockService(locEvent)->RootUnLock();
 
-   // Initialize RF time factory
-   auto locRFTimeFactory = static_cast<DRFTime_factory*>(event->GetFactory("DRFTime", ""));
 
    vector<const DRFTime*>	locRFTimes;
    vector<const DPSCPair*>	pairs;
 
-   event->Get(pairs);
-   event->Get(locRFTimes,"PSC");
+   loop->Get(pairs);
+   loop->Get(locRFTimes,"PSC");
+
    const DRFTime* locRFTime = NULL;
 
    if (locRFTimes.size() > 0)
       locRFTime = locRFTimes[0];
    else
       return;
+
 
    // Since we are filling histograms local to this plugin, 
    // it will not interfere with other ROOT operations:

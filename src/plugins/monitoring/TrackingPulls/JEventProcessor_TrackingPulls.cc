@@ -20,16 +20,8 @@ void InitPlugin(JApplication *app) {
 }
 }  // "C"
 
-//------------------
-// JEventProcessor_TrackingPulls (Constructor)
-//------------------
-JEventProcessor_TrackingPulls::JEventProcessor_TrackingPulls() {
-	SetTypeName("JEventProcessor_TrackingPulls");
-}
+JEventProcessor_TrackingPulls::JEventProcessor_TrackingPulls() {}
 
-//------------------
-// ~JEventProcessor_TrackingPulls (Destructor)
-//------------------
 JEventProcessor_TrackingPulls::~JEventProcessor_TrackingPulls() {}
 
 void JEventProcessor_TrackingPulls::Init() {
@@ -43,6 +35,7 @@ void JEventProcessor_TrackingPulls::Init() {
   tree_->Branch("track_index", &track_index_, "track_index/I");
   tree_->Branch("chi2", &chi2_, "chi2/D");
   tree_->Branch("ndf", &ndf_, "ndf/I");
+  tree_->Branch("charge", &charge_, "charge/D");
   tree_->Branch("mom", &mom_, "mom/D");
   tree_->Branch("phi", &phi_, "phi/D");
   tree_->Branch("theta", &theta_, "theta/D");
@@ -172,6 +165,7 @@ void JEventProcessor_TrackingPulls::Process(const std::shared_ptr<const JEvent> 
     track_index_ = (int)i;
     chi2_ = track->chisq;
     ndf_ = track->Ndof;
+    charge_ = track->charge();
     mom_ = track->momentum().Mag();
     phi_ = track->momentum().Phi() * TMath::RadToDeg();
     theta_ = track->momentum().Theta() * TMath::RadToDeg();
@@ -243,22 +237,13 @@ void JEventProcessor_TrackingPulls::Process(const std::shared_ptr<const JEvent> 
     }
 
     for (size_t iPull = 0; iPull < pulls.size(); iPull++) {
-      // Here is all of the information currently stored in the pulls from the
-      // fit From TRACKING/DTrackFitter.h
-      double resi = pulls[iPull].resi;  // residual of measurement
-      double err = pulls[iPull].err;    // estimated error of measurement
-      // double s                    = pulls[iPull].s;
-      double tdrift = pulls[iPull].tdrift;  // drift time of this measurement
-      // double d                    = pulls[iPull].d;  // doca to wire
+      double resi = pulls[iPull].resi;
+      double err = pulls[iPull].err;  // estimated error of measurement
+      double tdrift = pulls[iPull].tdrift;
       const DCDCTrackHit *cdc_hit = pulls[iPull].cdc_hit;
       const DFDCPseudo *fdc_hit = pulls[iPull].fdc_hit;
-      // double docaphi              = pulls[iPull].docaphi; // phi of doca in
-      // CDC straws
       double z = pulls[iPull].z;  // z position at doca
-      // double tcorr                = pulls[iPull].tcorr; // drift time with
-      // correction for B
-      double resic =
-          pulls[iPull].resic;  // residual for FDC cathode measurements
+      double resic = pulls[iPull].resic;
       double errc = pulls[iPull].errc;
 
       Fill1DHistogram("TrackingPulls", "TrackPulls", "All Pulls", resi / err,
@@ -623,10 +608,9 @@ void JEventProcessor_TrackingPulls::Process(const std::shared_ptr<const JEvent> 
             TMath::RadToDeg();
       }
     }
-    // this plugin needs to be rewritten to use the threadsafe interface
-#if 0    // COMMENT THIS OUT SO THINGS STOP CRASHING
+    japp->RootWriteLock();
     tree_->Fill();
-#endif
+    japp->RootUnLock();
   }
 
   return;

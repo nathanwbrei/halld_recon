@@ -36,6 +36,7 @@ void JEventProcessor_TrackingPulls_straight::Init() {
   tree_->Branch("track_index", &track_index_, "track_index/I");
   tree_->Branch("chi2", &chi2_, "chi2/D");
   tree_->Branch("ndf", &ndf_, "ndf/I");
+  tree_->Branch("mom", &mom_, "mom/D");
   tree_->Branch("phi", &phi_, "phi/D");
   tree_->Branch("theta", &theta_, "theta/D");
   tree_->Branch("pos_x", &pos_x_, "pos_x/D");
@@ -76,12 +77,8 @@ void JEventProcessor_TrackingPulls_straight::Init() {
 void JEventProcessor_TrackingPulls_straight::BeginRun(const std::shared_ptr<const JEvent> &event) {
 }
 
-void JEventProcessor_TrackingPulls_straight::Process(const std::shared_ptr<const JEvent> &event) {
-  // Loop over the tracks, get the tracking pulls, and fill some histograms.
-  // Easy peasy
-
-  auto eventnumber = event->GetEventNumber();
-
+jerror_t JEventProcessor_TrackingPulls_straight::evnt(JEventLoop *loop,
+                                                      uint64_t eventnumber) {
   const DTrigger *locTrigger = NULL;
   event->GetSingle(locTrigger);
   if (locTrigger->Get_L1FrontPanelTriggerBits() != 0) return;
@@ -121,22 +118,13 @@ void JEventProcessor_TrackingPulls_straight::Process(const std::shared_ptr<const
     track_index_ = (int)i;
     chi2_ = track->chisq;
     ndf_ = track->Ndof;
+    mom_ = track->momentum().Mag();
     phi_ = track->momentum().Phi() * TMath::RadToDeg();
     theta_ = track->momentum().Theta() * TMath::RadToDeg();
     pos_x_ = track->position().X();
     pos_y_ = track->position().Y();
     pos_z_ = track->position().Z();
     smoothed_ = (track->IsSmoothed ? 1 : 0);
-
-    // Some quality cuts for the tracks we will use
-    // Keep this minimal for now and investigate later
-    double trackingFOM = TMath::Prob(chi2_, ndf_);
-    float trackingFOMCut = 1.0e-20;
-    int trackingNDFCut = 20;
-
-    if (trackingFOM < trackingFOMCut) continue;
-    if (track->Ndof < trackingNDFCut) continue;
-    if (!track->IsSmoothed) continue;
 
     vector<DTrackFitter::pull_t> pulls = track->pulls;
 
@@ -150,19 +138,15 @@ void JEventProcessor_TrackingPulls_straight::Process(const std::shared_ptr<const
         break;
       }
     }
-    if (any_nan_) continue;
 
     for (size_t iPull = 0; iPull < pulls.size(); iPull++) {
-      // Here is all of the information currently stored in the pulls from the
-      // fit From TRACKING/DTrackFitter.h
-      double resi = pulls[iPull].resi;      // residual of measurement
-      double err = pulls[iPull].err;        // estimated error of measurement
-      double tdrift = pulls[iPull].tdrift;  // drift time of this measurement
+      double resi = pulls[iPull].resi;
+      double err = pulls[iPull].err;  // estimated error of measurement
+      double tdrift = pulls[iPull].tdrift;
       const DCDCTrackHit *cdc_hit = pulls[iPull].cdc_hit;
       const DFDCPseudo *fdc_hit = pulls[iPull].fdc_hit;
       double z = pulls[iPull].z;  // z position at doca
-      double resic =
-          pulls[iPull].resic;  // residual for FDC cathode measurements
+      double resic = pulls[iPull].resic;
       double errc = pulls[iPull].errc;
 
       // Fill some detector specific info
@@ -204,7 +188,9 @@ void JEventProcessor_TrackingPulls_straight::Process(const std::shared_ptr<const
             TMath::RadToDeg();
       }
     }
+    japp->RootWriteLock();
     tree_->Fill();
+    japp->RootUnLock();
   }
 }
 

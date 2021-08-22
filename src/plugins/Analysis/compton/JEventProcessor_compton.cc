@@ -28,7 +28,10 @@ void InitPlugin(JApplication *app){
 void JEventProcessor_compton::Init()
 {
   	
-	
+        TDirectory *main = gDirectory;
+        TDirectory *compton = new TDirectoryFile( "compton", "compton" );
+        compton->cd();
+
 	
 	hTrig     =  new TH1F( "hTrig",   "GTP Trigger Bits", 33, -0.5, 32.5 );
 	hfpTrig   =  new TH1F( "hfpTrig",  "FP Trigger Bits", 33, -0.5, 32.5 );
@@ -232,9 +235,7 @@ void JEventProcessor_compton::Init()
 	
 	}
 	
-	dir_xy->cd( "../" );
-	
-	
+	main->cd();
 	
 }
 

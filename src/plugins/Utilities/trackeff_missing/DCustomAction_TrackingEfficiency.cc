@@ -6,6 +6,7 @@
 //
 
 #include "DCustomAction_TrackingEfficiency.h"
+#include "TObjString.h"
 
 void DCustomAction_TrackingEfficiency::Initialize(const std::shared_ptr<const JEvent>& locEvent)
 {

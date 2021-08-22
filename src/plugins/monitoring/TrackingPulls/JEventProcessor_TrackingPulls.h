@@ -35,6 +35,7 @@ class JEventProcessor_TrackingPulls : public JEventProcessor {
   int track_index_;
   double chi2_;
   int ndf_;
+  double charge_;
   double mom_;
   double phi_;
   double theta_;

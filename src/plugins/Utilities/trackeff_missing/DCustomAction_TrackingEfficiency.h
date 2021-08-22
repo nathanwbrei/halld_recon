@@ -11,7 +11,9 @@
 #include <string>
 #include <iostream>
 
-#include <JANA/JEvent.h>
+#include "TMap.h"
+
+#include "JANA/JEventLoop.h"
 #include "JANA/JApplication.h"
 
 #include "DANA/DStatusBits.h"

@@ -12,6 +12,7 @@ subdirs = [
 'CDC_dedx',
 'CDC_online',
 'DAQ_online',
+'fa125_itrig',
 'FCAL_online',
 'FCAL_invmass',
 'FDC_online',
@@ -56,7 +57,11 @@ subdirs = [
 'DIRC_online',
 'TRD_online',
 'RSAI_KO',
-'BEAM_online'
+'BEAM_online',
+'lumi_mon',
+'scaler_primex'
+,'cppFMWPC'
+
 ]
 
 #'L3_online',

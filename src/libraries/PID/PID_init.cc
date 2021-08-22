@@ -16,6 +16,7 @@
 #include "DNeutralParticleHypothesis_factory.h"
 #include "DNeutralShower_factory.h"
 #include "DNeutralShower_factory_PreSelect.h"
+#include "DNeutralShower_factory_HadronPreSelect.h"
 #include "DVertex_factory.h"
 #include "DVertex_factory_THROWN.h"
 #include "DEventRFBunch_factory.h"
@@ -34,29 +35,33 @@
 void PID_init(JFactorySet *factorySet)
 {
 	/// Create and register PID data factories
-	factorySet->Add(new DBeamPhoton_factory);
-	factorySet->Add(new DBeamPhoton_factory_TRUTH);
-	factorySet->Add(new DBeamPhoton_factory_TAGGEDMCGEN);
-	factorySet->Add(new DBeamPhoton_factory_MCGEN);
-	factorySet->Add(new DParticleID_factory);
-	factorySet->Add(new DParticleID_factory_PID1);
-	factorySet->Add(new DChargedTrack_factory);
-	factorySet->Add(new DChargedTrack_factory_PreSelect);
-	factorySet->Add(new DChargedTrackHypothesis_factory);
-	factorySet->Add(new DNeutralParticle_factory);
-	factorySet->Add(new DNeutralParticle_factory_PreSelect);
-	factorySet->Add(new DNeutralParticleHypothesis_factory);
-	factorySet->Add(new DNeutralShower_factory);
-	factorySet->Add(new DNeutralShower_factory_PreSelect);
-	factorySet->Add(new DVertex_factory);
-	factorySet->Add(new DVertex_factory_THROWN);
-	factorySet->Add(new DEventRFBunch_factory);
-	factorySet->Add(new DEventRFBunch_factory_Thrown);
-	factorySet->Add(new DEventRFBunch_factory_Calibrations);
-	factorySet->Add(new DEventRFBunch_factory_CalorimeterOnly);
-	factorySet->Add(new DDetectorMatches_factory);
-	factorySet->Add(new DDetectorMatches_factory_WireBased);
-	factorySet->Add(new DMCThrown_factory_FinalState);
-	factorySet->Add(new DMCThrown_factory_Decaying);
-	factorySet->Add(new DMCThrown_factory_Primary);
+	loop->AddFactory(new JFactory<DMCReaction>());
+	loop->AddFactory(new DBeamPhoton_factory);
+	loop->AddFactory(new DBeamPhoton_factory_TRUTH);
+	loop->AddFactory(new DBeamPhoton_factory_TAGGEDMCGEN);
+	loop->AddFactory(new DBeamPhoton_factory_MCGEN);
+	loop->AddFactory(new DParticleID_factory);
+	loop->AddFactory(new DParticleID_factory_PID1);
+	loop->AddFactory(new DChargedTrack_factory);
+	loop->AddFactory(new DChargedTrack_factory_PreSelect);
+	loop->AddFactory(new DChargedTrackHypothesis_factory);
+	loop->AddFactory(new DNeutralParticle_factory);
+	loop->AddFactory(new DNeutralParticle_factory_PreSelect);
+	loop->AddFactory(new DNeutralParticleHypothesis_factory);
+	loop->AddFactory(new DNeutralShower_factory);
+	loop->AddFactory(new DNeutralShower_factory_PreSelect);
+	loop->AddFactory(new DNeutralShower_factory_HadronPreSelect);
+	loop->AddFactory(new DVertex_factory);
+	loop->AddFactory(new DVertex_factory_THROWN);
+	loop->AddFactory(new DEventRFBunch_factory);
+	loop->AddFactory(new DEventRFBunch_factory_Thrown);
+	loop->AddFactory(new DEventRFBunch_factory_Calibrations);
+	loop->AddFactory(new DEventRFBunch_factory_CalorimeterOnly);
+	loop->AddFactory(new DDetectorMatches_factory);
+	loop->AddFactory(new DDetectorMatches_factory_WireBased);
+	loop->AddFactory(new DMCThrown_factory_FinalState);
+	loop->AddFactory(new DMCThrown_factory_Decaying);
+	loop->AddFactory(new DMCThrown_factory_Primary);
+
+	return NOERROR;
 }

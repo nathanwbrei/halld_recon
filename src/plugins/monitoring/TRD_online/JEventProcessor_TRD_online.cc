@@ -340,7 +340,7 @@ void JEventProcessor_TRD_online::Process(const std::shared_ptr<const JEvent>& ev
 
     // SRS GEM cluster time comparison
     for (const auto& cluster : gem_clusters) {
-	    const DGEMHit *max_hit;
+      // unused variable	    const DGEMHit *max_hit;
 	    for (const auto& hit : cluster->members) {
 		    //if(hit->plane == 7 && hit->strip > 100 && hit->strip < 130) 
 		    hGEMSRSAmp_Time_Cluster->Fill(hit->t, hit->pulse_height);

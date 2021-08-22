@@ -13,6 +13,8 @@
 #include <PID/DNeutralParticleHypothesis.h>
 #include <PID/DNeutralShower.h>
 #include <particleType.h>
+#include <sstream>
+
 
 using namespace std;
 
@@ -27,8 +29,15 @@ class DNeutralParticle : public JObject
 		const DNeutralParticleHypothesis* Get_BestFOM(void) const;
 		const DNeutralParticleHypothesis* Get_Hypothesis(Particle_t locPID) const;
 
-		void Summarize(JObjectSummary& summary) const override {
-			summary.add(dNeutralParticleHypotheses.size(), "Nhypotheses", "%d");
+		void toStrings(vector<pair<string,string> > &items) const
+		{
+			AddString(items, "Nhypotheses", "%d", dNeutralParticleHypotheses.size());
+			
+			stringstream ss;
+			for(auto hypos : dNeutralParticleHypotheses) {
+				ss << hypos->PID() << " ";
+			}
+			AddString(items, "Hypothesis List", "%s", ss.str().c_str());
 		}
 };
 

@@ -10,7 +10,9 @@
 
 #include <JANA/JObject.h>
 
-class DFMWPCHit: public JObject{
+using namespace jana;
+
+class DFMWPCHit:public JObject{
 	public:
 		JOBJECT_PUBLIC(DFMWPCHit);
 

@@ -154,6 +154,7 @@ class DTrackFitter: public JObject{
 		  extrapolations[SYS_START].clear();
 		  extrapolations[SYS_DIRC].clear();
 		  extrapolations[SYS_TRD].clear();
+		  extrapolations[SYS_FMWPC].clear();
 		};
 		
 		// Fit parameter accessor methods

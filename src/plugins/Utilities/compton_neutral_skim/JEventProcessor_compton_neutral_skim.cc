@@ -263,8 +263,10 @@ void JEventProcessor_compton_neutral_skim::Process(const std::shared_ptr<const J
       double y2 =  locCCALShowers[j]->y - kinfitVertexY;
       double z2 =  locCCALShowers[j]->z - kinfitVertexZ;
       DVector3 vertex2(x2, y2, z2);
-      double r2 = vertex2.Mag();
-      double t2 = locCCALShowers[j]->time - (r2 / TMath::C() * 1e7);
+      // r2 unused: commented out
+      //      double r2 = vertex2.Mag();
+      // t2 unused: commented out
+      //      double t2 = locCCALShowers[j]->time - (r2 / TMath::C() * 1e7);
       double p2 = e2;
       double px2 = p2 * sin(vertex2.Theta()) * cos(vertex2.Phi());
       double py2 = p2 * sin(vertex2.Theta()) * sin(vertex2.Phi());
@@ -277,7 +279,8 @@ void JEventProcessor_compton_neutral_skim::Process(const std::shared_ptr<const J
 	double tb = locBeamPhotons[k]->time();
 	double deltaE =  (e1 + e2) - (eb + me);
 	double bfdt = tb - t1;
-	double bcdt = tb - t2;
+	// bcdt unused: commented out
+	//	double bcdt = tb - t2;
 	Candidate |= ((fabs(deltaE) < 3.0) && (130 < copl && copl < 230) && (fabs(bfdt) < 35) && locBCALShowers.size() == 0 && photon_nb < 3) ;
       }
     }

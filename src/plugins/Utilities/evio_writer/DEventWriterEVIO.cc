@@ -3,6 +3,8 @@
 
 #include <DAQ/JEventSource_EVIO.h>
 
+static  JEventSource *currentEventSource = nullptr;
+
 
 size_t& DEventWriterEVIO::Get_NumEVIOOutputThreads(void) const
 {
@@ -40,15 +42,19 @@ DEventWriterEVIO::DEventWriterEVIO(const std::shared_ptr<const JEvent>& locEvent
 	COMPACT = true;
 	PREFER_EMULATED = false;
 	DEBUG_FILES = false; // n.b. also defined in HDEVIOWriter
+    CLOSE_FILES = false;
     dMergeFiles = false;
-    dMergedFilename = "merged.evio";  
+    dMergedFilename = "merged";  
 
 	ofs_debug_input = NULL;
 	ofs_debug_output = NULL;
 
-	app->SetDefaultParameter("EVIOOUT:COMPACT" , COMPACT,  "Drop words where we can to reduce output file size. This shouldn't loose any vital information, but can be turned off to help with debugging.");
-	app->SetDefaultParameter("EVIOOUT:PREFER_EMULATED" , PREFER_EMULATED,  "If true, then sample data will not be written to output, but emulated hits will. Otherwise, do exactly the opposite.");
-	app->SetDefaultParameter("EVIOOUT:DEBUG_FILES" , DEBUG_FILES,  "Write input and output debug files in addition to the standard output.");
+	gPARMS->SetDefaultParameter("EVIOOUT:COMPACT" , COMPACT,  "Drop words where we can to reduce output file size. This shouldn't loose any vital information, but can be turned off to help with debugging.");
+	gPARMS->SetDefaultParameter("EVIOOUT:PREFER_EMULATED" , PREFER_EMULATED,  "If true, then sample data will not be written to output, but emulated hits will. Otherwise, do exactly the opposite.");
+	gPARMS->SetDefaultParameter("EVIOOUT:DEBUG_FILES" , DEBUG_FILES,  "Write input and output debug files in addition to the standard output.");
+	gPARMS->SetDefaultParameter("EVIOOUT:CLOSE_FILES" , CLOSE_FILES,  "Close output files once a new input file is opened (just make sure none of the input files have the same file name, or outputs will be overwritten!");
+	gPARMS->SetDefaultParameter("EVIOOUT:MERGE" , dMergeFiles,  "Write only one output file for each sub-file name");
+	gPARMS->SetDefaultParameter("EVIOOUT:MERGE_FILENAME" , dMergedFilename, "Base file name for merged files, only used if EVIOOUT:MERGE is enabled");
 
     //buffer_writer = new DEVIOBufferWriter(COMPACT, PREFER_EMULATED);
 
@@ -85,7 +91,7 @@ DEventWriterEVIO::DEventWriterEVIO(const std::shared_ptr<const JEvent>& locEvent
 }
 
 
-void DEventWriterEVIO::SetDetectorsToWriteOut(string detector_list, string locOutputFileNameSubString) const
+void DEventWriterEVIO::SetDetectorsToWriteOut(JEventLoop* locEventLoop, string detector_list, string locOutputFileNameSubString) const
 {
     // Allow users to set only some detectors to be written out
     // The list of detectors is set on a per-file basis
@@ -96,10 +102,12 @@ void DEventWriterEVIO::SetDetectorsToWriteOut(string detector_list, string locOu
         return;
     }
 
+	string locOutputFileName = Get_OutputFileName(locEventLoop, locOutputFileNameSubString);
+
     // sanity check
-	lockService->WriteLock("EVIOWriter");
-    if(Get_EVIOBufferWriters().find(locOutputFileNameSubString) == Get_EVIOBufferWriters().end()) {
-        lockService->Unlock("EVIOWriter");
+	japp->WriteLock("EVIOWriter");
+    if(Get_EVIOBufferWriters().find(locOutputFileName) == Get_EVIOBufferWriters().end()) {
+        japp->Unlock("EVIOWriter");
         // file must not have been created?
         return;
     }
@@ -111,9 +119,9 @@ void DEventWriterEVIO::SetDetectorsToWriteOut(string detector_list, string locOu
 
     // if given a blank list, assume we should write everything out
     if(detector_list == "") {
-        lockService->WriteLock("EVIOWriter");
-        Get_EVIOBufferWriters()[locOutputFileNameSubString]->SetROCsToWriteOut(rocs_to_write_out);
-        lockService->Unlock("EVIOWriter");
+        japp->WriteLock("EVIOWriter");
+        Get_EVIOBufferWriters()[locOutputFileName]->SetROCsToWriteOut(rocs_to_write_out);
+        japp->Unlock("EVIOWriter");
         return;
     }
 
@@ -150,9 +158,9 @@ void DEventWriterEVIO::SetDetectorsToWriteOut(string detector_list, string locOu
     }
 
     // save results
-	lockService->WriteLock("EVIOWriter");
-    Get_EVIOBufferWriters()[locOutputFileNameSubString]->SetROCsToWriteOut(rocs_to_write_out);
-	lockService->Unlock("EVIOWriter");
+	japp->WriteLock("EVIOWriter");
+    Get_EVIOBufferWriters()[locOutputFileName]->SetROCsToWriteOut(rocs_to_write_out);
+	japp->Unlock("EVIOWriter");
 }
 
 
@@ -287,7 +295,7 @@ string DEventWriterEVIO::Get_OutputFileName(const std::shared_ptr<const JEvent>&
 {
     // if we're merging input files, write everything to the specified file
     if(dMergeFiles) {
-        return dMergedFilename;
+        return (dMergedFilename + string(".") + locOutputFileNameSubString + string(".evio"));
     }
 
 	//get the event source
@@ -317,6 +325,35 @@ bool DEventWriterEVIO::Open_OutputFile(const std::shared_ptr<const JEvent>& locE
 	//ASSUMES A LOCK HAS ALREADY BEEN ACQUIRED (by WriteEVIOEvent)
 	// and assume that it doesn't exist
 
+
+    // only close additional files if requested
+    if(CLOSE_FILES) {
+        //get the event source
+        JEvent& locEvent = locEventLoop->GetJEvent();
+        JEventSource* locEventSource = locEvent.GetJEventSource();
+
+        // close all the files when we notice that the input file has changed
+        // it's a bit of a hammer, but should work since we only call it once
+        if(currentEventSource != locEventSource) {
+            currentEventSource = locEventSource;
+
+            // first clear all of the objects being referenced
+            for( auto entry : Get_EVIOOutputters() )
+                delete entry.second;
+            for( auto entry : Get_EVIOBufferWriters() )
+                delete entry.second;
+            // and close the threads so that they don't use extra CPU with their idle spin-locks
+            for( auto entry : Get_EVIOOutputThreads() )
+                pthread_cancel(entry.second);
+
+            // now clear all of the entries in these maps
+            Get_EVIOOutputters().clear();
+            Get_EVIOBufferWriters().clear();
+            Get_EVIOOutputThreads().clear();
+        }
+
+    }
+
 	// Create object to write the selected events to a file or ET system
 	// Run each connection in their own thread
 	HDEVIOWriter *locEVIOout = new HDEVIOWriter(locOutputFileName, japp);
@@ -325,6 +362,7 @@ bool DEventWriterEVIO::Open_OutputFile(const std::shared_ptr<const JEvent>& locE
 	pthread_t locEVIOout_thr;
 	int result = pthread_create(&locEVIOout_thr, NULL, HDEVIOOutputThread, locEVIOout);
 	bool success = (result == 0);
+
 
 	//evaluate status
 	if(!success)

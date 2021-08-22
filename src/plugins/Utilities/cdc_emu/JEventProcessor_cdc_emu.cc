@@ -9,7 +9,7 @@
 
 // CDC:RUN_CONFIG specifies run number to use parameter files from, defaults to current run
 
-// const int DIFFS_ONLY only write out events with differing fa125 output & emulation if this =1
+// CDC:DIFFS_ONLY only write out events with differing fa125 output & emulation if this =1
 
 // writes out reported and emulated fa125 quantities to tree_m.root
 // the events appear out of order if run multithreaded
@@ -68,7 +68,7 @@ void JEventProcessor_cdc_emu::Init()
   app->SetDefaultParameter("CDC:RUN_CONFIG",RUN_CONFIG,"Run to be used as source of configuration files");
 
   DIFFS_ONLY = 0;
-  app->SetDefaultParameter("CDC:DIFFS_ONLY",DIFFS_ONLY,"Record (0) all event or (1) only those events where difference are found");
+  gPARMS->SetDefaultParameter("CDC:DIFFS_ONLY",DIFFS_ONLY,"Record (0) all events or (1) only those events where difference are found");
 
 
   //TTREE INTERFACE
@@ -176,15 +176,7 @@ void JEventProcessor_cdc_emu::BeginRun(const std::shared_ptr<const JEvent>& even
   for (int iroc=1; iroc<5; iroc++) {
 
 
-    sprintf(filename,"/raid12/gluex/rawdata2/Run%06i/RunLog%06i/CDC/COM/roccdc%i_fadc125_fall2018.cnf",runfile,runfile,iroc);
-
-
-    //    sprintf(filename,"/raid12/gluex/rawdata2/Run%06i/RunLog%06i/CDC/COM/roccdc%i_fadc125_default.cnf",runfile,runfile,iroc);
-
-
-    //    sprintf(filename,"/raid12/gluex/rawdata2/Run%06i/RunLog%06i/CDC/COM/roccdc%i_fadc125_default6sigmas.cnf",runfile,runfile,iroc);
-
-    //    sprintf(filename,"/raid12/gluex/rawdata2/Run011017/RunLog011017/CDC/COM/roccdc%i_fadc125_default.cnf",iroc);
+    sprintf(filename,"Run%06i/RunLog%06i/CDC/COM/roccdc%i_fadc125_fall2018.cnf",runfile,runfile,iroc);
 
     printf("Looking for config parameter file %s\n",filename);
 
@@ -548,7 +540,7 @@ void JEventProcessor_cdc_emu::Process(const std::shared_ptr<const JEvent>& event
     const DCDCHit *hit = NULL;
     const DCDCDigiHit *digihit = NULL;
     const Df125CDCPulse *cp = NULL;
-    const Df125Config *cf = NULL;
+    //const Df125Config *cf = NULL;
     const Df125WindowRawData *wrd = NULL;
 
     for (id=0; id<nd; id++) {
