@@ -43,48 +43,50 @@ extern "C"{
 //------------------
 // JEventProcessor_pi0fcaltofskim (Constructor)
 //------------------
-JEventProcessor_pi0fcaltofskim::JEventProcessor_pi0fcaltofskim()
-{
-  SetTypeName("JEventProcessor_pi0fcaltofskim");
+JEventProcessor_pi0fcaltofskim::JEventProcessor_pi0fcaltofskim() {
+	SetTypeName("JEventProcessor_pi0fcaltofskim");
 }
 
-  WRITE_EVIO = 1;
-  WRITE_HDDM = 0;
-  
-  TURN_OFF_TRACK_MATCH = 0;
-  SAVE_BEAM_PHOTON = 0;
-  SAVE_TOF_POINT = 0;
-  GET_IP = 0;
-  SAVE_L1_TRIGGER = 0;
 
-  gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:WRITE_EVIO", WRITE_EVIO );
-  gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:WRITE_HDDM", WRITE_HDDM );
-  
-  gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:TURN_OFF_TRACK_MATCH", TURN_OFF_TRACK_MATCH );
-  gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:SAVE_BEAM_PHOTON", SAVE_BEAM_PHOTON );
-  gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:SAVE_TOF", SAVE_TOF_POINT );
-  gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:GET_IP", GET_IP );
-  gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:SAVE_L1_TRIGGER", SAVE_L1_TRIGGER );
-  
-  MIN_MASS   = 0.02; // GeV
-  MAX_MASS   = 1.2; // GeV
-  MIN_E      =  0.1; // GeV (photon energy cut)
-  //MIN_R      =   20; // cm  (cluster distance to beam line)
-  MAX_DT     =   25; // ns  (cluster time diff. cut)
-  //MAX_ETOT   =   12; // GeV (max total FCAL energy)
-  //MIN_BLOCKS =    2; // minumum blocks per cluster
-  
-  gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:MIN_MASS", MIN_MASS );
-  gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:MAX_MASS", MAX_MASS );
-  gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:MIN_E", MIN_E );                
-  //gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:MIN_R", MIN_R );
-  gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:MAX_DT", MAX_DT );
-  //gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:MAX_ETOT", MAX_ETOT );
-  //gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:MIN_BLOCKS", MIN_BLOCKS );
-  //gPARMS->SetDefaultParameter( "PI0FCALTOFSKIM:WRITE_ROOT", WRITE_ROOT );
+//------------------
+// Init
+//------------------
+void JEventProcessor_pi0fcaltofskim::Init() {
 
-}
+	WRITE_EVIO = 1;
+	WRITE_HDDM = 0;
 
+	TURN_OFF_TRACK_MATCH = 0;
+	SAVE_BEAM_PHOTON = 0;
+	SAVE_TOF_POINT = 0;
+	GET_IP = 0;
+	SAVE_L1_TRIGGER = 0;
+
+	japp->SetDefaultParameter("PI0FCALTOFSKIM:WRITE_EVIO", WRITE_EVIO);
+	japp->SetDefaultParameter("PI0FCALTOFSKIM:WRITE_HDDM", WRITE_HDDM);
+
+	japp->SetDefaultParameter("PI0FCALTOFSKIM:TURN_OFF_TRACK_MATCH", TURN_OFF_TRACK_MATCH);
+	japp->SetDefaultParameter("PI0FCALTOFSKIM:SAVE_BEAM_PHOTON", SAVE_BEAM_PHOTON);
+	japp->SetDefaultParameter("PI0FCALTOFSKIM:SAVE_TOF", SAVE_TOF_POINT);
+	japp->SetDefaultParameter("PI0FCALTOFSKIM:GET_IP", GET_IP);
+	japp->SetDefaultParameter("PI0FCALTOFSKIM:SAVE_L1_TRIGGER", SAVE_L1_TRIGGER);
+
+	MIN_MASS = 0.02; // GeV
+	MAX_MASS = 1.2; // GeV
+	MIN_E = 0.1; // GeV (photon energy cut)
+	//MIN_R      =   20; // cm  (cluster distance to beam line)
+	MAX_DT = 25; // ns  (cluster time diff. cut)
+	//MAX_ETOT   =   12; // GeV (max total FCAL energy)
+	//MIN_BLOCKS =    2; // minumum blocks per cluster
+
+	japp->SetDefaultParameter("PI0FCALTOFSKIM:MIN_MASS", MIN_MASS);
+	japp->SetDefaultParameter("PI0FCALTOFSKIM:MAX_MASS", MAX_MASS);
+	japp->SetDefaultParameter("PI0FCALTOFSKIM:MIN_E", MIN_E);
+	//japp->SetDefaultParameter( "PI0FCALTOFSKIM:MIN_R", MIN_R );
+	japp->SetDefaultParameter("PI0FCALTOFSKIM:MAX_DT", MAX_DT);
+	//japp->SetDefaultParameter( "PI0FCALTOFSKIM:MAX_ETOT", MAX_ETOT );
+	//japp->SetDefaultParameter( "PI0FCALTOFSKIM:MIN_BLOCKS", MIN_BLOCKS );
+	//japp->SetDefaultParameter( "PI0FCALTOFSKIM:WRITE_ROOT", WRITE_ROOT );
 	num_epics_events = 0;
 /*
   if( ! ( WRITE_ROOT || WRITE_EVIO ) ){
@@ -145,15 +147,15 @@ void JEventProcessor_pi0fcaltofskim::Process(const std::shared_ptr<const JEvent>
   vector<const DL1Trigger *> locL1Triggers;
   vector<const DEventRFBunch*> locEventRFBunches;
 
-  loop->Get(locFCALShowers);
-  loop->Get(kinfitVertex);
-  loop->Get(locEventRFBunches);
+  event->Get(locFCALShowers);
+  event->Get(kinfitVertex);
+  event->Get(locEventRFBunches);
   if (SAVE_TOF_POINT == 1)
-    loop->Get(locTofPoints);
+    event->Get(locTofPoints);
   if (SAVE_L1_TRIGGER == 1)
-    loop->Get(locL1Triggers);
+    event->Get(locL1Triggers);
   if (SAVE_BEAM_PHOTON == 1)
-    loop->Get(locBeamPhotons);
+    event->Get(locBeamPhotons);
 
   vector< const DTrackTimeBased* > locTrackTimeBased;
   event->Get(locTrackTimeBased);
@@ -161,20 +163,20 @@ void JEventProcessor_pi0fcaltofskim::Process(const std::shared_ptr<const JEvent>
   vector < const DFCALShower * > matchedShowers;
 
   const DEventWriterEVIO* locEventWriterEVIO = NULL;
-  loop->GetSingle(locEventWriterEVIO);
+  event->GetSingle(locEventWriterEVIO);
 
   // always write out BOR events
-  if(loop->GetJEvent().GetStatusBit(kSTATUS_BOR_EVENT)) {
+  if(GetStatusBit(event, kSTATUS_BOR_EVENT)) {
     //jout << "Found BOR!" << endl;
-    locEventWriterEVIO->Write_EVIOEvent( loop, "pi0fcaltofskim" );
-    return NOERROR;
+    locEventWriterEVIO->Write_EVIOEvent( event, "pi0fcaltofskim" );
+    return;
   }
   // write out the first few EPICS events to save run number & other meta info
-  if(loop->GetJEvent().GetStatusBit(kSTATUS_EPICS_EVENT) && (num_epics_events<5)) {
+  if(GetStatusBit(event, kSTATUS_EPICS_EVENT) && (num_epics_events<5)) {
     //jout << "Found EPICS!" << endl;
-    locEventWriterEVIO->Write_EVIOEvent( loop, "pi0fcaltofskim" );
+    locEventWriterEVIO->Write_EVIOEvent( event, "pi0fcaltofskim" );
     num_epics_events++;
-    return NOERROR;
+    return;
   }
     
   vector< const JObject* > locObjectsToSave;  
@@ -326,7 +328,7 @@ void JEventProcessor_pi0fcaltofskim::Process(const std::shared_ptr<const JEvent>
   if( Candidate ){
     
     if( WRITE_EVIO ){
-      locEventWriterEVIO->Write_EVIOEvent( loop, "pi0fcaltofskim", locObjectsToSave );
+      locEventWriterEVIO->Write_EVIOEvent( event, "pi0fcaltofskim", locObjectsToSave );
     }
     if( WRITE_HDDM ) {
       vector<const DEventWriterHDDM*> locEventWriterHDDMVector;
@@ -402,7 +404,7 @@ void JEventProcessor_pi0fcaltofskim::Process(const std::shared_ptr<const JEvent>
 
     if( WRITE_EVIO ){
 
-      dEventWriterEVIO->Write_EVIOEvent( loop, "pi0fcaltofskim" );
+      dEventWriterEVIO->Write_EVIOEvent( event, "pi0fcaltofskim" );
     }
 
     if( WRITE_ROOT ){

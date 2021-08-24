@@ -211,7 +211,7 @@ DParticleID::DParticleID(const std::shared_ptr<const JEvent>& event)
 
 
         // FCAL geometry
-        loop->GetSingle(dFCALGeometry);
+        event->GetSingle(dFCALGeometry);
 
 	//TOF calibration constants & geometry
 	event->Get(&dTOFGeometry);

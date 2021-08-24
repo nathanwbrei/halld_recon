@@ -11,8 +11,8 @@ set (analysis_programs
 
 foreach (project ${analysis_programs})
     file(GLOB ${project}_SOURCES ${project}/*.cc)
-    add_library(${project} ${${project}_SOURCES})
-    target_include_directories(${project} PRIVATE . ../include ../../libraries ../../libraries/include ../../include ${ROOT_INCLUDE_DIRS} ${JANA_INCLUDE_DIR} ${EVIO_INCLUDE_DIR})
-    target_link_libraries(${project} halld_recon {EVIO_LIB})
+    add_executable(${project} ${${project}_SOURCES})
+    target_include_directories(${project} PRIVATE . ../include ../../libraries ../../libraries/include ../../include ${CCDB_INCLUDE_DIRS} ${ROOT_INCLUDE_DIRS} ${JANA_INCLUDE_DIR} ${EVIO_INCLUDE_DIR})
+    target_link_libraries(${project} halld_recon ${EVIO_LIB} ${CCDB_LIB})
 endforeach()
 

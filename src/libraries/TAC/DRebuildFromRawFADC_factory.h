@@ -51,10 +51,6 @@ public:
 	DRebuildFromRawFADC_factory() : BASE_FACTORY() {
 		this->SetTag(BASE_FACTORY::getTagString() + BUILDER::getTagString());
 	}
-	virtual const char* Tag() {
-		fTag = std::string(BASE_FACTORY::Tag()) + BUILDER::getTagString();
-		return fTag.c_str();
-	}
 	virtual ~DRebuildFromRawFADC_factory() {
 	}
 

@@ -52,7 +52,7 @@ DEventWriterREST::DEventWriterREST(const std::shared_ptr<const JEvent>& locEvent
 	app->SetDefaultParameter("REST:WRITE_DIRC_HITS", REST_WRITE_DIRC_HITS);
 
 	REST_WRITE_CCAL_SHOWERS = true;
-	gPARMS->SetDefaultParameter("REST:WRITE_CCAL_SHOWERS", REST_WRITE_CCAL_SHOWERS);
+	app->SetDefaultParameter("REST:WRITE_CCAL_SHOWERS", REST_WRITE_CCAL_SHOWERS);
 
     CCDB_CONTEXT_STRING = "";
     // if we can get the calibration context from the DANA interface, then save this as well

@@ -280,6 +280,8 @@ set(HALLD_RECON_SOURCES
         FCAL/DFCALCluster.h
         FCAL/DFCALCluster_factory.cc
         FCAL/DFCALCluster_factory.h
+        FCAL/DFCALCluster_factory_Island.cc
+        FCAL/DFCALCluster_factory_Island.h
         FCAL/DFCALDigiHit.h
         FCAL/DFCALGeometry.cc
         FCAL/DFCALGeometry.h
@@ -468,6 +470,8 @@ set(HALLD_RECON_SOURCES
         PID/DNeutralShower.h
         PID/DNeutralShower_factory.cc
         PID/DNeutralShower_factory.h
+        PID/DNeutralShower_factory_HadronPreSelect.cc
+        PID/DNeutralShower_factory_HadronPreSelect.h
         PID/DNeutralShower_factory_PreSelect.cc
         PID/DNeutralShower_factory_PreSelect.h
         PID/DNeutralShower_FCALQualityMLP.h

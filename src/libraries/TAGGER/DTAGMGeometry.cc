@@ -46,7 +46,7 @@ static set<int> runs_announced;
 DTAGMGeometry::DTAGMGeometry(const std::shared_ptr<const JEvent>& event)
 {
 	// keep track of which runs we print out messages for
-	int32_t runnumber = loop->GetJEvent().GetRunNumber();
+	auto runnumber = event->GetRunNumber();
 	pthread_mutex_lock(&print_mutex);
 	bool print_messages = false;
 	if(runs_announced.find(runnumber) == runs_announced.end()){
@@ -55,9 +55,7 @@ DTAGMGeometry::DTAGMGeometry(const std::shared_ptr<const JEvent>& event)
 	}
 	pthread_mutex_unlock(&print_mutex);
 
-	JEvent &event = loop->GetJEvent();
-	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
-	JCalibrationCCDB *jcalib =  dynamic_cast<JCalibrationCCDB*>( dapp->GetJCalibration(event.GetRunNumber()) );
+	JCalibrationCCDB *jcalib =  dynamic_cast<JCalibrationCCDB*>( GetJCalibration(event) );
 
 	Initialize(jcalib, print_messages);
 }

@@ -19,6 +19,7 @@
 #ifndef SAW_s_HDDM
 #define SAW_s_HDDM
 
+#include <map>
 #include <list>
 #include <deque>
 #include <vector>
@@ -34,6 +35,16 @@
 #include <particleType.h>
 #include <pthread.h>
 #include <assert.h>
+#include <climits>
+
+#ifdef HDF5_SUPPORT
+#include <H5Fpublic.h>
+#include <H5Tpublic.h>
+#include <H5Ppublic.h>
+#include <H5Spublic.h>
+#include <H5Dpublic.h>
+#include <H5LTpublic.h>
+#endif
 
 #define MY_SETUP thread_private_data *my_private = lookup_private_data();
 #define MY(VAR) my_private->m_ ## VAR
@@ -62,6 +73,30 @@ enum hddm_type {
    k_hddm_anyURI,
    k_hddm_Particle_t
 };
+
+#ifdef HDF5_SUPPORT
+#define HDF5_DEFAULT_CHUNK_SIZE 100
+// gzip standard compression provided by hdf5
+const H5Z_filter_t k_hdf5_gzip_filter(H5Z_FILTER_DEFLATE);
+// szip standard compression provided by hdf5
+const H5Z_filter_t k_hdf5_szip_filter(H5Z_FILTER_SZIP);
+// bzip2 lossless compression used by PyTables
+const H5Z_filter_t k_hdf5_bzip2_plugin(307);
+// Blosc lossless compression used by PyTables
+const H5Z_filter_t k_hdf5_blosc_plugin(32001);
+// bitshuffle shuffle filter at bit level instead of byte level
+const H5Z_filter_t k_hdf5_bshuf_plugin(32008);
+// JPEG-XR compression filter used in jpeg images
+const H5Z_filter_t k_hdf5_jpeg_plugin(32007);
+// LZ4 fast lossless compression algorithm
+const H5Z_filter_t k_hdf5_lz4_plugin(32004);
+// LZF fast lossless compression used by H5Py project
+const H5Z_filter_t k_hdf5_lzf_plugin(32000);
+// modified LZMA compression filter (MAFISC)
+const H5Z_filter_t k_hdf5_lzma_plugin(32002);
+// zfp rate, accuracy, or precision bounded compression for arrays of floats
+const H5Z_filter_t k_hdf5_zfp_plugin(32013);
+#endif
 
 class HDDM;
 class istream;
@@ -311,7 +346,8 @@ template <class T> class HDDM_ElementList;
 
 class HDDM_Element: public streamable {
  public:
-   ~HDDM_Element() {}
+   virtual ~HDDM_Element() {}
+   virtual void clear() {}
    virtual const void *getAttribute(const std::string &name,
                                     hddm_type *atype=0) const {
       return 0;
@@ -324,22 +360,26 @@ class HDDM_Element: public streamable {
    }
    friend class HDDM_ElementList<HDDM_Element>;
  protected:
-   HDDM_Element() : m_parent(0), m_host(0) {}
-   HDDM_Element(HDDM_Element *parent)
+   HDDM_Element() : m_parent(0), m_host(0), m_owner(0) {}
+   HDDM_Element(HDDM_Element *parent, int owner=0)
     : m_parent(parent),
-      m_host(parent->m_host)
-    {}
-   HDDM_Element(HDDM_Element &src)
+      m_host((parent != 0)? parent->m_host : 0),
+      m_owner(owner)
+   {}
+   HDDM_Element(const HDDM_Element &src)
     : m_parent(src.m_parent),
-      m_host(src.m_host)
+      m_host(src.m_host),
+      m_owner(0)
    {}
    HDDM_Element *m_parent;
    HDDM *m_host;
+   int m_owner;
 };
 
 template <class T>
 class HDDM_ElementList: public streamable {
  public:
+   HDDM_ElementList() : m_host_plist(0), m_parent(0) {}
    HDDM_ElementList(typename std::list<T*> *plist,
                     typename std::list<T*>::iterator begin,
                     typename std::list<T*>::iterator end,
@@ -347,7 +387,8 @@ class HDDM_ElementList: public streamable {
     : m_host_plist(plist),
       m_first_iter(begin),
       m_last_iter(end),
-      m_parent(parent)
+      m_parent(parent),
+      m_ref(0)
    {
       for (m_size = 0; begin != end; ++m_size, ++begin) {}
       if (m_size) {
@@ -359,8 +400,9 @@ class HDDM_ElementList: public streamable {
     : m_host_plist(src.m_host_plist),
       m_first_iter(src.m_first_iter),
       m_last_iter(src.m_last_iter),
-      m_parent(0),
-      m_size(src.m_size)
+      m_parent(src.m_parent),
+      m_size(src.m_size),
+      m_ref(src.m_ref)
    {}
 
    bool empty() const { return (m_size == 0); }
@@ -432,7 +474,7 @@ class HDDM_ElementList: public streamable {
             return 0;
          }
          iterator iter2(iter);
-         for (int n=1; n < m_size; ++n) {
+         for (int n=1; n < INT_MAX; ++n) {
             if (++iter == *this) {
                return n;
             }
@@ -440,7 +482,10 @@ class HDDM_ElementList: public streamable {
                return -n;
             }
          }
-         return m_size;
+         return INT_MAX;
+      }
+      void *address() const {
+         return &*(typename std::list<T*>::iterator)(*this);
       }
    };
 
@@ -506,6 +551,9 @@ class HDDM_ElementList: public streamable {
          }
          return m_size;
       }
+      void *address() const {
+         return &*(typename std::list<T*>::iterator)(*this);
+      }
    };
 
    iterator begin() const { return m_first_iter; }
@@ -520,18 +568,18 @@ class HDDM_ElementList: public streamable {
       iterator it = insert(start, count);
       typename std::list<T*>::iterator iter(it);
       for (int n=0; n<count; ++n, ++iter) {
-         *iter = new T(m_parent);
+         *iter = new T(m_parent, 1);
       }
       return HDDM_ElementList(m_host_plist, it, it+count, m_parent);
    }
 
    void del(int count=-1, int start=0) {
+      if (m_size == 0 || count == 0) {
+         return;
+      }
       if (m_parent == 0) {
          throw std::runtime_error("HDDM_ElementList error - "
                                   "attempt to delete from immutable list");
-      }
-      if (m_size == 0 || count == 0) {
-         return;
       }
       iterator iter_begin(begin());
       iterator iter_end(end());
@@ -549,7 +597,10 @@ class HDDM_ElementList: public streamable {
       }
       typename std::list<T*>::iterator iter;
       for (iter = iter_begin; iter != iter_end; ++iter) {
-         delete *iter;
+         if ((*iter)->m_owner)
+            delete *iter;
+         else
+            (*iter)->clear();
       }
       erase(start, count);
    }
@@ -559,12 +610,25 @@ class HDDM_ElementList: public streamable {
       int n2 = (last < 0)? last + m_size + 1 : last + 1;
       int count = n2 - n1;
       iterator iter_begin;
-      if (first > 0)
+      if (first >= 0)
          iter_begin = begin() + first;
-      else if (first < 0)
+      else
          iter_begin = end() + first;
       iterator iter_end(iter_begin + count);
       return HDDM_ElementList(m_host_plist, iter_begin, iter_end);
+   }
+   void debug_print() {
+      std::cout << "HDDM_ElementList<T> contents printout:"
+                << std::endl
+                << "    this         = " << &*this << std::endl
+                << "    m_parent     = " << m_parent << std::endl
+                << "    m_host_plist = " << m_host_plist << std::endl
+                << "    m_size       = " << m_size << std::endl
+                << "    m_ref        = " << m_ref << std::endl
+                << "    m_first_iter = " << m_first_iter.address()
+                << std::endl
+                << "    m_last_iter  = " << m_last_iter.address()
+                << std::endl;
    }
 
    void streamer(istream &istr) {
@@ -608,8 +672,6 @@ class HDDM_ElementList: public streamable {
    }
 
  private:
-   HDDM_ElementList() {}
-
    iterator insert(int start, int count) {
       if (m_size == 0) {
          if (count > 0) {
@@ -710,21 +772,45 @@ class HDDM_ElementList: public streamable {
       }
    }
 
+ public:
+   void inflate(HDDM *host, std::list<T*> *host_plist, HDDM_Element *parent) {
+      m_parent = parent;
+      m_host_plist = host_plist;
+      m_first_iter = m_host_plist->begin();
+      m_first_iter += m_ref;
+      m_last_iter = m_first_iter;
+      m_last_iter += m_size;
+      for (iterator iter = m_first_iter; iter != m_last_iter; ++iter) {
+         iter->m_parent = parent;
+         iter->m_host = host;
+      }
+      if (m_size) {
+         --m_last_iter;
+      }
+   }
+   void deflate() {
+      iterator iter = m_host_plist->begin();
+      for (m_ref=0; iter != m_first_iter; ++iter, ++m_ref) {}
+   }
+
  protected:
    std::list<T*> *m_host_plist;
    iterator m_first_iter;
    iterator m_last_iter;
    HDDM_Element *m_parent;
+ public:
    int m_size;
+   int m_ref;
 };
 
 template <class T>
 class HDDM_ElementLink: public HDDM_ElementList<T> {
  public:
+   HDDM_ElementLink() {}
    HDDM_ElementLink(typename std::list<T*> *plist,
                     typename std::list<T*>::iterator begin,
                     typename std::list<T*>::iterator end,
-                    HDDM_Element *parent)
+                    HDDM_Element *parent=0)
     : HDDM_ElementList<T>(plist,begin,end,parent)
    {}
    HDDM_ElementLink(const HDDM_ElementList<T> &src)
@@ -741,14 +827,19 @@ class HDDM_ElementLink: public HDDM_ElementList<T> {
          HDDM_ElementList<T>::begin()->streamer(ostr);
       }
    }
-
- protected:
-   HDDM_ElementLink() {}
 };
+
+#ifdef HDF5_SUPPORT
+typedef struct {
+   size_t len;
+   void *p;
+} hdf5_hvl_t;
+#endif
 
 class Geometry: public HDDM_Element {
  public:
    ~Geometry();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -763,15 +854,24 @@ class Geometry: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Geometry>;
    friend class HDDM_ElementLink<Geometry>;
+   Geometry() {}
+   Geometry(HDDM_Element *parent, int owner=0);
  private:
-   Geometry(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    std::string m_md5reconstruction;
+   const char *mx_md5reconstruction;
    std::string m_md5simulation;
+   const char *mx_md5simulation;
    std::string m_md5smear;
+   const char *mx_md5smear;
 };
 
 typedef HDDM_ElementList<Geometry> GeometryList;
@@ -780,6 +880,7 @@ typedef HDDM_ElementLink<Geometry> GeometryLink;
 class DataVersionString: public HDDM_Element {
  public:
    ~DataVersionString();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -792,13 +893,20 @@ class DataVersionString: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<DataVersionString>;
    friend class HDDM_ElementLink<DataVersionString>;
+   DataVersionString() {}
+   DataVersionString(HDDM_Element *parent, int owner=0);
  private:
-   DataVersionString(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    std::string m_text;
+   const char *mx_text;
 };
 
 typedef HDDM_ElementList<DataVersionString> DataVersionStringList;
@@ -807,6 +915,7 @@ typedef HDDM_ElementLink<DataVersionString> DataVersionStringLink;
 class CcdbContext: public HDDM_Element {
  public:
    ~CcdbContext();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -819,13 +928,20 @@ class CcdbContext: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<CcdbContext>;
    friend class HDDM_ElementLink<CcdbContext>;
+   CcdbContext() {}
+   CcdbContext(HDDM_Element *parent, int owner=0);
  private:
-   CcdbContext(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    std::string m_text;
+   const char *mx_text;
 };
 
 typedef HDDM_ElementList<CcdbContext> CcdbContextList;
@@ -834,6 +950,7 @@ typedef HDDM_ElementLink<CcdbContext> CcdbContextLink;
 class Momentum: public HDDM_Element {
  public:
    ~Momentum();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -864,10 +981,16 @@ class Momentum: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Momentum>;
    friend class HDDM_ElementLink<Momentum>;
+   Momentum() {}
+   Momentum(HDDM_Element *parent, int owner=0);
  private:
-   Momentum(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -882,6 +1005,7 @@ typedef HDDM_ElementLink<Momentum> MomentumLink;
 class Polarization: public HDDM_Element {
  public:
    ~Polarization();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -905,10 +1029,16 @@ class Polarization: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Polarization>;
    friend class HDDM_ElementLink<Polarization>;
+   Polarization() {}
+   Polarization(HDDM_Element *parent, int owner=0);
  private:
-   Polarization(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_Px;
@@ -922,6 +1052,7 @@ typedef HDDM_ElementLink<Polarization> PolarizationLink;
 class Properties: public HDDM_Element {
  public:
    ~Properties();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -948,10 +1079,16 @@ class Properties: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Properties>;
    friend class HDDM_ElementLink<Properties>;
+   Properties() {}
+   Properties(HDDM_Element *parent, int owner=0);
  private:
-   Properties(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_charge;
@@ -964,6 +1101,7 @@ typedef HDDM_ElementLink<Properties> PropertiesLink;
 class Beam: public HDDM_Element {
  public:
    ~Beam();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -989,10 +1127,16 @@ class Beam: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Beam>;
    friend class HDDM_ElementLink<Beam>;
+   Beam() {}
+   Beam(HDDM_Element *parent, int owner=0);
  private:
-   Beam(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_type;
@@ -1007,6 +1151,7 @@ typedef HDDM_ElementLink<Beam> BeamLink;
 class Target: public HDDM_Element {
  public:
    ~Target();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1032,10 +1177,16 @@ class Target: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Target>;
    friend class HDDM_ElementLink<Target>;
+   Target() {}
+   Target(HDDM_Element *parent, int owner=0);
  private:
-   Target(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_type;
@@ -1050,6 +1201,7 @@ typedef HDDM_ElementLink<Target> TargetLink;
 class Product: public HDDM_Element {
  public:
    ~Product();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1085,10 +1237,16 @@ class Product: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Product>;
    friend class HDDM_ElementLink<Product>;
+   Product() {}
+   Product(HDDM_Element *parent, int owner=0);
  private:
-   Product(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_decayVertex;
@@ -1108,6 +1266,7 @@ typedef HDDM_ElementLink<Product> ProductLink;
 class Origin: public HDDM_Element {
  public:
    ~Origin();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1134,10 +1293,16 @@ class Origin: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Origin>;
    friend class HDDM_ElementLink<Origin>;
+   Origin() {}
+   Origin(HDDM_Element *parent, int owner=0);
  private:
-   Origin(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_t;
@@ -1152,6 +1317,7 @@ typedef HDDM_ElementLink<Origin> OriginLink;
 class Vertex: public HDDM_Element {
  public:
    ~Vertex();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1172,10 +1338,16 @@ class Vertex: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Vertex>;
    friend class HDDM_ElementLink<Vertex>;
+   Vertex() {}
+   Vertex(HDDM_Element *parent, int owner=0);
  private:
-   Vertex(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    ProductList m_product_list;
@@ -1188,6 +1360,7 @@ typedef HDDM_ElementLink<Vertex> VertexLink;
 class Random: public HDDM_Element {
  public:
    ~Random();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1208,10 +1381,16 @@ class Random: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Random>;
    friend class HDDM_ElementLink<Random>;
+   Random() {}
+   Random(HDDM_Element *parent, int owner=0);
  private:
-   Random(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_seed1;
@@ -1226,6 +1405,7 @@ typedef HDDM_ElementLink<Random> RandomLink;
 class UserDataFloat: public HDDM_Element {
  public:
    ~UserDataFloat();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1243,14 +1423,21 @@ class UserDataFloat: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<UserDataFloat>;
    friend class HDDM_ElementLink<UserDataFloat>;
+   UserDataFloat() {}
+   UserDataFloat(HDDM_Element *parent, int owner=0);
  private:
-   UserDataFloat(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_data;
    std::string m_meaning;
+   const char *mx_meaning;
 };
 
 typedef HDDM_ElementList<UserDataFloat> UserDataFloatList;
@@ -1259,6 +1446,7 @@ typedef HDDM_ElementLink<UserDataFloat> UserDataFloatLink;
 class UserDataInt: public HDDM_Element {
  public:
    ~UserDataInt();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1276,14 +1464,21 @@ class UserDataInt: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<UserDataInt>;
    friend class HDDM_ElementLink<UserDataInt>;
+   UserDataInt() {}
+   UserDataInt(HDDM_Element *parent, int owner=0);
  private:
-   UserDataInt(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_data;
    std::string m_meaning;
+   const char *mx_meaning;
 };
 
 typedef HDDM_ElementList<UserDataInt> UserDataIntList;
@@ -1292,6 +1487,7 @@ typedef HDDM_ElementLink<UserDataInt> UserDataIntLink;
 class UserData: public HDDM_Element {
  public:
    ~UserData();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1314,13 +1510,20 @@ class UserData: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<UserData>;
    friend class HDDM_ElementLink<UserData>;
+   UserData() {}
+   UserData(HDDM_Element *parent, int owner=0);
  private:
-   UserData(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    std::string m_description;
+   const char *mx_description;
    UserDataFloatList m_userDataFloat_list;
    UserDataIntList m_userDataInt_list;
 };
@@ -1331,6 +1534,7 @@ typedef HDDM_ElementLink<UserData> UserDataLink;
 class Reaction: public HDDM_Element {
  public:
    ~Reaction();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1365,10 +1569,16 @@ class Reaction: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Reaction>;
    friend class HDDM_ElementLink<Reaction>;
+   Reaction() {}
+   Reaction(HDDM_Element *parent, int owner=0);
  private:
-   Reaction(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_type;
@@ -1386,6 +1596,7 @@ typedef HDDM_ElementLink<Reaction> ReactionLink;
 class CdcDigihit: public HDDM_Element {
  public:
    ~CdcDigihit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1402,10 +1613,16 @@ class CdcDigihit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<CdcDigihit>;
    friend class HDDM_ElementLink<CdcDigihit>;
+   CdcDigihit() {}
+   CdcDigihit(HDDM_Element *parent, int owner=0);
  private:
-   CdcDigihit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_peakAmp;
@@ -1417,6 +1634,7 @@ typedef HDDM_ElementLink<CdcDigihit> CdcDigihitLink;
 class CdcHitQF: public HDDM_Element {
  public:
    ~CdcHitQF();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1433,10 +1651,16 @@ class CdcHitQF: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<CdcHitQF>;
    friend class HDDM_ElementLink<CdcHitQF>;
+   CdcHitQF() {}
+   CdcHitQF(HDDM_Element *parent, int owner=0);
  private:
-   CdcHitQF(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_QF;
@@ -1448,6 +1672,7 @@ typedef HDDM_ElementLink<CdcHitQF> CdcHitQFLink;
 class CdcStrawHit: public HDDM_Element {
  public:
    ~CdcStrawHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1472,10 +1697,16 @@ class CdcStrawHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<CdcStrawHit>;
    friend class HDDM_ElementLink<CdcStrawHit>;
+   CdcStrawHit() {}
+   CdcStrawHit(HDDM_Element *parent, int owner=0);
  private:
-   CdcStrawHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_q;
@@ -1490,6 +1721,7 @@ typedef HDDM_ElementLink<CdcStrawHit> CdcStrawHitLink;
 class CdcStrawTruthHit: public HDDM_Element {
  public:
    ~CdcStrawTruthHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1512,10 +1744,16 @@ class CdcStrawTruthHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<CdcStrawTruthHit>;
    friend class HDDM_ElementLink<CdcStrawTruthHit>;
+   CdcStrawTruthHit() {}
+   CdcStrawTruthHit(HDDM_Element *parent, int owner=0);
  private:
-   CdcStrawTruthHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_d;
@@ -1531,6 +1769,7 @@ typedef HDDM_ElementLink<CdcStrawTruthHit> CdcStrawTruthHitLink;
 class CdcStraw: public HDDM_Element {
  public:
    ~CdcStraw();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1553,10 +1792,16 @@ class CdcStraw: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<CdcStraw>;
    friend class HDDM_ElementLink<CdcStraw>;
+   CdcStraw() {}
+   CdcStraw(HDDM_Element *parent, int owner=0);
  private:
-   CdcStraw(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_ring;
@@ -1571,6 +1816,7 @@ typedef HDDM_ElementLink<CdcStraw> CdcStrawLink;
 class TrackID: public HDDM_Element {
  public:
    ~TrackID();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1603,10 +1849,16 @@ class TrackID: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<TrackID>;
    friend class HDDM_ElementLink<TrackID>;
+   TrackID() {}
+   TrackID(HDDM_Element *parent, int owner=0);
  private:
-   TrackID(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_itrack;
@@ -1618,6 +1870,7 @@ typedef HDDM_ElementLink<TrackID> TrackIDLink;
 class CdcTruthPoint: public HDDM_Element {
  public:
    ~CdcTruthPoint();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1656,10 +1909,16 @@ class CdcTruthPoint: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<CdcTruthPoint>;
    friend class HDDM_ElementLink<CdcTruthPoint>;
+   CdcTruthPoint() {}
+   CdcTruthPoint(HDDM_Element *parent, int owner=0);
  private:
-   CdcTruthPoint(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_dEdx;
@@ -1683,6 +1942,7 @@ typedef HDDM_ElementLink<CdcTruthPoint> CdcTruthPointLink;
 class CentralDC: public HDDM_Element {
  public:
    ~CentralDC();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1701,10 +1961,16 @@ class CentralDC: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<CentralDC>;
    friend class HDDM_ElementLink<CentralDC>;
+   CentralDC() {}
+   CentralDC(HDDM_Element *parent, int owner=0);
  private:
-   CentralDC(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    CdcStrawList m_cdcStraw_list;
@@ -1717,6 +1983,7 @@ typedef HDDM_ElementLink<CentralDC> CentralDCLink;
 class FdcAnodeHit: public HDDM_Element {
  public:
    ~FdcAnodeHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1734,10 +2001,16 @@ class FdcAnodeHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FdcAnodeHit>;
    friend class HDDM_ElementLink<FdcAnodeHit>;
+   FdcAnodeHit() {}
+   FdcAnodeHit(HDDM_Element *parent, int owner=0);
  private:
-   FdcAnodeHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_dE;
@@ -1750,6 +2023,7 @@ typedef HDDM_ElementLink<FdcAnodeHit> FdcAnodeHitLink;
 class FdcAnodeTruthHit: public HDDM_Element {
  public:
    ~FdcAnodeTruthHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1775,10 +2049,16 @@ class FdcAnodeTruthHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FdcAnodeTruthHit>;
    friend class HDDM_ElementLink<FdcAnodeTruthHit>;
+   FdcAnodeTruthHit() {}
+   FdcAnodeTruthHit(HDDM_Element *parent, int owner=0);
  private:
-   FdcAnodeTruthHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_d;
@@ -1795,6 +2075,7 @@ typedef HDDM_ElementLink<FdcAnodeTruthHit> FdcAnodeTruthHitLink;
 class FdcAnodeWire: public HDDM_Element {
  public:
    ~FdcAnodeWire();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1817,10 +2098,16 @@ class FdcAnodeWire: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FdcAnodeWire>;
    friend class HDDM_ElementLink<FdcAnodeWire>;
+   FdcAnodeWire() {}
+   FdcAnodeWire(HDDM_Element *parent, int owner=0);
  private:
-   FdcAnodeWire(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_wire;
@@ -1834,6 +2121,7 @@ typedef HDDM_ElementLink<FdcAnodeWire> FdcAnodeWireLink;
 class FdcDigihit: public HDDM_Element {
  public:
    ~FdcDigihit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1852,10 +2140,16 @@ class FdcDigihit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FdcDigihit>;
    friend class HDDM_ElementLink<FdcDigihit>;
+   FdcDigihit() {}
+   FdcDigihit(HDDM_Element *parent, int owner=0);
  private:
-   FdcDigihit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_peakAmp;
@@ -1867,6 +2161,7 @@ typedef HDDM_ElementLink<FdcDigihit> FdcDigihitLink;
 class FdcCathodeHit: public HDDM_Element {
  public:
    ~FdcCathodeHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1889,10 +2184,16 @@ class FdcCathodeHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FdcCathodeHit>;
    friend class HDDM_ElementLink<FdcCathodeHit>;
+   FdcCathodeHit() {}
+   FdcCathodeHit(HDDM_Element *parent, int owner=0);
  private:
-   FdcCathodeHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_q;
@@ -1906,6 +2207,7 @@ typedef HDDM_ElementLink<FdcCathodeHit> FdcCathodeHitLink;
 class FdcCathodeTruthHit: public HDDM_Element {
  public:
    ~FdcCathodeTruthHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1928,10 +2230,16 @@ class FdcCathodeTruthHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FdcCathodeTruthHit>;
    friend class HDDM_ElementLink<FdcCathodeTruthHit>;
+   FdcCathodeTruthHit() {}
+   FdcCathodeTruthHit(HDDM_Element *parent, int owner=0);
  private:
-   FdcCathodeTruthHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_itrack;
@@ -1946,6 +2254,7 @@ typedef HDDM_ElementLink<FdcCathodeTruthHit> FdcCathodeTruthHitLink;
 class FdcCathodeStrip: public HDDM_Element {
  public:
    ~FdcCathodeStrip();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -1970,10 +2279,16 @@ class FdcCathodeStrip: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FdcCathodeStrip>;
    friend class HDDM_ElementLink<FdcCathodeStrip>;
+   FdcCathodeStrip() {}
+   FdcCathodeStrip(HDDM_Element *parent, int owner=0);
  private:
-   FdcCathodeStrip(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_plane;
@@ -1988,6 +2303,7 @@ typedef HDDM_ElementLink<FdcCathodeStrip> FdcCathodeStripLink;
 class FdcTruthPoint: public HDDM_Element {
  public:
    ~FdcTruthPoint();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2030,10 +2346,16 @@ class FdcTruthPoint: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FdcTruthPoint>;
    friend class HDDM_ElementLink<FdcTruthPoint>;
+   FdcTruthPoint() {}
+   FdcTruthPoint(HDDM_Element *parent, int owner=0);
  private:
-   FdcTruthPoint(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -2058,6 +2380,7 @@ typedef HDDM_ElementLink<FdcTruthPoint> FdcTruthPointLink;
 class FdcChamber: public HDDM_Element {
  public:
    ~FdcChamber();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2084,10 +2407,16 @@ class FdcChamber: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FdcChamber>;
    friend class HDDM_ElementLink<FdcChamber>;
+   FdcChamber() {}
+   FdcChamber(HDDM_Element *parent, int owner=0);
  private:
-   FdcChamber(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_layer;
@@ -2103,6 +2432,7 @@ typedef HDDM_ElementLink<FdcChamber> FdcChamberLink;
 class ForwardDC: public HDDM_Element {
  public:
    ~ForwardDC();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2117,10 +2447,16 @@ class ForwardDC: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<ForwardDC>;
    friend class HDDM_ElementLink<ForwardDC>;
+   ForwardDC() {}
+   ForwardDC(HDDM_Element *parent, int owner=0);
  private:
-   ForwardDC(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    FdcChamberList m_fdcChamber_list;
@@ -2132,6 +2468,7 @@ typedef HDDM_ElementLink<ForwardDC> ForwardDCLink;
 class StcDigihit: public HDDM_Element {
  public:
    ~StcDigihit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2147,10 +2484,16 @@ class StcDigihit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<StcDigihit>;
    friend class HDDM_ElementLink<StcDigihit>;
+   StcDigihit() {}
+   StcDigihit(HDDM_Element *parent, int owner=0);
  private:
-   StcDigihit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_peakAmp;
@@ -2162,6 +2505,7 @@ typedef HDDM_ElementLink<StcDigihit> StcDigihitLink;
 class StcHit: public HDDM_Element {
  public:
    ~StcHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2181,10 +2525,16 @@ class StcHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<StcHit>;
    friend class HDDM_ElementLink<StcHit>;
+   StcHit() {}
+   StcHit(HDDM_Element *parent, int owner=0);
  private:
-   StcHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_dE;
@@ -2198,6 +2548,7 @@ typedef HDDM_ElementLink<StcHit> StcHitLink;
 class StcTruthHit: public HDDM_Element {
  public:
    ~StcTruthHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2217,10 +2568,16 @@ class StcTruthHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<StcTruthHit>;
    friend class HDDM_ElementLink<StcTruthHit>;
+   StcTruthHit() {}
+   StcTruthHit(HDDM_Element *parent, int owner=0);
  private:
-   StcTruthHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_dE;
@@ -2235,6 +2592,7 @@ typedef HDDM_ElementLink<StcTruthHit> StcTruthHitLink;
 class StcPaddle: public HDDM_Element {
  public:
    ~StcPaddle();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2255,10 +2613,16 @@ class StcPaddle: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<StcPaddle>;
    friend class HDDM_ElementLink<StcPaddle>;
+   StcPaddle() {}
+   StcPaddle(HDDM_Element *parent, int owner=0);
  private:
-   StcPaddle(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_sector;
@@ -2272,6 +2636,7 @@ typedef HDDM_ElementLink<StcPaddle> StcPaddleLink;
 class StcTruthPoint: public HDDM_Element {
  public:
    ~StcTruthPoint();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2312,10 +2677,16 @@ class StcTruthPoint: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<StcTruthPoint>;
    friend class HDDM_ElementLink<StcTruthPoint>;
+   StcTruthPoint() {}
+   StcTruthPoint(HDDM_Element *parent, int owner=0);
  private:
-   StcTruthPoint(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -2340,6 +2711,7 @@ typedef HDDM_ElementLink<StcTruthPoint> StcTruthPointLink;
 class StartCntr: public HDDM_Element {
  public:
    ~StartCntr();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2358,10 +2730,16 @@ class StartCntr: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<StartCntr>;
    friend class HDDM_ElementLink<StartCntr>;
+   StartCntr() {}
+   StartCntr(HDDM_Element *parent, int owner=0);
  private:
-   StartCntr(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    StcPaddleList m_stcPaddle_list;
@@ -2374,6 +2752,7 @@ typedef HDDM_ElementLink<StartCntr> StartCntrLink;
 class BcalSiPMUpHit: public HDDM_Element {
  public:
    ~BcalSiPMUpHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2391,10 +2770,16 @@ class BcalSiPMUpHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<BcalSiPMUpHit>;
    friend class HDDM_ElementLink<BcalSiPMUpHit>;
+   BcalSiPMUpHit() {}
+   BcalSiPMUpHit(HDDM_Element *parent, int owner=0);
  private:
-   BcalSiPMUpHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -2407,6 +2792,7 @@ typedef HDDM_ElementLink<BcalSiPMUpHit> BcalSiPMUpHitLink;
 class BcalSiPMDownHit: public HDDM_Element {
  public:
    ~BcalSiPMDownHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2424,10 +2810,16 @@ class BcalSiPMDownHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<BcalSiPMDownHit>;
    friend class HDDM_ElementLink<BcalSiPMDownHit>;
+   BcalSiPMDownHit() {}
+   BcalSiPMDownHit(HDDM_Element *parent, int owner=0);
  private:
-   BcalSiPMDownHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -2440,6 +2832,7 @@ typedef HDDM_ElementLink<BcalSiPMDownHit> BcalSiPMDownHitLink;
 class BcalSiPMTruth: public HDDM_Element {
  public:
    ~BcalSiPMTruth();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2461,10 +2854,16 @@ class BcalSiPMTruth: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<BcalSiPMTruth>;
    friend class HDDM_ElementLink<BcalSiPMTruth>;
+   BcalSiPMTruth() {}
+   BcalSiPMTruth(HDDM_Element *parent, int owner=0);
  private:
-   BcalSiPMTruth(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -2477,6 +2876,7 @@ typedef HDDM_ElementLink<BcalSiPMTruth> BcalSiPMTruthLink;
 class BcalSiPMSpectrum: public HDDM_Element {
  public:
    ~BcalSiPMSpectrum();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2502,16 +2902,23 @@ class BcalSiPMSpectrum: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<BcalSiPMSpectrum>;
    friend class HDDM_ElementLink<BcalSiPMSpectrum>;
+   BcalSiPMSpectrum() {}
+   BcalSiPMSpectrum(HDDM_Element *parent, int owner=0);
  private:
-   BcalSiPMSpectrum(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_bin_width;
    int m_end;
    float m_tstart;
    std::string m_vals;
+   const char *mx_vals;
    BcalSiPMTruthLink m_bcalSiPMTruth_link;
 };
 
@@ -2521,6 +2928,7 @@ typedef HDDM_ElementLink<BcalSiPMSpectrum> BcalSiPMSpectrumLink;
 class BcalfADCHit: public HDDM_Element {
  public:
    ~BcalfADCHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2540,10 +2948,16 @@ class BcalfADCHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<BcalfADCHit>;
    friend class HDDM_ElementLink<BcalfADCHit>;
+   BcalfADCHit() {}
+   BcalfADCHit(HDDM_Element *parent, int owner=0);
  private:
-   BcalfADCHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -2557,6 +2971,7 @@ typedef HDDM_ElementLink<BcalfADCHit> BcalfADCHitLink;
 class BcalfADCPeak: public HDDM_Element {
  public:
    ~BcalfADCPeak();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2575,10 +2990,16 @@ class BcalfADCPeak: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<BcalfADCPeak>;
    friend class HDDM_ElementLink<BcalfADCPeak>;
+   BcalfADCPeak() {}
+   BcalfADCPeak(HDDM_Element *parent, int owner=0);
  private:
-   BcalfADCPeak(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_peakAmp;
@@ -2590,6 +3011,7 @@ typedef HDDM_ElementLink<BcalfADCPeak> BcalfADCPeakLink;
 class BcalfADCDigiHit: public HDDM_Element {
  public:
    ~BcalfADCDigiHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2613,10 +3035,16 @@ class BcalfADCDigiHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<BcalfADCDigiHit>;
    friend class HDDM_ElementLink<BcalfADCDigiHit>;
+   BcalfADCDigiHit() {}
+   BcalfADCDigiHit(HDDM_Element *parent, int owner=0);
  private:
-   BcalfADCDigiHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_end;
@@ -2631,6 +3059,7 @@ typedef HDDM_ElementLink<BcalfADCDigiHit> BcalfADCDigiHitLink;
 class BcalTDCHit: public HDDM_Element {
  public:
    ~BcalTDCHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2648,10 +3077,16 @@ class BcalTDCHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<BcalTDCHit>;
    friend class HDDM_ElementLink<BcalTDCHit>;
+   BcalTDCHit() {}
+   BcalTDCHit(HDDM_Element *parent, int owner=0);
  private:
-   BcalTDCHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_end;
@@ -2664,6 +3099,7 @@ typedef HDDM_ElementLink<BcalTDCHit> BcalTDCHitLink;
 class BcalTDCDigiHit: public HDDM_Element {
  public:
    ~BcalTDCDigiHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2681,10 +3117,16 @@ class BcalTDCDigiHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<BcalTDCDigiHit>;
    friend class HDDM_ElementLink<BcalTDCDigiHit>;
+   BcalTDCDigiHit() {}
+   BcalTDCDigiHit(HDDM_Element *parent, int owner=0);
  private:
-   BcalTDCDigiHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_end;
@@ -2697,6 +3139,7 @@ typedef HDDM_ElementLink<BcalTDCDigiHit> BcalTDCDigiHitLink;
 class BcalTruthHit: public HDDM_Element {
  public:
    ~BcalTruthHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2718,10 +3161,16 @@ class BcalTruthHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<BcalTruthHit>;
    friend class HDDM_ElementLink<BcalTruthHit>;
+   BcalTruthHit() {}
+   BcalTruthHit(HDDM_Element *parent, int owner=0);
  private:
-   BcalTruthHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -2736,6 +3185,7 @@ typedef HDDM_ElementLink<BcalTruthHit> BcalTruthHitLink;
 class BcalCell: public HDDM_Element {
  public:
    ~BcalCell();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2784,10 +3234,16 @@ class BcalCell: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<BcalCell>;
    friend class HDDM_ElementLink<BcalCell>;
+   BcalCell() {}
+   BcalCell(HDDM_Element *parent, int owner=0);
  private:
-   BcalCell(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_layer;
@@ -2809,6 +3265,7 @@ typedef HDDM_ElementLink<BcalCell> BcalCellLink;
 class BcalTruthIncidentParticle: public HDDM_Element {
  public:
    ~BcalTruthIncidentParticle();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2835,10 +3292,16 @@ class BcalTruthIncidentParticle: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<BcalTruthIncidentParticle>;
    friend class HDDM_ElementLink<BcalTruthIncidentParticle>;
+   BcalTruthIncidentParticle() {}
+   BcalTruthIncidentParticle(HDDM_Element *parent, int owner=0);
  private:
-   BcalTruthIncidentParticle(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_id;
@@ -2857,6 +3320,7 @@ typedef HDDM_ElementLink<BcalTruthIncidentParticle> BcalTruthIncidentParticleLin
 class BcalTruthShower: public HDDM_Element {
  public:
    ~BcalTruthShower();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2893,10 +3357,16 @@ class BcalTruthShower: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<BcalTruthShower>;
    friend class HDDM_ElementLink<BcalTruthShower>;
+   BcalTruthShower() {}
+   BcalTruthShower(HDDM_Element *parent, int owner=0);
  private:
-   BcalTruthShower(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -2919,6 +3389,7 @@ typedef HDDM_ElementLink<BcalTruthShower> BcalTruthShowerLink;
 class BarrelEMcal: public HDDM_Element {
  public:
    ~BarrelEMcal();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2941,10 +3412,16 @@ class BarrelEMcal: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<BarrelEMcal>;
    friend class HDDM_ElementLink<BarrelEMcal>;
+   BarrelEMcal() {}
+   BarrelEMcal(HDDM_Element *parent, int owner=0);
  private:
-   BarrelEMcal(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    BcalCellList m_bcalCell_list;
@@ -2958,6 +3435,7 @@ typedef HDDM_ElementLink<BarrelEMcal> BarrelEMcalLink;
 class GcalHit: public HDDM_Element {
  public:
    ~GcalHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -2975,10 +3453,16 @@ class GcalHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<GcalHit>;
    friend class HDDM_ElementLink<GcalHit>;
+   GcalHit() {}
+   GcalHit(HDDM_Element *parent, int owner=0);
  private:
-   GcalHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -2992,6 +3476,7 @@ typedef HDDM_ElementLink<GcalHit> GcalHitLink;
 class GcalTruthHit: public HDDM_Element {
  public:
    ~GcalTruthHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3009,10 +3494,16 @@ class GcalTruthHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<GcalTruthHit>;
    friend class HDDM_ElementLink<GcalTruthHit>;
+   GcalTruthHit() {}
+   GcalTruthHit(HDDM_Element *parent, int owner=0);
  private:
-   GcalTruthHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -3026,6 +3517,7 @@ typedef HDDM_ElementLink<GcalTruthHit> GcalTruthHitLink;
 class GcalCell: public HDDM_Element {
  public:
    ~GcalCell();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3046,10 +3538,16 @@ class GcalCell: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<GcalCell>;
    friend class HDDM_ElementLink<GcalCell>;
+   GcalCell() {}
+   GcalCell(HDDM_Element *parent, int owner=0);
  private:
-   GcalCell(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_module;
@@ -3063,6 +3561,7 @@ typedef HDDM_ElementLink<GcalCell> GcalCellLink;
 class GcalTruthShower: public HDDM_Element {
  public:
    ~GcalTruthShower();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3099,10 +3598,16 @@ class GcalTruthShower: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<GcalTruthShower>;
    friend class HDDM_ElementLink<GcalTruthShower>;
+   GcalTruthShower() {}
+   GcalTruthShower(HDDM_Element *parent, int owner=0);
  private:
-   GcalTruthShower(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -3125,6 +3630,7 @@ typedef HDDM_ElementLink<GcalTruthShower> GcalTruthShowerLink;
 class GapEMcal: public HDDM_Element {
  public:
    ~GapEMcal();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3143,10 +3649,16 @@ class GapEMcal: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<GapEMcal>;
    friend class HDDM_ElementLink<GapEMcal>;
+   GapEMcal() {}
+   GapEMcal(HDDM_Element *parent, int owner=0);
  private:
-   GapEMcal(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    GcalCellList m_gcalCell_list;
@@ -3159,6 +3671,7 @@ typedef HDDM_ElementLink<GapEMcal> GapEMcalLink;
 class CereHit: public HDDM_Element {
  public:
    ~CereHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3174,10 +3687,16 @@ class CereHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<CereHit>;
    friend class HDDM_ElementLink<CereHit>;
+   CereHit() {}
+   CereHit(HDDM_Element *parent, int owner=0);
  private:
-   CereHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_pe;
@@ -3190,6 +3709,7 @@ typedef HDDM_ElementLink<CereHit> CereHitLink;
 class CereTruthHit: public HDDM_Element {
  public:
    ~CereTruthHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3205,10 +3725,16 @@ class CereTruthHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<CereTruthHit>;
    friend class HDDM_ElementLink<CereTruthHit>;
+   CereTruthHit() {}
+   CereTruthHit(HDDM_Element *parent, int owner=0);
  private:
-   CereTruthHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_pe;
@@ -3221,6 +3747,7 @@ typedef HDDM_ElementLink<CereTruthHit> CereTruthHitLink;
 class CereSection: public HDDM_Element {
  public:
    ~CereSection();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3241,10 +3768,16 @@ class CereSection: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<CereSection>;
    friend class HDDM_ElementLink<CereSection>;
+   CereSection() {}
+   CereSection(HDDM_Element *parent, int owner=0);
  private:
-   CereSection(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_sector;
@@ -3258,6 +3791,7 @@ typedef HDDM_ElementLink<CereSection> CereSectionLink;
 class CereTruthPoint: public HDDM_Element {
  public:
    ~CereTruthPoint();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3294,10 +3828,16 @@ class CereTruthPoint: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<CereTruthPoint>;
    friend class HDDM_ElementLink<CereTruthPoint>;
+   CereTruthPoint() {}
+   CereTruthPoint(HDDM_Element *parent, int owner=0);
  private:
-   CereTruthPoint(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -3320,6 +3860,7 @@ typedef HDDM_ElementLink<CereTruthPoint> CereTruthPointLink;
 class Cerenkov: public HDDM_Element {
  public:
    ~Cerenkov();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3338,10 +3879,16 @@ class Cerenkov: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Cerenkov>;
    friend class HDDM_ElementLink<Cerenkov>;
+   Cerenkov() {}
+   Cerenkov(HDDM_Element *parent, int owner=0);
  private:
-   Cerenkov(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    CereSectionList m_cereSection_list;
@@ -3354,6 +3901,7 @@ typedef HDDM_ElementLink<Cerenkov> CerenkovLink;
 class RichTruthHit: public HDDM_Element {
  public:
    ~RichTruthHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3372,10 +3920,16 @@ class RichTruthHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<RichTruthHit>;
    friend class HDDM_ElementLink<RichTruthHit>;
+   RichTruthHit() {}
+   RichTruthHit(HDDM_Element *parent, int owner=0);
  private:
-   RichTruthHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_t;
@@ -3390,6 +3944,7 @@ typedef HDDM_ElementLink<RichTruthHit> RichTruthHitLink;
 class RichTruthPoint: public HDDM_Element {
  public:
    ~RichTruthPoint();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3426,10 +3981,16 @@ class RichTruthPoint: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<RichTruthPoint>;
    friend class HDDM_ElementLink<RichTruthPoint>;
+   RichTruthPoint() {}
+   RichTruthPoint(HDDM_Element *parent, int owner=0);
  private:
-   RichTruthPoint(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -3452,6 +4013,7 @@ typedef HDDM_ElementLink<RichTruthPoint> RichTruthPointLink;
 class RICH: public HDDM_Element {
  public:
    ~RICH();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3470,10 +4032,16 @@ class RICH: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<RICH>;
    friend class HDDM_ElementLink<RICH>;
+   RICH() {}
+   RICH(HDDM_Element *parent, int owner=0);
  private:
-   RICH(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    RichTruthHitList m_richTruthHit_list;
@@ -3486,6 +4054,7 @@ typedef HDDM_ElementLink<RICH> RICHLink;
 class DircTruthBarHit: public HDDM_Element {
  public:
    ~DircTruthBarHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3518,10 +4087,16 @@ class DircTruthBarHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<DircTruthBarHit>;
    friend class HDDM_ElementLink<DircTruthBarHit>;
+   DircTruthBarHit() {}
+   DircTruthBarHit(HDDM_Element *parent, int owner=0);
  private:
-   DircTruthBarHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -3543,6 +4118,7 @@ typedef HDDM_ElementLink<DircTruthBarHit> DircTruthBarHitLink;
 class DircTruthPmtHitExtra: public HDDM_Element {
  public:
    ~DircTruthPmtHitExtra();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3568,10 +4144,16 @@ class DircTruthPmtHitExtra: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<DircTruthPmtHitExtra>;
    friend class HDDM_ElementLink<DircTruthPmtHitExtra>;
+   DircTruthPmtHitExtra() {}
+   DircTruthPmtHitExtra(HDDM_Element *parent, int owner=0);
  private:
-   DircTruthPmtHitExtra(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_bbrefl;
@@ -3586,6 +4168,7 @@ typedef HDDM_ElementLink<DircTruthPmtHitExtra> DircTruthPmtHitExtraLink;
 class DircTruthPmtHit: public HDDM_Element {
  public:
    ~DircTruthPmtHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3614,10 +4197,16 @@ class DircTruthPmtHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<DircTruthPmtHit>;
    friend class HDDM_ElementLink<DircTruthPmtHit>;
+   DircTruthPmtHit() {}
+   DircTruthPmtHit(HDDM_Element *parent, int owner=0);
  private:
-   DircTruthPmtHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -3636,6 +4225,7 @@ typedef HDDM_ElementLink<DircTruthPmtHit> DircTruthPmtHitLink;
 class DircPmtHit: public HDDM_Element {
  public:
    ~DircPmtHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3650,10 +4240,16 @@ class DircPmtHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<DircPmtHit>;
    friend class HDDM_ElementLink<DircPmtHit>;
+   DircPmtHit() {}
+   DircPmtHit(HDDM_Element *parent, int owner=0);
  private:
-   DircPmtHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_ch;
@@ -3666,6 +4262,7 @@ typedef HDDM_ElementLink<DircPmtHit> DircPmtHitLink;
 class DIRC: public HDDM_Element {
  public:
    ~DIRC();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3688,10 +4285,16 @@ class DIRC: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<DIRC>;
    friend class HDDM_ElementLink<DIRC>;
+   DIRC() {}
+   DIRC(HDDM_Element *parent, int owner=0);
  private:
-   DIRC(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    DircTruthBarHitList m_dircTruthBarHit_list;
@@ -3705,6 +4308,7 @@ typedef HDDM_ElementLink<DIRC> DIRCLink;
 class FtofDigihit: public HDDM_Element {
  public:
    ~FtofDigihit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3722,10 +4326,16 @@ class FtofDigihit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FtofDigihit>;
    friend class HDDM_ElementLink<FtofDigihit>;
+   FtofDigihit() {}
+   FtofDigihit(HDDM_Element *parent, int owner=0);
  private:
-   FtofDigihit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_peakAmp;
@@ -3737,6 +4347,7 @@ typedef HDDM_ElementLink<FtofDigihit> FtofDigihitLink;
 class FtofHit: public HDDM_Element {
  public:
    ~FtofHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3759,10 +4370,16 @@ class FtofHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FtofHit>;
    friend class HDDM_ElementLink<FtofHit>;
+   FtofHit() {}
+   FtofHit(HDDM_Element *parent, int owner=0);
  private:
-   FtofHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_dE;
@@ -3777,6 +4394,7 @@ typedef HDDM_ElementLink<FtofHit> FtofHitLink;
 class FtofTruthExtra: public HDDM_Element {
  public:
    ~FtofTruthExtra();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3812,10 +4430,16 @@ class FtofTruthExtra: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FtofTruthExtra>;
    friend class HDDM_ElementLink<FtofTruthExtra>;
+   FtofTruthExtra() {}
+   FtofTruthExtra(HDDM_Element *parent, int owner=0);
  private:
-   FtofTruthExtra(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -3836,6 +4460,7 @@ typedef HDDM_ElementLink<FtofTruthExtra> FtofTruthExtraLink;
 class FtofTruthHit: public HDDM_Element {
  public:
    ~FtofTruthHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3858,10 +4483,16 @@ class FtofTruthHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FtofTruthHit>;
    friend class HDDM_ElementLink<FtofTruthHit>;
+   FtofTruthHit() {}
+   FtofTruthHit(HDDM_Element *parent, int owner=0);
  private:
-   FtofTruthHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_dE;
@@ -3876,6 +4507,7 @@ typedef HDDM_ElementLink<FtofTruthHit> FtofTruthHitLink;
 class FtofCounter: public HDDM_Element {
  public:
    ~FtofCounter();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3898,10 +4530,16 @@ class FtofCounter: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FtofCounter>;
    friend class HDDM_ElementLink<FtofCounter>;
+   FtofCounter() {}
+   FtofCounter(HDDM_Element *parent, int owner=0);
  private:
-   FtofCounter(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_bar;
@@ -3916,6 +4554,7 @@ typedef HDDM_ElementLink<FtofCounter> FtofCounterLink;
 class FtofTruthPoint: public HDDM_Element {
  public:
    ~FtofTruthPoint();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3952,10 +4591,16 @@ class FtofTruthPoint: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FtofTruthPoint>;
    friend class HDDM_ElementLink<FtofTruthPoint>;
+   FtofTruthPoint() {}
+   FtofTruthPoint(HDDM_Element *parent, int owner=0);
  private:
-   FtofTruthPoint(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -3978,6 +4623,7 @@ typedef HDDM_ElementLink<FtofTruthPoint> FtofTruthPointLink;
 class ForwardTOF: public HDDM_Element {
  public:
    ~ForwardTOF();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -3996,10 +4642,16 @@ class ForwardTOF: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<ForwardTOF>;
    friend class HDDM_ElementLink<ForwardTOF>;
+   ForwardTOF() {}
+   ForwardTOF(HDDM_Element *parent, int owner=0);
  private:
-   ForwardTOF(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    FtofCounterList m_ftofCounter_list;
@@ -4012,6 +4664,7 @@ typedef HDDM_ElementLink<ForwardTOF> ForwardTOFLink;
 class FcalDigihit: public HDDM_Element {
  public:
    ~FcalDigihit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4028,10 +4681,16 @@ class FcalDigihit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FcalDigihit>;
    friend class HDDM_ElementLink<FcalDigihit>;
+   FcalDigihit() {}
+   FcalDigihit(HDDM_Element *parent, int owner=0);
  private:
-   FcalDigihit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_integralOverPeak;
@@ -4043,6 +4702,7 @@ typedef HDDM_ElementLink<FcalDigihit> FcalDigihitLink;
 class FcalHit: public HDDM_Element {
  public:
    ~FcalHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4063,10 +4723,16 @@ class FcalHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FcalHit>;
    friend class HDDM_ElementLink<FcalHit>;
+   FcalHit() {}
+   FcalHit(HDDM_Element *parent, int owner=0);
  private:
-   FcalHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -4080,6 +4746,7 @@ typedef HDDM_ElementLink<FcalHit> FcalHitLink;
 class FcalTruthLightGuide: public HDDM_Element {
  public:
    ~FcalTruthLightGuide();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4097,10 +4764,16 @@ class FcalTruthLightGuide: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FcalTruthLightGuide>;
    friend class HDDM_ElementLink<FcalTruthLightGuide>;
+   FcalTruthLightGuide() {}
+   FcalTruthLightGuide(HDDM_Element *parent, int owner=0);
  private:
-   FcalTruthLightGuide(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_dE;
@@ -4113,6 +4786,7 @@ typedef HDDM_ElementLink<FcalTruthLightGuide> FcalTruthLightGuideLink;
 class FcalTruthHit: public HDDM_Element {
  public:
    ~FcalTruthHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4133,10 +4807,16 @@ class FcalTruthHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FcalTruthHit>;
    friend class HDDM_ElementLink<FcalTruthHit>;
+   FcalTruthHit() {}
+   FcalTruthHit(HDDM_Element *parent, int owner=0);
  private:
-   FcalTruthHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -4150,6 +4830,7 @@ typedef HDDM_ElementLink<FcalTruthHit> FcalTruthHitLink;
 class FcalBlock: public HDDM_Element {
  public:
    ~FcalBlock();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4172,10 +4853,16 @@ class FcalBlock: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FcalBlock>;
    friend class HDDM_ElementLink<FcalBlock>;
+   FcalBlock() {}
+   FcalBlock(HDDM_Element *parent, int owner=0);
  private:
-   FcalBlock(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_column;
@@ -4190,6 +4877,7 @@ typedef HDDM_ElementLink<FcalBlock> FcalBlockLink;
 class FcalTruthShower: public HDDM_Element {
  public:
    ~FcalTruthShower();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4226,10 +4914,16 @@ class FcalTruthShower: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FcalTruthShower>;
    friend class HDDM_ElementLink<FcalTruthShower>;
+   FcalTruthShower() {}
+   FcalTruthShower(HDDM_Element *parent, int owner=0);
  private:
-   FcalTruthShower(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -4252,6 +4946,7 @@ typedef HDDM_ElementLink<FcalTruthShower> FcalTruthShowerLink;
 class ForwardEMcal: public HDDM_Element {
  public:
    ~ForwardEMcal();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4270,10 +4965,16 @@ class ForwardEMcal: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<ForwardEMcal>;
    friend class HDDM_ElementLink<ForwardEMcal>;
+   ForwardEMcal() {}
+   ForwardEMcal(HDDM_Element *parent, int owner=0);
  private:
-   ForwardEMcal(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    FcalBlockList m_fcalBlock_list;
@@ -4286,6 +4987,7 @@ typedef HDDM_ElementLink<ForwardEMcal> ForwardEMcalLink;
 class CcalHit: public HDDM_Element {
  public:
    ~CcalHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4302,10 +5004,16 @@ class CcalHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<CcalHit>;
    friend class HDDM_ElementLink<CcalHit>;
+   CcalHit() {}
+   CcalHit(HDDM_Element *parent, int owner=0);
  private:
-   CcalHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -4318,6 +5026,7 @@ typedef HDDM_ElementLink<CcalHit> CcalHitLink;
 class CcalTruthHit: public HDDM_Element {
  public:
    ~CcalTruthHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4334,10 +5043,16 @@ class CcalTruthHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<CcalTruthHit>;
    friend class HDDM_ElementLink<CcalTruthHit>;
+   CcalTruthHit() {}
+   CcalTruthHit(HDDM_Element *parent, int owner=0);
  private:
-   CcalTruthHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -4350,6 +5065,7 @@ typedef HDDM_ElementLink<CcalTruthHit> CcalTruthHitLink;
 class CcalBlock: public HDDM_Element {
  public:
    ~CcalBlock();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4372,10 +5088,16 @@ class CcalBlock: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<CcalBlock>;
    friend class HDDM_ElementLink<CcalBlock>;
+   CcalBlock() {}
+   CcalBlock(HDDM_Element *parent, int owner=0);
  private:
-   CcalBlock(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_column;
@@ -4390,6 +5112,7 @@ typedef HDDM_ElementLink<CcalBlock> CcalBlockLink;
 class CcalTruthShower: public HDDM_Element {
  public:
    ~CcalTruthShower();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4426,10 +5149,16 @@ class CcalTruthShower: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<CcalTruthShower>;
    friend class HDDM_ElementLink<CcalTruthShower>;
+   CcalTruthShower() {}
+   CcalTruthShower(HDDM_Element *parent, int owner=0);
  private:
-   CcalTruthShower(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -4452,6 +5181,7 @@ typedef HDDM_ElementLink<CcalTruthShower> CcalTruthShowerLink;
 class ComptonEMcal: public HDDM_Element {
  public:
    ~ComptonEMcal();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4470,10 +5200,16 @@ class ComptonEMcal: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<ComptonEMcal>;
    friend class HDDM_ElementLink<ComptonEMcal>;
+   ComptonEMcal() {}
+   ComptonEMcal(HDDM_Element *parent, int owner=0);
  private:
-   ComptonEMcal(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    CcalBlockList m_ccalBlock_list;
@@ -4486,6 +5222,7 @@ typedef HDDM_ElementLink<ComptonEMcal> ComptonEMcalLink;
 class UpvHit: public HDDM_Element {
  public:
    ~UpvHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4504,10 +5241,16 @@ class UpvHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<UpvHit>;
    friend class HDDM_ElementLink<UpvHit>;
+   UpvHit() {}
+   UpvHit(HDDM_Element *parent, int owner=0);
  private:
-   UpvHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -4521,6 +5264,7 @@ typedef HDDM_ElementLink<UpvHit> UpvHitLink;
 class UpvTruthHit: public HDDM_Element {
  public:
    ~UpvTruthHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4541,10 +5285,16 @@ class UpvTruthHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<UpvTruthHit>;
    friend class HDDM_ElementLink<UpvTruthHit>;
+   UpvTruthHit() {}
+   UpvTruthHit(HDDM_Element *parent, int owner=0);
  private:
-   UpvTruthHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -4559,6 +5309,7 @@ typedef HDDM_ElementLink<UpvTruthHit> UpvTruthHitLink;
 class UpvPaddle: public HDDM_Element {
  public:
    ~UpvPaddle();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4581,10 +5332,16 @@ class UpvPaddle: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<UpvPaddle>;
    friend class HDDM_ElementLink<UpvPaddle>;
+   UpvPaddle() {}
+   UpvPaddle(HDDM_Element *parent, int owner=0);
  private:
-   UpvPaddle(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_layer;
@@ -4599,6 +5356,7 @@ typedef HDDM_ElementLink<UpvPaddle> UpvPaddleLink;
 class UpvTruthShower: public HDDM_Element {
  public:
    ~UpvTruthShower();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4635,10 +5393,16 @@ class UpvTruthShower: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<UpvTruthShower>;
    friend class HDDM_ElementLink<UpvTruthShower>;
+   UpvTruthShower() {}
+   UpvTruthShower(HDDM_Element *parent, int owner=0);
  private:
-   UpvTruthShower(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -4661,6 +5425,7 @@ typedef HDDM_ElementLink<UpvTruthShower> UpvTruthShowerLink;
 class UpstreamEMveto: public HDDM_Element {
  public:
    ~UpstreamEMveto();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4679,10 +5444,16 @@ class UpstreamEMveto: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<UpstreamEMveto>;
    friend class HDDM_ElementLink<UpstreamEMveto>;
+   UpstreamEMveto() {}
+   UpstreamEMveto(HDDM_Element *parent, int owner=0);
  private:
-   UpstreamEMveto(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    UpvPaddleList m_upvPaddle_list;
@@ -4695,6 +5466,7 @@ typedef HDDM_ElementLink<UpstreamEMveto> UpstreamEMvetoLink;
 class TaggerHit: public HDDM_Element {
  public:
    ~TaggerHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4715,10 +5487,16 @@ class TaggerHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<TaggerHit>;
    friend class HDDM_ElementLink<TaggerHit>;
+   TaggerHit() {}
+   TaggerHit(HDDM_Element *parent, int owner=0);
  private:
-   TaggerHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_npe;
@@ -4732,6 +5510,7 @@ typedef HDDM_ElementLink<TaggerHit> TaggerHitLink;
 class TaggerTruthHit: public HDDM_Element {
  public:
    ~TaggerTruthHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4753,10 +5532,16 @@ class TaggerTruthHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<TaggerTruthHit>;
    friend class HDDM_ElementLink<TaggerTruthHit>;
+   TaggerTruthHit() {}
+   TaggerTruthHit(HDDM_Element *parent, int owner=0);
  private:
-   TaggerTruthHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -4771,6 +5556,7 @@ typedef HDDM_ElementLink<TaggerTruthHit> TaggerTruthHitLink;
 class MicroChannel: public HDDM_Element {
  public:
    ~MicroChannel();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4795,10 +5581,16 @@ class MicroChannel: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<MicroChannel>;
    friend class HDDM_ElementLink<MicroChannel>;
+   MicroChannel() {}
+   MicroChannel(HDDM_Element *parent, int owner=0);
  private:
-   MicroChannel(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -4814,6 +5606,7 @@ typedef HDDM_ElementLink<MicroChannel> MicroChannelLink;
 class HodoChannel: public HDDM_Element {
  public:
    ~HodoChannel();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4836,10 +5629,16 @@ class HodoChannel: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<HodoChannel>;
    friend class HDDM_ElementLink<HodoChannel>;
+   HodoChannel() {}
+   HodoChannel(HDDM_Element *parent, int owner=0);
  private:
-   HodoChannel(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -4854,6 +5653,7 @@ typedef HDDM_ElementLink<HodoChannel> HodoChannelLink;
 class Tagger: public HDDM_Element {
  public:
    ~Tagger();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4872,10 +5672,16 @@ class Tagger: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Tagger>;
    friend class HDDM_ElementLink<Tagger>;
+   Tagger() {}
+   Tagger(HDDM_Element *parent, int owner=0);
  private:
-   Tagger(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    MicroChannelList m_microChannel_list;
@@ -4888,6 +5694,7 @@ typedef HDDM_ElementLink<Tagger> TaggerLink;
 class PsHit: public HDDM_Element {
  public:
    ~PsHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4904,10 +5711,16 @@ class PsHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<PsHit>;
    friend class HDDM_ElementLink<PsHit>;
+   PsHit() {}
+   PsHit(HDDM_Element *parent, int owner=0);
  private:
-   PsHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_dE;
@@ -4920,6 +5733,7 @@ typedef HDDM_ElementLink<PsHit> PsHitLink;
 class PsTruthHit: public HDDM_Element {
  public:
    ~PsTruthHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4940,10 +5754,16 @@ class PsTruthHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<PsTruthHit>;
    friend class HDDM_ElementLink<PsTruthHit>;
+   PsTruthHit() {}
+   PsTruthHit(HDDM_Element *parent, int owner=0);
  private:
-   PsTruthHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_dE;
@@ -4958,6 +5778,7 @@ typedef HDDM_ElementLink<PsTruthHit> PsTruthHitLink;
 class PsTile: public HDDM_Element {
  public:
    ~PsTile();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -4980,10 +5801,16 @@ class PsTile: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<PsTile>;
    friend class HDDM_ElementLink<PsTile>;
+   PsTile() {}
+   PsTile(HDDM_Element *parent, int owner=0);
  private:
-   PsTile(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_arm;
@@ -4998,6 +5825,7 @@ typedef HDDM_ElementLink<PsTile> PsTileLink;
 class PsTruthPoint: public HDDM_Element {
  public:
    ~PsTruthPoint();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -5040,10 +5868,16 @@ class PsTruthPoint: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<PsTruthPoint>;
    friend class HDDM_ElementLink<PsTruthPoint>;
+   PsTruthPoint() {}
+   PsTruthPoint(HDDM_Element *parent, int owner=0);
  private:
-   PsTruthPoint(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -5069,6 +5903,7 @@ typedef HDDM_ElementLink<PsTruthPoint> PsTruthPointLink;
 class PairSpectrometerFine: public HDDM_Element {
  public:
    ~PairSpectrometerFine();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -5087,10 +5922,16 @@ class PairSpectrometerFine: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<PairSpectrometerFine>;
    friend class HDDM_ElementLink<PairSpectrometerFine>;
+   PairSpectrometerFine() {}
+   PairSpectrometerFine(HDDM_Element *parent, int owner=0);
  private:
-   PairSpectrometerFine(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    PsTileList m_psTile_list;
@@ -5103,6 +5944,7 @@ typedef HDDM_ElementLink<PairSpectrometerFine> PairSpectrometerFineLink;
 class PscHit: public HDDM_Element {
  public:
    ~PscHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -5119,10 +5961,16 @@ class PscHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<PscHit>;
    friend class HDDM_ElementLink<PscHit>;
+   PscHit() {}
+   PscHit(HDDM_Element *parent, int owner=0);
  private:
-   PscHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_dE;
@@ -5135,6 +5983,7 @@ typedef HDDM_ElementLink<PscHit> PscHitLink;
 class PscTruthHit: public HDDM_Element {
  public:
    ~PscTruthHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -5155,10 +6004,16 @@ class PscTruthHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<PscTruthHit>;
    friend class HDDM_ElementLink<PscTruthHit>;
+   PscTruthHit() {}
+   PscTruthHit(HDDM_Element *parent, int owner=0);
  private:
-   PscTruthHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_dE;
@@ -5173,6 +6028,7 @@ typedef HDDM_ElementLink<PscTruthHit> PscTruthHitLink;
 class PscPaddle: public HDDM_Element {
  public:
    ~PscPaddle();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -5195,10 +6051,16 @@ class PscPaddle: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<PscPaddle>;
    friend class HDDM_ElementLink<PscPaddle>;
+   PscPaddle() {}
+   PscPaddle(HDDM_Element *parent, int owner=0);
  private:
-   PscPaddle(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_arm;
@@ -5213,6 +6075,7 @@ typedef HDDM_ElementLink<PscPaddle> PscPaddleLink;
 class PscTruthPoint: public HDDM_Element {
  public:
    ~PscTruthPoint();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -5255,10 +6118,16 @@ class PscTruthPoint: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<PscTruthPoint>;
    friend class HDDM_ElementLink<PscTruthPoint>;
+   PscTruthPoint() {}
+   PscTruthPoint(HDDM_Element *parent, int owner=0);
  private:
-   PscTruthPoint(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -5284,6 +6153,7 @@ typedef HDDM_ElementLink<PscTruthPoint> PscTruthPointLink;
 class PairSpectrometerCoarse: public HDDM_Element {
  public:
    ~PairSpectrometerCoarse();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -5302,10 +6172,16 @@ class PairSpectrometerCoarse: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<PairSpectrometerCoarse>;
    friend class HDDM_ElementLink<PairSpectrometerCoarse>;
+   PairSpectrometerCoarse() {}
+   PairSpectrometerCoarse(HDDM_Element *parent, int owner=0);
  private:
-   PairSpectrometerCoarse(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    PscPaddleList m_pscPaddle_list;
@@ -5318,6 +6194,7 @@ typedef HDDM_ElementLink<PairSpectrometerCoarse> PairSpectrometerCoarseLink;
 class TpolHit: public HDDM_Element {
  public:
    ~TpolHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -5334,10 +6211,16 @@ class TpolHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<TpolHit>;
    friend class HDDM_ElementLink<TpolHit>;
+   TpolHit() {}
+   TpolHit(HDDM_Element *parent, int owner=0);
  private:
-   TpolHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_dE;
@@ -5350,6 +6233,7 @@ typedef HDDM_ElementLink<TpolHit> TpolHitLink;
 class TpolTruthHit: public HDDM_Element {
  public:
    ~TpolTruthHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -5370,10 +6254,16 @@ class TpolTruthHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<TpolTruthHit>;
    friend class HDDM_ElementLink<TpolTruthHit>;
+   TpolTruthHit() {}
+   TpolTruthHit(HDDM_Element *parent, int owner=0);
  private:
-   TpolTruthHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_dE;
@@ -5388,6 +6278,7 @@ typedef HDDM_ElementLink<TpolTruthHit> TpolTruthHitLink;
 class TpolSector: public HDDM_Element {
  public:
    ~TpolSector();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -5410,10 +6301,16 @@ class TpolSector: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<TpolSector>;
    friend class HDDM_ElementLink<TpolSector>;
+   TpolSector() {}
+   TpolSector(HDDM_Element *parent, int owner=0);
  private:
-   TpolSector(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_ring;
@@ -5428,6 +6325,7 @@ typedef HDDM_ElementLink<TpolSector> TpolSectorLink;
 class TpolTruthPoint: public HDDM_Element {
  public:
    ~TpolTruthPoint();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -5464,10 +6362,16 @@ class TpolTruthPoint: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<TpolTruthPoint>;
    friend class HDDM_ElementLink<TpolTruthPoint>;
+   TpolTruthPoint() {}
+   TpolTruthPoint(HDDM_Element *parent, int owner=0);
  private:
-   TpolTruthPoint(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -5490,6 +6394,7 @@ typedef HDDM_ElementLink<TpolTruthPoint> TpolTruthPointLink;
 class TripletPolarimeter: public HDDM_Element {
  public:
    ~TripletPolarimeter();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -5508,10 +6413,16 @@ class TripletPolarimeter: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<TripletPolarimeter>;
    friend class HDDM_ElementLink<TripletPolarimeter>;
+   TripletPolarimeter() {}
+   TripletPolarimeter(HDDM_Element *parent, int owner=0);
  private:
-   TripletPolarimeter(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    TpolSectorList m_tpolSector_list;
@@ -5524,6 +6435,7 @@ typedef HDDM_ElementLink<TripletPolarimeter> TripletPolarimeterLink;
 class McTrajectoryPoint: public HDDM_Element {
  public:
    ~McTrajectoryPoint();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -5564,10 +6476,16 @@ class McTrajectoryPoint: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<McTrajectoryPoint>;
    friend class HDDM_ElementLink<McTrajectoryPoint>;
+   McTrajectoryPoint() {}
+   McTrajectoryPoint(HDDM_Element *parent, int owner=0);
  private:
-   McTrajectoryPoint(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -5593,6 +6511,7 @@ typedef HDDM_ElementLink<McTrajectoryPoint> McTrajectoryPointLink;
 class McTrajectory: public HDDM_Element {
  public:
    ~McTrajectory();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -5607,10 +6526,16 @@ class McTrajectory: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<McTrajectory>;
    friend class HDDM_ElementLink<McTrajectory>;
+   McTrajectory() {}
+   McTrajectory(HDDM_Element *parent, int owner=0);
  private:
-   McTrajectory(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    McTrajectoryPointList m_mcTrajectoryPoint_list;
@@ -5622,6 +6547,7 @@ typedef HDDM_ElementLink<McTrajectory> McTrajectoryLink;
 class RFsubsystem: public HDDM_Element {
  public:
    ~RFsubsystem();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -5637,13 +6563,20 @@ class RFsubsystem: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<RFsubsystem>;
    friend class HDDM_ElementLink<RFsubsystem>;
+   RFsubsystem() {}
+   RFsubsystem(HDDM_Element *parent, int owner=0);
  private:
-   RFsubsystem(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    std::string m_jtag;
+   const char *mx_jtag;
    float m_tsync;
 };
 
@@ -5653,6 +6586,7 @@ typedef HDDM_ElementLink<RFsubsystem> RFsubsystemLink;
 class RFtime: public HDDM_Element {
  public:
    ~RFtime();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -5672,13 +6606,20 @@ class RFtime: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<RFtime>;
    friend class HDDM_ElementLink<RFtime>;
+   RFtime() {}
+   RFtime(HDDM_Element *parent, int owner=0);
  private:
-   RFtime(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    std::string m_jtag;
+   const char *mx_jtag;
    float m_tsync;
    RFsubsystemList m_RFsubsystem_list;
 };
@@ -5689,6 +6630,7 @@ typedef HDDM_ElementLink<RFtime> RFtimeLink;
 class FmwpcTruthHit: public HDDM_Element {
  public:
    ~FmwpcTruthHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -5707,10 +6649,16 @@ class FmwpcTruthHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FmwpcTruthHit>;
    friend class HDDM_ElementLink<FmwpcTruthHit>;
+   FmwpcTruthHit() {}
+   FmwpcTruthHit(HDDM_Element *parent, int owner=0);
  private:
-   FmwpcTruthHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_dE;
@@ -5724,6 +6672,7 @@ typedef HDDM_ElementLink<FmwpcTruthHit> FmwpcTruthHitLink;
 class FmwpcHit: public HDDM_Element {
  public:
    ~FmwpcHit();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -5740,10 +6689,16 @@ class FmwpcHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FmwpcHit>;
    friend class HDDM_ElementLink<FmwpcHit>;
+   FmwpcHit() {}
+   FmwpcHit(HDDM_Element *parent, int owner=0);
  private:
-   FmwpcHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_dE;
@@ -5756,6 +6711,7 @@ typedef HDDM_ElementLink<FmwpcHit> FmwpcHitLink;
 class FmwpcChamber: public HDDM_Element {
  public:
    ~FmwpcChamber();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -5778,10 +6734,16 @@ class FmwpcChamber: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FmwpcChamber>;
    friend class HDDM_ElementLink<FmwpcChamber>;
+   FmwpcChamber() {}
+   FmwpcChamber(HDDM_Element *parent, int owner=0);
  private:
-   FmwpcChamber(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_layer;
@@ -5796,6 +6758,7 @@ typedef HDDM_ElementLink<FmwpcChamber> FmwpcChamberLink;
 class FmwpcTruthPoint: public HDDM_Element {
  public:
    ~FmwpcTruthPoint();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -5832,10 +6795,16 @@ class FmwpcTruthPoint: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FmwpcTruthPoint>;
    friend class HDDM_ElementLink<FmwpcTruthPoint>;
+   FmwpcTruthPoint() {}
+   FmwpcTruthPoint(HDDM_Element *parent, int owner=0);
  private:
-   FmwpcTruthPoint(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -5858,6 +6827,7 @@ typedef HDDM_ElementLink<FmwpcTruthPoint> FmwpcTruthPointLink;
 class ForwardMWPC: public HDDM_Element {
  public:
    ~ForwardMWPC();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -5876,10 +6846,16 @@ class ForwardMWPC: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<ForwardMWPC>;
    friend class HDDM_ElementLink<ForwardMWPC>;
+   ForwardMWPC() {}
+   ForwardMWPC(HDDM_Element *parent, int owner=0);
  private:
-   ForwardMWPC(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    FmwpcChamberList m_fmwpcChamber_list;
@@ -5892,6 +6868,7 @@ typedef HDDM_ElementLink<ForwardMWPC> ForwardMWPCLink;
 class HitView: public HDDM_Element {
  public:
    ~HitView();
+   void clear();
    std::string getClass() const;
    std::string getXmlns() const;
    int getEventNo() const;
@@ -5978,10 +6955,16 @@ class HitView: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<HitView>;
    friend class HDDM_ElementLink<HitView>;
+   HitView() {}
+   HitView(HDDM_Element *parent, int owner=0);
  private:
-   HitView(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    CentralDCLink m_centralDC_link;
@@ -6011,6 +6994,7 @@ typedef HDDM_ElementLink<HitView> HitViewLink;
 class ErrorMatrix: public HDDM_Element {
  public:
    ~ErrorMatrix();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -6035,16 +7019,24 @@ class ErrorMatrix: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<ErrorMatrix>;
    friend class HDDM_ElementLink<ErrorMatrix>;
+   ErrorMatrix() {}
+   ErrorMatrix(HDDM_Element *parent, int owner=0);
  private:
-   ErrorMatrix(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_Ncols;
    int m_Nrows;
    std::string m_type;
+   const char *mx_type;
    std::string m_vals;
+   const char *mx_vals;
 };
 
 typedef HDDM_ElementList<ErrorMatrix> ErrorMatrixList;
@@ -6053,6 +7045,7 @@ typedef HDDM_ElementLink<ErrorMatrix> ErrorMatrixLink;
 class TrackingErrorMatrix: public HDDM_Element {
  public:
    ~TrackingErrorMatrix();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -6077,16 +7070,24 @@ class TrackingErrorMatrix: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<TrackingErrorMatrix>;
    friend class HDDM_ElementLink<TrackingErrorMatrix>;
+   TrackingErrorMatrix() {}
+   TrackingErrorMatrix(HDDM_Element *parent, int owner=0);
  private:
-   TrackingErrorMatrix(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_Ncols;
    int m_Nrows;
    std::string m_type;
+   const char *mx_type;
    std::string m_vals;
+   const char *mx_vals;
 };
 
 typedef HDDM_ElementList<TrackingErrorMatrix> TrackingErrorMatrixList;
@@ -6095,6 +7096,7 @@ typedef HDDM_ElementLink<TrackingErrorMatrix> TrackingErrorMatrixLink;
 class Tracktimebased: public HDDM_Element {
  public:
    ~Tracktimebased();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -6137,10 +7139,16 @@ class Tracktimebased: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Tracktimebased>;
    friend class HDDM_ElementLink<Tracktimebased>;
+   Tracktimebased() {}
+   Tracktimebased(HDDM_Element *parent, int owner=0);
  private:
-   Tracktimebased(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_FOM;
@@ -6162,6 +7170,7 @@ typedef HDDM_ElementLink<Tracktimebased> TracktimebasedLink;
 class ReconView: public HDDM_Element {
  public:
    ~ReconView();
+   void clear();
    std::string getClass() const;
    std::string getXmlns() const;
    int getEventNo() const;
@@ -6176,10 +7185,16 @@ class ReconView: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<ReconView>;
    friend class HDDM_ElementLink<ReconView>;
+   ReconView() {}
+   ReconView(HDDM_Element *parent, int owner=0);
  private:
-   ReconView(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    TracktimebasedList m_tracktimebased_list;
@@ -6191,6 +7206,7 @@ typedef HDDM_ElementLink<ReconView> ReconViewLink;
 class PhysicsEvent: public HDDM_Element {
  public:
    ~PhysicsEvent();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -6222,10 +7238,16 @@ class PhysicsEvent: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<PhysicsEvent>;
    friend class HDDM_ElementLink<PhysicsEvent>;
+   PhysicsEvent() {}
+   PhysicsEvent(HDDM_Element *parent, int owner=0);
  private:
-   PhysicsEvent(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_eventNo;
@@ -6244,6 +7266,7 @@ class HDDM: public HDDM_Element {
  public:
    HDDM();
    ~HDDM();
+   void clear();
    std::string getClass() const;
    float getVersion() const;
    std::string getXmlns() const;
@@ -6387,7 +7410,6 @@ class HDDM: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
-   void clear();
    friend class Cerenkov;
    friend class ComptonEMcal;
    friend class DIRC;
@@ -6656,6 +7678,170 @@ class HDDM: public HDDM_Element {
    std::list<Vertex*> m_vertex_plist;
    GeometryLink m_geometry_link;
    PhysicsEventList m_physicsEvent_list;
+#ifdef HDF5_SUPPORT
+ public:
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+   herr_t hdf5FileWrite(hid_t file_id, long int entry=-1);
+   herr_t hdf5FileRead(hid_t file_id, long int entry=-1);
+   static hid_t hdf5FileCreate(std::string name, unsigned int flags);
+   static hid_t hdf5FileOpen(std::string name, unsigned int flags);
+   static herr_t hdf5FileClose(hid_t file_id);
+   static herr_t hdf5FileStamp(hid_t file_id, char **tags=0);
+   static herr_t hdf5FileCheck(hid_t file_id, char **tags=0);
+   static std::string hdf5DocumentString(hid_t file_id);
+   static long int hdf5GetEntries(hid_t file_id);
+   static herr_t hdf5SetChunksize(hid_t file_id, hsize_t chunksize);
+   static hsize_t hdf5GetChunksize(hid_t file_id);
+   static herr_t hdf5SetFilters(hid_t file_id, std::vector<H5Z_filter_t> &filters);
+   static herr_t hdf5GetFilters(hid_t file_id, std::vector<H5Z_filter_t> &filters);
+ private:
+   static std::map<std::string, hid_t> s_hdf5_datatype;
+   static std::map<std::string, hid_t> s_hdf5_memorytype;
+   static std::map<std::string, hid_t> s_hdf5_memoryspace;
+   static std::map<hid_t, hid_t> s_hdf5_dataspace;
+   static std::map<hid_t, hid_t> s_hdf5_chunking;
+   static std::map<hid_t, hid_t> s_hdf5_dataset;
+   typedef struct {
+      hdf5_hvl_t vl_Cerenkov;
+      hdf5_hvl_t vl_ComptonEMcal;
+      hdf5_hvl_t vl_DIRC;
+      hdf5_hvl_t vl_RFsubsystem;
+      hdf5_hvl_t vl_RFtime;
+      hdf5_hvl_t vl_RICH;
+      hdf5_hvl_t vl_TrackingErrorMatrix;
+      hdf5_hvl_t vl_barrelEMcal;
+      hdf5_hvl_t vl_bcalCell;
+      hdf5_hvl_t vl_bcalSiPMDownHit;
+      hdf5_hvl_t vl_bcalSiPMSpectrum;
+      hdf5_hvl_t vl_bcalSiPMTruth;
+      hdf5_hvl_t vl_bcalSiPMUpHit;
+      hdf5_hvl_t vl_bcalTDCDigiHit;
+      hdf5_hvl_t vl_bcalTDCHit;
+      hdf5_hvl_t vl_bcalTruthHit;
+      hdf5_hvl_t vl_bcalTruthIncidentParticle;
+      hdf5_hvl_t vl_bcalTruthShower;
+      hdf5_hvl_t vl_bcalfADCDigiHit;
+      hdf5_hvl_t vl_bcalfADCHit;
+      hdf5_hvl_t vl_bcalfADCPeak;
+      hdf5_hvl_t vl_beam;
+      hdf5_hvl_t vl_ccalBlock;
+      hdf5_hvl_t vl_ccalHit;
+      hdf5_hvl_t vl_ccalTruthHit;
+      hdf5_hvl_t vl_ccalTruthShower;
+      hdf5_hvl_t vl_ccdbContext;
+      hdf5_hvl_t vl_cdcDigihit;
+      hdf5_hvl_t vl_cdcHitQF;
+      hdf5_hvl_t vl_cdcStraw;
+      hdf5_hvl_t vl_cdcStrawHit;
+      hdf5_hvl_t vl_cdcStrawTruthHit;
+      hdf5_hvl_t vl_cdcTruthPoint;
+      hdf5_hvl_t vl_centralDC;
+      hdf5_hvl_t vl_cereHit;
+      hdf5_hvl_t vl_cereSection;
+      hdf5_hvl_t vl_cereTruthHit;
+      hdf5_hvl_t vl_cereTruthPoint;
+      hdf5_hvl_t vl_dataVersionString;
+      hdf5_hvl_t vl_dircPmtHit;
+      hdf5_hvl_t vl_dircTruthBarHit;
+      hdf5_hvl_t vl_dircTruthPmtHit;
+      hdf5_hvl_t vl_dircTruthPmtHitExtra;
+      hdf5_hvl_t vl_errorMatrix;
+      hdf5_hvl_t vl_fcalBlock;
+      hdf5_hvl_t vl_fcalDigihit;
+      hdf5_hvl_t vl_fcalHit;
+      hdf5_hvl_t vl_fcalTruthHit;
+      hdf5_hvl_t vl_fcalTruthLightGuide;
+      hdf5_hvl_t vl_fcalTruthShower;
+      hdf5_hvl_t vl_fdcAnodeHit;
+      hdf5_hvl_t vl_fdcAnodeTruthHit;
+      hdf5_hvl_t vl_fdcAnodeWire;
+      hdf5_hvl_t vl_fdcCathodeHit;
+      hdf5_hvl_t vl_fdcCathodeStrip;
+      hdf5_hvl_t vl_fdcCathodeTruthHit;
+      hdf5_hvl_t vl_fdcChamber;
+      hdf5_hvl_t vl_fdcDigihit;
+      hdf5_hvl_t vl_fdcTruthPoint;
+      hdf5_hvl_t vl_fmwpcChamber;
+      hdf5_hvl_t vl_fmwpcHit;
+      hdf5_hvl_t vl_fmwpcTruthHit;
+      hdf5_hvl_t vl_fmwpcTruthPoint;
+      hdf5_hvl_t vl_forwardDC;
+      hdf5_hvl_t vl_forwardEMcal;
+      hdf5_hvl_t vl_forwardMWPC;
+      hdf5_hvl_t vl_forwardTOF;
+      hdf5_hvl_t vl_ftofCounter;
+      hdf5_hvl_t vl_ftofDigihit;
+      hdf5_hvl_t vl_ftofHit;
+      hdf5_hvl_t vl_ftofTruthExtra;
+      hdf5_hvl_t vl_ftofTruthHit;
+      hdf5_hvl_t vl_ftofTruthPoint;
+      hdf5_hvl_t vl_gapEMcal;
+      hdf5_hvl_t vl_gcalCell;
+      hdf5_hvl_t vl_gcalHit;
+      hdf5_hvl_t vl_gcalTruthHit;
+      hdf5_hvl_t vl_gcalTruthShower;
+      hdf5_hvl_t vl_geometry;
+      hdf5_hvl_t vl_hitView;
+      hdf5_hvl_t vl_hodoChannel;
+      hdf5_hvl_t vl_mcTrajectory;
+      hdf5_hvl_t vl_mcTrajectoryPoint;
+      hdf5_hvl_t vl_microChannel;
+      hdf5_hvl_t vl_momentum;
+      hdf5_hvl_t vl_origin;
+      hdf5_hvl_t vl_pairSpectrometerCoarse;
+      hdf5_hvl_t vl_pairSpectrometerFine;
+      hdf5_hvl_t vl_physicsEvent;
+      hdf5_hvl_t vl_polarization;
+      hdf5_hvl_t vl_product;
+      hdf5_hvl_t vl_properties;
+      hdf5_hvl_t vl_psHit;
+      hdf5_hvl_t vl_psTile;
+      hdf5_hvl_t vl_psTruthHit;
+      hdf5_hvl_t vl_psTruthPoint;
+      hdf5_hvl_t vl_pscHit;
+      hdf5_hvl_t vl_pscPaddle;
+      hdf5_hvl_t vl_pscTruthHit;
+      hdf5_hvl_t vl_pscTruthPoint;
+      hdf5_hvl_t vl_random;
+      hdf5_hvl_t vl_reaction;
+      hdf5_hvl_t vl_reconView;
+      hdf5_hvl_t vl_richTruthHit;
+      hdf5_hvl_t vl_richTruthPoint;
+      hdf5_hvl_t vl_startCntr;
+      hdf5_hvl_t vl_stcDigihit;
+      hdf5_hvl_t vl_stcHit;
+      hdf5_hvl_t vl_stcPaddle;
+      hdf5_hvl_t vl_stcTruthHit;
+      hdf5_hvl_t vl_stcTruthPoint;
+      hdf5_hvl_t vl_tagger;
+      hdf5_hvl_t vl_taggerHit;
+      hdf5_hvl_t vl_taggerTruthHit;
+      hdf5_hvl_t vl_target;
+      hdf5_hvl_t vl_tpolHit;
+      hdf5_hvl_t vl_tpolSector;
+      hdf5_hvl_t vl_tpolTruthHit;
+      hdf5_hvl_t vl_tpolTruthPoint;
+      hdf5_hvl_t vl_trackID;
+      hdf5_hvl_t vl_tracktimebased;
+      hdf5_hvl_t vl_tripletPolarimeter;
+      hdf5_hvl_t vl_upstreamEMveto;
+      hdf5_hvl_t vl_upvHit;
+      hdf5_hvl_t vl_upvPaddle;
+      hdf5_hvl_t vl_upvTruthHit;
+      hdf5_hvl_t vl_upvTruthShower;
+      hdf5_hvl_t vl_userData;
+      hdf5_hvl_t vl_userDataFloat;
+      hdf5_hvl_t vl_userDataInt;
+      hdf5_hvl_t vl_vertex;
+   } hdf5_record_t;
+   hdf5_record_t m_hdf5_record;
+   hsize_t m_hdf5_record_offset;
+   hsize_t m_hdf5_record_count;
+   hsize_t m_hdf5_record_extent;
+   std::vector<std::string*> m_hdf5_strings;
+#endif
 };
 
 inline istream::thread_private_data *istream::lookup_private_data() {
@@ -6848,14 +8034,17 @@ inline ostream &ostream::operator<<(streamable &object) {
    return *this;
 }
 
-inline Geometry::Geometry(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Geometry::Geometry(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_md5reconstruction(""),
    m_md5simulation(""),
    m_md5smear("")
 {}
 
-inline Geometry::~Geometry() {}
+inline Geometry::~Geometry() {
+   clear();
+}
+inline void Geometry::clear() {}
 
 inline std::string Geometry::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -6933,12 +8122,15 @@ inline const void *Geometry::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline DataVersionString::DataVersionString(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline DataVersionString::DataVersionString(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_text("")
 {}
 
-inline DataVersionString::~DataVersionString() {}
+inline DataVersionString::~DataVersionString() {
+   clear();
+}
+inline void DataVersionString::clear() {}
 
 inline std::string DataVersionString::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -6998,12 +8190,15 @@ inline const void *DataVersionString::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline CcdbContext::CcdbContext(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline CcdbContext::CcdbContext(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_text("")
 {}
 
-inline CcdbContext::~CcdbContext() {}
+inline CcdbContext::~CcdbContext() {
+   clear();
+}
+inline void CcdbContext::clear() {}
 
 inline std::string CcdbContext::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -7063,15 +8258,18 @@ inline const void *CcdbContext::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline Momentum::Momentum(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Momentum::Momentum(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_px(0),
    m_py(0),
    m_pz(0)
 {}
 
-inline Momentum::~Momentum() {}
+inline Momentum::~Momentum() {
+   clear();
+}
+inline void Momentum::clear() {}
 
 inline std::string Momentum::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -7206,14 +8404,17 @@ inline const void *Momentum::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline Polarization::Polarization(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Polarization::Polarization(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_Px(0),
    m_Py(0),
    m_Pz(0)
 {}
 
-inline Polarization::~Polarization() {}
+inline Polarization::~Polarization() {
+   clear();
+}
+inline void Polarization::clear() {}
 
 inline std::string Polarization::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -7321,13 +8522,16 @@ inline const void *Polarization::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline Properties::Properties(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Properties::Properties(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_charge(0),
    m_mass(0)
 {}
 
-inline Properties::~Properties() {}
+inline Properties::~Properties() {
+   clear();
+}
+inline void Properties::clear() {}
 
 inline std::string Properties::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -7436,8 +8640,8 @@ inline const void *Properties::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline Beam::Beam(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Beam::Beam(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_type(0),
    m_momentum_link(&m_host->m_momentum_plist,
                m_host->m_momentum_plist.end(),
@@ -7454,9 +8658,14 @@ inline Beam::Beam(HDDM_Element *parent)
 {}
 
 inline Beam::~Beam() {
+   clear();
+}
+inline void Beam::clear() {
+   if (m_host != 0) {
    deleteMomenta();
    deletePolarizations();
    deletePropertiesList();
+   }
 }
 
 inline std::string Beam::getClass() const {
@@ -7563,8 +8772,8 @@ inline void Beam::deletePropertiesList(int count, int start) {
    m_properties_link.del(count,start);
 }
 
-inline Target::Target(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Target::Target(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_type(0),
    m_momentum_link(&m_host->m_momentum_plist,
                m_host->m_momentum_plist.end(),
@@ -7581,9 +8790,14 @@ inline Target::Target(HDDM_Element *parent)
 {}
 
 inline Target::~Target() {
+   clear();
+}
+inline void Target::clear() {
+   if (m_host != 0) {
    deleteMomenta();
    deletePolarizations();
    deletePropertiesList();
+   }
 }
 
 inline std::string Target::getClass() const {
@@ -7690,8 +8904,8 @@ inline void Target::deletePropertiesList(int count, int start) {
    m_properties_link.del(count,start);
 }
 
-inline Product::Product(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Product::Product(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_decayVertex(0),
    m_id(0),
    m_mech(0),
@@ -7713,9 +8927,14 @@ inline Product::Product(HDDM_Element *parent)
 {}
 
 inline Product::~Product() {
+   clear();
+}
+inline void Product::clear() {
+   if (m_host != 0) {
    deleteMomenta();
    deletePolarizations();
    deletePropertiesList();
+   }
 }
 
 inline std::string Product::getClass() const {
@@ -7887,15 +9106,18 @@ inline void Product::deletePropertiesList(int count, int start) {
    m_properties_link.del(count,start);
 }
 
-inline Origin::Origin(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Origin::Origin(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_t(0),
    m_vx(0),
    m_vy(0),
    m_vz(0)
 {}
 
-inline Origin::~Origin() {}
+inline Origin::~Origin() {
+   clear();
+}
+inline void Origin::clear() {}
 
 inline std::string Origin::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -8014,8 +9236,8 @@ inline const void *Origin::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline Vertex::Vertex(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Vertex::Vertex(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_product_list(&m_host->m_product_plist,
                m_host->m_product_plist.end(),
                m_host->m_product_plist.end(),
@@ -8027,8 +9249,13 @@ inline Vertex::Vertex(HDDM_Element *parent)
 {}
 
 inline Vertex::~Vertex() {
+   clear();
+}
+inline void Vertex::clear() {
+   if (m_host != 0) {
    deleteProducts();
    deleteOrigins();
+   }
 }
 
 inline std::string Vertex::getClass() const {
@@ -8110,15 +9337,18 @@ inline void Vertex::deleteOrigins(int count, int start) {
    m_origin_link.del(count,start);
 }
 
-inline Random::Random(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Random::Random(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_seed1(0),
    m_seed2(0),
    m_seed3(0),
    m_seed4(0)
 {}
 
-inline Random::~Random() {}
+inline Random::~Random() {
+   clear();
+}
+inline void Random::clear() {}
 
 inline std::string Random::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -8225,13 +9455,16 @@ inline const void *Random::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline UserDataFloat::UserDataFloat(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline UserDataFloat::UserDataFloat(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_data(0),
    m_meaning("")
 {}
 
-inline UserDataFloat::~UserDataFloat() {}
+inline UserDataFloat::~UserDataFloat() {
+   clear();
+}
+inline void UserDataFloat::clear() {}
 
 inline std::string UserDataFloat::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -8316,13 +9549,16 @@ inline const void *UserDataFloat::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline UserDataInt::UserDataInt(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline UserDataInt::UserDataInt(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_data(0),
    m_meaning("")
 {}
 
-inline UserDataInt::~UserDataInt() {}
+inline UserDataInt::~UserDataInt() {
+   clear();
+}
+inline void UserDataInt::clear() {}
 
 inline std::string UserDataInt::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -8407,8 +9643,8 @@ inline const void *UserDataInt::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline UserData::UserData(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline UserData::UserData(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_description(""),
    m_userDataFloat_list(&m_host->m_userDataFloat_plist,
                m_host->m_userDataFloat_plist.end(),
@@ -8421,8 +9657,13 @@ inline UserData::UserData(HDDM_Element *parent)
 {}
 
 inline UserData::~UserData() {
+   clear();
+}
+inline void UserData::clear() {
+   if (m_host != 0) {
    deleteUserDataFloats();
    deleteUserDataInts();
+   }
 }
 
 inline std::string UserData::getClass() const {
@@ -8523,8 +9764,8 @@ inline void UserData::deleteUserDataInts(int count, int start) {
    m_userDataInt_list.del(count,start);
 }
 
-inline Reaction::Reaction(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Reaction::Reaction(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_type(0),
    m_weight(0),
    m_beam_link(&m_host->m_beam_plist,
@@ -8550,11 +9791,16 @@ inline Reaction::Reaction(HDDM_Element *parent)
 {}
 
 inline Reaction::~Reaction() {
+   clear();
+}
+inline void Reaction::clear() {
+   if (m_host != 0) {
    deleteBeams();
    deleteTargets();
    deleteVertices();
    deleteRandoms();
    deleteUserDatas();
+   }
 }
 
 inline std::string Reaction::getClass() const {
@@ -8708,12 +9954,15 @@ inline void Reaction::deleteUserDatas(int count, int start) {
    m_userData_list.del(count,start);
 }
 
-inline CdcDigihit::CdcDigihit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline CdcDigihit::CdcDigihit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_peakAmp(0)
 {}
 
-inline CdcDigihit::~CdcDigihit() {}
+inline CdcDigihit::~CdcDigihit() {
+   clear();
+}
+inline void CdcDigihit::clear() {}
 
 inline std::string CdcDigihit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -8783,12 +10032,15 @@ inline const void *CdcDigihit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline CdcHitQF::CdcHitQF(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline CdcHitQF::CdcHitQF(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_QF(0)
 {}
 
-inline CdcHitQF::~CdcHitQF() {}
+inline CdcHitQF::~CdcHitQF() {
+   clear();
+}
+inline void CdcHitQF::clear() {}
 
 inline std::string CdcHitQF::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -8858,8 +10110,8 @@ inline const void *CdcHitQF::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline CdcStrawHit::CdcStrawHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline CdcStrawHit::CdcStrawHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_q(0),
    m_t(0),
    m_cdcDigihit_link(&m_host->m_cdcDigihit_plist,
@@ -8873,8 +10125,13 @@ inline CdcStrawHit::CdcStrawHit(HDDM_Element *parent)
 {}
 
 inline CdcStrawHit::~CdcStrawHit() {
+   clear();
+}
+inline void CdcStrawHit::clear() {
+   if (m_host != 0) {
    deleteCdcDigihits();
    deleteCdcHitQFs();
+   }
 }
 
 inline std::string CdcStrawHit::getClass() const {
@@ -8982,8 +10239,8 @@ inline void CdcStrawHit::deleteCdcHitQFs(int count, int start) {
    m_cdcHitQF_link.del(count,start);
 }
 
-inline CdcStrawTruthHit::CdcStrawTruthHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline CdcStrawTruthHit::CdcStrawTruthHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_d(0),
    m_itrack(0),
    m_ptype(0),
@@ -8991,7 +10248,10 @@ inline CdcStrawTruthHit::CdcStrawTruthHit(HDDM_Element *parent)
    m_t(0)
 {}
 
-inline CdcStrawTruthHit::~CdcStrawTruthHit() {}
+inline CdcStrawTruthHit::~CdcStrawTruthHit() {
+   clear();
+}
+inline void CdcStrawTruthHit::clear() {}
 
 inline std::string CdcStrawTruthHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -9105,8 +10365,8 @@ inline const void *CdcStrawTruthHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline CdcStraw::CdcStraw(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline CdcStraw::CdcStraw(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_ring(0),
    m_straw(0),
    m_cdcStrawHit_list(&m_host->m_cdcStrawHit_plist,
@@ -9120,8 +10380,13 @@ inline CdcStraw::CdcStraw(HDDM_Element *parent)
 {}
 
 inline CdcStraw::~CdcStraw() {
+   clear();
+}
+inline void CdcStraw::clear() {
+   if (m_host != 0) {
    deleteCdcStrawHits();
    deleteCdcStrawTruthHits();
+   }
 }
 
 inline std::string CdcStraw::getClass() const {
@@ -9227,12 +10492,15 @@ inline void CdcStraw::deleteCdcStrawTruthHits(int count, int start) {
    m_cdcStrawTruthHit_list.del(count,start);
 }
 
-inline TrackID::TrackID(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline TrackID::TrackID(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_itrack(0)
 {}
 
-inline TrackID::~TrackID() {}
+inline TrackID::~TrackID() {
+   clear();
+}
+inline void TrackID::clear() {}
 
 inline std::string TrackID::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -9366,8 +10634,8 @@ inline const void *TrackID::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline CdcTruthPoint::CdcTruthPoint(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline CdcTruthPoint::CdcTruthPoint(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dEdx(0),
    m_dradius(0),
    m_phi(0),
@@ -9387,7 +10655,12 @@ inline CdcTruthPoint::CdcTruthPoint(HDDM_Element *parent)
 {}
 
 inline CdcTruthPoint::~CdcTruthPoint() {
+   clear();
+}
+inline void CdcTruthPoint::clear() {
+   if (m_host != 0) {
    deleteTrackIDs();
+   }
 }
 
 inline std::string CdcTruthPoint::getClass() const {
@@ -9607,8 +10880,8 @@ inline void CdcTruthPoint::deleteTrackIDs(int count, int start) {
    m_trackID_link.del(count,start);
 }
 
-inline CentralDC::CentralDC(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline CentralDC::CentralDC(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_cdcStraw_list(&m_host->m_cdcStraw_plist,
                m_host->m_cdcStraw_plist.end(),
                m_host->m_cdcStraw_plist.end(),
@@ -9620,8 +10893,13 @@ inline CentralDC::CentralDC(HDDM_Element *parent)
 {}
 
 inline CentralDC::~CentralDC() {
+   clear();
+}
+inline void CentralDC::clear() {
+   if (m_host != 0) {
    deleteCdcStraws();
    deleteCdcTruthPoints();
+   }
 }
 
 inline std::string CentralDC::getClass() const {
@@ -9695,13 +10973,16 @@ inline void CentralDC::deleteCdcTruthPoints(int count, int start) {
    m_cdcTruthPoint_list.del(count,start);
 }
 
-inline FdcAnodeHit::FdcAnodeHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FdcAnodeHit::FdcAnodeHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dE(0),
    m_t(0)
 {}
 
-inline FdcAnodeHit::~FdcAnodeHit() {}
+inline FdcAnodeHit::~FdcAnodeHit() {
+   clear();
+}
+inline void FdcAnodeHit::clear() {}
 
 inline std::string FdcAnodeHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -9780,8 +11061,8 @@ inline const void *FdcAnodeHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline FdcAnodeTruthHit::FdcAnodeTruthHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FdcAnodeTruthHit::FdcAnodeTruthHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_d(0),
    m_dE(0),
    m_itrack(0),
@@ -9790,7 +11071,10 @@ inline FdcAnodeTruthHit::FdcAnodeTruthHit(HDDM_Element *parent)
    m_t_unsmeared(0)
 {}
 
-inline FdcAnodeTruthHit::~FdcAnodeTruthHit() {}
+inline FdcAnodeTruthHit::~FdcAnodeTruthHit() {
+   clear();
+}
+inline void FdcAnodeTruthHit::clear() {}
 
 inline std::string FdcAnodeTruthHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -9921,8 +11205,8 @@ inline const void *FdcAnodeTruthHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline FdcAnodeWire::FdcAnodeWire(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FdcAnodeWire::FdcAnodeWire(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_wire(0),
    m_fdcAnodeHit_list(&m_host->m_fdcAnodeHit_plist,
                m_host->m_fdcAnodeHit_plist.end(),
@@ -9935,8 +11219,13 @@ inline FdcAnodeWire::FdcAnodeWire(HDDM_Element *parent)
 {}
 
 inline FdcAnodeWire::~FdcAnodeWire() {
+   clear();
+}
+inline void FdcAnodeWire::clear() {
+   if (m_host != 0) {
    deleteFdcAnodeHits();
    deleteFdcAnodeTruthHits();
+   }
 }
 
 inline std::string FdcAnodeWire::getClass() const {
@@ -10037,12 +11326,15 @@ inline void FdcAnodeWire::deleteFdcAnodeTruthHits(int count, int start) {
    m_fdcAnodeTruthHit_list.del(count,start);
 }
 
-inline FdcDigihit::FdcDigihit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FdcDigihit::FdcDigihit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_peakAmp(0)
 {}
 
-inline FdcDigihit::~FdcDigihit() {}
+inline FdcDigihit::~FdcDigihit() {
+   clear();
+}
+inline void FdcDigihit::clear() {}
 
 inline std::string FdcDigihit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -10120,8 +11412,8 @@ inline const void *FdcDigihit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline FdcCathodeHit::FdcCathodeHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FdcCathodeHit::FdcCathodeHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_q(0),
    m_t(0),
    m_fdcDigihit_link(&m_host->m_fdcDigihit_plist,
@@ -10131,7 +11423,12 @@ inline FdcCathodeHit::FdcCathodeHit(HDDM_Element *parent)
 {}
 
 inline FdcCathodeHit::~FdcCathodeHit() {
+   clear();
+}
+inline void FdcCathodeHit::clear() {
+   if (m_host != 0) {
    deleteFdcDigihits();
+   }
 }
 
 inline std::string FdcCathodeHit::getClass() const {
@@ -10231,15 +11528,18 @@ inline void FdcCathodeHit::deleteFdcDigihits(int count, int start) {
    m_fdcDigihit_link.del(count,start);
 }
 
-inline FdcCathodeTruthHit::FdcCathodeTruthHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FdcCathodeTruthHit::FdcCathodeTruthHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_itrack(0),
    m_ptype(0),
    m_q(0),
    m_t(0)
 {}
 
-inline FdcCathodeTruthHit::~FdcCathodeTruthHit() {}
+inline FdcCathodeTruthHit::~FdcCathodeTruthHit() {
+   clear();
+}
+inline void FdcCathodeTruthHit::clear() {}
 
 inline std::string FdcCathodeTruthHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -10348,8 +11648,8 @@ inline const void *FdcCathodeTruthHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline FdcCathodeStrip::FdcCathodeStrip(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FdcCathodeStrip::FdcCathodeStrip(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_plane(0),
    m_strip(0),
    m_fdcCathodeHit_list(&m_host->m_fdcCathodeHit_plist,
@@ -10363,8 +11663,13 @@ inline FdcCathodeStrip::FdcCathodeStrip(HDDM_Element *parent)
 {}
 
 inline FdcCathodeStrip::~FdcCathodeStrip() {
+   clear();
+}
+inline void FdcCathodeStrip::clear() {
+   if (m_host != 0) {
    deleteFdcCathodeHits();
    deleteFdcCathodeTruthHits();
+   }
 }
 
 inline std::string FdcCathodeStrip::getClass() const {
@@ -10478,8 +11783,8 @@ inline void FdcCathodeStrip::deleteFdcCathodeTruthHits(int count, int start) {
    m_fdcCathodeTruthHit_list.del(count,start);
 }
 
-inline FdcTruthPoint::FdcTruthPoint(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FdcTruthPoint::FdcTruthPoint(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_dEdx(0),
    m_dradius(0),
@@ -10500,7 +11805,12 @@ inline FdcTruthPoint::FdcTruthPoint(HDDM_Element *parent)
 {}
 
 inline FdcTruthPoint::~FdcTruthPoint() {
+   clear();
+}
+inline void FdcTruthPoint::clear() {
+   if (m_host != 0) {
    deleteTrackIDs();
+   }
 }
 
 inline std::string FdcTruthPoint::getClass() const {
@@ -10741,8 +12051,8 @@ inline void FdcTruthPoint::deleteTrackIDs(int count, int start) {
    m_trackID_link.del(count,start);
 }
 
-inline FdcChamber::FdcChamber(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FdcChamber::FdcChamber(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_layer(0),
    m_module(0),
    m_fdcAnodeWire_list(&m_host->m_fdcAnodeWire_plist,
@@ -10760,9 +12070,14 @@ inline FdcChamber::FdcChamber(HDDM_Element *parent)
 {}
 
 inline FdcChamber::~FdcChamber() {
+   clear();
+}
+inline void FdcChamber::clear() {
+   if (m_host != 0) {
    deleteFdcAnodeWires();
    deleteFdcCathodeStrips();
    deleteFdcTruthPoints();
+   }
 }
 
 inline std::string FdcChamber::getClass() const {
@@ -10878,8 +12193,8 @@ inline void FdcChamber::deleteFdcTruthPoints(int count, int start) {
    m_fdcTruthPoint_list.del(count,start);
 }
 
-inline ForwardDC::ForwardDC(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline ForwardDC::ForwardDC(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_fdcChamber_list(&m_host->m_fdcChamber_plist,
                m_host->m_fdcChamber_plist.end(),
                m_host->m_fdcChamber_plist.end(),
@@ -10887,7 +12202,12 @@ inline ForwardDC::ForwardDC(HDDM_Element *parent)
 {}
 
 inline ForwardDC::~ForwardDC() {
+   clear();
+}
+inline void ForwardDC::clear() {
+   if (m_host != 0) {
    deleteFdcChambers();
+   }
 }
 
 inline std::string ForwardDC::getClass() const {
@@ -10945,12 +12265,15 @@ inline void ForwardDC::deleteFdcChambers(int count, int start) {
    m_fdcChamber_list.del(count,start);
 }
 
-inline StcDigihit::StcDigihit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline StcDigihit::StcDigihit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_peakAmp(0)
 {}
 
-inline StcDigihit::~StcDigihit() {}
+inline StcDigihit::~StcDigihit() {
+   clear();
+}
+inline void StcDigihit::clear() {}
 
 inline std::string StcDigihit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -11016,8 +12339,8 @@ inline const void *StcDigihit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline StcHit::StcHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline StcHit::StcHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dE(0),
    m_t(0),
    m_stcDigihit_link(&m_host->m_stcDigihit_plist,
@@ -11027,7 +12350,12 @@ inline StcHit::StcHit(HDDM_Element *parent)
 {}
 
 inline StcHit::~StcHit() {
+   clear();
+}
+inline void StcHit::clear() {
+   if (m_host != 0) {
    deleteStcDigihits();
+   }
 }
 
 inline std::string StcHit::getClass() const {
@@ -11115,15 +12443,18 @@ inline void StcHit::deleteStcDigihits(int count, int start) {
    m_stcDigihit_link.del(count,start);
 }
 
-inline StcTruthHit::StcTruthHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline StcTruthHit::StcTruthHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dE(0),
    m_itrack(0),
    m_ptype(0),
    m_t(0)
 {}
 
-inline StcTruthHit::~StcTruthHit() {}
+inline StcTruthHit::~StcTruthHit() {
+   clear();
+}
+inline void StcTruthHit::clear() {}
 
 inline std::string StcTruthHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -11220,8 +12551,8 @@ inline const void *StcTruthHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline StcPaddle::StcPaddle(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline StcPaddle::StcPaddle(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_sector(0),
    m_stcHit_list(&m_host->m_stcHit_plist,
                m_host->m_stcHit_plist.end(),
@@ -11234,8 +12565,13 @@ inline StcPaddle::StcPaddle(HDDM_Element *parent)
 {}
 
 inline StcPaddle::~StcPaddle() {
+   clear();
+}
+inline void StcPaddle::clear() {
+   if (m_host != 0) {
    deleteStcHits();
    deleteStcTruthHits();
+   }
 }
 
 inline std::string StcPaddle::getClass() const {
@@ -11328,8 +12664,8 @@ inline void StcPaddle::deleteStcTruthHits(int count, int start) {
    m_stcTruthHit_list.del(count,start);
 }
 
-inline StcTruthPoint::StcTruthPoint(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline StcTruthPoint::StcTruthPoint(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_dEdx(0),
    m_phi(0),
@@ -11350,7 +12686,12 @@ inline StcTruthPoint::StcTruthPoint(HDDM_Element *parent)
 {}
 
 inline StcTruthPoint::~StcTruthPoint() {
+   clear();
+}
+inline void StcTruthPoint::clear() {
+   if (m_host != 0) {
    deleteTrackIDs();
+   }
 }
 
 inline std::string StcTruthPoint::getClass() const {
@@ -11583,8 +12924,8 @@ inline void StcTruthPoint::deleteTrackIDs(int count, int start) {
    m_trackID_link.del(count,start);
 }
 
-inline StartCntr::StartCntr(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline StartCntr::StartCntr(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_stcPaddle_list(&m_host->m_stcPaddle_plist,
                m_host->m_stcPaddle_plist.end(),
                m_host->m_stcPaddle_plist.end(),
@@ -11596,8 +12937,13 @@ inline StartCntr::StartCntr(HDDM_Element *parent)
 {}
 
 inline StartCntr::~StartCntr() {
+   clear();
+}
+inline void StartCntr::clear() {
+   if (m_host != 0) {
    deleteStcPaddles();
    deleteStcTruthPoints();
+   }
 }
 
 inline std::string StartCntr::getClass() const {
@@ -11671,13 +13017,16 @@ inline void StartCntr::deleteStcTruthPoints(int count, int start) {
    m_stcTruthPoint_list.del(count,start);
 }
 
-inline BcalSiPMUpHit::BcalSiPMUpHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline BcalSiPMUpHit::BcalSiPMUpHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_t(0)
 {}
 
-inline BcalSiPMUpHit::~BcalSiPMUpHit() {}
+inline BcalSiPMUpHit::~BcalSiPMUpHit() {
+   clear();
+}
+inline void BcalSiPMUpHit::clear() {}
 
 inline std::string BcalSiPMUpHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -11762,13 +13111,16 @@ inline const void *BcalSiPMUpHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline BcalSiPMDownHit::BcalSiPMDownHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline BcalSiPMDownHit::BcalSiPMDownHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_t(0)
 {}
 
-inline BcalSiPMDownHit::~BcalSiPMDownHit() {}
+inline BcalSiPMDownHit::~BcalSiPMDownHit() {
+   clear();
+}
+inline void BcalSiPMDownHit::clear() {}
 
 inline std::string BcalSiPMDownHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -11853,13 +13205,16 @@ inline const void *BcalSiPMDownHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline BcalSiPMTruth::BcalSiPMTruth(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline BcalSiPMTruth::BcalSiPMTruth(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_incident_id(0)
 {}
 
-inline BcalSiPMTruth::~BcalSiPMTruth() {}
+inline BcalSiPMTruth::~BcalSiPMTruth() {
+   clear();
+}
+inline void BcalSiPMTruth::clear() {}
 
 inline std::string BcalSiPMTruth::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -11954,8 +13309,8 @@ inline const void *BcalSiPMTruth::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline BcalSiPMSpectrum::BcalSiPMSpectrum(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline BcalSiPMSpectrum::BcalSiPMSpectrum(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_bin_width(0),
    m_end(0),
    m_tstart(0),
@@ -11967,7 +13322,12 @@ inline BcalSiPMSpectrum::BcalSiPMSpectrum(HDDM_Element *parent)
 {}
 
 inline BcalSiPMSpectrum::~BcalSiPMSpectrum() {
+   clear();
+}
+inline void BcalSiPMSpectrum::clear() {
+   if (m_host != 0) {
    deleteBcalSiPMTruths();
+   }
 }
 
 inline std::string BcalSiPMSpectrum::getClass() const {
@@ -12095,14 +13455,17 @@ inline void BcalSiPMSpectrum::deleteBcalSiPMTruths(int count, int start) {
    m_bcalSiPMTruth_link.del(count,start);
 }
 
-inline BcalfADCHit::BcalfADCHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline BcalfADCHit::BcalfADCHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_end(0),
    m_t(0)
 {}
 
-inline BcalfADCHit::~BcalfADCHit() {}
+inline BcalfADCHit::~BcalfADCHit() {
+   clear();
+}
+inline void BcalfADCHit::clear() {}
 
 inline std::string BcalfADCHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -12200,12 +13563,15 @@ inline const void *BcalfADCHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline BcalfADCPeak::BcalfADCPeak(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline BcalfADCPeak::BcalfADCPeak(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_peakAmp(0)
 {}
 
-inline BcalfADCPeak::~BcalfADCPeak() {}
+inline BcalfADCPeak::~BcalfADCPeak() {
+   clear();
+}
+inline void BcalfADCPeak::clear() {}
 
 inline std::string BcalfADCPeak::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -12283,8 +13649,8 @@ inline const void *BcalfADCPeak::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline BcalfADCDigiHit::BcalfADCDigiHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline BcalfADCDigiHit::BcalfADCDigiHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_end(0),
    m_pulse_integral(0),
    m_pulse_time(0),
@@ -12295,7 +13661,12 @@ inline BcalfADCDigiHit::BcalfADCDigiHit(HDDM_Element *parent)
 {}
 
 inline BcalfADCDigiHit::~BcalfADCDigiHit() {
+   clear();
+}
+inline void BcalfADCDigiHit::clear() {
+   if (m_host != 0) {
    deleteBcalfADCPeaks();
+   }
 }
 
 inline std::string BcalfADCDigiHit::getClass() const {
@@ -12410,13 +13781,16 @@ inline void BcalfADCDigiHit::deleteBcalfADCPeaks(int count, int start) {
    m_bcalfADCPeak_link.del(count,start);
 }
 
-inline BcalTDCHit::BcalTDCHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline BcalTDCHit::BcalTDCHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_end(0),
    m_t(0)
 {}
 
-inline BcalTDCHit::~BcalTDCHit() {}
+inline BcalTDCHit::~BcalTDCHit() {
+   clear();
+}
+inline void BcalTDCHit::clear() {}
 
 inline std::string BcalTDCHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -12501,13 +13875,16 @@ inline const void *BcalTDCHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline BcalTDCDigiHit::BcalTDCDigiHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline BcalTDCDigiHit::BcalTDCDigiHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_end(0),
    m_time(0)
 {}
 
-inline BcalTDCDigiHit::~BcalTDCDigiHit() {}
+inline BcalTDCDigiHit::~BcalTDCDigiHit() {
+   clear();
+}
+inline void BcalTDCDigiHit::clear() {}
 
 inline std::string BcalTDCDigiHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -12592,15 +13969,18 @@ inline const void *BcalTDCDigiHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline BcalTruthHit::BcalTruthHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline BcalTruthHit::BcalTruthHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_incident_id(0),
    m_t(0),
    m_zLocal(0)
 {}
 
-inline BcalTruthHit::~BcalTruthHit() {}
+inline BcalTruthHit::~BcalTruthHit() {
+   clear();
+}
+inline void BcalTruthHit::clear() {}
 
 inline std::string BcalTruthHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -12711,8 +14091,8 @@ inline const void *BcalTruthHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline BcalCell::BcalCell(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline BcalCell::BcalCell(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_layer(0),
    m_module(0),
    m_sector(0),
@@ -12751,6 +14131,10 @@ inline BcalCell::BcalCell(HDDM_Element *parent)
 {}
 
 inline BcalCell::~BcalCell() {
+   clear();
+}
+inline void BcalCell::clear() {
+   if (m_host != 0) {
    deleteBcalSiPMUpHits();
    deleteBcalSiPMDownHits();
    deleteBcalSiPMSpectrums();
@@ -12759,6 +14143,7 @@ inline BcalCell::~BcalCell() {
    deleteBcalTDCHits();
    deleteBcalTDCDigiHits();
    deleteBcalTruthHits();
+   }
 }
 
 inline std::string BcalCell::getClass() const {
@@ -12973,8 +14358,8 @@ inline void BcalCell::deleteBcalTruthHits(int count, int start) {
    m_bcalTruthHit_list.del(count,start);
 }
 
-inline BcalTruthIncidentParticle::BcalTruthIncidentParticle(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline BcalTruthIncidentParticle::BcalTruthIncidentParticle(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_id(0),
    m_ptype(0),
    m_px(0),
@@ -12985,7 +14370,10 @@ inline BcalTruthIncidentParticle::BcalTruthIncidentParticle(HDDM_Element *parent
    m_z(0)
 {}
 
-inline BcalTruthIncidentParticle::~BcalTruthIncidentParticle() {}
+inline BcalTruthIncidentParticle::~BcalTruthIncidentParticle() {
+   clear();
+}
+inline void BcalTruthIncidentParticle::clear() {}
 
 inline std::string BcalTruthIncidentParticle::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -13136,8 +14524,8 @@ inline const void *BcalTruthIncidentParticle::getAttribute(const std::string &na
    return m_parent->getAttribute(name, atype);
 }
 
-inline BcalTruthShower::BcalTruthShower(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline BcalTruthShower::BcalTruthShower(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_phi(0),
    m_primary(0),
@@ -13156,7 +14544,12 @@ inline BcalTruthShower::BcalTruthShower(HDDM_Element *parent)
 {}
 
 inline BcalTruthShower::~BcalTruthShower() {
+   clear();
+}
+inline void BcalTruthShower::clear() {
+   if (m_host != 0) {
    deleteTrackIDs();
+   }
 }
 
 inline std::string BcalTruthShower::getClass() const {
@@ -13363,8 +14756,8 @@ inline void BcalTruthShower::deleteTrackIDs(int count, int start) {
    m_trackID_link.del(count,start);
 }
 
-inline BarrelEMcal::BarrelEMcal(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline BarrelEMcal::BarrelEMcal(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_bcalCell_list(&m_host->m_bcalCell_plist,
                m_host->m_bcalCell_plist.end(),
                m_host->m_bcalCell_plist.end(),
@@ -13380,9 +14773,14 @@ inline BarrelEMcal::BarrelEMcal(HDDM_Element *parent)
 {}
 
 inline BarrelEMcal::~BarrelEMcal() {
+   clear();
+}
+inline void BarrelEMcal::clear() {
+   if (m_host != 0) {
    deleteBcalCells();
    deleteBcalTruthIncidentParticles();
    deleteBcalTruthShowers();
+   }
 }
 
 inline std::string BarrelEMcal::getClass() const {
@@ -13472,14 +14870,17 @@ inline void BarrelEMcal::deleteBcalTruthShowers(int count, int start) {
    m_bcalTruthShower_list.del(count,start);
 }
 
-inline GcalHit::GcalHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline GcalHit::GcalHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_t(0),
    m_zLocal(0)
 {}
 
-inline GcalHit::~GcalHit() {}
+inline GcalHit::~GcalHit() {
+   clear();
+}
+inline void GcalHit::clear() {}
 
 inline std::string GcalHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -13569,14 +14970,17 @@ inline const void *GcalHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline GcalTruthHit::GcalTruthHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline GcalTruthHit::GcalTruthHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_t(0),
    m_zLocal(0)
 {}
 
-inline GcalTruthHit::~GcalTruthHit() {}
+inline GcalTruthHit::~GcalTruthHit() {
+   clear();
+}
+inline void GcalTruthHit::clear() {}
 
 inline std::string GcalTruthHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -13666,8 +15070,8 @@ inline const void *GcalTruthHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline GcalCell::GcalCell(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline GcalCell::GcalCell(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_module(0),
    m_gcalHit_list(&m_host->m_gcalHit_plist,
                m_host->m_gcalHit_plist.end(),
@@ -13680,8 +15084,13 @@ inline GcalCell::GcalCell(HDDM_Element *parent)
 {}
 
 inline GcalCell::~GcalCell() {
+   clear();
+}
+inline void GcalCell::clear() {
+   if (m_host != 0) {
    deleteGcalHits();
    deleteGcalTruthHits();
+   }
 }
 
 inline std::string GcalCell::getClass() const {
@@ -13774,8 +15183,8 @@ inline void GcalCell::deleteGcalTruthHits(int count, int start) {
    m_gcalTruthHit_list.del(count,start);
 }
 
-inline GcalTruthShower::GcalTruthShower(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline GcalTruthShower::GcalTruthShower(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_phi(0),
    m_primary(0),
@@ -13794,7 +15203,12 @@ inline GcalTruthShower::GcalTruthShower(HDDM_Element *parent)
 {}
 
 inline GcalTruthShower::~GcalTruthShower() {
+   clear();
+}
+inline void GcalTruthShower::clear() {
+   if (m_host != 0) {
    deleteTrackIDs();
+   }
 }
 
 inline std::string GcalTruthShower::getClass() const {
@@ -14001,8 +15415,8 @@ inline void GcalTruthShower::deleteTrackIDs(int count, int start) {
    m_trackID_link.del(count,start);
 }
 
-inline GapEMcal::GapEMcal(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline GapEMcal::GapEMcal(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_gcalCell_list(&m_host->m_gcalCell_plist,
                m_host->m_gcalCell_plist.end(),
                m_host->m_gcalCell_plist.end(),
@@ -14014,8 +15428,13 @@ inline GapEMcal::GapEMcal(HDDM_Element *parent)
 {}
 
 inline GapEMcal::~GapEMcal() {
+   clear();
+}
+inline void GapEMcal::clear() {
+   if (m_host != 0) {
    deleteGcalCells();
    deleteGcalTruthShowers();
+   }
 }
 
 inline std::string GapEMcal::getClass() const {
@@ -14089,13 +15508,16 @@ inline void GapEMcal::deleteGcalTruthShowers(int count, int start) {
    m_gcalTruthShower_list.del(count,start);
 }
 
-inline CereHit::CereHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline CereHit::CereHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_pe(0),
    m_t(0)
 {}
 
-inline CereHit::~CereHit() {}
+inline CereHit::~CereHit() {
+   clear();
+}
+inline void CereHit::clear() {}
 
 inline std::string CereHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -14166,13 +15588,16 @@ inline const void *CereHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline CereTruthHit::CereTruthHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline CereTruthHit::CereTruthHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_pe(0),
    m_t(0)
 {}
 
-inline CereTruthHit::~CereTruthHit() {}
+inline CereTruthHit::~CereTruthHit() {
+   clear();
+}
+inline void CereTruthHit::clear() {}
 
 inline std::string CereTruthHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -14243,8 +15668,8 @@ inline const void *CereTruthHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline CereSection::CereSection(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline CereSection::CereSection(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_sector(0),
    m_cereHit_list(&m_host->m_cereHit_plist,
                m_host->m_cereHit_plist.end(),
@@ -14257,8 +15682,13 @@ inline CereSection::CereSection(HDDM_Element *parent)
 {}
 
 inline CereSection::~CereSection() {
+   clear();
+}
+inline void CereSection::clear() {
+   if (m_host != 0) {
    deleteCereHits();
    deleteCereTruthHits();
+   }
 }
 
 inline std::string CereSection::getClass() const {
@@ -14351,8 +15781,8 @@ inline void CereSection::deleteCereTruthHits(int count, int start) {
    m_cereTruthHit_list.del(count,start);
 }
 
-inline CereTruthPoint::CereTruthPoint(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline CereTruthPoint::CereTruthPoint(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_primary(0),
    m_ptype(0),
@@ -14371,7 +15801,12 @@ inline CereTruthPoint::CereTruthPoint(HDDM_Element *parent)
 {}
 
 inline CereTruthPoint::~CereTruthPoint() {
+   clear();
+}
+inline void CereTruthPoint::clear() {
+   if (m_host != 0) {
    deleteTrackIDs();
+   }
 }
 
 inline std::string CereTruthPoint::getClass() const {
@@ -14578,8 +16013,8 @@ inline void CereTruthPoint::deleteTrackIDs(int count, int start) {
    m_trackID_link.del(count,start);
 }
 
-inline Cerenkov::Cerenkov(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Cerenkov::Cerenkov(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_cereSection_list(&m_host->m_cereSection_plist,
                m_host->m_cereSection_plist.end(),
                m_host->m_cereSection_plist.end(),
@@ -14591,8 +16026,13 @@ inline Cerenkov::Cerenkov(HDDM_Element *parent)
 {}
 
 inline Cerenkov::~Cerenkov() {
+   clear();
+}
+inline void Cerenkov::clear() {
+   if (m_host != 0) {
    deleteCereSections();
    deleteCereTruthPoints();
+   }
 }
 
 inline std::string Cerenkov::getClass() const {
@@ -14666,15 +16106,18 @@ inline void Cerenkov::deleteCereTruthPoints(int count, int start) {
    m_cereTruthPoint_list.del(count,start);
 }
 
-inline RichTruthHit::RichTruthHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline RichTruthHit::RichTruthHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_t(0),
    m_x(0),
    m_y(0),
    m_z(0)
 {}
 
-inline RichTruthHit::~RichTruthHit() {}
+inline RichTruthHit::~RichTruthHit() {
+   clear();
+}
+inline void RichTruthHit::clear() {}
 
 inline std::string RichTruthHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -14773,8 +16216,8 @@ inline const void *RichTruthHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline RichTruthPoint::RichTruthPoint(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline RichTruthPoint::RichTruthPoint(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_primary(0),
    m_ptype(0),
@@ -14793,7 +16236,12 @@ inline RichTruthPoint::RichTruthPoint(HDDM_Element *parent)
 {}
 
 inline RichTruthPoint::~RichTruthPoint() {
+   clear();
+}
+inline void RichTruthPoint::clear() {
+   if (m_host != 0) {
    deleteTrackIDs();
+   }
 }
 
 inline std::string RichTruthPoint::getClass() const {
@@ -15000,8 +16448,8 @@ inline void RichTruthPoint::deleteTrackIDs(int count, int start) {
    m_trackID_link.del(count,start);
 }
 
-inline RICH::RICH(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline RICH::RICH(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_richTruthHit_list(&m_host->m_richTruthHit_plist,
                m_host->m_richTruthHit_plist.end(),
                m_host->m_richTruthHit_plist.end(),
@@ -15013,8 +16461,13 @@ inline RICH::RICH(HDDM_Element *parent)
 {}
 
 inline RICH::~RICH() {
+   clear();
+}
+inline void RICH::clear() {
+   if (m_host != 0) {
    deleteRichTruthHits();
    deleteRichTruthPoints();
+   }
 }
 
 inline std::string RICH::getClass() const {
@@ -15088,8 +16541,8 @@ inline void RICH::deleteRichTruthPoints(int count, int start) {
    m_richTruthPoint_list.del(count,start);
 }
 
-inline DircTruthBarHit::DircTruthBarHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline DircTruthBarHit::DircTruthBarHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_bar(0),
    m_pdg(0),
@@ -15103,7 +16556,10 @@ inline DircTruthBarHit::DircTruthBarHit(HDDM_Element *parent)
    m_z(0)
 {}
 
-inline DircTruthBarHit::~DircTruthBarHit() {}
+inline DircTruthBarHit::~DircTruthBarHit() {
+   clear();
+}
+inline void DircTruthBarHit::clear() {}
 
 inline std::string DircTruthBarHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -15293,15 +16749,18 @@ inline const void *DircTruthBarHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline DircTruthPmtHitExtra::DircTruthPmtHitExtra(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline DircTruthPmtHitExtra::DircTruthPmtHitExtra(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_bbrefl(0),
    m_path(0),
    m_refl(0),
    m_t_fixed(0)
 {}
 
-inline DircTruthPmtHitExtra::~DircTruthPmtHitExtra() {}
+inline DircTruthPmtHitExtra::~DircTruthPmtHitExtra() {
+   clear();
+}
+inline void DircTruthPmtHitExtra::clear() {}
 
 inline std::string DircTruthPmtHitExtra::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -15428,8 +16887,8 @@ inline const void *DircTruthPmtHitExtra::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline DircTruthPmtHit::DircTruthPmtHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline DircTruthPmtHit::DircTruthPmtHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_ch(0),
    m_key_bar(0),
@@ -15444,7 +16903,12 @@ inline DircTruthPmtHit::DircTruthPmtHit(HDDM_Element *parent)
 {}
 
 inline DircTruthPmtHit::~DircTruthPmtHit() {
+   clear();
+}
+inline void DircTruthPmtHit::clear() {
+   if (m_host != 0) {
    deleteDircTruthPmtHitExtras();
+   }
 }
 
 inline std::string DircTruthPmtHit::getClass() const {
@@ -15599,13 +17063,16 @@ inline void DircTruthPmtHit::deleteDircTruthPmtHitExtras(int count, int start) {
    m_dircTruthPmtHitExtra_list.del(count,start);
 }
 
-inline DircPmtHit::DircPmtHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline DircPmtHit::DircPmtHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_ch(0),
    m_t(0)
 {}
 
-inline DircPmtHit::~DircPmtHit() {}
+inline DircPmtHit::~DircPmtHit() {
+   clear();
+}
+inline void DircPmtHit::clear() {}
 
 inline std::string DircPmtHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -15678,8 +17145,8 @@ inline const void *DircPmtHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline DIRC::DIRC(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline DIRC::DIRC(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dircTruthBarHit_list(&m_host->m_dircTruthBarHit_plist,
                m_host->m_dircTruthBarHit_plist.end(),
                m_host->m_dircTruthBarHit_plist.end(),
@@ -15695,9 +17162,14 @@ inline DIRC::DIRC(HDDM_Element *parent)
 {}
 
 inline DIRC::~DIRC() {
+   clear();
+}
+inline void DIRC::clear() {
+   if (m_host != 0) {
    deleteDircTruthBarHits();
    deleteDircTruthPmtHits();
    deleteDircPmtHits();
+   }
 }
 
 inline std::string DIRC::getClass() const {
@@ -15787,12 +17259,15 @@ inline void DIRC::deleteDircPmtHits(int count, int start) {
    m_dircPmtHit_list.del(count,start);
 }
 
-inline FtofDigihit::FtofDigihit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FtofDigihit::FtofDigihit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_peakAmp(0)
 {}
 
-inline FtofDigihit::~FtofDigihit() {}
+inline FtofDigihit::~FtofDigihit() {
+   clear();
+}
+inline void FtofDigihit::clear() {}
 
 inline std::string FtofDigihit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -15866,8 +17341,8 @@ inline const void *FtofDigihit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline FtofHit::FtofHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FtofHit::FtofHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dE(0),
    m_end(0),
    m_t(0),
@@ -15878,7 +17353,12 @@ inline FtofHit::FtofHit(HDDM_Element *parent)
 {}
 
 inline FtofHit::~FtofHit() {
+   clear();
+}
+inline void FtofHit::clear() {
+   if (m_host != 0) {
    deleteFtofDigihits();
+   }
 }
 
 inline std::string FtofHit::getClass() const {
@@ -15989,8 +17469,8 @@ inline void FtofHit::deleteFtofDigihits(int count, int start) {
    m_ftofDigihit_link.del(count,start);
 }
 
-inline FtofTruthExtra::FtofTruthExtra(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FtofTruthExtra::FtofTruthExtra(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_dist(0),
    m_itrack(0),
@@ -16003,7 +17483,10 @@ inline FtofTruthExtra::FtofTruthExtra(HDDM_Element *parent)
    m_z(0)
 {}
 
-inline FtofTruthExtra::~FtofTruthExtra() {}
+inline FtofTruthExtra::~FtofTruthExtra() {
+   clear();
+}
+inline void FtofTruthExtra::clear() {}
 
 inline std::string FtofTruthExtra::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -16200,8 +17683,8 @@ inline const void *FtofTruthExtra::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline FtofTruthHit::FtofTruthHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FtofTruthHit::FtofTruthHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dE(0),
    m_end(0),
    m_t(0),
@@ -16212,7 +17695,12 @@ inline FtofTruthHit::FtofTruthHit(HDDM_Element *parent)
 {}
 
 inline FtofTruthHit::~FtofTruthHit() {
+   clear();
+}
+inline void FtofTruthHit::clear() {
+   if (m_host != 0) {
    deleteFtofTruthExtras();
+   }
 }
 
 inline std::string FtofTruthHit::getClass() const {
@@ -16323,8 +17811,8 @@ inline void FtofTruthHit::deleteFtofTruthExtras(int count, int start) {
    m_ftofTruthExtra_list.del(count,start);
 }
 
-inline FtofCounter::FtofCounter(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FtofCounter::FtofCounter(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_bar(0),
    m_plane(0),
    m_ftofHit_list(&m_host->m_ftofHit_plist,
@@ -16338,8 +17826,13 @@ inline FtofCounter::FtofCounter(HDDM_Element *parent)
 {}
 
 inline FtofCounter::~FtofCounter() {
+   clear();
+}
+inline void FtofCounter::clear() {
+   if (m_host != 0) {
    deleteFtofHits();
    deleteFtofTruthHits();
+   }
 }
 
 inline std::string FtofCounter::getClass() const {
@@ -16445,8 +17938,8 @@ inline void FtofCounter::deleteFtofTruthHits(int count, int start) {
    m_ftofTruthHit_list.del(count,start);
 }
 
-inline FtofTruthPoint::FtofTruthPoint(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FtofTruthPoint::FtofTruthPoint(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_primary(0),
    m_ptype(0),
@@ -16465,7 +17958,12 @@ inline FtofTruthPoint::FtofTruthPoint(HDDM_Element *parent)
 {}
 
 inline FtofTruthPoint::~FtofTruthPoint() {
+   clear();
+}
+inline void FtofTruthPoint::clear() {
+   if (m_host != 0) {
    deleteTrackIDs();
+   }
 }
 
 inline std::string FtofTruthPoint::getClass() const {
@@ -16672,8 +18170,8 @@ inline void FtofTruthPoint::deleteTrackIDs(int count, int start) {
    m_trackID_link.del(count,start);
 }
 
-inline ForwardTOF::ForwardTOF(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline ForwardTOF::ForwardTOF(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_ftofCounter_list(&m_host->m_ftofCounter_plist,
                m_host->m_ftofCounter_plist.end(),
                m_host->m_ftofCounter_plist.end(),
@@ -16685,8 +18183,13 @@ inline ForwardTOF::ForwardTOF(HDDM_Element *parent)
 {}
 
 inline ForwardTOF::~ForwardTOF() {
+   clear();
+}
+inline void ForwardTOF::clear() {
+   if (m_host != 0) {
    deleteFtofCounters();
    deleteFtofTruthPoints();
+   }
 }
 
 inline std::string ForwardTOF::getClass() const {
@@ -16760,12 +18263,15 @@ inline void ForwardTOF::deleteFtofTruthPoints(int count, int start) {
    m_ftofTruthPoint_list.del(count,start);
 }
 
-inline FcalDigihit::FcalDigihit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FcalDigihit::FcalDigihit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_integralOverPeak(0)
 {}
 
-inline FcalDigihit::~FcalDigihit() {}
+inline FcalDigihit::~FcalDigihit() {
+   clear();
+}
+inline void FcalDigihit::clear() {}
 
 inline std::string FcalDigihit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -16835,8 +18341,8 @@ inline const void *FcalDigihit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline FcalHit::FcalHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FcalHit::FcalHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_t(0),
    m_fcalDigihit_link(&m_host->m_fcalDigihit_plist,
@@ -16846,7 +18352,12 @@ inline FcalHit::FcalHit(HDDM_Element *parent)
 {}
 
 inline FcalHit::~FcalHit() {
+   clear();
+}
+inline void FcalHit::clear() {
+   if (m_host != 0) {
    deleteFcalDigihits();
+   }
 }
 
 inline std::string FcalHit::getClass() const {
@@ -16938,13 +18449,16 @@ inline void FcalHit::deleteFcalDigihits(int count, int start) {
    m_fcalDigihit_link.del(count,start);
 }
 
-inline FcalTruthLightGuide::FcalTruthLightGuide(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FcalTruthLightGuide::FcalTruthLightGuide(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dE(0),
    m_t(0)
 {}
 
-inline FcalTruthLightGuide::~FcalTruthLightGuide() {}
+inline FcalTruthLightGuide::~FcalTruthLightGuide() {
+   clear();
+}
+inline void FcalTruthLightGuide::clear() {}
 
 inline std::string FcalTruthLightGuide::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -17023,8 +18537,8 @@ inline const void *FcalTruthLightGuide::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline FcalTruthHit::FcalTruthHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FcalTruthHit::FcalTruthHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_t(0),
    m_fcalTruthLightGuide_list(&m_host->m_fcalTruthLightGuide_plist,
@@ -17034,7 +18548,12 @@ inline FcalTruthHit::FcalTruthHit(HDDM_Element *parent)
 {}
 
 inline FcalTruthHit::~FcalTruthHit() {
+   clear();
+}
+inline void FcalTruthHit::clear() {
+   if (m_host != 0) {
    deleteFcalTruthLightGuides();
+   }
 }
 
 inline std::string FcalTruthHit::getClass() const {
@@ -17126,8 +18645,8 @@ inline void FcalTruthHit::deleteFcalTruthLightGuides(int count, int start) {
    m_fcalTruthLightGuide_list.del(count,start);
 }
 
-inline FcalBlock::FcalBlock(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FcalBlock::FcalBlock(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_column(0),
    m_row(0),
    m_fcalHit_list(&m_host->m_fcalHit_plist,
@@ -17141,8 +18660,13 @@ inline FcalBlock::FcalBlock(HDDM_Element *parent)
 {}
 
 inline FcalBlock::~FcalBlock() {
+   clear();
+}
+inline void FcalBlock::clear() {
+   if (m_host != 0) {
    deleteFcalHits();
    deleteFcalTruthHits();
+   }
 }
 
 inline std::string FcalBlock::getClass() const {
@@ -17248,8 +18772,8 @@ inline void FcalBlock::deleteFcalTruthHits(int count, int start) {
    m_fcalTruthHit_list.del(count,start);
 }
 
-inline FcalTruthShower::FcalTruthShower(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FcalTruthShower::FcalTruthShower(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_primary(0),
    m_ptype(0),
@@ -17268,7 +18792,12 @@ inline FcalTruthShower::FcalTruthShower(HDDM_Element *parent)
 {}
 
 inline FcalTruthShower::~FcalTruthShower() {
+   clear();
+}
+inline void FcalTruthShower::clear() {
+   if (m_host != 0) {
    deleteTrackIDs();
+   }
 }
 
 inline std::string FcalTruthShower::getClass() const {
@@ -17475,8 +19004,8 @@ inline void FcalTruthShower::deleteTrackIDs(int count, int start) {
    m_trackID_link.del(count,start);
 }
 
-inline ForwardEMcal::ForwardEMcal(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline ForwardEMcal::ForwardEMcal(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_fcalBlock_list(&m_host->m_fcalBlock_plist,
                m_host->m_fcalBlock_plist.end(),
                m_host->m_fcalBlock_plist.end(),
@@ -17488,8 +19017,13 @@ inline ForwardEMcal::ForwardEMcal(HDDM_Element *parent)
 {}
 
 inline ForwardEMcal::~ForwardEMcal() {
+   clear();
+}
+inline void ForwardEMcal::clear() {
+   if (m_host != 0) {
    deleteFcalBlocks();
    deleteFcalTruthShowers();
+   }
 }
 
 inline std::string ForwardEMcal::getClass() const {
@@ -17563,13 +19097,16 @@ inline void ForwardEMcal::deleteFcalTruthShowers(int count, int start) {
    m_fcalTruthShower_list.del(count,start);
 }
 
-inline CcalHit::CcalHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline CcalHit::CcalHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_t(0)
 {}
 
-inline CcalHit::~CcalHit() {}
+inline CcalHit::~CcalHit() {
+   clear();
+}
+inline void CcalHit::clear() {}
 
 inline std::string CcalHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -17644,13 +19181,16 @@ inline const void *CcalHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline CcalTruthHit::CcalTruthHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline CcalTruthHit::CcalTruthHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_t(0)
 {}
 
-inline CcalTruthHit::~CcalTruthHit() {}
+inline CcalTruthHit::~CcalTruthHit() {
+   clear();
+}
+inline void CcalTruthHit::clear() {}
 
 inline std::string CcalTruthHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -17725,8 +19265,8 @@ inline const void *CcalTruthHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline CcalBlock::CcalBlock(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline CcalBlock::CcalBlock(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_column(0),
    m_row(0),
    m_ccalHit_list(&m_host->m_ccalHit_plist,
@@ -17740,8 +19280,13 @@ inline CcalBlock::CcalBlock(HDDM_Element *parent)
 {}
 
 inline CcalBlock::~CcalBlock() {
+   clear();
+}
+inline void CcalBlock::clear() {
+   if (m_host != 0) {
    deleteCcalHits();
    deleteCcalTruthHits();
+   }
 }
 
 inline std::string CcalBlock::getClass() const {
@@ -17847,8 +19392,8 @@ inline void CcalBlock::deleteCcalTruthHits(int count, int start) {
    m_ccalTruthHit_list.del(count,start);
 }
 
-inline CcalTruthShower::CcalTruthShower(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline CcalTruthShower::CcalTruthShower(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_primary(0),
    m_ptype(0),
@@ -17867,7 +19412,12 @@ inline CcalTruthShower::CcalTruthShower(HDDM_Element *parent)
 {}
 
 inline CcalTruthShower::~CcalTruthShower() {
+   clear();
+}
+inline void CcalTruthShower::clear() {
+   if (m_host != 0) {
    deleteTrackIDs();
+   }
 }
 
 inline std::string CcalTruthShower::getClass() const {
@@ -18074,8 +19624,8 @@ inline void CcalTruthShower::deleteTrackIDs(int count, int start) {
    m_trackID_link.del(count,start);
 }
 
-inline ComptonEMcal::ComptonEMcal(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline ComptonEMcal::ComptonEMcal(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_ccalBlock_list(&m_host->m_ccalBlock_plist,
                m_host->m_ccalBlock_plist.end(),
                m_host->m_ccalBlock_plist.end(),
@@ -18087,8 +19637,13 @@ inline ComptonEMcal::ComptonEMcal(HDDM_Element *parent)
 {}
 
 inline ComptonEMcal::~ComptonEMcal() {
+   clear();
+}
+inline void ComptonEMcal::clear() {
+   if (m_host != 0) {
    deleteCcalBlocks();
    deleteCcalTruthShowers();
+   }
 }
 
 inline std::string ComptonEMcal::getClass() const {
@@ -18162,14 +19717,17 @@ inline void ComptonEMcal::deleteCcalTruthShowers(int count, int start) {
    m_ccalTruthShower_list.del(count,start);
 }
 
-inline UpvHit::UpvHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline UpvHit::UpvHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_end(0),
    m_t(0)
 {}
 
-inline UpvHit::~UpvHit() {}
+inline UpvHit::~UpvHit() {
+   clear();
+}
+inline void UpvHit::clear() {}
 
 inline std::string UpvHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -18263,15 +19821,18 @@ inline const void *UpvHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline UpvTruthHit::UpvTruthHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline UpvTruthHit::UpvTruthHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_end(0),
    m_t(0),
    m_xlocal(0)
 {}
 
-inline UpvTruthHit::~UpvTruthHit() {}
+inline UpvTruthHit::~UpvTruthHit() {
+   clear();
+}
+inline void UpvTruthHit::clear() {}
 
 inline std::string UpvTruthHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -18378,8 +19939,8 @@ inline const void *UpvTruthHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline UpvPaddle::UpvPaddle(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline UpvPaddle::UpvPaddle(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_layer(0),
    m_row(0),
    m_upvHit_list(&m_host->m_upvHit_plist,
@@ -18393,8 +19954,13 @@ inline UpvPaddle::UpvPaddle(HDDM_Element *parent)
 {}
 
 inline UpvPaddle::~UpvPaddle() {
+   clear();
+}
+inline void UpvPaddle::clear() {
+   if (m_host != 0) {
    deleteUpvHits();
    deleteUpvTruthHits();
+   }
 }
 
 inline std::string UpvPaddle::getClass() const {
@@ -18500,8 +20066,8 @@ inline void UpvPaddle::deleteUpvTruthHits(int count, int start) {
    m_upvTruthHit_list.del(count,start);
 }
 
-inline UpvTruthShower::UpvTruthShower(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline UpvTruthShower::UpvTruthShower(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_primary(0),
    m_ptype(0),
@@ -18520,7 +20086,12 @@ inline UpvTruthShower::UpvTruthShower(HDDM_Element *parent)
 {}
 
 inline UpvTruthShower::~UpvTruthShower() {
+   clear();
+}
+inline void UpvTruthShower::clear() {
+   if (m_host != 0) {
    deleteTrackIDs();
+   }
 }
 
 inline std::string UpvTruthShower::getClass() const {
@@ -18727,8 +20298,8 @@ inline void UpvTruthShower::deleteTrackIDs(int count, int start) {
    m_trackID_link.del(count,start);
 }
 
-inline UpstreamEMveto::UpstreamEMveto(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline UpstreamEMveto::UpstreamEMveto(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_upvPaddle_list(&m_host->m_upvPaddle_plist,
                m_host->m_upvPaddle_plist.end(),
                m_host->m_upvPaddle_plist.end(),
@@ -18740,8 +20311,13 @@ inline UpstreamEMveto::UpstreamEMveto(HDDM_Element *parent)
 {}
 
 inline UpstreamEMveto::~UpstreamEMveto() {
+   clear();
+}
+inline void UpstreamEMveto::clear() {
+   if (m_host != 0) {
    deleteUpvPaddles();
    deleteUpvTruthShowers();
+   }
 }
 
 inline std::string UpstreamEMveto::getClass() const {
@@ -18815,14 +20391,17 @@ inline void UpstreamEMveto::deleteUpvTruthShowers(int count, int start) {
    m_upvTruthShower_list.del(count,start);
 }
 
-inline TaggerHit::TaggerHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline TaggerHit::TaggerHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_npe(0),
    m_t(0),
    m_tADC(0)
 {}
 
-inline TaggerHit::~TaggerHit() {}
+inline TaggerHit::~TaggerHit() {
+   clear();
+}
+inline void TaggerHit::clear() {}
 
 inline std::string TaggerHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -18924,15 +20503,18 @@ inline const void *TaggerHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline TaggerTruthHit::TaggerTruthHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline TaggerTruthHit::TaggerTruthHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_bg(0),
    m_dE(0),
    m_t(0)
 {}
 
-inline TaggerTruthHit::~TaggerTruthHit() {}
+inline TaggerTruthHit::~TaggerTruthHit() {
+   clear();
+}
+inline void TaggerTruthHit::clear() {}
 
 inline std::string TaggerTruthHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -19043,8 +20625,8 @@ inline const void *TaggerTruthHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline MicroChannel::MicroChannel(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline MicroChannel::MicroChannel(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_column(0),
    m_row(0),
@@ -19059,8 +20641,13 @@ inline MicroChannel::MicroChannel(HDDM_Element *parent)
 {}
 
 inline MicroChannel::~MicroChannel() {
+   clear();
+}
+inline void MicroChannel::clear() {
+   if (m_host != 0) {
    deleteTaggerHits();
    deleteTaggerTruthHits();
+   }
 }
 
 inline std::string MicroChannel::getClass() const {
@@ -19179,8 +20766,8 @@ inline void MicroChannel::deleteTaggerTruthHits(int count, int start) {
    m_taggerTruthHit_list.del(count,start);
 }
 
-inline HodoChannel::HodoChannel(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline HodoChannel::HodoChannel(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_counterId(0),
    m_taggerHit_list(&m_host->m_taggerHit_plist,
@@ -19194,8 +20781,13 @@ inline HodoChannel::HodoChannel(HDDM_Element *parent)
 {}
 
 inline HodoChannel::~HodoChannel() {
+   clear();
+}
+inline void HodoChannel::clear() {
+   if (m_host != 0) {
    deleteTaggerHits();
    deleteTaggerTruthHits();
+   }
 }
 
 inline std::string HodoChannel::getClass() const {
@@ -19301,8 +20893,8 @@ inline void HodoChannel::deleteTaggerTruthHits(int count, int start) {
    m_taggerTruthHit_list.del(count,start);
 }
 
-inline Tagger::Tagger(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Tagger::Tagger(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_microChannel_list(&m_host->m_microChannel_plist,
                m_host->m_microChannel_plist.end(),
                m_host->m_microChannel_plist.end(),
@@ -19314,8 +20906,13 @@ inline Tagger::Tagger(HDDM_Element *parent)
 {}
 
 inline Tagger::~Tagger() {
+   clear();
+}
+inline void Tagger::clear() {
+   if (m_host != 0) {
    deleteMicroChannels();
    deleteHodoChannels();
+   }
 }
 
 inline std::string Tagger::getClass() const {
@@ -19389,13 +20986,16 @@ inline void Tagger::deleteHodoChannels(int count, int start) {
    m_hodoChannel_list.del(count,start);
 }
 
-inline PsHit::PsHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline PsHit::PsHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dE(0),
    m_t(0)
 {}
 
-inline PsHit::~PsHit() {}
+inline PsHit::~PsHit() {
+   clear();
+}
+inline void PsHit::clear() {}
 
 inline std::string PsHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -19470,15 +21070,18 @@ inline const void *PsHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline PsTruthHit::PsTruthHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline PsTruthHit::PsTruthHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dE(0),
    m_itrack(0),
    m_ptype(0),
    m_t(0)
 {}
 
-inline PsTruthHit::~PsTruthHit() {}
+inline PsTruthHit::~PsTruthHit() {
+   clear();
+}
+inline void PsTruthHit::clear() {}
 
 inline std::string PsTruthHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -19579,8 +21182,8 @@ inline const void *PsTruthHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline PsTile::PsTile(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline PsTile::PsTile(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_arm(0),
    m_column(0),
    m_psHit_list(&m_host->m_psHit_plist,
@@ -19594,8 +21197,13 @@ inline PsTile::PsTile(HDDM_Element *parent)
 {}
 
 inline PsTile::~PsTile() {
+   clear();
+}
+inline void PsTile::clear() {
+   if (m_host != 0) {
    deletePsHits();
    deletePsTruthHits();
+   }
 }
 
 inline std::string PsTile::getClass() const {
@@ -19701,8 +21309,8 @@ inline void PsTile::deletePsTruthHits(int count, int start) {
    m_psTruthHit_list.del(count,start);
 }
 
-inline PsTruthPoint::PsTruthPoint(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline PsTruthPoint::PsTruthPoint(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_arm(0),
    m_column(0),
@@ -19724,7 +21332,12 @@ inline PsTruthPoint::PsTruthPoint(HDDM_Element *parent)
 {}
 
 inline PsTruthPoint::~PsTruthPoint() {
+   clear();
+}
+inline void PsTruthPoint::clear() {
+   if (m_host != 0) {
    deleteTrackIDs();
+   }
 }
 
 inline std::string PsTruthPoint::getClass() const {
@@ -19970,8 +21583,8 @@ inline void PsTruthPoint::deleteTrackIDs(int count, int start) {
    m_trackID_link.del(count,start);
 }
 
-inline PairSpectrometerFine::PairSpectrometerFine(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline PairSpectrometerFine::PairSpectrometerFine(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_psTile_list(&m_host->m_psTile_plist,
                m_host->m_psTile_plist.end(),
                m_host->m_psTile_plist.end(),
@@ -19983,8 +21596,13 @@ inline PairSpectrometerFine::PairSpectrometerFine(HDDM_Element *parent)
 {}
 
 inline PairSpectrometerFine::~PairSpectrometerFine() {
+   clear();
+}
+inline void PairSpectrometerFine::clear() {
+   if (m_host != 0) {
    deletePsTiles();
    deletePsTruthPoints();
+   }
 }
 
 inline std::string PairSpectrometerFine::getClass() const {
@@ -20058,13 +21676,16 @@ inline void PairSpectrometerFine::deletePsTruthPoints(int count, int start) {
    m_psTruthPoint_list.del(count,start);
 }
 
-inline PscHit::PscHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline PscHit::PscHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dE(0),
    m_t(0)
 {}
 
-inline PscHit::~PscHit() {}
+inline PscHit::~PscHit() {
+   clear();
+}
+inline void PscHit::clear() {}
 
 inline std::string PscHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -20139,15 +21760,18 @@ inline const void *PscHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline PscTruthHit::PscTruthHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline PscTruthHit::PscTruthHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dE(0),
    m_itrack(0),
    m_ptype(0),
    m_t(0)
 {}
 
-inline PscTruthHit::~PscTruthHit() {}
+inline PscTruthHit::~PscTruthHit() {
+   clear();
+}
+inline void PscTruthHit::clear() {}
 
 inline std::string PscTruthHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -20248,8 +21872,8 @@ inline const void *PscTruthHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline PscPaddle::PscPaddle(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline PscPaddle::PscPaddle(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_arm(0),
    m_module(0),
    m_pscHit_list(&m_host->m_pscHit_plist,
@@ -20263,8 +21887,13 @@ inline PscPaddle::PscPaddle(HDDM_Element *parent)
 {}
 
 inline PscPaddle::~PscPaddle() {
+   clear();
+}
+inline void PscPaddle::clear() {
+   if (m_host != 0) {
    deletePscHits();
    deletePscTruthHits();
+   }
 }
 
 inline std::string PscPaddle::getClass() const {
@@ -20370,8 +21999,8 @@ inline void PscPaddle::deletePscTruthHits(int count, int start) {
    m_pscTruthHit_list.del(count,start);
 }
 
-inline PscTruthPoint::PscTruthPoint(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline PscTruthPoint::PscTruthPoint(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_arm(0),
    m_dEdx(0),
@@ -20393,7 +22022,12 @@ inline PscTruthPoint::PscTruthPoint(HDDM_Element *parent)
 {}
 
 inline PscTruthPoint::~PscTruthPoint() {
+   clear();
+}
+inline void PscTruthPoint::clear() {
+   if (m_host != 0) {
    deleteTrackIDs();
+   }
 }
 
 inline std::string PscTruthPoint::getClass() const {
@@ -20639,8 +22273,8 @@ inline void PscTruthPoint::deleteTrackIDs(int count, int start) {
    m_trackID_link.del(count,start);
 }
 
-inline PairSpectrometerCoarse::PairSpectrometerCoarse(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline PairSpectrometerCoarse::PairSpectrometerCoarse(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_pscPaddle_list(&m_host->m_pscPaddle_plist,
                m_host->m_pscPaddle_plist.end(),
                m_host->m_pscPaddle_plist.end(),
@@ -20652,8 +22286,13 @@ inline PairSpectrometerCoarse::PairSpectrometerCoarse(HDDM_Element *parent)
 {}
 
 inline PairSpectrometerCoarse::~PairSpectrometerCoarse() {
+   clear();
+}
+inline void PairSpectrometerCoarse::clear() {
+   if (m_host != 0) {
    deletePscPaddles();
    deletePscTruthPoints();
+   }
 }
 
 inline std::string PairSpectrometerCoarse::getClass() const {
@@ -20727,13 +22366,16 @@ inline void PairSpectrometerCoarse::deletePscTruthPoints(int count, int start) {
    m_pscTruthPoint_list.del(count,start);
 }
 
-inline TpolHit::TpolHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline TpolHit::TpolHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dE(0),
    m_t(0)
 {}
 
-inline TpolHit::~TpolHit() {}
+inline TpolHit::~TpolHit() {
+   clear();
+}
+inline void TpolHit::clear() {}
 
 inline std::string TpolHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -20808,15 +22450,18 @@ inline const void *TpolHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline TpolTruthHit::TpolTruthHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline TpolTruthHit::TpolTruthHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dE(0),
    m_itrack(0),
    m_ptype(0),
    m_t(0)
 {}
 
-inline TpolTruthHit::~TpolTruthHit() {}
+inline TpolTruthHit::~TpolTruthHit() {
+   clear();
+}
+inline void TpolTruthHit::clear() {}
 
 inline std::string TpolTruthHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -20917,8 +22562,8 @@ inline const void *TpolTruthHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline TpolSector::TpolSector(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline TpolSector::TpolSector(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_ring(0),
    m_sector(0),
    m_tpolHit_list(&m_host->m_tpolHit_plist,
@@ -20932,8 +22577,13 @@ inline TpolSector::TpolSector(HDDM_Element *parent)
 {}
 
 inline TpolSector::~TpolSector() {
+   clear();
+}
+inline void TpolSector::clear() {
+   if (m_host != 0) {
    deleteTpolHits();
    deleteTpolTruthHits();
+   }
 }
 
 inline std::string TpolSector::getClass() const {
@@ -21039,8 +22689,8 @@ inline void TpolSector::deleteTpolTruthHits(int count, int start) {
    m_tpolTruthHit_list.del(count,start);
 }
 
-inline TpolTruthPoint::TpolTruthPoint(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline TpolTruthPoint::TpolTruthPoint(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_dEdx(0),
    m_phi(0),
@@ -21059,7 +22709,12 @@ inline TpolTruthPoint::TpolTruthPoint(HDDM_Element *parent)
 {}
 
 inline TpolTruthPoint::~TpolTruthPoint() {
+   clear();
+}
+inline void TpolTruthPoint::clear() {
+   if (m_host != 0) {
    deleteTrackIDs();
+   }
 }
 
 inline std::string TpolTruthPoint::getClass() const {
@@ -21266,8 +22921,8 @@ inline void TpolTruthPoint::deleteTrackIDs(int count, int start) {
    m_trackID_link.del(count,start);
 }
 
-inline TripletPolarimeter::TripletPolarimeter(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline TripletPolarimeter::TripletPolarimeter(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_tpolSector_list(&m_host->m_tpolSector_plist,
                m_host->m_tpolSector_plist.end(),
                m_host->m_tpolSector_plist.end(),
@@ -21279,8 +22934,13 @@ inline TripletPolarimeter::TripletPolarimeter(HDDM_Element *parent)
 {}
 
 inline TripletPolarimeter::~TripletPolarimeter() {
+   clear();
+}
+inline void TripletPolarimeter::clear() {
+   if (m_host != 0) {
    deleteTpolSectors();
    deleteTpolTruthPoints();
+   }
 }
 
 inline std::string TripletPolarimeter::getClass() const {
@@ -21354,8 +23014,8 @@ inline void TripletPolarimeter::deleteTpolTruthPoints(int count, int start) {
    m_tpolTruthPoint_list.del(count,start);
 }
 
-inline McTrajectoryPoint::McTrajectoryPoint(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline McTrajectoryPoint::McTrajectoryPoint(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_dE(0),
    m_mech(0),
@@ -21373,7 +23033,10 @@ inline McTrajectoryPoint::McTrajectoryPoint(HDDM_Element *parent)
    m_z(0)
 {}
 
-inline McTrajectoryPoint::~McTrajectoryPoint() {}
+inline McTrajectoryPoint::~McTrajectoryPoint() {
+   clear();
+}
+inline void McTrajectoryPoint::clear() {}
 
 inline std::string McTrajectoryPoint::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -21615,8 +23278,8 @@ inline const void *McTrajectoryPoint::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline McTrajectory::McTrajectory(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline McTrajectory::McTrajectory(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_mcTrajectoryPoint_list(&m_host->m_mcTrajectoryPoint_plist,
                m_host->m_mcTrajectoryPoint_plist.end(),
                m_host->m_mcTrajectoryPoint_plist.end(),
@@ -21624,7 +23287,12 @@ inline McTrajectory::McTrajectory(HDDM_Element *parent)
 {}
 
 inline McTrajectory::~McTrajectory() {
+   clear();
+}
+inline void McTrajectory::clear() {
+   if (m_host != 0) {
    deleteMcTrajectoryPoints();
+   }
 }
 
 inline std::string McTrajectory::getClass() const {
@@ -21682,13 +23350,16 @@ inline void McTrajectory::deleteMcTrajectoryPoints(int count, int start) {
    m_mcTrajectoryPoint_list.del(count,start);
 }
 
-inline RFsubsystem::RFsubsystem(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline RFsubsystem::RFsubsystem(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_jtag(""),
    m_tsync(0)
 {}
 
-inline RFsubsystem::~RFsubsystem() {}
+inline RFsubsystem::~RFsubsystem() {
+   clear();
+}
+inline void RFsubsystem::clear() {}
 
 inline std::string RFsubsystem::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -21771,8 +23442,8 @@ inline const void *RFsubsystem::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline RFtime::RFtime(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline RFtime::RFtime(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_jtag(""),
    m_tsync(0),
    m_RFsubsystem_list(&m_host->m_RFsubsystem_plist,
@@ -21782,7 +23453,12 @@ inline RFtime::RFtime(HDDM_Element *parent)
 {}
 
 inline RFtime::~RFtime() {
+   clear();
+}
+inline void RFtime::clear() {
+   if (m_host != 0) {
    deleteRFsubsystems();
+   }
 }
 
 inline std::string RFtime::getClass() const {
@@ -21876,14 +23552,17 @@ inline void RFtime::deleteRFsubsystems(int count, int start) {
    m_RFsubsystem_list.del(count,start);
 }
 
-inline FmwpcTruthHit::FmwpcTruthHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FmwpcTruthHit::FmwpcTruthHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dE(0),
    m_dx(0),
    m_t(0)
 {}
 
-inline FmwpcTruthHit::~FmwpcTruthHit() {}
+inline FmwpcTruthHit::~FmwpcTruthHit() {
+   clear();
+}
+inline void FmwpcTruthHit::clear() {}
 
 inline std::string FmwpcTruthHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -21971,13 +23650,16 @@ inline const void *FmwpcTruthHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline FmwpcHit::FmwpcHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FmwpcHit::FmwpcHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dE(0),
    m_t(0)
 {}
 
-inline FmwpcHit::~FmwpcHit() {}
+inline FmwpcHit::~FmwpcHit() {
+   clear();
+}
+inline void FmwpcHit::clear() {}
 
 inline std::string FmwpcHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -22052,8 +23734,8 @@ inline const void *FmwpcHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline FmwpcChamber::FmwpcChamber(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FmwpcChamber::FmwpcChamber(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_layer(0),
    m_wire(0),
    m_fmwpcTruthHit_list(&m_host->m_fmwpcTruthHit_plist,
@@ -22067,8 +23749,13 @@ inline FmwpcChamber::FmwpcChamber(HDDM_Element *parent)
 {}
 
 inline FmwpcChamber::~FmwpcChamber() {
+   clear();
+}
+inline void FmwpcChamber::clear() {
+   if (m_host != 0) {
    deleteFmwpcTruthHits();
    deleteFmwpcHits();
+   }
 }
 
 inline std::string FmwpcChamber::getClass() const {
@@ -22174,8 +23861,8 @@ inline void FmwpcChamber::deleteFmwpcHits(int count, int start) {
    m_fmwpcHit_list.del(count,start);
 }
 
-inline FmwpcTruthPoint::FmwpcTruthPoint(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FmwpcTruthPoint::FmwpcTruthPoint(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_primary(0),
    m_ptype(0),
@@ -22194,7 +23881,12 @@ inline FmwpcTruthPoint::FmwpcTruthPoint(HDDM_Element *parent)
 {}
 
 inline FmwpcTruthPoint::~FmwpcTruthPoint() {
+   clear();
+}
+inline void FmwpcTruthPoint::clear() {
+   if (m_host != 0) {
    deleteTrackIDs();
+   }
 }
 
 inline std::string FmwpcTruthPoint::getClass() const {
@@ -22401,8 +24093,8 @@ inline void FmwpcTruthPoint::deleteTrackIDs(int count, int start) {
    m_trackID_link.del(count,start);
 }
 
-inline ForwardMWPC::ForwardMWPC(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline ForwardMWPC::ForwardMWPC(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_fmwpcChamber_list(&m_host->m_fmwpcChamber_plist,
                m_host->m_fmwpcChamber_plist.end(),
                m_host->m_fmwpcChamber_plist.end(),
@@ -22414,8 +24106,13 @@ inline ForwardMWPC::ForwardMWPC(HDDM_Element *parent)
 {}
 
 inline ForwardMWPC::~ForwardMWPC() {
+   clear();
+}
+inline void ForwardMWPC::clear() {
+   if (m_host != 0) {
    deleteFmwpcChambers();
    deleteFmwpcTruthPoints();
+   }
 }
 
 inline std::string ForwardMWPC::getClass() const {
@@ -22489,8 +24186,8 @@ inline void ForwardMWPC::deleteFmwpcTruthPoints(int count, int start) {
    m_fmwpcTruthPoint_list.del(count,start);
 }
 
-inline HitView::HitView(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline HitView::HitView(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_centralDC_link(&m_host->m_centralDC_plist,
                m_host->m_centralDC_plist.end(),
                m_host->m_centralDC_plist.end(),
@@ -22570,6 +24267,10 @@ inline HitView::HitView(HDDM_Element *parent)
 {}
 
 inline HitView::~HitView() {
+   clear();
+}
+inline void HitView::clear() {
+   if (m_host != 0) {
    deleteCentralDCs();
    deleteForwardDCs();
    deleteStartCntrs();
@@ -22589,6 +24290,7 @@ inline HitView::~HitView() {
    deleteMcTrajectorys();
    deleteRFtimes();
    deleteForwardMWPCs();
+   }
 }
 
 inline std::string HitView::getClass() const {
@@ -22940,15 +24642,18 @@ inline void HitView::deleteForwardMWPCs(int count, int start) {
    m_forwardMWPC_link.del(count,start);
 }
 
-inline ErrorMatrix::ErrorMatrix(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline ErrorMatrix::ErrorMatrix(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_Ncols(0),
    m_Nrows(0),
    m_type(""),
    m_vals("")
 {}
 
-inline ErrorMatrix::~ErrorMatrix() {}
+inline ErrorMatrix::~ErrorMatrix() {
+   clear();
+}
+inline void ErrorMatrix::clear() {}
 
 inline std::string ErrorMatrix::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -23059,15 +24764,18 @@ inline const void *ErrorMatrix::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline TrackingErrorMatrix::TrackingErrorMatrix(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline TrackingErrorMatrix::TrackingErrorMatrix(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_Ncols(0),
    m_Nrows(0),
    m_type(""),
    m_vals("")
 {}
 
-inline TrackingErrorMatrix::~TrackingErrorMatrix() {}
+inline TrackingErrorMatrix::~TrackingErrorMatrix() {
+   clear();
+}
+inline void TrackingErrorMatrix::clear() {}
 
 inline std::string TrackingErrorMatrix::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -23178,8 +24886,8 @@ inline const void *TrackingErrorMatrix::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline Tracktimebased::Tracktimebased(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Tracktimebased::Tracktimebased(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_FOM(0),
    m_Ndof(0),
    m_candidateid(0),
@@ -23209,11 +24917,16 @@ inline Tracktimebased::Tracktimebased(HDDM_Element *parent)
 {}
 
 inline Tracktimebased::~Tracktimebased() {
+   clear();
+}
+inline void Tracktimebased::clear() {
+   if (m_host != 0) {
    deleteMomenta();
    deletePropertiesList();
    deleteOrigins();
    deleteErrorMatrixs();
    deleteTrackingErrorMatrixs();
+   }
 }
 
 inline std::string Tracktimebased::getClass() const {
@@ -23419,8 +25132,8 @@ inline void Tracktimebased::deleteTrackingErrorMatrixs(int count, int start) {
    m_TrackingErrorMatrix_link.del(count,start);
 }
 
-inline ReconView::ReconView(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline ReconView::ReconView(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_tracktimebased_list(&m_host->m_tracktimebased_plist,
                m_host->m_tracktimebased_plist.end(),
                m_host->m_tracktimebased_plist.end(),
@@ -23428,7 +25141,12 @@ inline ReconView::ReconView(HDDM_Element *parent)
 {}
 
 inline ReconView::~ReconView() {
+   clear();
+}
+inline void ReconView::clear() {
+   if (m_host != 0) {
    deleteTracktimebaseds();
+   }
 }
 
 inline std::string ReconView::getClass() const {
@@ -23492,8 +25210,8 @@ inline void ReconView::deleteTracktimebaseds(int count, int start) {
    m_tracktimebased_list.del(count,start);
 }
 
-inline PhysicsEvent::PhysicsEvent(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline PhysicsEvent::PhysicsEvent(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_eventNo(0),
    m_runNo(0),
    m_dataVersionString_list(&m_host->m_dataVersionString_plist,
@@ -23519,11 +25237,16 @@ inline PhysicsEvent::PhysicsEvent(HDDM_Element *parent)
 {}
 
 inline PhysicsEvent::~PhysicsEvent() {
+   clear();
+}
+inline void PhysicsEvent::clear() {
+   if (m_host != 0) {
    deleteDataVersionStrings();
    deleteCcdbContexts();
    deleteReactions();
    deleteHitViews();
    deleteReconViews();
+   }
 }
 
 inline std::string PhysicsEvent::getClass() const {
@@ -23673,13 +25396,16 @@ inline HDDM::HDDM()
                this)
 {
    m_host = this;
+#ifdef HDF5_SUPPORT
+   m_hdf5_record_offset = 0;
+   m_hdf5_record_count = 0;
+   m_hdf5_record_extent = 0;
+#endif
 }
 
 inline HDDM::~HDDM() {
-   deleteGeometrys();
-   deletePhysicsEvents();
+   clear();
 }
-
 inline std::string HDDM::getClass() const {
    return "s";
 }
@@ -23695,6 +25421,18 @@ inline std::string HDDM::getXmlns() const {
 inline void HDDM::clear() {
    deleteGeometrys();
    deletePhysicsEvents();
+#ifdef HDF5_SUPPORT
+   if (m_hdf5_record_count > 0) {
+      for (unsigned i=0; i < m_hdf5_strings.size(); ++i) {
+         m_hdf5_strings[i]->std::string::~string();
+      }
+      m_hdf5_strings.clear();
+      H5Dvlen_reclaim(s_hdf5_memorytype["HDDM"],
+                      s_hdf5_memoryspace["HDDM"],
+                      H5P_DEFAULT, &m_hdf5_record);
+      m_hdf5_record_count = 0;
+   }
+#endif
 }
 
 inline const void *HDDM::getAttribute(const std::string &name,

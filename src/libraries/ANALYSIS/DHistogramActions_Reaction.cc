@@ -2020,7 +2020,8 @@ bool DHistogramAction_Dalitz::Perform_Action(const std::shared_ptr<const JEvent>
 
 void DHistogramAction_KinFitResults::Initialize(const std::shared_ptr<const JEvent>& locEvent)
 {
-        gPARMS->SetDefaultParameter("KINFIT:DEPENDENCE_HISTS", dHistDependenceFlag);
+	auto app = locEvent->GetJApplication();
+	app->SetDefaultParameter("KINFIT:DEPENDENCE_HISTS", dHistDependenceFlag);
 
 	auto locReaction = Get_Reaction();
 	DKinFitType locKinFitType = locReaction->Get_KinFitType();

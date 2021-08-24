@@ -27,17 +27,19 @@ using namespace std;
 //------------------
 void DBeamCurrent_factory::Init()
 {
+	auto app = GetApplication();
+	
 	BEAM_ON_MIN_PSCOUNTS = 3000;
 	USE_EPICS_FOR_BEAM_ON = false;
 	BEAM_ON_MIN_nA  = 10.0;  // nA
 	BEAM_TRIP_MIN_T = 3.0;   // seconds
 	SYNCSKIM_ROCID  = 34;    // rocBCAL4
 	
-	gPARMS->SetDefaultParameter("BEAM_ON_MIN_PSCOUNTS", BEAM_ON_MIN_PSCOUNTS, "Minimum counts in PS to consider the beam \"on\" by DBeamCurrent");
-	gPARMS->SetDefaultParameter("USE_EPICS_FOR_BEAM_ON", USE_EPICS_FOR_BEAM_ON, "Use map from EPICS in DBeamCurrent to decide if the beam is \"on\" (MIGHT BE BROKEN!)");
-	gPARMS->SetDefaultParameter("BEAM_ON_MIN_nA", BEAM_ON_MIN_nA, "Minimum current in nA to consider the beam \"on\" by DBeamCurrent (only used with EPICS map)");
-	gPARMS->SetDefaultParameter("BEAM_TRIP_MIN_T", BEAM_TRIP_MIN_T, "Minimum amount of time in seconds that event is away from beam trips to be considered fiducial");
-	gPARMS->SetDefaultParameter("SYNCSKIM:ROCID", SYNCSKIM_ROCID, "ROC id from which to use timestamp. Set to 0 to use average timestamp from CODA EB. Default is 34 (rocBCAL4)");
+	app->SetDefaultParameter("BEAM_ON_MIN_PSCOUNTS", BEAM_ON_MIN_PSCOUNTS, "Minimum counts in PS to consider the beam \"on\" by DBeamCurrent");
+	app->SetDefaultParameter("USE_EPICS_FOR_BEAM_ON", USE_EPICS_FOR_BEAM_ON, "Use map from EPICS in DBeamCurrent to decide if the beam is \"on\" (MIGHT BE BROKEN!)");
+	app->SetDefaultParameter("BEAM_ON_MIN_nA", BEAM_ON_MIN_nA, "Minimum current in nA to consider the beam \"on\" by DBeamCurrent (only used with EPICS map)");
+	app->SetDefaultParameter("BEAM_TRIP_MIN_T", BEAM_TRIP_MIN_T, "Minimum amount of time in seconds that event is away from beam trips to be considered fiducial");
+	app->SetDefaultParameter("SYNCSKIM:ROCID", SYNCSKIM_ROCID, "ROC id from which to use timestamp. Set to 0 to use average timestamp from CODA EB. Default is 34 (rocBCAL4)");
 
 	ticks_per_sec      = 250.011E6; // 250MHz clock (may be overwritten with calib constant in brun)
 	rcdb_start_time    = 0;       // unix time of when 250MHz clock was reset. (overwritten below)
@@ -73,7 +75,7 @@ void DBeamCurrent_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 	string electron_beam_proxy; //will be either PS counts (default) or current as measured by EPICS
 	double cutoffval=0; // either counts in PS or minimum bean current
 	
-	loop->GetJCalibration()->GetCalib("/ELECTRON_BEAM/timestamp_to_unix", mcalib);
+	GetCalib(event, "/ELECTRON_BEAM/timestamp_to_unix", mcalib);
 	if(mcalib.size() == 3){
 		//ticks_per_sec           = atof(mcalib["tics_per_sec"].c_str());
 		rcdb_250MHz_offset_tics = stoull(mcalib["rcdb_250MHz_offset_tics"].c_str());
@@ -81,15 +83,15 @@ void DBeamCurrent_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 	}
 		
 	if(USE_EPICS_FOR_BEAM_ON){
-		loop->GetJCalibration()->GetCalib("/ELECTRON_BEAM/current_map_epics", mstr);
-		if(mstr.empty()) return NOERROR;
+		GetCalib(event, "/ELECTRON_BEAM/current_map_epics", mstr);
+		if(mstr.empty()) return;
 		electron_beam_proxy = mstr.begin()->second;
 		cutoffval = BEAM_ON_MIN_nA;
 		jout << "Use map from EPICS in DBeamCurrent to decide if the beam is \"on\" (MIGHT BE BROKEN!)" << endl;
 	}
 	else{
-		loop->GetJCalibration()->GetCalib("/ELECTRON_BEAM/ps_counts", mstr);
-		if(mstr.empty()) return NOERROR;
+		GetCalib(event, "/ELECTRON_BEAM/ps_counts", mstr);
+		if(mstr.empty()) return;
 		electron_beam_proxy = mstr.begin()->second;
 		cutoffval = BEAM_ON_MIN_PSCOUNTS;
 	}

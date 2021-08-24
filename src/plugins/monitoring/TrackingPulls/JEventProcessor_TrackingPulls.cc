@@ -608,9 +608,9 @@ void JEventProcessor_TrackingPulls::Process(const std::shared_ptr<const JEvent> 
             TMath::RadToDeg();
       }
     }
-    japp->RootWriteLock();
+    lockService->RootWriteLock();
     tree_->Fill();
-    japp->RootUnLock();
+    lockService->RootUnLock();
   }
 
   return;

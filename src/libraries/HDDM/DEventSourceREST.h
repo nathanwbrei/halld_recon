@@ -14,10 +14,7 @@
 #include <pthread.h>
 
 #include <JANA/JEventSource.h>
-#include <JANA/jerror.h>
-#include <JANA/JCalibration.h>
-#include <JANA/JCalibrationCCDB.h>
-#include <JANA/JCalibrationGeneratorCCDB.h>
+#include <JANA/Calibrations/JCalibrationGeneratorCCDB.h>
 
 #include "hddm_r.hpp"
 
@@ -34,7 +31,7 @@
 #include <START_COUNTER/DSCHit.h>
 #include <TOF/DTOFPoint.h>
 #include <TRIGGER/DTrigger.h>
-#include <DANA/DApplication.h>
+#include <DANA/DEvent.h>
 #include <RF/DRFTime.h>
 #include <DIRC/DDIRCPmtHit.h>
 #include <DIRC/DDIRCTruthBarHit.h>
@@ -52,13 +49,7 @@ class DEventSourceREST:public JEventSource
 {
  public:
    DEventSourceREST(const char* source_name);
-   virtual ~DEventSourceREST();		
-   virtual const char* className(void) {
-      return DEventSourceREST::static_className();
-   }
-   static const char* static_className(void) {
-      return "DEventSourceREST";
-   }
+   virtual ~DEventSourceREST();
 
    void GetEvent(std::shared_ptr<JEvent> event) override;
 
@@ -66,13 +57,11 @@ class DEventSourceREST:public JEventSource
 
    bool GetObjects(const std::shared_ptr<const JEvent> &event, JFactory *factory) override;
 
-   // TODO: NWB: We use a lot of raw JEvent pointers here and we probably shouldn't
+   jerror_t Extract_DMCReaction(hddm_r::HDDM *record, JFactoryT<DMCReaction> *factory, const std::shared_ptr<const JEvent>& locEventLoop);
 
-   jerror_t Extract_DMCReaction(hddm_r::HDDM *record, JFactoryT<DMCReaction> *factory, JEvent* locEventLoop);
+   jerror_t Extract_DRFTime(hddm_r::HDDM *record, JFactoryT<DRFTime> *factory, const std::shared_ptr<const JEvent>& locEventLoop);
 
-   jerror_t Extract_DRFTime(hddm_r::HDDM *record, JFactoryT<DRFTime> *factory, JEvent* locEventLoop);
-
-   jerror_t Extract_DBeamPhoton(hddm_r::HDDM *record, JFactoryT<DBeamPhoton> *factory, JEvent *eventLoop);
+   jerror_t Extract_DBeamPhoton(hddm_r::HDDM *record, JFactoryT<DBeamPhoton> *factory, const std::shared_ptr<const JEvent>& eventLoop);
 
    jerror_t Extract_DMCThrown(hddm_r::HDDM *record, JFactoryT<DMCThrown> *factory);
 
@@ -86,18 +75,18 @@ class DEventSourceREST:public JEventSource
 
    jerror_t Extract_DCCALShower(hddm_r::HDDM *record, JFactoryT<DCCALShower>* factory);
 
-   jerror_t Extract_DTrackTimeBased(hddm_r::HDDM *record, JFactoryT<DTrackTimeBased>* factory, JEvent* locEventLoop);
+   jerror_t Extract_DTrackTimeBased(hddm_r::HDDM *record, JFactoryT<DTrackTimeBased>* factory, const std::shared_ptr<const JEvent>& locEventLoop);
 
    jerror_t Extract_DTrigger(hddm_r::HDDM *record, JFactoryT<DTrigger>* factory);
 
-   jerror_t Extract_DDetectorMatches(JEvent* locEventLoop, hddm_r::HDDM *record, JFactoryT<DDetectorMatches>* factory);
+   jerror_t Extract_DDetectorMatches(const std::shared_ptr<const JEvent>& locEventLoop, hddm_r::HDDM *record, JFactoryT<DDetectorMatches>* factory);
 
 #if 0
    jerror_t Extract_DRFTime(hddm_r::HDDM *record,
                     JFactoryT<DRFTime>* factory);
 #endif
    jerror_t Extract_DDIRCPmtHit(hddm_r::HDDM *record,
-                    JFactoryT<DDIRCPmtHit>* factory, JEvent* locEventLoop);
+                    JFactoryT<DDIRCPmtHit>* factory, const std::shared_ptr<const JEvent>& locEventLoop);
    jerror_t Extract_DEventHitStatistics(hddm_r::HDDM *record,
                     JFactoryT<DEventHitStatistics> *factory);
 
@@ -136,6 +125,8 @@ class DEventSourceREST:public JEventSource
    	map<unsigned int, JCalibration *> dJCalib_olds; //unsigned int is run number
    	map<unsigned int, DTAGHGeometry *> dTAGHGeoms; //unsigned int is run number
    	map<unsigned int, DTAGMGeometry *> dTAGMGeoms; //unsigned int is run number
+
+   	std::mutex readMutex;
 
 };
 

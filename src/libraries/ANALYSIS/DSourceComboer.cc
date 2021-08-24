@@ -387,7 +387,7 @@ void DSourceComboer::Get_CommandLineCuts_Beta(void)
 	//COMBO_BETA:13_32=0.75_0.5             //Cut protons (13) in the FCAL (32) with the following parameters
 
 	map<string, string> locParameterMap; //parameter key - filter, value
-	gPARMS->GetParameters(locParameterMap, "COMBO_BETA:"); //gets all parameters with this filter at the beginning of the key
+	japp->GetJParameterManager()->FilterParameters(locParameterMap, "COMBO_BETA:"); //gets all parameters with this filter at the beginning of the key
 	for(auto locParamPair : locParameterMap)
 	{
 		if(dDebugLevel)
@@ -419,7 +419,7 @@ void DSourceComboer::Get_CommandLineCuts_Beta(void)
 		//get the parameter, with hack so that don't get warning message about no default
 		string locKeyValue;
 		string locFullParamName = string("COMBO_BETA:") + locParamPair.first; //have to add back on the filter
-		gPARMS->SetDefaultParameter(locFullParamName, locKeyValue);
+		japp->SetDefaultParameter(locFullParamName, locKeyValue);
 
 		//If functional form, save it and continue
 		if(locFuncIndex != string::npos)
@@ -573,7 +573,7 @@ void DSourceComboer::Create_CutFunctions(void)
 		}
 	}
 
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	japp->GetService<JLockService>()->RootUnLock(); // RELEASE ROOT LOCK!!
 }
 
 /********************************************************************* CONSTRUCTOR **********************************************************************/
@@ -1311,7 +1311,7 @@ void DSourceComboer::Reset_NewEvent(const std::shared_ptr<const JEvent>& locEven
 
 	//COMPARE:
 	const DVertex* locVertex = nullptr;
-	locEventLoop->GetSingle(locVertex);
+	locEvent->GetSingle(locVertex);
 	dSourceComboVertexer->Set_Vertex(locVertex);
 
     vector<const DESSkimData*> locESSkimDataVector;
@@ -1333,7 +1333,7 @@ void DSourceComboer::Reset_NewEvent(const std::shared_ptr<const JEvent>& locEven
 	
 	// handle showers from neutral hadrons differently to allow for different selections to be applied
 	vector<const DNeutralShower*> locNeutralHadronShowers;
-	locEventLoop->Get(locNeutralHadronShowers, dHadronShowerSelectionTag.c_str());
+	locEvent->Get(locNeutralHadronShowers, dHadronShowerSelectionTag.c_str());
 	
 	for(auto &locHadronShower : locNeutralHadronShowers) {
 		dNeutralHadronShowers.push_back(static_cast<const JObject*>(locHadronShower));

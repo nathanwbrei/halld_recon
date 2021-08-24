@@ -91,8 +91,6 @@ void DNeutralShower_factory_PreSelect::BeginRun(const std::shared_ptr<const JEve
 	  dFCALInnerChannels.push_back( dFCALGeometry->channel( 29, 31 ) );
 	  dFCALInnerChannels.push_back( dFCALGeometry->channel( 30, 31 ) );
 	}
-
-	return NOERROR;
 }
 
 //------------------

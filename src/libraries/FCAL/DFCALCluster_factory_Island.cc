@@ -11,7 +11,7 @@
 using namespace std;
 
 #include "DFCALCluster_factory_Island.h"
-using namespace jana;
+#include <JANA/JEvent.h>
 
 inline bool FCALHit_E_cmp(const DFCALHit *a,const DFCALHit *b){
   return (a->E>b->E);
@@ -21,45 +21,46 @@ inline bool FCALHit_E_cmp(const DFCALHit *a,const DFCALHit *b){
 //------------------
 // init
 //------------------
-jerror_t DFCALCluster_factory_Island::init(void)
+void DFCALCluster_factory_Island::Init() 
 {
+  auto app = GetApplication();
+  
   TIME_CUT=15.;
-  gPARMS->SetDefaultParameter("FCAL:TIME_CUT",TIME_CUT,"time cut for associating FCAL hits together into a cluster");
+  app->SetDefaultParameter("FCAL:TIME_CUT",TIME_CUT,"time cut for associating FCAL hits together into a cluster");
   
   MIN_CLUSTER_SEED_ENERGY=35.*k_MeV;
-  gPARMS->SetDefaultParameter("FCAL:MIN_CLUSTER_SEED_ENERGY",
+  app->SetDefaultParameter("FCAL:MIN_CLUSTER_SEED_ENERGY",
 			      MIN_CLUSTER_SEED_ENERGY);
   SHOWER_ENERGY_THRESHOLD = 50*k_MeV;
-  gPARMS->SetDefaultParameter("FCAL:SHOWER_ENERGY_THRESHOLD", SHOWER_ENERGY_THRESHOLD);
+  app->SetDefaultParameter("FCAL:SHOWER_ENERGY_THRESHOLD", SHOWER_ENERGY_THRESHOLD);
 
   SHOWER_WIDTH_PARAMETER=0.625;
-  gPARMS->SetDefaultParameter("FCAL:SHOWER_WIDTH_PARAMETER",
+  app->SetDefaultParameter("FCAL:SHOWER_WIDTH_PARAMETER",
 			      SHOWER_WIDTH_PARAMETER);
   INSERT_SHOWER_WIDTH_PARAMETER=0.3;
-  gPARMS->SetDefaultParameter("FCAL:INSERT_SHOWER_WIDTH_PARAMETER",
+  app->SetDefaultParameter("FCAL:INSERT_SHOWER_WIDTH_PARAMETER",
 			      INSERT_SHOWER_WIDTH_PARAMETER);
   MIN_CUTDOWN_FRACTION=0.25;
-  gPARMS->SetDefaultParameter("FCAL:MIN_CUTDOWN_FRACTION",
+  app->SetDefaultParameter("FCAL:MIN_CUTDOWN_FRACTION",
 			      MIN_CUTDOWN_FRACTION);
 
   DEBUG_HISTS=false;
-  gPARMS->SetDefaultParameter("FCAL:DEBUG_HISTS",DEBUG_HISTS);
+  app->SetDefaultParameter("FCAL:DEBUG_HISTS",DEBUG_HISTS);
 
   CHISQ_MARGIN=5.;
-  gPARMS->SetDefaultParameter("FCAL:CHISQ_MARGIN",CHISQ_MARGIN);
+  app->SetDefaultParameter("FCAL:CHISQ_MARGIN",CHISQ_MARGIN);
 
   HistdE=new TH2D("HistdE",";E [GeV];#deltaE [GeV]",100,0,10,200,-0.5,0.5);
   HistProb=new TH1D("HistProb",";CL",100,0,1);
-  
-  return NOERROR;
 }
 
 //------------------
 // brun
 //------------------
-jerror_t DFCALCluster_factory_Island::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
+void DFCALCluster_factory_Island::BeginRun(const std::shared_ptr<const JEvent> &event)
 {
-  eventLoop->GetSingle(dFCALGeom);
+  auto app = GetApplication();
+  event->GetSingle(dFCALGeom);
 
   insert_Eres[0]=0.0003;
   insert_Eres[1]=0.00025;
@@ -71,27 +72,25 @@ jerror_t DFCALCluster_factory_Island::brun(jana::JEventLoop *eventLoop, int32_t 
   posConst1=0.0147;
   posConst2=6.587e-4;
   posConst3=0.017265;
-  gPARMS->SetDefaultParameter("FCAL:POS_CORR_P1", posConst1);
-  gPARMS->SetDefaultParameter("FCAL:POS_CORR_P2", posConst2);
-  gPARMS->SetDefaultParameter("FCAL:POS_CORR_P3", posConst3);
+  app->SetDefaultParameter("FCAL:POS_CORR_P1", posConst1);
+  app->SetDefaultParameter("FCAL:POS_CORR_P2", posConst2);
+  app->SetDefaultParameter("FCAL:POS_CORR_P3", posConst3);
   insertPosConst1=0.08699;
   insertPosConst2=8.23e-3;
   insertPosConst3=0.1146;
-  gPARMS->SetDefaultParameter("FCAL:INSERT_POS_CORR_P1", insertPosConst1);
-  gPARMS->SetDefaultParameter("FCAL:INSERT_POS_CORR_P2", insertPosConst2);
-  gPARMS->SetDefaultParameter("FCAL:INSERT_POS_CORR_P3", insertPosConst3);
-
-  return NOERROR;
+  app->SetDefaultParameter("FCAL:INSERT_POS_CORR_P1", insertPosConst1);
+  app->SetDefaultParameter("FCAL:INSERT_POS_CORR_P2", insertPosConst2);
+  app->SetDefaultParameter("FCAL:INSERT_POS_CORR_P3", insertPosConst3);
 }
 
 //------------------
 // evnt
 //------------------
-jerror_t DFCALCluster_factory_Island::evnt(JEventLoop *loop, uint64_t eventnumber)
+void DFCALCluster_factory_Island::Process(const std::shared_ptr<const JEvent> &event)
 {
   vector<const DFCALHit*>fcal_hits;
-  loop->Get(fcal_hits);
-  if (fcal_hits.size()==0) return OBJECT_NOT_AVAILABLE;
+  event->Get(fcal_hits);
+  if (fcal_hits.size()==0) return; // OBJECT_NOT_AVAILABLE;
   
   // Sort the hits according to energy.
   stable_sort(fcal_hits.begin(),fcal_hits.end(),FCALHit_E_cmp);
@@ -139,7 +138,7 @@ jerror_t DFCALCluster_factory_Island::evnt(JEventLoop *loop, uint64_t eventnumbe
       CorrectPosition(channel,d,x,y);
       myCluster->setCentroid(x,y);
       
-      _data.push_back(myCluster);
+      Insert(myCluster);
 
       continue;
     }
@@ -372,28 +371,24 @@ jerror_t DFCALCluster_factory_Island::evnt(JEventLoop *loop, uint64_t eventnumbe
 	  }
 	}
 	
-	_data.push_back(myCluster);
+	Insert(myCluster);
       }
     }
   }
-
-  return NOERROR;
 }
 
 //------------------
 // erun
 //------------------
-jerror_t DFCALCluster_factory_Island::erun(void)
+void DFCALCluster_factory_Island::EndRun()
 {
-  return NOERROR;
 }
 
 //------------------
 // fini
 //------------------
-jerror_t DFCALCluster_factory_Island::fini(void)
+void DFCALCluster_factory_Island::Finish()
 {
-  return NOERROR;
 }
 
 // Make a list of potential clusters, each consisting of a "central" block 

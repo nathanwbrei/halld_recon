@@ -88,11 +88,9 @@ void JEventProcessor_ps_skim::Process(const std::shared_ptr<const JEvent>& event
     int trig_bit = (trig_mask & (1 << 3)) ? 1 : 0;
 
     if (fp_trig_mask == 0 && trig_bit){
-      locEventWriterEVIO->Write_EVIOEvent(loop, "ps");
-      return NOERROR;
+      locEventWriterEVIO->Write_EVIOEvent(event, "ps");
+      return;
     }
-    
-    return NOERROR;
 }
 
 //------------------

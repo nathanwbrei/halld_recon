@@ -2688,7 +2688,7 @@ Particle_t DEventSourceHDDM::IDTrack(float locCharge, float locMass) const
       if (fabs(locMass - ParticleMass(Gamma)) < locMassTolerance) return Gamma;
       if (fabs(locMass - ParticleMass(Neutron)) < locMassTolerance) return Neutron;
    }
-   return Unknown;
+   return Particle_t::Unknown;
 }
 
 //------------------

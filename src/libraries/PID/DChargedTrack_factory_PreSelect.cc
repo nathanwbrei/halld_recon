@@ -40,7 +40,7 @@ void DChargedTrack_factory_PreSelect::Process(const std::shared_ptr<const JEvent
 	//Clear objects from last event
 	dResourcePool_ChargedTrack->Recycle(dCreated);
 	dCreated.clear();
-	_data.clear();
+	mData.clear();
 
 	vector<const DChargedTrack*> locChargedTracks;
 	event->Get(locChargedTracks);
@@ -71,14 +71,13 @@ void DChargedTrack_factory_PreSelect::Process(const std::shared_ptr<const JEvent
 
 		// keep the particle if any of the hypotheses survive
 		if(locChargedTrack_PreSelected->dChargedTrackHypotheses.size() > 0)
-			_data.push_back(const_cast<DChargedTrack*>(locChargedTrack_PreSelected));
+			Insert(const_cast<DChargedTrack*>(locChargedTrack_PreSelected));
 		else
 			delete locChargedTrack_PreSelected;
 
 	}
 
-	dCreated = _data;
-	return NOERROR;
+	dCreated = mData;
 }
 
 bool DChargedTrack_factory_PreSelect::Cut_HasDetectorMatch(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DDetectorMatches* locDetectorMatches) const
@@ -108,10 +107,9 @@ void DChargedTrack_factory_PreSelect::EndRun()
 //------------------
 void DChargedTrack_factory_PreSelect::Finish()
 {
-	for(auto locHypo : _data)
+	for(auto locHypo : mData)
 		Recycle_Hypothesis(locHypo);
-	_data.clear();
+	mData.clear();
 	delete dResourcePool_ChargedTrack;
-	return NOERROR;
 }
 

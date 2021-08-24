@@ -31,8 +31,9 @@ JEventProcessor_MilleFieldOff::~JEventProcessor_MilleFieldOff() {}
 
 void JEventProcessor_MilleFieldOff::Init() {
   // This is called once at program startup.
+  auto app = GetApplication();
   string output_filename;
-  gPARMS->GetParameter("OUTPUT_FILENAME", output_filename);
+  app->GetParameter("OUTPUT_FILENAME", output_filename);
   int ext_pos = output_filename.rfind(".root");
   if (ext_pos != (int)output_filename.size() - 5) {
     jerr << "[MilleFieldOff] Invalid output filename." << endl;
@@ -40,18 +41,13 @@ void JEventProcessor_MilleFieldOff::Init() {
   }
   output_filename.replace(ext_pos, 5, ".mil");
   milleWriter = new Mille(output_filename.data());
-
-  return NOERROR;
 }
 
 void JEventProcessor_MilleFieldOff::BeginRun(const std::shared_ptr<const JEvent> &event, int32_t runnumber) {
 
   // This is called whenever the run number changes
   // Check for magnetic field
-  DApplication *dapp =
-      dynamic_cast<DApplication *>(eventLoop->GetJApplication());
-  bool dIsNoFieldFlag = (dynamic_cast<const DMagneticFieldMapNoField *>(
-                             dapp->GetBfield(runnumber)) != nullptr);
+  bool dIsNoFieldFlag = (dynamic_cast<const DMagneticFieldMapNoField *>(GetBfield(event)) != nullptr);
 
   // This plugin is designed for field off data. If this is used for field on
   // data, Abort...

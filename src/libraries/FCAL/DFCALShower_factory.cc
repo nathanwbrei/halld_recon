@@ -14,6 +14,7 @@ using namespace std;
 #include <JANA/JEvent.h>
 #include <JANA/Calibrations/JCalibrationManager.h>
 #include <JANA/Services/JGlobalRootLock.h>
+// TODO: NWB: IMPORTANT: JGlobalRootLock needs to be replaced with JLockService as otherwise ROOT locks don't happen
 
 #include "FCAL/DFCALShower_factory.h"
 #include "FCAL/DFCALGeometry.h"
@@ -29,16 +30,18 @@ using namespace std;
 //----------------
 DFCALShower_factory::DFCALShower_factory()
 {
+  auto app = GetApplication();
+
   //debug_level=1;
   // should we use CCDB constants?
   LOAD_NONLIN_CCDB = true;
   LOAD_TIMING_CCDB = true;
   // 29/03/2020 ijaegle@jlab.org decouple non linear and timing correction
-  gPARMS->SetDefaultParameter("FCAL:LOAD_NONLIN_CCDB", LOAD_NONLIN_CCDB);
-  gPARMS->SetDefaultParameter("FCAL:LOAD_TIMING_CCDB", LOAD_TIMING_CCDB);
+  app->SetDefaultParameter("FCAL:LOAD_NONLIN_CCDB", LOAD_NONLIN_CCDB);
+  app->SetDefaultParameter("FCAL:LOAD_TIMING_CCDB", LOAD_TIMING_CCDB);
   // Should we use the PrimeX-D energy correction?
   USE_RING_E_CORRECTION=false;
-  gPARMS->SetDefaultParameter("FCAL:USE_RING_E_CORRECTION",USE_RING_E_CORRECTION);
+  app->SetDefaultParameter("FCAL:USE_RING_E_CORRECTION",USE_RING_E_CORRECTION);
 
   SHOWER_ENERGY_THRESHOLD = 50*k_MeV;
   app->SetDefaultParameter("FCAL:SHOWER_ENERGY_THRESHOLD", SHOWER_ENERGY_THRESHOLD);
@@ -101,10 +104,10 @@ DFCALShower_factory::DFCALShower_factory()
   INSERT_PAR2=0.04;
   INSERT_PAR3=1.185;
   INSERT_PAR4=2.;
-  gPARMS->SetDefaultParameter("FCAL:INSERT_PAR1",INSERT_PAR1);
-  gPARMS->SetDefaultParameter("FCAL:INSERT_PAR2",INSERT_PAR2);
-  gPARMS->SetDefaultParameter("FCAL:INSERT_PAR3",INSERT_PAR3);
-  gPARMS->SetDefaultParameter("FCAL:INSERT_PAR4",INSERT_PAR4);
+  app->SetDefaultParameter("FCAL:INSERT_PAR1",INSERT_PAR1);
+  app->SetDefaultParameter("FCAL:INSERT_PAR2",INSERT_PAR2);
+  app->SetDefaultParameter("FCAL:INSERT_PAR3",INSERT_PAR3);
+  app->SetDefaultParameter("FCAL:INSERT_PAR4",INSERT_PAR4);
 
 }
 

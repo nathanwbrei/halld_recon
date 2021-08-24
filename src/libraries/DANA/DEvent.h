@@ -92,6 +92,11 @@ inline JCalibration* GetJCalibration(const std::shared_ptr<const JEvent>& event)
 	return event->GetJApplication()->GetService<JCalibrationManager>()->GetJCalibration(event->GetRunNumber());
 }
 
+// TODO: NWB: Not so happy with naming of "JResourceManager" or "JLargeCalibration"
+inline JLargeCalibration* GetJLargeCalibration(const std::shared_ptr<const JEvent>& event) {
+	return event->GetJApplication()->GetService<JCalibrationManager>()->GetLargeCalibration(event->GetRunNumber());
+}
+
 inline DGeometry* GetDGeometry(const std::shared_ptr<const JEvent>& event) {
 	return event->GetJApplication()->GetService<DGeometryManager>()->GetDGeometry(event->GetRunNumber());
 }

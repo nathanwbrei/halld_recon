@@ -25,8 +25,6 @@ void DNeutralParticle_factory_PreSelect::Init()
 	// the exact vertex, and at this point we don't know that so have to assume
 	// the center of the target as a default
 	dMaxNeutronBeta = 1.0;   // don't throw anything away by default
-
-	return NOERROR;
 }
 
 //------------------
@@ -34,9 +32,7 @@ void DNeutralParticle_factory_PreSelect::Init()
 //------------------
 void DNeutralParticle_factory_PreSelect::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-	gPARMS->SetDefaultParameter("PRESELECT:MAX_NEUTRON_BETA", dMaxNeutronBeta);   
-
-	return NOERROR;
+	GetApplication()->SetDefaultParameter("PRESELECT:MAX_NEUTRON_BETA", dMaxNeutronBeta);
 }
 
 //------------------
@@ -47,15 +43,16 @@ void DNeutralParticle_factory_PreSelect::Process(const std::shared_ptr<const JEv
 	//Clear objects from last event
 	dResourcePool_NeutralParticle->Recycle(dCreated);
 	dCreated.clear();
-	_data.clear();
+	mData.clear();
+	// TODO: NWB: Aesthetics: Improve getter to mData
 
 	vector<const DNeutralParticle*> locNeutralParticles;
 	event->Get(locNeutralParticles);
 
 	vector<const DNeutralShower*> locNeutralShowers;
-	locEventLoop->Get(locNeutralShowers, "PreSelect");
+	event->Get(locNeutralShowers, "PreSelect");
 	vector<const DNeutralShower*> locHadronNeutralShowers;
-	locEventLoop->Get(locHadronNeutralShowers, "HadronPreSelect");
+	event->Get(locHadronNeutralShowers, "HadronPreSelect");
 
 	// 
 	set<const DNeutralShower*> locNeutralShowerSet;
@@ -100,13 +97,12 @@ void DNeutralParticle_factory_PreSelect::Process(const std::shared_ptr<const JEv
 		
 		// keep the particle if any of the hypotheses survive
 		if(locNeutralParticle_PreSelected->dNeutralParticleHypotheses.size() > 0)
-			_data.push_back(const_cast<DNeutralParticle*>(locNeutralParticle_PreSelected));
+			Insert(const_cast<DNeutralParticle*>(locNeutralParticle_PreSelected));
 		else 
 			delete locNeutralParticle_PreSelected;
 	}
 
-	dCreated = _data;
-	return NOERROR;
+	dCreated = mData;
 }
 
 //------------------
@@ -121,12 +117,10 @@ void DNeutralParticle_factory_PreSelect::EndRun()
 //------------------
 void DNeutralParticle_factory_PreSelect::Finish()
 {
-	for(auto locHypo : _data)
+	for(auto locHypo : mData)
 		Recycle_Hypothesis(locHypo);
-	_data.clear();
+	mData.clear();
 	delete dResourcePool_NeutralParticle;
-
-	return NOERROR;
 }
 
 

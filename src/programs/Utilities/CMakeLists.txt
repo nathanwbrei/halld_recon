@@ -35,6 +35,6 @@ set (utilities_programs
 foreach (proj ${utilities_programs})
     file(GLOB ${proj}_SOURCES ${proj}/*.cc ${proj}/*.cpp)
     add_executable(${proj} ${${proj}_SOURCES})
-    target_include_directories(${proj} PRIVATE . ../include ../../libraries ../../libraries/include ../../include ${JANA_INCLUDE_DIRS} ${ROOT_INCLUDE_DIRS} ${EVIO_INCLUDE_DIR})
-    target_link_libraries(${proj} halld_recon ${EVIO_LIB})
+    target_include_directories(${proj} PRIVATE . ../include ../../libraries ../../libraries/include ../../include ${JANA_INCLUDE_DIRS} ${ROOT_INCLUDE_DIRS} ${EVIO_INCLUDE_DIR} ${CCDB_INCLUDE_DIRS})
+    target_link_libraries(${proj} halld_recon ${CCDB_LIB} ${EVIO_LIB})
 endforeach ()

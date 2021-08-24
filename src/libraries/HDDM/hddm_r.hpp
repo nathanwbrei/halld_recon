@@ -19,6 +19,7 @@
 #ifndef SAW_r_HDDM
 #define SAW_r_HDDM
 
+#include <map>
 #include <list>
 #include <deque>
 #include <vector>
@@ -34,6 +35,16 @@
 #include <particleType.h>
 #include <pthread.h>
 #include <assert.h>
+#include <climits>
+
+#ifdef HDF5_SUPPORT
+#include <H5Fpublic.h>
+#include <H5Tpublic.h>
+#include <H5Ppublic.h>
+#include <H5Spublic.h>
+#include <H5Dpublic.h>
+#include <H5LTpublic.h>
+#endif
 
 #define MY_SETUP thread_private_data *my_private = lookup_private_data();
 #define MY(VAR) my_private->m_ ## VAR
@@ -62,6 +73,30 @@ enum hddm_type {
    k_hddm_anyURI,
    k_hddm_Particle_t
 };
+
+#ifdef HDF5_SUPPORT
+#define HDF5_DEFAULT_CHUNK_SIZE 100
+// gzip standard compression provided by hdf5
+const H5Z_filter_t k_hdf5_gzip_filter(H5Z_FILTER_DEFLATE);
+// szip standard compression provided by hdf5
+const H5Z_filter_t k_hdf5_szip_filter(H5Z_FILTER_SZIP);
+// bzip2 lossless compression used by PyTables
+const H5Z_filter_t k_hdf5_bzip2_plugin(307);
+// Blosc lossless compression used by PyTables
+const H5Z_filter_t k_hdf5_blosc_plugin(32001);
+// bitshuffle shuffle filter at bit level instead of byte level
+const H5Z_filter_t k_hdf5_bshuf_plugin(32008);
+// JPEG-XR compression filter used in jpeg images
+const H5Z_filter_t k_hdf5_jpeg_plugin(32007);
+// LZ4 fast lossless compression algorithm
+const H5Z_filter_t k_hdf5_lz4_plugin(32004);
+// LZF fast lossless compression used by H5Py project
+const H5Z_filter_t k_hdf5_lzf_plugin(32000);
+// modified LZMA compression filter (MAFISC)
+const H5Z_filter_t k_hdf5_lzma_plugin(32002);
+// zfp rate, accuracy, or precision bounded compression for arrays of floats
+const H5Z_filter_t k_hdf5_zfp_plugin(32013);
+#endif
 
 class HDDM;
 class istream;
@@ -311,7 +346,8 @@ template <class T> class HDDM_ElementList;
 
 class HDDM_Element: public streamable {
  public:
-   ~HDDM_Element() {}
+   virtual ~HDDM_Element() {}
+   virtual void clear() {}
    virtual const void *getAttribute(const std::string &name,
                                     hddm_type *atype=0) const {
       return 0;
@@ -324,22 +360,26 @@ class HDDM_Element: public streamable {
    }
    friend class HDDM_ElementList<HDDM_Element>;
  protected:
-   HDDM_Element() : m_parent(0), m_host(0) {}
-   HDDM_Element(HDDM_Element *parent)
+   HDDM_Element() : m_parent(0), m_host(0), m_owner(0) {}
+   HDDM_Element(HDDM_Element *parent, int owner=0)
     : m_parent(parent),
-      m_host(parent->m_host)
-    {}
-   HDDM_Element(HDDM_Element &src)
+      m_host((parent != 0)? parent->m_host : 0),
+      m_owner(owner)
+   {}
+   HDDM_Element(const HDDM_Element &src)
     : m_parent(src.m_parent),
-      m_host(src.m_host)
+      m_host(src.m_host),
+      m_owner(0)
    {}
    HDDM_Element *m_parent;
    HDDM *m_host;
+   int m_owner;
 };
 
 template <class T>
 class HDDM_ElementList: public streamable {
  public:
+   HDDM_ElementList() : m_host_plist(0), m_parent(0) {}
    HDDM_ElementList(typename std::list<T*> *plist,
                     typename std::list<T*>::iterator begin,
                     typename std::list<T*>::iterator end,
@@ -347,7 +387,8 @@ class HDDM_ElementList: public streamable {
     : m_host_plist(plist),
       m_first_iter(begin),
       m_last_iter(end),
-      m_parent(parent)
+      m_parent(parent),
+      m_ref(0)
    {
       for (m_size = 0; begin != end; ++m_size, ++begin) {}
       if (m_size) {
@@ -359,8 +400,9 @@ class HDDM_ElementList: public streamable {
     : m_host_plist(src.m_host_plist),
       m_first_iter(src.m_first_iter),
       m_last_iter(src.m_last_iter),
-      m_parent(0),
-      m_size(src.m_size)
+      m_parent(src.m_parent),
+      m_size(src.m_size),
+      m_ref(src.m_ref)
    {}
 
    bool empty() const { return (m_size == 0); }
@@ -432,7 +474,7 @@ class HDDM_ElementList: public streamable {
             return 0;
          }
          iterator iter2(iter);
-         for (int n=1; n < m_size; ++n) {
+         for (int n=1; n < INT_MAX; ++n) {
             if (++iter == *this) {
                return n;
             }
@@ -440,7 +482,10 @@ class HDDM_ElementList: public streamable {
                return -n;
             }
          }
-         return m_size;
+         return INT_MAX;
+      }
+      void *address() const {
+         return &*(typename std::list<T*>::iterator)(*this);
       }
    };
 
@@ -506,6 +551,9 @@ class HDDM_ElementList: public streamable {
          }
          return m_size;
       }
+      void *address() const {
+         return &*(typename std::list<T*>::iterator)(*this);
+      }
    };
 
    iterator begin() const { return m_first_iter; }
@@ -520,18 +568,18 @@ class HDDM_ElementList: public streamable {
       iterator it = insert(start, count);
       typename std::list<T*>::iterator iter(it);
       for (int n=0; n<count; ++n, ++iter) {
-         *iter = new T(m_parent);
+         *iter = new T(m_parent, 1);
       }
       return HDDM_ElementList(m_host_plist, it, it+count, m_parent);
    }
 
    void del(int count=-1, int start=0) {
+      if (m_size == 0 || count == 0) {
+         return;
+      }
       if (m_parent == 0) {
          throw std::runtime_error("HDDM_ElementList error - "
                                   "attempt to delete from immutable list");
-      }
-      if (m_size == 0 || count == 0) {
-         return;
       }
       iterator iter_begin(begin());
       iterator iter_end(end());
@@ -549,7 +597,10 @@ class HDDM_ElementList: public streamable {
       }
       typename std::list<T*>::iterator iter;
       for (iter = iter_begin; iter != iter_end; ++iter) {
-         delete *iter;
+         if ((*iter)->m_owner)
+            delete *iter;
+         else
+            (*iter)->clear();
       }
       erase(start, count);
    }
@@ -559,12 +610,25 @@ class HDDM_ElementList: public streamable {
       int n2 = (last < 0)? last + m_size + 1 : last + 1;
       int count = n2 - n1;
       iterator iter_begin;
-      if (first > 0)
+      if (first >= 0)
          iter_begin = begin() + first;
-      else if (first < 0)
+      else
          iter_begin = end() + first;
       iterator iter_end(iter_begin + count);
       return HDDM_ElementList(m_host_plist, iter_begin, iter_end);
+   }
+   void debug_print() {
+      std::cout << "HDDM_ElementList<T> contents printout:"
+                << std::endl
+                << "    this         = " << &*this << std::endl
+                << "    m_parent     = " << m_parent << std::endl
+                << "    m_host_plist = " << m_host_plist << std::endl
+                << "    m_size       = " << m_size << std::endl
+                << "    m_ref        = " << m_ref << std::endl
+                << "    m_first_iter = " << m_first_iter.address()
+                << std::endl
+                << "    m_last_iter  = " << m_last_iter.address()
+                << std::endl;
    }
 
    void streamer(istream &istr) {
@@ -608,8 +672,6 @@ class HDDM_ElementList: public streamable {
    }
 
  private:
-   HDDM_ElementList() {}
-
    iterator insert(int start, int count) {
       if (m_size == 0) {
          if (count > 0) {
@@ -710,21 +772,45 @@ class HDDM_ElementList: public streamable {
       }
    }
 
+ public:
+   void inflate(HDDM *host, std::list<T*> *host_plist, HDDM_Element *parent) {
+      m_parent = parent;
+      m_host_plist = host_plist;
+      m_first_iter = m_host_plist->begin();
+      m_first_iter += m_ref;
+      m_last_iter = m_first_iter;
+      m_last_iter += m_size;
+      for (iterator iter = m_first_iter; iter != m_last_iter; ++iter) {
+         iter->m_parent = parent;
+         iter->m_host = host;
+      }
+      if (m_size) {
+         --m_last_iter;
+      }
+   }
+   void deflate() {
+      iterator iter = m_host_plist->begin();
+      for (m_ref=0; iter != m_first_iter; ++iter, ++m_ref) {}
+   }
+
  protected:
    std::list<T*> *m_host_plist;
    iterator m_first_iter;
    iterator m_last_iter;
    HDDM_Element *m_parent;
+ public:
    int m_size;
+   int m_ref;
 };
 
 template <class T>
 class HDDM_ElementLink: public HDDM_ElementList<T> {
  public:
+   HDDM_ElementLink() {}
    HDDM_ElementLink(typename std::list<T*> *plist,
                     typename std::list<T*>::iterator begin,
                     typename std::list<T*>::iterator end,
-                    HDDM_Element *parent)
+                    HDDM_Element *parent=0)
     : HDDM_ElementList<T>(plist,begin,end,parent)
    {}
    HDDM_ElementLink(const HDDM_ElementList<T> &src)
@@ -741,14 +827,19 @@ class HDDM_ElementLink: public HDDM_ElementList<T> {
          HDDM_ElementList<T>::begin()->streamer(ostr);
       }
    }
-
- protected:
-   HDDM_ElementLink() {}
 };
+
+#ifdef HDF5_SUPPORT
+typedef struct {
+   size_t len;
+   void *p;
+} hdf5_hvl_t;
+#endif
 
 class Comment: public HDDM_Element {
  public:
    ~Comment();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -761,13 +852,20 @@ class Comment: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Comment>;
    friend class HDDM_ElementLink<Comment>;
+   Comment() {}
+   Comment(HDDM_Element *parent, int owner=0);
  private:
-   Comment(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    std::string m_text;
+   const char *mx_text;
 };
 
 typedef HDDM_ElementList<Comment> CommentList;
@@ -776,6 +874,7 @@ typedef HDDM_ElementLink<Comment> CommentLink;
 class DataVersionString: public HDDM_Element {
  public:
    ~DataVersionString();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -788,13 +887,20 @@ class DataVersionString: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<DataVersionString>;
    friend class HDDM_ElementLink<DataVersionString>;
+   DataVersionString() {}
+   DataVersionString(HDDM_Element *parent, int owner=0);
  private:
-   DataVersionString(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    std::string m_text;
+   const char *mx_text;
 };
 
 typedef HDDM_ElementList<DataVersionString> DataVersionStringList;
@@ -803,6 +909,7 @@ typedef HDDM_ElementLink<DataVersionString> DataVersionStringLink;
 class CcdbContext: public HDDM_Element {
  public:
    ~CcdbContext();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -815,13 +922,20 @@ class CcdbContext: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<CcdbContext>;
    friend class HDDM_ElementLink<CcdbContext>;
+   CcdbContext() {}
+   CcdbContext(HDDM_Element *parent, int owner=0);
  private:
-   CcdbContext(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    std::string m_text;
+   const char *mx_text;
 };
 
 typedef HDDM_ElementList<CcdbContext> CcdbContextList;
@@ -830,6 +944,7 @@ typedef HDDM_ElementLink<CcdbContext> CcdbContextLink;
 class Origin: public HDDM_Element {
  public:
    ~Origin();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -855,10 +970,16 @@ class Origin: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Origin>;
    friend class HDDM_ElementLink<Origin>;
+   Origin() {}
+   Origin(HDDM_Element *parent, int owner=0);
  private:
-   Origin(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_t;
@@ -873,6 +994,7 @@ typedef HDDM_ElementLink<Origin> OriginLink;
 class Momentum: public HDDM_Element {
  public:
    ~Momentum();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -901,10 +1023,16 @@ class Momentum: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Momentum>;
    friend class HDDM_ElementLink<Momentum>;
+   Momentum() {}
+   Momentum(HDDM_Element *parent, int owner=0);
  private:
-   Momentum(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -919,6 +1047,7 @@ typedef HDDM_ElementLink<Momentum> MomentumLink;
 class Product: public HDDM_Element {
  public:
    ~Product();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -945,10 +1074,16 @@ class Product: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Product>;
    friend class HDDM_ElementLink<Product>;
+   Product() {}
+   Product(HDDM_Element *parent, int owner=0);
  private:
-   Product(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_id;
@@ -963,6 +1098,7 @@ typedef HDDM_ElementLink<Product> ProductLink;
 class Vertex: public HDDM_Element {
  public:
    ~Vertex();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -987,10 +1123,16 @@ class Vertex: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Vertex>;
    friend class HDDM_ElementLink<Vertex>;
+   Vertex() {}
+   Vertex(HDDM_Element *parent, int owner=0);
  private:
-   Vertex(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    OriginLink m_origin_link;
@@ -1003,6 +1145,7 @@ typedef HDDM_ElementLink<Vertex> VertexLink;
 class Reaction: public HDDM_Element {
  public:
    ~Reaction();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -1028,14 +1171,21 @@ class Reaction: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Reaction>;
    friend class HDDM_ElementLink<Reaction>;
+   Reaction() {}
+   Reaction(HDDM_Element *parent, int owner=0);
  private:
-   Reaction(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_Ebeam;
    std::string m_jtag;
+   const char *mx_jtag;
    int m_targetType;
    int m_type;
    float m_weight;
@@ -1045,9 +1195,49 @@ class Reaction: public HDDM_Element {
 typedef HDDM_ElementList<Reaction> ReactionList;
 typedef HDDM_ElementLink<Reaction> ReactionLink;
 
+class TagmChannel: public HDDM_Element {
+ public:
+   ~TagmChannel();
+   void clear();
+   std::string getClass() const;
+   std::string getVersion() const;
+   std::string getXmlns() const;
+   int64_t getEventNo() const;
+   int getRunNo() const;
+   float getE() const;
+   std::string getEunit() const;
+   std::string getJtag() const;
+   std::string getMaxOccurs() const;
+   float getT() const;
+   std::string getTunit() const;
+   int getColumn() const;
+   void setColumn(int column);
+   int getMinOccurs() const;
+   const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
+   std::string toString(int indent=0);
+   std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
+   friend class HDDM_ElementList<TagmChannel>;
+   friend class HDDM_ElementLink<TagmChannel>;
+   TagmChannel() {}
+   TagmChannel(HDDM_Element *parent, int owner=0);
+ private:
+   void streamer(istream &istr);
+   void streamer(ostream &ostr);
+   int m_column;
+};
+
+typedef HDDM_ElementList<TagmChannel> TagmChannelList;
+typedef HDDM_ElementLink<TagmChannel> TagmChannelLink;
+
 class TagmBeamPhoton: public HDDM_Element {
  public:
    ~TagmBeamPhoton();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -1063,26 +1253,78 @@ class TagmBeamPhoton: public HDDM_Element {
    float getT() const;
    void setT(float t);
    std::string getTunit() const;
+   TagmChannel &getTagmChannel();
+   TagmChannelList &getTagmChannels();
+   TagmChannelList addTagmChannels(int count=1, int start=-1);
+   void deleteTagmChannels(int count=-1, int start=0);
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<TagmBeamPhoton>;
    friend class HDDM_ElementLink<TagmBeamPhoton>;
+   TagmBeamPhoton() {}
+   TagmBeamPhoton(HDDM_Element *parent, int owner=0);
  private:
-   TagmBeamPhoton(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
    std::string m_jtag;
+   const char *mx_jtag;
    float m_t;
+   TagmChannelLink m_tagmChannel_link;
 };
 
 typedef HDDM_ElementList<TagmBeamPhoton> TagmBeamPhotonList;
 typedef HDDM_ElementLink<TagmBeamPhoton> TagmBeamPhotonLink;
 
+class TaghChannel: public HDDM_Element {
+ public:
+   ~TaghChannel();
+   void clear();
+   std::string getClass() const;
+   std::string getVersion() const;
+   std::string getXmlns() const;
+   int64_t getEventNo() const;
+   int getRunNo() const;
+   float getE() const;
+   std::string getEunit() const;
+   std::string getJtag() const;
+   std::string getMaxOccurs() const;
+   float getT() const;
+   std::string getTunit() const;
+   int getCounter() const;
+   void setCounter(int counter);
+   int getMinOccurs() const;
+   const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
+   std::string toString(int indent=0);
+   std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
+   friend class HDDM_ElementList<TaghChannel>;
+   friend class HDDM_ElementLink<TaghChannel>;
+   TaghChannel() {}
+   TaghChannel(HDDM_Element *parent, int owner=0);
+ private:
+   void streamer(istream &istr);
+   void streamer(ostream &ostr);
+   int m_counter;
+};
+
+typedef HDDM_ElementList<TaghChannel> TaghChannelList;
+typedef HDDM_ElementLink<TaghChannel> TaghChannelLink;
+
 class TaghBeamPhoton: public HDDM_Element {
  public:
    ~TaghBeamPhoton();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -1098,18 +1340,30 @@ class TaghBeamPhoton: public HDDM_Element {
    float getT() const;
    void setT(float t);
    std::string getTunit() const;
+   TaghChannel &getTaghChannel();
+   TaghChannelList &getTaghChannels();
+   TaghChannelList addTaghChannels(int count=1, int start=-1);
+   void deleteTaghChannels(int count=-1, int start=0);
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<TaghBeamPhoton>;
    friend class HDDM_ElementLink<TaghBeamPhoton>;
+   TaghBeamPhoton() {}
+   TaghBeamPhoton(HDDM_Element *parent, int owner=0);
  private:
-   TaghBeamPhoton(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
    std::string m_jtag;
+   const char *mx_jtag;
    float m_t;
+   TaghChannelLink m_taghChannel_link;
 };
 
 typedef HDDM_ElementList<TaghBeamPhoton> TaghBeamPhotonList;
@@ -1118,6 +1372,7 @@ typedef HDDM_ElementLink<TaghBeamPhoton> TaghBeamPhotonLink;
 class FcalCorrelations: public HDDM_Element {
  public:
    ~FcalCorrelations();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -1157,10 +1412,16 @@ class FcalCorrelations: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FcalCorrelations>;
    friend class HDDM_ElementLink<FcalCorrelations>;
+   FcalCorrelations() {}
+   FcalCorrelations(HDDM_Element *parent, int owner=0);
  private:
-   FcalCorrelations(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_Etcorr;
@@ -1176,6 +1437,7 @@ typedef HDDM_ElementLink<FcalCorrelations> FcalCorrelationsLink;
 class FcalShowerClassification: public HDDM_Element {
  public:
    ~FcalShowerClassification();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -1207,10 +1469,16 @@ class FcalShowerClassification: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FcalShowerClassification>;
    friend class HDDM_ElementLink<FcalShowerClassification>;
+   FcalShowerClassification() {}
+   FcalShowerClassification(HDDM_Element *parent, int owner=0);
  private:
-   FcalShowerClassification(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_classifierOuput;
@@ -1222,6 +1490,7 @@ typedef HDDM_ElementLink<FcalShowerClassification> FcalShowerClassificationLink;
 class FcalShowerProperties: public HDDM_Element {
  public:
    ~FcalShowerProperties();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -1263,10 +1532,16 @@ class FcalShowerProperties: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FcalShowerProperties>;
    friend class HDDM_ElementLink<FcalShowerProperties>;
+   FcalShowerProperties() {}
+   FcalShowerProperties(HDDM_Element *parent, int owner=0);
  private:
-   FcalShowerProperties(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E1E9;
@@ -1283,6 +1558,7 @@ typedef HDDM_ElementLink<FcalShowerProperties> FcalShowerPropertiesLink;
 class FcalShowerNBlocks: public HDDM_Element {
  public:
    ~FcalShowerNBlocks();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -1314,10 +1590,16 @@ class FcalShowerNBlocks: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FcalShowerNBlocks>;
    friend class HDDM_ElementLink<FcalShowerNBlocks>;
+   FcalShowerNBlocks() {}
+   FcalShowerNBlocks(HDDM_Element *parent, int owner=0);
  private:
-   FcalShowerNBlocks(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_numBlocks;
@@ -1329,6 +1611,7 @@ typedef HDDM_ElementLink<FcalShowerNBlocks> FcalShowerNBlocksLink;
 class FcalShower: public HDDM_Element {
  public:
    ~FcalShower();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -1390,16 +1673,23 @@ class FcalShower: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FcalShower>;
    friend class HDDM_ElementLink<FcalShower>;
+   FcalShower() {}
+   FcalShower(HDDM_Element *parent, int owner=0);
  private:
-   FcalShower(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
    float m_Eerr;
    float m_Ezcorr;
    std::string m_jtag;
+   const char *mx_jtag;
    float m_t;
    float m_terr;
    float m_tzcorr;
@@ -1424,6 +1714,7 @@ typedef HDDM_ElementLink<FcalShower> FcalShowerLink;
 class Preshower: public HDDM_Element {
  public:
    ~Preshower();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -1455,10 +1746,16 @@ class Preshower: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Preshower>;
    friend class HDDM_ElementLink<Preshower>;
+   Preshower() {}
+   Preshower(HDDM_Element *parent, int owner=0);
  private:
-   Preshower(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_preshowerE;
@@ -1470,6 +1767,7 @@ typedef HDDM_ElementLink<Preshower> PreshowerLink;
 class Width: public HDDM_Element {
  public:
    ~Width();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -1505,10 +1803,16 @@ class Width: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Width>;
    friend class HDDM_ElementLink<Width>;
+   Width() {}
+   Width(HDDM_Element *parent, int owner=0);
  private:
-   Width(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_sigLong;
@@ -1522,6 +1826,7 @@ typedef HDDM_ElementLink<Width> WidthLink;
 class BcalCluster: public HDDM_Element {
  public:
    ~BcalCluster();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -1553,10 +1858,16 @@ class BcalCluster: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<BcalCluster>;
    friend class HDDM_ElementLink<BcalCluster>;
+   BcalCluster() {}
+   BcalCluster(HDDM_Element *parent, int owner=0);
  private:
-   BcalCluster(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_ncell;
@@ -1568,6 +1879,7 @@ typedef HDDM_ElementLink<BcalCluster> BcalClusterLink;
 class BcalCorrelations: public HDDM_Element {
  public:
    ~BcalCorrelations();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -1607,10 +1919,16 @@ class BcalCorrelations: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<BcalCorrelations>;
    friend class HDDM_ElementLink<BcalCorrelations>;
+   BcalCorrelations() {}
+   BcalCorrelations(HDDM_Element *parent, int owner=0);
  private:
-   BcalCorrelations(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_Etcorr;
@@ -1626,6 +1944,7 @@ typedef HDDM_ElementLink<BcalCorrelations> BcalCorrelationsLink;
 class BcalLayers: public HDDM_Element {
  public:
    ~BcalLayers();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -1663,10 +1982,16 @@ class BcalLayers: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<BcalLayers>;
    friend class HDDM_ElementLink<BcalLayers>;
+   BcalLayers() {}
+   BcalLayers(HDDM_Element *parent, int owner=0);
  private:
-   BcalLayers(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E_L2;
@@ -1681,6 +2006,7 @@ typedef HDDM_ElementLink<BcalLayers> BcalLayersLink;
 class BcalShower: public HDDM_Element {
  public:
    ~BcalShower();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -1746,16 +2072,23 @@ class BcalShower: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<BcalShower>;
    friend class HDDM_ElementLink<BcalShower>;
+   BcalShower() {}
+   BcalShower(HDDM_Element *parent, int owner=0);
  private:
-   BcalShower(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
    float m_Eerr;
    float m_Ezcorr;
    std::string m_jtag;
+   const char *mx_jtag;
    float m_t;
    float m_terr;
    float m_tzcorr;
@@ -1781,6 +2114,7 @@ typedef HDDM_ElementLink<BcalShower> BcalShowerLink;
 class CcalShower: public HDDM_Element {
  public:
    ~CcalShower();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -1826,10 +2160,16 @@ class CcalShower: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<CcalShower>;
    friend class HDDM_ElementLink<CcalShower>;
+   CcalShower() {}
+   CcalShower(HDDM_Element *parent, int owner=0);
  private:
-   CcalShower(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_E;
@@ -1840,6 +2180,7 @@ class CcalShower: public HDDM_Element {
    int m_id;
    int m_idmax;
    std::string m_jtag;
+   const char *mx_jtag;
    float m_t;
    float m_terr;
    int m_type;
@@ -1856,6 +2197,7 @@ typedef HDDM_ElementLink<CcalShower> CcalShowerLink;
 class TrackFit: public HDDM_Element {
  public:
    ~TrackFit();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -1924,10 +2266,16 @@ class TrackFit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<TrackFit>;
    friend class HDDM_ElementLink<TrackFit>;
+   TrackFit() {}
+   TrackFit(HDDM_Element *parent, int owner=0);
  private:
-   TrackFit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_Ndof;
@@ -1964,6 +2312,7 @@ typedef HDDM_ElementLink<TrackFit> TrackFitLink;
 class TrackFlags: public HDDM_Element {
  public:
    ~TrackFlags();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -1979,10 +2328,16 @@ class TrackFlags: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<TrackFlags>;
    friend class HDDM_ElementLink<TrackFlags>;
+   TrackFlags() {}
+   TrackFlags(HDDM_Element *parent, int owner=0);
  private:
-   TrackFlags(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_flags;
@@ -1994,6 +2349,7 @@ typedef HDDM_ElementLink<TrackFlags> TrackFlagsLink;
 class Hitlayers: public HDDM_Element {
  public:
    ~Hitlayers();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -2011,10 +2367,16 @@ class Hitlayers: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Hitlayers>;
    friend class HDDM_ElementLink<Hitlayers>;
+   Hitlayers() {}
+   Hitlayers(HDDM_Element *parent, int owner=0);
  private:
-   Hitlayers(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_CDCrings;
@@ -2027,6 +2389,7 @@ typedef HDDM_ElementLink<Hitlayers> HitlayersLink;
 class Expectedhits: public HDDM_Element {
  public:
    ~Expectedhits();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -2048,10 +2411,16 @@ class Expectedhits: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Expectedhits>;
    friend class HDDM_ElementLink<Expectedhits>;
+   Expectedhits() {}
+   Expectedhits(HDDM_Element *parent, int owner=0);
  private:
-   Expectedhits(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_expectedCDChits;
@@ -2066,6 +2435,7 @@ typedef HDDM_ElementLink<Expectedhits> ExpectedhitsLink;
 class Mcmatch: public HDDM_Element {
  public:
    ~Mcmatch();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -2083,10 +2453,16 @@ class Mcmatch: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Mcmatch>;
    friend class HDDM_ElementLink<Mcmatch>;
+   Mcmatch() {}
+   Mcmatch(HDDM_Element *parent, int owner=0);
  private:
-   Mcmatch(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_ithrown;
@@ -2099,6 +2475,7 @@ typedef HDDM_ElementLink<Mcmatch> McmatchLink;
 class CDCAmpdEdx: public HDDM_Element {
  public:
    ~CDCAmpdEdx();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -2124,10 +2501,16 @@ class CDCAmpdEdx: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<CDCAmpdEdx>;
    friend class HDDM_ElementLink<CDCAmpdEdx>;
+   CDCAmpdEdx() {}
+   CDCAmpdEdx(HDDM_Element *parent, int owner=0);
  private:
-   CDCAmpdEdx(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_dEdxCDCAmp;
@@ -2140,6 +2523,7 @@ typedef HDDM_ElementLink<CDCAmpdEdx> CDCAmpdEdxLink;
 class DEdxDC: public HDDM_Element {
  public:
    ~DEdxDC();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -2171,10 +2555,16 @@ class DEdxDC: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<DEdxDC>;
    friend class HDDM_ElementLink<DEdxDC>;
+   DEdxDC() {}
+   DEdxDC(HDDM_Element *parent, int owner=0);
  private:
-   DEdxDC(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_NsampleCDC;
@@ -2192,6 +2582,7 @@ typedef HDDM_ElementLink<DEdxDC> DEdxDCLink;
 class ExitParams: public HDDM_Element {
  public:
    ~ExitParams();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -2222,10 +2613,16 @@ class ExitParams: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<ExitParams>;
    friend class HDDM_ElementLink<ExitParams>;
+   ExitParams() {}
+   ExitParams(HDDM_Element *parent, int owner=0);
  private:
-   ExitParams(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_px1;
@@ -2243,6 +2640,7 @@ typedef HDDM_ElementLink<ExitParams> ExitParamsLink;
 class ChargedTrack: public HDDM_Element {
  public:
    ~ChargedTrack();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -2287,14 +2685,21 @@ class ChargedTrack: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<ChargedTrack>;
    friend class HDDM_ElementLink<ChargedTrack>;
+   ChargedTrack() {}
+   ChargedTrack(HDDM_Element *parent, int owner=0);
  private:
-   ChargedTrack(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_candidateId;
    std::string m_jtag;
+   const char *mx_jtag;
    int m_ptype;
    TrackFitLink m_trackFit_link;
    TrackFlagsLink m_trackFlags_link;
@@ -2311,6 +2716,7 @@ typedef HDDM_ElementLink<ChargedTrack> ChargedTrackLink;
 class StartHit: public HDDM_Element {
  public:
    ~StartHit();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -2331,14 +2737,21 @@ class StartHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<StartHit>;
    friend class HDDM_ElementLink<StartHit>;
+   StartHit() {}
+   StartHit(HDDM_Element *parent, int owner=0);
  private:
-   StartHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_dE;
    std::string m_jtag;
+   const char *mx_jtag;
    int m_sector;
    float m_t;
 };
@@ -2349,6 +2762,7 @@ typedef HDDM_ElementLink<StartHit> StartHitLink;
 class TofStatus: public HDDM_Element {
  public:
    ~TofStatus();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -2371,10 +2785,16 @@ class TofStatus: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<TofStatus>;
    friend class HDDM_ElementLink<TofStatus>;
+   TofStatus() {}
+   TofStatus(HDDM_Element *parent, int owner=0);
  private:
-   TofStatus(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_status;
@@ -2386,6 +2806,7 @@ typedef HDDM_ElementLink<TofStatus> TofStatusLink;
 class TofEnergyDeposition: public HDDM_Element {
  public:
    ~TofEnergyDeposition();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -2410,10 +2831,16 @@ class TofEnergyDeposition: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<TofEnergyDeposition>;
    friend class HDDM_ElementLink<TofEnergyDeposition>;
+   TofEnergyDeposition() {}
+   TofEnergyDeposition(HDDM_Element *parent, int owner=0);
  private:
-   TofEnergyDeposition(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_dE1;
@@ -2426,6 +2853,7 @@ typedef HDDM_ElementLink<TofEnergyDeposition> TofEnergyDepositionLink;
 class TofPoint: public HDDM_Element {
  public:
    ~TofPoint();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -2461,14 +2889,21 @@ class TofPoint: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<TofPoint>;
    friend class HDDM_ElementLink<TofPoint>;
+   TofPoint() {}
+   TofPoint(HDDM_Element *parent, int owner=0);
  private:
-   TofPoint(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_dE;
    std::string m_jtag;
+   const char *mx_jtag;
    float m_t;
    float m_terr;
    float m_x;
@@ -2484,6 +2919,7 @@ typedef HDDM_ElementLink<TofPoint> TofPointLink;
 class DircHit: public HDDM_Element {
  public:
    ~DircHit();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -2503,14 +2939,21 @@ class DircHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<DircHit>;
    friend class HDDM_ElementLink<DircHit>;
+   DircHit() {}
+   DircHit(HDDM_Element *parent, int owner=0);
  private:
-   DircHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_ch;
    std::string m_jtag;
+   const char *mx_jtag;
    float m_t;
    float m_tot;
 };
@@ -2521,6 +2964,7 @@ typedef HDDM_ElementLink<DircHit> DircHitLink;
 class RFtime: public HDDM_Element {
  public:
    ~RFtime();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -2535,13 +2979,20 @@ class RFtime: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<RFtime>;
    friend class HDDM_ElementLink<RFtime>;
+   RFtime() {}
+   RFtime(HDDM_Element *parent, int owner=0);
  private:
-   RFtime(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    std::string m_jtag;
+   const char *mx_jtag;
    float m_tsync;
 };
 
@@ -2551,6 +3002,7 @@ typedef HDDM_ElementLink<RFtime> RFtimeLink;
 class TriggerEnergySums: public HDDM_Element {
  public:
    ~TriggerEnergySums();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -2568,10 +3020,16 @@ class TriggerEnergySums: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<TriggerEnergySums>;
    friend class HDDM_ElementLink<TriggerEnergySums>;
+   TriggerEnergySums() {}
+   TriggerEnergySums(HDDM_Element *parent, int owner=0);
  private:
-   TriggerEnergySums(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_BCALEnergySum;
@@ -2584,6 +3042,7 @@ typedef HDDM_ElementLink<TriggerEnergySums> TriggerEnergySumsLink;
 class Trigger: public HDDM_Element {
  public:
    ~Trigger();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -2604,13 +3063,20 @@ class Trigger: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<Trigger>;
    friend class HDDM_ElementLink<Trigger>;
+   Trigger() {}
+   Trigger(HDDM_Element *parent, int owner=0);
  private:
-   Trigger(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    std::string m_jtag;
+   const char *mx_jtag;
    int m_l1_fp_trig_bits;
    int m_l1_trig_bits;
    TriggerEnergySumsLink m_triggerEnergySums_link;
@@ -2622,6 +3088,7 @@ typedef HDDM_ElementLink<Trigger> TriggerLink;
 class BcalMatchParams: public HDDM_Element {
  public:
    ~BcalMatchParams();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -2651,10 +3118,16 @@ class BcalMatchParams: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<BcalMatchParams>;
    friend class HDDM_ElementLink<BcalMatchParams>;
+   BcalMatchParams() {}
+   BcalMatchParams(HDDM_Element *parent, int owner=0);
  private:
-   BcalMatchParams(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_deltaphi;
@@ -2673,6 +3146,7 @@ typedef HDDM_ElementLink<BcalMatchParams> BcalMatchParamsLink;
 class FcalMatchParams: public HDDM_Element {
  public:
    ~FcalMatchParams();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -2700,10 +3174,16 @@ class FcalMatchParams: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FcalMatchParams>;
    friend class HDDM_ElementLink<FcalMatchParams>;
+   FcalMatchParams() {}
+   FcalMatchParams(HDDM_Element *parent, int owner=0);
  private:
-   FcalMatchParams(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_doca;
@@ -2721,6 +3201,7 @@ typedef HDDM_ElementLink<FcalMatchParams> FcalMatchParamsLink;
 class TofDedx: public HDDM_Element {
  public:
    ~TofDedx();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -2750,10 +3231,16 @@ class TofDedx: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<TofDedx>;
    friend class HDDM_ElementLink<TofDedx>;
+   TofDedx() {}
+   TofDedx(HDDM_Element *parent, int owner=0);
  private:
-   TofDedx(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_dEdx1;
@@ -2766,6 +3253,7 @@ typedef HDDM_ElementLink<TofDedx> TofDedxLink;
 class TofMatchParams: public HDDM_Element {
  public:
    ~TofMatchParams();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -2806,10 +3294,16 @@ class TofMatchParams: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<TofMatchParams>;
    friend class HDDM_ElementLink<TofMatchParams>;
+   TofMatchParams() {}
+   TofMatchParams(HDDM_Element *parent, int owner=0);
  private:
-   TofMatchParams(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_dEdx;
@@ -2832,6 +3326,7 @@ typedef HDDM_ElementLink<TofMatchParams> TofMatchParamsLink;
 class ScMatchParams: public HDDM_Element {
  public:
    ~ScMatchParams();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -2868,10 +3363,16 @@ class ScMatchParams: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<ScMatchParams>;
    friend class HDDM_ElementLink<ScMatchParams>;
+   ScMatchParams() {}
+   ScMatchParams(HDDM_Element *parent, int owner=0);
  private:
-   ScMatchParams(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_dEdx;
@@ -2892,6 +3393,7 @@ typedef HDDM_ElementLink<ScMatchParams> ScMatchParamsLink;
 class DircMatchParams: public HDDM_Element {
  public:
    ~DircMatchParams();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -2935,10 +3437,16 @@ class DircMatchParams: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<DircMatchParams>;
    friend class HDDM_ElementLink<DircMatchParams>;
+   DircMatchParams() {}
+   DircMatchParams(HDDM_Element *parent, int owner=0);
  private:
-   DircMatchParams(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_deltat;
@@ -2965,6 +3473,7 @@ typedef HDDM_ElementLink<DircMatchParams> DircMatchParamsLink;
 class DircMatchHit: public HDDM_Element {
  public:
    ~DircMatchHit();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -2980,10 +3489,16 @@ class DircMatchHit: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<DircMatchHit>;
    friend class HDDM_ElementLink<DircMatchHit>;
+   DircMatchHit() {}
+   DircMatchHit(HDDM_Element *parent, int owner=0);
  private:
-   DircMatchHit(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_hit;
@@ -2996,6 +3511,7 @@ typedef HDDM_ElementLink<DircMatchHit> DircMatchHitLink;
 class BcalDOCAtoTrack: public HDDM_Element {
  public:
    ~BcalDOCAtoTrack();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -3014,10 +3530,16 @@ class BcalDOCAtoTrack: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<BcalDOCAtoTrack>;
    friend class HDDM_ElementLink<BcalDOCAtoTrack>;
+   BcalDOCAtoTrack() {}
+   BcalDOCAtoTrack(HDDM_Element *parent, int owner=0);
  private:
-   BcalDOCAtoTrack(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_deltaphi;
@@ -3031,6 +3553,7 @@ typedef HDDM_ElementLink<BcalDOCAtoTrack> BcalDOCAtoTrackLink;
 class FcalDOCAtoTrack: public HDDM_Element {
  public:
    ~FcalDOCAtoTrack();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -3047,10 +3570,16 @@ class FcalDOCAtoTrack: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FcalDOCAtoTrack>;
    friend class HDDM_ElementLink<FcalDOCAtoTrack>;
+   FcalDOCAtoTrack() {}
+   FcalDOCAtoTrack(HDDM_Element *parent, int owner=0);
  private:
-   FcalDOCAtoTrack(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_doca;
@@ -3063,6 +3592,7 @@ typedef HDDM_ElementLink<FcalDOCAtoTrack> FcalDOCAtoTrackLink;
 class TflightPCorrelation: public HDDM_Element {
  public:
    ~TflightPCorrelation();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -3082,10 +3612,16 @@ class TflightPCorrelation: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<TflightPCorrelation>;
    friend class HDDM_ElementLink<TflightPCorrelation>;
+   TflightPCorrelation() {}
+   TflightPCorrelation(HDDM_Element *parent, int owner=0);
  private:
-   TflightPCorrelation(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    float m_correlation;
@@ -3099,6 +3635,7 @@ typedef HDDM_ElementLink<TflightPCorrelation> TflightPCorrelationLink;
 class DetectorMatches: public HDDM_Element {
  public:
    ~DetectorMatches();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -3147,13 +3684,20 @@ class DetectorMatches: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<DetectorMatches>;
    friend class HDDM_ElementLink<DetectorMatches>;
+   DetectorMatches() {}
+   DetectorMatches(HDDM_Element *parent, int owner=0);
  private:
-   DetectorMatches(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    std::string m_jtag;
+   const char *mx_jtag;
    BcalMatchParamsList m_bcalMatchParams_list;
    FcalMatchParamsList m_fcalMatchParams_list;
    TofMatchParamsList m_tofMatchParams_list;
@@ -3171,6 +3715,7 @@ typedef HDDM_ElementLink<DetectorMatches> DetectorMatchesLink;
 class StartCounters: public HDDM_Element {
  public:
    ~StartCounters();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -3183,10 +3728,16 @@ class StartCounters: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<StartCounters>;
    friend class HDDM_ElementLink<StartCounters>;
+   StartCounters() {}
+   StartCounters(HDDM_Element *parent, int owner=0);
  private:
-   StartCounters(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_count;
@@ -3198,6 +3749,7 @@ typedef HDDM_ElementLink<StartCounters> StartCountersLink;
 class CdcStraws: public HDDM_Element {
  public:
    ~CdcStraws();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -3210,10 +3762,16 @@ class CdcStraws: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<CdcStraws>;
    friend class HDDM_ElementLink<CdcStraws>;
+   CdcStraws() {}
+   CdcStraws(HDDM_Element *parent, int owner=0);
  private:
-   CdcStraws(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_count;
@@ -3225,6 +3783,7 @@ typedef HDDM_ElementLink<CdcStraws> CdcStrawsLink;
 class FdcPseudos: public HDDM_Element {
  public:
    ~FdcPseudos();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -3237,10 +3796,16 @@ class FdcPseudos: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FdcPseudos>;
    friend class HDDM_ElementLink<FdcPseudos>;
+   FdcPseudos() {}
+   FdcPseudos(HDDM_Element *parent, int owner=0);
  private:
-   FdcPseudos(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_count;
@@ -3252,6 +3817,7 @@ typedef HDDM_ElementLink<FdcPseudos> FdcPseudosLink;
 class BcalCells: public HDDM_Element {
  public:
    ~BcalCells();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -3264,10 +3830,16 @@ class BcalCells: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<BcalCells>;
    friend class HDDM_ElementLink<BcalCells>;
+   BcalCells() {}
+   BcalCells(HDDM_Element *parent, int owner=0);
  private:
-   BcalCells(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_count;
@@ -3279,6 +3851,7 @@ typedef HDDM_ElementLink<BcalCells> BcalCellsLink;
 class FcalBlocks: public HDDM_Element {
  public:
    ~FcalBlocks();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -3291,10 +3864,16 @@ class FcalBlocks: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<FcalBlocks>;
    friend class HDDM_ElementLink<FcalBlocks>;
+   FcalBlocks() {}
+   FcalBlocks(HDDM_Element *parent, int owner=0);
  private:
-   FcalBlocks(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_count;
@@ -3306,6 +3885,7 @@ typedef HDDM_ElementLink<FcalBlocks> FcalBlocksLink;
 class TofPaddles: public HDDM_Element {
  public:
    ~TofPaddles();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -3318,10 +3898,16 @@ class TofPaddles: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<TofPaddles>;
    friend class HDDM_ElementLink<TofPaddles>;
+   TofPaddles() {}
+   TofPaddles(HDDM_Element *parent, int owner=0);
  private:
-   TofPaddles(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_count;
@@ -3333,6 +3919,7 @@ typedef HDDM_ElementLink<TofPaddles> TofPaddlesLink;
 class CcalBlocks: public HDDM_Element {
  public:
    ~CcalBlocks();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -3345,10 +3932,16 @@ class CcalBlocks: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<CcalBlocks>;
    friend class HDDM_ElementLink<CcalBlocks>;
+   CcalBlocks() {}
+   CcalBlocks(HDDM_Element *parent, int owner=0);
  private:
-   CcalBlocks(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_count;
@@ -3360,6 +3953,7 @@ typedef HDDM_ElementLink<CcalBlocks> CcalBlocksLink;
 class DircPMTs: public HDDM_Element {
  public:
    ~DircPMTs();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -3372,10 +3966,16 @@ class DircPMTs: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<DircPMTs>;
    friend class HDDM_ElementLink<DircPMTs>;
+   DircPMTs() {}
+   DircPMTs(HDDM_Element *parent, int owner=0);
  private:
-   DircPMTs(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int m_count;
@@ -3387,6 +3987,7 @@ typedef HDDM_ElementLink<DircPMTs> DircPMTsLink;
 class HitStatistics: public HDDM_Element {
  public:
    ~HitStatistics();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -3430,13 +4031,20 @@ class HitStatistics: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<HitStatistics>;
    friend class HDDM_ElementLink<HitStatistics>;
+   HitStatistics() {}
+   HitStatistics(HDDM_Element *parent, int owner=0);
  private:
-   HitStatistics(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    std::string m_jtag;
+   const char *mx_jtag;
    StartCountersLink m_startCounters_link;
    CdcStrawsLink m_cdcStraws_link;
    FdcPseudosLink m_fdcPseudos_link;
@@ -3453,6 +4061,7 @@ typedef HDDM_ElementLink<HitStatistics> HitStatisticsLink;
 class ReconstructedPhysicsEvent: public HDDM_Element {
  public:
    ~ReconstructedPhysicsEvent();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -3531,10 +4140,16 @@ class ReconstructedPhysicsEvent: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
+#ifdef HDF5_SUPPORT
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+#endif
    friend class HDDM_ElementList<ReconstructedPhysicsEvent>;
    friend class HDDM_ElementLink<ReconstructedPhysicsEvent>;
+   ReconstructedPhysicsEvent() {}
+   ReconstructedPhysicsEvent(HDDM_Element *parent, int owner=0);
  private:
-   ReconstructedPhysicsEvent(HDDM_Element *parent=0);
    void streamer(istream &istr);
    void streamer(ostream &ostr);
    int64_t m_eventNo;
@@ -3565,6 +4180,7 @@ class HDDM: public HDDM_Element {
  public:
    HDDM();
    ~HDDM();
+   void clear();
    std::string getClass() const;
    std::string getVersion() const;
    std::string getXmlns() const;
@@ -3613,7 +4229,9 @@ class HDDM: public HDDM_Element {
    StartCountersList getStartCounterses();
    StartHitList getStartHits();
    TaghBeamPhotonList getTaghBeamPhotons();
+   TaghChannelList getTaghChannels();
    TagmBeamPhotonList getTagmBeamPhotons();
+   TagmChannelList getTagmChannels();
    TflightPCorrelationList getTflightPCorrelations();
    TofDedxList getTofDedxs();
    TofEnergyDepositionList getTofEnergyDepositions();
@@ -3634,7 +4252,6 @@ class HDDM: public HDDM_Element {
    const void *getAttribute(const std::string &name, hddm_type *atype=0) const;
    std::string toString(int indent=0);
    std::string toXML(int indent=0);
-   void clear();
    friend class CDCAmpdEdx;
    friend class RFtime;
    friend class BcalCells;
@@ -3681,7 +4298,9 @@ class HDDM: public HDDM_Element {
    friend class StartCounters;
    friend class StartHit;
    friend class TaghBeamPhoton;
+   friend class TaghChannel;
    friend class TagmBeamPhoton;
+   friend class TagmChannel;
    friend class TflightPCorrelation;
    friend class TofDedx;
    friend class TofEnergyDeposition;
@@ -3745,7 +4364,9 @@ class HDDM: public HDDM_Element {
    std::list<StartCounters*> m_startCounters_plist;
    std::list<StartHit*> m_startHit_plist;
    std::list<TaghBeamPhoton*> m_taghBeamPhoton_plist;
+   std::list<TaghChannel*> m_taghChannel_plist;
    std::list<TagmBeamPhoton*> m_tagmBeamPhoton_plist;
+   std::list<TagmChannel*> m_tagmChannel_plist;
    std::list<TflightPCorrelation*> m_tflightPCorrelation_plist;
    std::list<TofDedx*> m_tofDedx_plist;
    std::list<TofEnergyDeposition*> m_tofEnergyDeposition_plist;
@@ -3760,6 +4381,101 @@ class HDDM: public HDDM_Element {
    std::list<Vertex*> m_vertex_plist;
    std::list<Width*> m_width_plist;
    ReconstructedPhysicsEventLink m_reconstructedPhysicsEvent_link;
+#ifdef HDF5_SUPPORT
+ public:
+   void hdf5DataPack();
+   void hdf5DataUnpack();
+   hid_t hdf5Datatype(int inmemory=0, int verbose=0);
+   herr_t hdf5FileWrite(hid_t file_id, long int entry=-1);
+   herr_t hdf5FileRead(hid_t file_id, long int entry=-1);
+   static hid_t hdf5FileCreate(std::string name, unsigned int flags);
+   static hid_t hdf5FileOpen(std::string name, unsigned int flags);
+   static herr_t hdf5FileClose(hid_t file_id);
+   static herr_t hdf5FileStamp(hid_t file_id, char **tags=0);
+   static herr_t hdf5FileCheck(hid_t file_id, char **tags=0);
+   static std::string hdf5DocumentString(hid_t file_id);
+   static long int hdf5GetEntries(hid_t file_id);
+   static herr_t hdf5SetChunksize(hid_t file_id, hsize_t chunksize);
+   static hsize_t hdf5GetChunksize(hid_t file_id);
+   static herr_t hdf5SetFilters(hid_t file_id, std::vector<H5Z_filter_t> &filters);
+   static herr_t hdf5GetFilters(hid_t file_id, std::vector<H5Z_filter_t> &filters);
+ private:
+   static std::map<std::string, hid_t> s_hdf5_datatype;
+   static std::map<std::string, hid_t> s_hdf5_memorytype;
+   static std::map<std::string, hid_t> s_hdf5_memoryspace;
+   static std::map<hid_t, hid_t> s_hdf5_dataspace;
+   static std::map<hid_t, hid_t> s_hdf5_chunking;
+   static std::map<hid_t, hid_t> s_hdf5_dataset;
+   typedef struct {
+      hdf5_hvl_t vl_CDCAmpdEdx;
+      hdf5_hvl_t vl_RFtime;
+      hdf5_hvl_t vl_bcalCells;
+      hdf5_hvl_t vl_bcalCluster;
+      hdf5_hvl_t vl_bcalCorrelations;
+      hdf5_hvl_t vl_bcalDOCAtoTrack;
+      hdf5_hvl_t vl_bcalLayers;
+      hdf5_hvl_t vl_bcalMatchParams;
+      hdf5_hvl_t vl_bcalShower;
+      hdf5_hvl_t vl_ccalBlocks;
+      hdf5_hvl_t vl_ccalShower;
+      hdf5_hvl_t vl_ccdbContext;
+      hdf5_hvl_t vl_cdcStraws;
+      hdf5_hvl_t vl_chargedTrack;
+      hdf5_hvl_t vl_comment;
+      hdf5_hvl_t vl_dEdxDC;
+      hdf5_hvl_t vl_dataVersionString;
+      hdf5_hvl_t vl_detectorMatches;
+      hdf5_hvl_t vl_dircHit;
+      hdf5_hvl_t vl_dircMatchHit;
+      hdf5_hvl_t vl_dircMatchParams;
+      hdf5_hvl_t vl_dircPMTs;
+      hdf5_hvl_t vl_exitParams;
+      hdf5_hvl_t vl_expectedhits;
+      hdf5_hvl_t vl_fcalBlocks;
+      hdf5_hvl_t vl_fcalCorrelations;
+      hdf5_hvl_t vl_fcalDOCAtoTrack;
+      hdf5_hvl_t vl_fcalMatchParams;
+      hdf5_hvl_t vl_fcalShower;
+      hdf5_hvl_t vl_fcalShowerClassification;
+      hdf5_hvl_t vl_fcalShowerNBlocks;
+      hdf5_hvl_t vl_fcalShowerProperties;
+      hdf5_hvl_t vl_fdcPseudos;
+      hdf5_hvl_t vl_hitStatistics;
+      hdf5_hvl_t vl_hitlayers;
+      hdf5_hvl_t vl_mcmatch;
+      hdf5_hvl_t vl_momentum;
+      hdf5_hvl_t vl_origin;
+      hdf5_hvl_t vl_preshower;
+      hdf5_hvl_t vl_product;
+      hdf5_hvl_t vl_reaction;
+      hdf5_hvl_t vl_reconstructedPhysicsEvent;
+      hdf5_hvl_t vl_scMatchParams;
+      hdf5_hvl_t vl_startCounters;
+      hdf5_hvl_t vl_startHit;
+      hdf5_hvl_t vl_taghBeamPhoton;
+      hdf5_hvl_t vl_taghChannel;
+      hdf5_hvl_t vl_tagmBeamPhoton;
+      hdf5_hvl_t vl_tagmChannel;
+      hdf5_hvl_t vl_tflightPCorrelation;
+      hdf5_hvl_t vl_tofDedx;
+      hdf5_hvl_t vl_tofEnergyDeposition;
+      hdf5_hvl_t vl_tofMatchParams;
+      hdf5_hvl_t vl_tofPaddles;
+      hdf5_hvl_t vl_tofPoint;
+      hdf5_hvl_t vl_tofStatus;
+      hdf5_hvl_t vl_trackFit;
+      hdf5_hvl_t vl_trackFlags;
+      hdf5_hvl_t vl_trigger;
+      hdf5_hvl_t vl_triggerEnergySums;
+      hdf5_hvl_t vl_vertex;
+      hdf5_hvl_t vl_width;
+   } hdf5_record_t;
+   hdf5_record_t m_hdf5_record;
+   hsize_t m_hdf5_record_offset;
+   hsize_t m_hdf5_record_count;
+   hsize_t m_hdf5_record_extent;
+   std::vector<std::string*> m_hdf5_strings;
+#endif
 };
 
 inline istream::thread_private_data *istream::lookup_private_data() {
@@ -3952,12 +4668,15 @@ inline ostream &ostream::operator<<(streamable &object) {
    return *this;
 }
 
-inline Comment::Comment(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Comment::Comment(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_text("")
 {}
 
-inline Comment::~Comment() {}
+inline Comment::~Comment() {
+   clear();
+}
+inline void Comment::clear() {}
 
 inline std::string Comment::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -4017,12 +4736,15 @@ inline const void *Comment::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline DataVersionString::DataVersionString(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline DataVersionString::DataVersionString(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_text("")
 {}
 
-inline DataVersionString::~DataVersionString() {}
+inline DataVersionString::~DataVersionString() {
+   clear();
+}
+inline void DataVersionString::clear() {}
 
 inline std::string DataVersionString::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -4082,12 +4804,15 @@ inline const void *DataVersionString::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline CcdbContext::CcdbContext(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline CcdbContext::CcdbContext(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_text("")
 {}
 
-inline CcdbContext::~CcdbContext() {}
+inline CcdbContext::~CcdbContext() {
+   clear();
+}
+inline void CcdbContext::clear() {}
 
 inline std::string CcdbContext::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -4147,15 +4872,18 @@ inline const void *CcdbContext::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline Origin::Origin(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Origin::Origin(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_t(0),
    m_vx(0),
    m_vy(0),
    m_vz(0)
 {}
 
-inline Origin::~Origin() {}
+inline Origin::~Origin() {
+   clear();
+}
+inline void Origin::clear() {}
 
 inline std::string Origin::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -4276,15 +5004,18 @@ inline const void *Origin::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline Momentum::Momentum(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Momentum::Momentum(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_px(0),
    m_py(0),
    m_pz(0)
 {}
 
-inline Momentum::~Momentum() {}
+inline Momentum::~Momentum() {
+   clear();
+}
+inline void Momentum::clear() {}
 
 inline std::string Momentum::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -4423,8 +5154,8 @@ inline const void *Momentum::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline Product::Product(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Product::Product(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_id(0),
    m_parentId(0),
    m_pdgtype(0),
@@ -4435,7 +5166,12 @@ inline Product::Product(HDDM_Element *parent)
 {}
 
 inline Product::~Product() {
+   clear();
+}
+inline void Product::clear() {
+   if (m_host != 0) {
    deleteMomenta();
+   }
 }
 
 inline std::string Product::getClass() const {
@@ -4556,8 +5292,8 @@ inline void Product::deleteMomenta(int count, int start) {
    m_momentum_link.del(count,start);
 }
 
-inline Vertex::Vertex(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Vertex::Vertex(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_origin_link(&m_host->m_origin_plist,
                m_host->m_origin_plist.end(),
                m_host->m_origin_plist.end(),
@@ -4569,8 +5305,13 @@ inline Vertex::Vertex(HDDM_Element *parent)
 {}
 
 inline Vertex::~Vertex() {
+   clear();
+}
+inline void Vertex::clear() {
+   if (m_host != 0) {
    deleteOrigins();
    deleteProducts();
+   }
 }
 
 inline std::string Vertex::getClass() const {
@@ -4668,8 +5409,8 @@ inline void Vertex::deleteProducts(int count, int start) {
    m_product_list.del(count,start);
 }
 
-inline Reaction::Reaction(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Reaction::Reaction(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_Ebeam(0),
    m_jtag(""),
    m_targetType(0),
@@ -4682,7 +5423,12 @@ inline Reaction::Reaction(HDDM_Element *parent)
 {}
 
 inline Reaction::~Reaction() {
+   clear();
+}
+inline void Reaction::clear() {
+   if (m_host != 0) {
    deleteVertices();
+   }
 }
 
 inline std::string Reaction::getClass() const {
@@ -4821,14 +5567,107 @@ inline void Reaction::deleteVertices(int count, int start) {
    m_vertex_list.del(count,start);
 }
 
-inline TagmBeamPhoton::TagmBeamPhoton(HDDM_Element *parent)
- : HDDM_Element(parent),
-   m_E(0),
-   m_jtag(""),
-   m_t(0)
+inline TagmChannel::TagmChannel(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
+   m_column(0)
 {}
 
-inline TagmBeamPhoton::~TagmBeamPhoton() {}
+inline TagmChannel::~TagmChannel() {
+   clear();
+}
+inline void TagmChannel::clear() {}
+
+inline std::string TagmChannel::getClass() const {
+   return *(std::string*)m_parent->getAttribute("class");
+}
+
+inline std::string TagmChannel::getVersion() const {
+   return *(std::string*)m_parent->getAttribute("version");
+}
+
+inline std::string TagmChannel::getXmlns() const {
+   return *(std::string*)m_parent->getAttribute("xmlns");
+}
+
+inline int64_t TagmChannel::getEventNo() const {
+   return *(int64_t*)m_parent->getAttribute("eventNo");
+}
+
+inline int TagmChannel::getRunNo() const {
+   return *(int*)m_parent->getAttribute("runNo");
+}
+
+inline float TagmChannel::getE() const {
+   return *(float*)m_parent->getAttribute("E");
+}
+
+inline std::string TagmChannel::getEunit() const {
+   return *(std::string*)m_parent->getAttribute("Eunit");
+}
+
+inline std::string TagmChannel::getJtag() const {
+   return *(const std::string*)m_parent->getAttribute("jtag");
+}
+
+inline std::string TagmChannel::getMaxOccurs() const {
+   return *(std::string*)m_parent->getAttribute("maxOccurs");
+}
+
+inline float TagmChannel::getT() const {
+   return *(float*)m_parent->getAttribute("t");
+}
+
+inline std::string TagmChannel::getTunit() const {
+   return *(std::string*)m_parent->getAttribute("tunit");
+}
+
+inline int TagmChannel::getColumn() const {
+   return m_column;
+}
+
+inline void TagmChannel::setColumn(int column) {
+   m_column = column;
+}
+
+inline int TagmChannel::getMinOccurs() const {
+   return 0;
+}
+
+inline const void *TagmChannel::getAttribute(const std::string &name,
+                                                   hddm_type *atype) const {
+   if (name == "column") {
+      if (atype != 0)
+         *atype = k_hddm_int;
+      return &m_column;
+   }
+   if (name == "minOccurs") {
+      if (atype != 0)
+         *atype = k_hddm_int;
+      static int m_minOccurs = getMinOccurs();
+      return &m_minOccurs;
+   }
+   return m_parent->getAttribute(name, atype);
+}
+
+inline TagmBeamPhoton::TagmBeamPhoton(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
+   m_E(0),
+   m_jtag(""),
+   m_t(0),
+   m_tagmChannel_link(&m_host->m_tagmChannel_plist,
+               m_host->m_tagmChannel_plist.end(),
+               m_host->m_tagmChannel_plist.end(),
+               this)
+{}
+
+inline TagmBeamPhoton::~TagmBeamPhoton() {
+   clear();
+}
+inline void TagmBeamPhoton::clear() {
+   if (m_host != 0) {
+   deleteTagmChannels();
+   }
+}
 
 inline std::string TagmBeamPhoton::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -4934,14 +5773,123 @@ inline const void *TagmBeamPhoton::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline TaghBeamPhoton::TaghBeamPhoton(HDDM_Element *parent)
- : HDDM_Element(parent),
-   m_E(0),
-   m_jtag(""),
-   m_t(0)
+inline TagmChannel &TagmBeamPhoton::getTagmChannel() {
+   return m_tagmChannel_link.front();
+}
+
+inline TagmChannelList &TagmBeamPhoton::getTagmChannels() {
+   return m_tagmChannel_link;
+}
+
+inline TagmChannelList TagmBeamPhoton::addTagmChannels(int count, int start) {
+   return m_tagmChannel_link.add(count,start);
+}
+
+inline void TagmBeamPhoton::deleteTagmChannels(int count, int start) {
+   m_tagmChannel_link.del(count,start);
+}
+
+inline TaghChannel::TaghChannel(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
+   m_counter(0)
 {}
 
-inline TaghBeamPhoton::~TaghBeamPhoton() {}
+inline TaghChannel::~TaghChannel() {
+   clear();
+}
+inline void TaghChannel::clear() {}
+
+inline std::string TaghChannel::getClass() const {
+   return *(std::string*)m_parent->getAttribute("class");
+}
+
+inline std::string TaghChannel::getVersion() const {
+   return *(std::string*)m_parent->getAttribute("version");
+}
+
+inline std::string TaghChannel::getXmlns() const {
+   return *(std::string*)m_parent->getAttribute("xmlns");
+}
+
+inline int64_t TaghChannel::getEventNo() const {
+   return *(int64_t*)m_parent->getAttribute("eventNo");
+}
+
+inline int TaghChannel::getRunNo() const {
+   return *(int*)m_parent->getAttribute("runNo");
+}
+
+inline float TaghChannel::getE() const {
+   return *(float*)m_parent->getAttribute("E");
+}
+
+inline std::string TaghChannel::getEunit() const {
+   return *(std::string*)m_parent->getAttribute("Eunit");
+}
+
+inline std::string TaghChannel::getJtag() const {
+   return *(const std::string*)m_parent->getAttribute("jtag");
+}
+
+inline std::string TaghChannel::getMaxOccurs() const {
+   return *(std::string*)m_parent->getAttribute("maxOccurs");
+}
+
+inline float TaghChannel::getT() const {
+   return *(float*)m_parent->getAttribute("t");
+}
+
+inline std::string TaghChannel::getTunit() const {
+   return *(std::string*)m_parent->getAttribute("tunit");
+}
+
+inline int TaghChannel::getCounter() const {
+   return m_counter;
+}
+
+inline void TaghChannel::setCounter(int counter) {
+   m_counter = counter;
+}
+
+inline int TaghChannel::getMinOccurs() const {
+   return 0;
+}
+
+inline const void *TaghChannel::getAttribute(const std::string &name,
+                                                   hddm_type *atype) const {
+   if (name == "counter") {
+      if (atype != 0)
+         *atype = k_hddm_int;
+      return &m_counter;
+   }
+   if (name == "minOccurs") {
+      if (atype != 0)
+         *atype = k_hddm_int;
+      static int m_minOccurs = getMinOccurs();
+      return &m_minOccurs;
+   }
+   return m_parent->getAttribute(name, atype);
+}
+
+inline TaghBeamPhoton::TaghBeamPhoton(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
+   m_E(0),
+   m_jtag(""),
+   m_t(0),
+   m_taghChannel_link(&m_host->m_taghChannel_plist,
+               m_host->m_taghChannel_plist.end(),
+               m_host->m_taghChannel_plist.end(),
+               this)
+{}
+
+inline TaghBeamPhoton::~TaghBeamPhoton() {
+   clear();
+}
+inline void TaghBeamPhoton::clear() {
+   if (m_host != 0) {
+   deleteTaghChannels();
+   }
+}
 
 inline std::string TaghBeamPhoton::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -5047,8 +5995,24 @@ inline const void *TaghBeamPhoton::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline FcalCorrelations::FcalCorrelations(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline TaghChannel &TaghBeamPhoton::getTaghChannel() {
+   return m_taghChannel_link.front();
+}
+
+inline TaghChannelList &TaghBeamPhoton::getTaghChannels() {
+   return m_taghChannel_link;
+}
+
+inline TaghChannelList TaghBeamPhoton::addTaghChannels(int count, int start) {
+   return m_taghChannel_link.add(count,start);
+}
+
+inline void TaghBeamPhoton::deleteTaghChannels(int count, int start) {
+   m_taghChannel_link.del(count,start);
+}
+
+inline FcalCorrelations::FcalCorrelations(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_Etcorr(0),
    m_Excorr(0),
    m_Eycorr(0),
@@ -5056,7 +6020,10 @@ inline FcalCorrelations::FcalCorrelations(HDDM_Element *parent)
    m_tycorr(0)
 {}
 
-inline FcalCorrelations::~FcalCorrelations() {}
+inline FcalCorrelations::~FcalCorrelations() {
+   clear();
+}
+inline void FcalCorrelations::clear() {}
 
 inline std::string FcalCorrelations::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -5244,12 +6211,15 @@ inline const void *FcalCorrelations::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline FcalShowerClassification::FcalShowerClassification(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FcalShowerClassification::FcalShowerClassification(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_classifierOuput(0)
 {}
 
-inline FcalShowerClassification::~FcalShowerClassification() {}
+inline FcalShowerClassification::~FcalShowerClassification() {
+   clear();
+}
+inline void FcalShowerClassification::clear() {}
 
 inline std::string FcalShowerClassification::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -5379,8 +6349,8 @@ inline const void *FcalShowerClassification::getAttribute(const std::string &nam
    return m_parent->getAttribute(name, atype);
 }
 
-inline FcalShowerProperties::FcalShowerProperties(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FcalShowerProperties::FcalShowerProperties(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E1E9(0),
    m_E9E25(0),
    m_docaTrack(0),
@@ -5389,7 +6359,10 @@ inline FcalShowerProperties::FcalShowerProperties(HDDM_Element *parent)
    m_timeTrack(0)
 {}
 
-inline FcalShowerProperties::~FcalShowerProperties() {}
+inline FcalShowerProperties::~FcalShowerProperties() {
+   clear();
+}
+inline void FcalShowerProperties::clear() {}
 
 inline std::string FcalShowerProperties::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -5590,12 +6563,15 @@ inline const void *FcalShowerProperties::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline FcalShowerNBlocks::FcalShowerNBlocks(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FcalShowerNBlocks::FcalShowerNBlocks(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_numBlocks(0)
 {}
 
-inline FcalShowerNBlocks::~FcalShowerNBlocks() {}
+inline FcalShowerNBlocks::~FcalShowerNBlocks() {
+   clear();
+}
+inline void FcalShowerNBlocks::clear() {}
 
 inline std::string FcalShowerNBlocks::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -5725,8 +6701,8 @@ inline const void *FcalShowerNBlocks::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline FcalShower::FcalShower(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FcalShower::FcalShower(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_Eerr(0),
    m_Ezcorr(0),
@@ -5762,10 +6738,15 @@ inline FcalShower::FcalShower(HDDM_Element *parent)
 {}
 
 inline FcalShower::~FcalShower() {
+   clear();
+}
+inline void FcalShower::clear() {
+   if (m_host != 0) {
    deleteFcalCorrelationses();
    deleteFcalShowerClassifications();
    deleteFcalShowerPropertiesList();
    deleteFcalShowerNBlockses();
+   }
 }
 
 inline std::string FcalShower::getClass() const {
@@ -6115,12 +7096,15 @@ inline void FcalShower::deleteFcalShowerNBlockses(int count, int start) {
    m_fcalShowerNBlocks_link.del(count,start);
 }
 
-inline Preshower::Preshower(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Preshower::Preshower(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_preshowerE(0)
 {}
 
-inline Preshower::~Preshower() {}
+inline Preshower::~Preshower() {
+   clear();
+}
+inline void Preshower::clear() {}
 
 inline std::string Preshower::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -6256,14 +7240,17 @@ inline const void *Preshower::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline Width::Width(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Width::Width(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_sigLong(0),
    m_sigTheta(0),
    m_sigTrans(0)
 {}
 
-inline Width::~Width() {}
+inline Width::~Width() {
+   clear();
+}
+inline void Width::clear() {}
 
 inline std::string Width::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -6425,12 +7412,15 @@ inline const void *Width::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline BcalCluster::BcalCluster(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline BcalCluster::BcalCluster(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_ncell(0)
 {}
 
-inline BcalCluster::~BcalCluster() {}
+inline BcalCluster::~BcalCluster() {
+   clear();
+}
+inline void BcalCluster::clear() {}
 
 inline std::string BcalCluster::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -6566,8 +7556,8 @@ inline const void *BcalCluster::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline BcalCorrelations::BcalCorrelations(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline BcalCorrelations::BcalCorrelations(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_Etcorr(0),
    m_Excorr(0),
    m_Eycorr(0),
@@ -6575,7 +7565,10 @@ inline BcalCorrelations::BcalCorrelations(HDDM_Element *parent)
    m_tycorr(0)
 {}
 
-inline BcalCorrelations::~BcalCorrelations() {}
+inline BcalCorrelations::~BcalCorrelations() {
+   clear();
+}
+inline void BcalCorrelations::clear() {}
 
 inline std::string BcalCorrelations::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -6763,15 +7756,18 @@ inline const void *BcalCorrelations::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline BcalLayers::BcalLayers(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline BcalLayers::BcalLayers(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E_L2(0),
    m_E_L3(0),
    m_E_L4(0),
    m_rmsTime(0)
 {}
 
-inline BcalLayers::~BcalLayers() {}
+inline BcalLayers::~BcalLayers() {
+   clear();
+}
+inline void BcalLayers::clear() {}
 
 inline std::string BcalLayers::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -6946,8 +7942,8 @@ inline const void *BcalLayers::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline BcalShower::BcalShower(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline BcalShower::BcalShower(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_Eerr(0),
    m_Ezcorr(0),
@@ -6987,11 +7983,16 @@ inline BcalShower::BcalShower(HDDM_Element *parent)
 {}
 
 inline BcalShower::~BcalShower() {
+   clear();
+}
+inline void BcalShower::clear() {
+   if (m_host != 0) {
    deletePreshowers();
    deleteWidths();
    deleteBcalClusters();
    deleteBcalCorrelationses();
    deleteBcalLayerses();
+   }
 }
 
 inline std::string BcalShower::getClass() const {
@@ -7357,8 +8358,8 @@ inline void BcalShower::deleteBcalLayerses(int count, int start) {
    m_bcalLayers_link.del(count,start);
 }
 
-inline CcalShower::CcalShower(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline CcalShower::CcalShower(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_E(0),
    m_Eerr(0),
    m_Emax(0),
@@ -7377,7 +8378,10 @@ inline CcalShower::CcalShower(HDDM_Element *parent)
    m_z(0)
 {}
 
-inline CcalShower::~CcalShower() {}
+inline CcalShower::~CcalShower() {
+   clear();
+}
+inline void CcalShower::clear() {}
 
 inline std::string CcalShower::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -7662,8 +8666,8 @@ inline const void *CcalShower::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline TrackFit::TrackFit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline TrackFit::TrackFit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_Ndof(0),
    m_chisq(0),
    m_e11(0),
@@ -7692,7 +8696,10 @@ inline TrackFit::TrackFit(HDDM_Element *parent)
    m_z0(0)
 {}
 
-inline TrackFit::~TrackFit() {}
+inline TrackFit::~TrackFit() {
+   clear();
+}
+inline void TrackFit::clear() {}
 
 inline std::string TrackFit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -8107,12 +9114,15 @@ inline const void *TrackFit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline TrackFlags::TrackFlags(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline TrackFlags::TrackFlags(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_flags(0)
 {}
 
-inline TrackFlags::~TrackFlags() {}
+inline TrackFlags::~TrackFlags() {
+   clear();
+}
+inline void TrackFlags::clear() {}
 
 inline std::string TrackFlags::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -8184,13 +9194,16 @@ inline const void *TrackFlags::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline Hitlayers::Hitlayers(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Hitlayers::Hitlayers(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_CDCrings(0),
    m_FDCplanes(0)
 {}
 
-inline Hitlayers::~Hitlayers() {}
+inline Hitlayers::~Hitlayers() {
+   clear();
+}
+inline void Hitlayers::clear() {}
 
 inline std::string Hitlayers::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -8275,15 +9288,18 @@ inline const void *Hitlayers::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline Expectedhits::Expectedhits(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Expectedhits::Expectedhits(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_expectedCDChits(0),
    m_expectedFDChits(0),
    m_measuredCDChits(0),
    m_measuredFDChits(0)
 {}
 
-inline Expectedhits::~Expectedhits() {}
+inline Expectedhits::~Expectedhits() {
+   clear();
+}
+inline void Expectedhits::clear() {}
 
 inline std::string Expectedhits::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -8394,13 +9410,16 @@ inline const void *Expectedhits::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline Mcmatch::Mcmatch(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Mcmatch::Mcmatch(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_ithrown(0),
    m_numhitsmatch(0)
 {}
 
-inline Mcmatch::~Mcmatch() {}
+inline Mcmatch::~Mcmatch() {
+   clear();
+}
+inline void Mcmatch::clear() {}
 
 inline std::string Mcmatch::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -8485,13 +9504,16 @@ inline const void *Mcmatch::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline CDCAmpdEdx::CDCAmpdEdx(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline CDCAmpdEdx::CDCAmpdEdx(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dEdxCDCAmp(0),
    m_dxCDCAmp(0)
 {}
 
-inline CDCAmpdEdx::~CDCAmpdEdx() {}
+inline CDCAmpdEdx::~CDCAmpdEdx() {
+   clear();
+}
+inline void CDCAmpdEdx::clear() {}
 
 inline std::string CDCAmpdEdx::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -8602,8 +9624,8 @@ inline const void *CDCAmpdEdx::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline DEdxDC::DEdxDC(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline DEdxDC::DEdxDC(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_NsampleCDC(0),
    m_NsampleFDC(0),
    m_dEdxCDC(0),
@@ -8617,7 +9639,12 @@ inline DEdxDC::DEdxDC(HDDM_Element *parent)
 {}
 
 inline DEdxDC::~DEdxDC() {
+   clear();
+}
+inline void DEdxDC::clear() {
+   if (m_host != 0) {
    deleteCDCAmpdEdxs();
+   }
 }
 
 inline std::string DEdxDC::getClass() const {
@@ -8785,8 +9812,8 @@ inline void DEdxDC::deleteCDCAmpdEdxs(int count, int start) {
    m_CDCAmpdEdx_link.del(count,start);
 }
 
-inline ExitParams::ExitParams(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline ExitParams::ExitParams(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_px1(0),
    m_py1(0),
    m_pz1(0),
@@ -8796,7 +9823,10 @@ inline ExitParams::ExitParams(HDDM_Element *parent)
    m_z1(0)
 {}
 
-inline ExitParams::~ExitParams() {}
+inline ExitParams::~ExitParams() {
+   clear();
+}
+inline void ExitParams::clear() {}
 
 inline std::string ExitParams::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -8976,8 +10006,8 @@ inline const void *ExitParams::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline ChargedTrack::ChargedTrack(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline ChargedTrack::ChargedTrack(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_candidateId(0),
    m_jtag(""),
    m_ptype(0),
@@ -9012,6 +10042,10 @@ inline ChargedTrack::ChargedTrack(HDDM_Element *parent)
 {}
 
 inline ChargedTrack::~ChargedTrack() {
+   clear();
+}
+inline void ChargedTrack::clear() {
+   if (m_host != 0) {
    deleteTrackFits();
    deleteTrackFlagses();
    deleteHitlayerses();
@@ -9019,6 +10053,7 @@ inline ChargedTrack::~ChargedTrack() {
    deleteMcmatchs();
    deleteDEdxDCs();
    deleteExitParamses();
+   }
 }
 
 inline std::string ChargedTrack::getClass() const {
@@ -9217,15 +10252,18 @@ inline void ChargedTrack::deleteExitParamses(int count, int start) {
    m_exitParams_link.del(count,start);
 }
 
-inline StartHit::StartHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline StartHit::StartHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dE(0),
    m_jtag(""),
    m_sector(0),
    m_t(0)
 {}
 
-inline StartHit::~StartHit() {}
+inline StartHit::~StartHit() {
+   clear();
+}
+inline void StartHit::clear() {}
 
 inline std::string StartHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -9344,12 +10382,15 @@ inline const void *StartHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline TofStatus::TofStatus(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline TofStatus::TofStatus(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_status(0)
 {}
 
-inline TofStatus::~TofStatus() {}
+inline TofStatus::~TofStatus() {
+   clear();
+}
+inline void TofStatus::clear() {}
 
 inline std::string TofStatus::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -9449,13 +10490,16 @@ inline const void *TofStatus::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline TofEnergyDeposition::TofEnergyDeposition(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline TofEnergyDeposition::TofEnergyDeposition(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dE1(0),
    m_dE2(0)
 {}
 
-inline TofEnergyDeposition::~TofEnergyDeposition() {}
+inline TofEnergyDeposition::~TofEnergyDeposition() {
+   clear();
+}
+inline void TofEnergyDeposition::clear() {}
 
 inline std::string TofEnergyDeposition::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -9568,8 +10612,8 @@ inline const void *TofEnergyDeposition::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline TofPoint::TofPoint(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline TofPoint::TofPoint(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dE(0),
    m_jtag(""),
    m_t(0),
@@ -9588,8 +10632,13 @@ inline TofPoint::TofPoint(HDDM_Element *parent)
 {}
 
 inline TofPoint::~TofPoint() {
+   clear();
+}
+inline void TofPoint::clear() {
+   if (m_host != 0) {
    deleteTofStatuses();
    deleteTofEnergyDepositions();
+   }
 }
 
 inline std::string TofPoint::getClass() const {
@@ -9790,15 +10839,18 @@ inline void TofPoint::deleteTofEnergyDepositions(int count, int start) {
    m_tofEnergyDeposition_link.del(count,start);
 }
 
-inline DircHit::DircHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline DircHit::DircHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_ch(0),
    m_jtag(""),
    m_t(0),
    m_tot(0)
 {}
 
-inline DircHit::~DircHit() {}
+inline DircHit::~DircHit() {
+   clear();
+}
+inline void DircHit::clear() {}
 
 inline std::string DircHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -9907,13 +10959,16 @@ inline const void *DircHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline RFtime::RFtime(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline RFtime::RFtime(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_jtag(""),
    m_tsync(0)
 {}
 
-inline RFtime::~RFtime() {}
+inline RFtime::~RFtime() {
+   clear();
+}
+inline void RFtime::clear() {}
 
 inline std::string RFtime::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -9986,13 +11041,16 @@ inline const void *RFtime::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline TriggerEnergySums::TriggerEnergySums(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline TriggerEnergySums::TriggerEnergySums(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_BCALEnergySum(0),
    m_FCALEnergySum(0)
 {}
 
-inline TriggerEnergySums::~TriggerEnergySums() {}
+inline TriggerEnergySums::~TriggerEnergySums() {
+   clear();
+}
+inline void TriggerEnergySums::clear() {}
 
 inline std::string TriggerEnergySums::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -10071,8 +11129,8 @@ inline const void *TriggerEnergySums::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline Trigger::Trigger(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline Trigger::Trigger(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_jtag(""),
    m_l1_fp_trig_bits(0),
    m_l1_trig_bits(0),
@@ -10083,7 +11141,12 @@ inline Trigger::Trigger(HDDM_Element *parent)
 {}
 
 inline Trigger::~Trigger() {
+   clear();
+}
+inline void Trigger::clear() {
+   if (m_host != 0) {
    deleteTriggerEnergySumses();
+   }
 }
 
 inline std::string Trigger::getClass() const {
@@ -10186,8 +11249,8 @@ inline void Trigger::deleteTriggerEnergySumses(int count, int start) {
    m_triggerEnergySums_link.del(count,start);
 }
 
-inline BcalMatchParams::BcalMatchParams(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline BcalMatchParams::BcalMatchParams(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_deltaphi(0),
    m_deltaz(0),
    m_dx(0),
@@ -10198,7 +11261,10 @@ inline BcalMatchParams::BcalMatchParams(HDDM_Element *parent)
    m_track(0)
 {}
 
-inline BcalMatchParams::~BcalMatchParams() {}
+inline BcalMatchParams::~BcalMatchParams() {
+   clear();
+}
+inline void BcalMatchParams::clear() {}
 
 inline std::string BcalMatchParams::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -10373,8 +11439,8 @@ inline const void *BcalMatchParams::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline FcalMatchParams::FcalMatchParams(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FcalMatchParams::FcalMatchParams(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_doca(0),
    m_dx(0),
    m_pathlength(0),
@@ -10384,7 +11450,10 @@ inline FcalMatchParams::FcalMatchParams(HDDM_Element *parent)
    m_track(0)
 {}
 
-inline FcalMatchParams::~FcalMatchParams() {}
+inline FcalMatchParams::~FcalMatchParams() {
+   clear();
+}
+inline void FcalMatchParams::clear() {}
 
 inline std::string FcalMatchParams::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -10546,13 +11615,16 @@ inline const void *FcalMatchParams::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline TofDedx::TofDedx(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline TofDedx::TofDedx(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dEdx1(0),
    m_dEdx2(0)
 {}
 
-inline TofDedx::~TofDedx() {}
+inline TofDedx::~TofDedx() {
+   clear();
+}
+inline void TofDedx::clear() {}
 
 inline std::string TofDedx::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -10685,8 +11757,8 @@ inline const void *TofDedx::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline TofMatchParams::TofMatchParams(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline TofMatchParams::TofMatchParams(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dEdx(0),
    m_deltax(0),
    m_deltay(0),
@@ -10705,7 +11777,12 @@ inline TofMatchParams::TofMatchParams(HDDM_Element *parent)
 {}
 
 inline TofMatchParams::~TofMatchParams() {
+   clear();
+}
+inline void TofMatchParams::clear() {
+   if (m_host != 0) {
    deleteTofDedxs();
+   }
 }
 
 inline std::string TofMatchParams::getClass() const {
@@ -10946,8 +12023,8 @@ inline void TofMatchParams::deleteTofDedxs(int count, int start) {
    m_tofDedx_link.del(count,start);
 }
 
-inline ScMatchParams::ScMatchParams(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline ScMatchParams::ScMatchParams(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_dEdx(0),
    m_deltaphi(0),
    m_ehit(0),
@@ -10960,7 +12037,10 @@ inline ScMatchParams::ScMatchParams(HDDM_Element *parent)
    m_track(0)
 {}
 
-inline ScMatchParams::~ScMatchParams() {}
+inline ScMatchParams::~ScMatchParams() {
+   clear();
+}
+inline void ScMatchParams::clear() {}
 
 inline std::string ScMatchParams::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -11191,8 +12271,8 @@ inline const void *ScMatchParams::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline DircMatchParams::DircMatchParams(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline DircMatchParams::DircMatchParams(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_deltat(0),
    m_expectthetac(0),
    m_lele(0),
@@ -11211,7 +12291,10 @@ inline DircMatchParams::DircMatchParams(HDDM_Element *parent)
    m_z(0)
 {}
 
-inline DircMatchParams::~DircMatchParams() {}
+inline DircMatchParams::~DircMatchParams() {
+   clear();
+}
+inline void DircMatchParams::clear() {}
 
 inline std::string DircMatchParams::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -11470,13 +12553,16 @@ inline const void *DircMatchParams::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline DircMatchHit::DircMatchHit(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline DircMatchHit::DircMatchHit(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_hit(0),
    m_track(0)
 {}
 
-inline DircMatchHit::~DircMatchHit() {}
+inline DircMatchHit::~DircMatchHit() {
+   clear();
+}
+inline void DircMatchHit::clear() {}
 
 inline std::string DircMatchHit::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -11553,14 +12639,17 @@ inline const void *DircMatchHit::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline BcalDOCAtoTrack::BcalDOCAtoTrack(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline BcalDOCAtoTrack::BcalDOCAtoTrack(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_deltaphi(0),
    m_deltaz(0),
    m_shower(0)
 {}
 
-inline BcalDOCAtoTrack::~BcalDOCAtoTrack() {}
+inline BcalDOCAtoTrack::~BcalDOCAtoTrack() {
+   clear();
+}
+inline void BcalDOCAtoTrack::clear() {}
 
 inline std::string BcalDOCAtoTrack::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -11660,13 +12749,16 @@ inline const void *BcalDOCAtoTrack::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline FcalDOCAtoTrack::FcalDOCAtoTrack(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FcalDOCAtoTrack::FcalDOCAtoTrack(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_doca(0),
    m_shower(0)
 {}
 
-inline FcalDOCAtoTrack::~FcalDOCAtoTrack() {}
+inline FcalDOCAtoTrack::~FcalDOCAtoTrack() {
+   clear();
+}
+inline void FcalDOCAtoTrack::clear() {}
 
 inline std::string FcalDOCAtoTrack::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -11753,14 +12845,17 @@ inline const void *FcalDOCAtoTrack::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline TflightPCorrelation::TflightPCorrelation(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline TflightPCorrelation::TflightPCorrelation(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_correlation(0),
    m_system(0),
    m_track(0)
 {}
 
-inline TflightPCorrelation::~TflightPCorrelation() {}
+inline TflightPCorrelation::~TflightPCorrelation() {
+   clear();
+}
+inline void TflightPCorrelation::clear() {}
 
 inline std::string TflightPCorrelation::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -11870,8 +12965,8 @@ inline const void *TflightPCorrelation::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline DetectorMatches::DetectorMatches(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline DetectorMatches::DetectorMatches(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_jtag(""),
    m_bcalMatchParams_list(&m_host->m_bcalMatchParams_plist,
                m_host->m_bcalMatchParams_plist.end(),
@@ -11912,6 +13007,10 @@ inline DetectorMatches::DetectorMatches(HDDM_Element *parent)
 {}
 
 inline DetectorMatches::~DetectorMatches() {
+   clear();
+}
+inline void DetectorMatches::clear() {
+   if (m_host != 0) {
    deleteBcalMatchParamses();
    deleteFcalMatchParamses();
    deleteTofMatchParamses();
@@ -11921,6 +13020,7 @@ inline DetectorMatches::~DetectorMatches() {
    deleteBcalDOCAtoTracks();
    deleteFcalDOCAtoTracks();
    deleteTflightPCorrelations();
+   }
 }
 
 inline std::string DetectorMatches::getClass() const {
@@ -12125,12 +13225,15 @@ inline void DetectorMatches::deleteTflightPCorrelations(int count, int start) {
    m_tflightPCorrelation_list.del(count,start);
 }
 
-inline StartCounters::StartCounters(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline StartCounters::StartCounters(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_count(0)
 {}
 
-inline StartCounters::~StartCounters() {}
+inline StartCounters::~StartCounters() {
+   clear();
+}
+inline void StartCounters::clear() {}
 
 inline std::string StartCounters::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -12184,12 +13287,15 @@ inline const void *StartCounters::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline CdcStraws::CdcStraws(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline CdcStraws::CdcStraws(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_count(0)
 {}
 
-inline CdcStraws::~CdcStraws() {}
+inline CdcStraws::~CdcStraws() {
+   clear();
+}
+inline void CdcStraws::clear() {}
 
 inline std::string CdcStraws::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -12243,12 +13349,15 @@ inline const void *CdcStraws::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline FdcPseudos::FdcPseudos(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FdcPseudos::FdcPseudos(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_count(0)
 {}
 
-inline FdcPseudos::~FdcPseudos() {}
+inline FdcPseudos::~FdcPseudos() {
+   clear();
+}
+inline void FdcPseudos::clear() {}
 
 inline std::string FdcPseudos::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -12302,12 +13411,15 @@ inline const void *FdcPseudos::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline BcalCells::BcalCells(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline BcalCells::BcalCells(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_count(0)
 {}
 
-inline BcalCells::~BcalCells() {}
+inline BcalCells::~BcalCells() {
+   clear();
+}
+inline void BcalCells::clear() {}
 
 inline std::string BcalCells::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -12361,12 +13473,15 @@ inline const void *BcalCells::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline FcalBlocks::FcalBlocks(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline FcalBlocks::FcalBlocks(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_count(0)
 {}
 
-inline FcalBlocks::~FcalBlocks() {}
+inline FcalBlocks::~FcalBlocks() {
+   clear();
+}
+inline void FcalBlocks::clear() {}
 
 inline std::string FcalBlocks::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -12420,12 +13535,15 @@ inline const void *FcalBlocks::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline TofPaddles::TofPaddles(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline TofPaddles::TofPaddles(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_count(0)
 {}
 
-inline TofPaddles::~TofPaddles() {}
+inline TofPaddles::~TofPaddles() {
+   clear();
+}
+inline void TofPaddles::clear() {}
 
 inline std::string TofPaddles::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -12479,12 +13597,15 @@ inline const void *TofPaddles::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline CcalBlocks::CcalBlocks(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline CcalBlocks::CcalBlocks(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_count(0)
 {}
 
-inline CcalBlocks::~CcalBlocks() {}
+inline CcalBlocks::~CcalBlocks() {
+   clear();
+}
+inline void CcalBlocks::clear() {}
 
 inline std::string CcalBlocks::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -12538,12 +13659,15 @@ inline const void *CcalBlocks::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline DircPMTs::DircPMTs(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline DircPMTs::DircPMTs(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_count(0)
 {}
 
-inline DircPMTs::~DircPMTs() {}
+inline DircPMTs::~DircPMTs() {
+   clear();
+}
+inline void DircPMTs::clear() {}
 
 inline std::string DircPMTs::getClass() const {
    return *(std::string*)m_parent->getAttribute("class");
@@ -12597,8 +13721,8 @@ inline const void *DircPMTs::getAttribute(const std::string &name,
    return m_parent->getAttribute(name, atype);
 }
 
-inline HitStatistics::HitStatistics(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline HitStatistics::HitStatistics(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_jtag(""),
    m_startCounters_link(&m_host->m_startCounters_plist,
                m_host->m_startCounters_plist.end(),
@@ -12635,6 +13759,10 @@ inline HitStatistics::HitStatistics(HDDM_Element *parent)
 {}
 
 inline HitStatistics::~HitStatistics() {
+   clear();
+}
+inline void HitStatistics::clear() {
+   if (m_host != 0) {
    deleteStartCounterses();
    deleteCdcStrawses();
    deleteFdcPseudoses();
@@ -12643,6 +13771,7 @@ inline HitStatistics::~HitStatistics() {
    deleteTofPaddleses();
    deleteCcalBlockses();
    deleteDircPMTses();
+   }
 }
 
 inline std::string HitStatistics::getClass() const {
@@ -12821,8 +13950,8 @@ inline void HitStatistics::deleteDircPMTses(int count, int start) {
    m_dircPMTs_link.del(count,start);
 }
 
-inline ReconstructedPhysicsEvent::ReconstructedPhysicsEvent(HDDM_Element *parent)
- : HDDM_Element(parent),
+inline ReconstructedPhysicsEvent::ReconstructedPhysicsEvent(HDDM_Element *parent, int owner)
+ : HDDM_Element(parent, owner),
    m_eventNo(0),
    m_runNo(0),
    m_comment_list(&m_host->m_comment_plist,
@@ -12896,6 +14025,10 @@ inline ReconstructedPhysicsEvent::ReconstructedPhysicsEvent(HDDM_Element *parent
 {}
 
 inline ReconstructedPhysicsEvent::~ReconstructedPhysicsEvent() {
+   clear();
+}
+inline void ReconstructedPhysicsEvent::clear() {
+   if (m_host != 0) {
    deleteComments();
    deleteDataVersionStrings();
    deleteCcdbContexts();
@@ -12913,6 +14046,7 @@ inline ReconstructedPhysicsEvent::~ReconstructedPhysicsEvent() {
    deleteTriggers();
    deleteDetectorMatcheses();
    deleteHitStatisticses();
+   }
 }
 
 inline std::string ReconstructedPhysicsEvent::getClass() const {
@@ -13239,12 +14373,16 @@ inline HDDM::HDDM()
                this)
 {
    m_host = this;
+#ifdef HDF5_SUPPORT
+   m_hdf5_record_offset = 0;
+   m_hdf5_record_count = 0;
+   m_hdf5_record_extent = 0;
+#endif
 }
 
 inline HDDM::~HDDM() {
-   deleteReconstructedPhysicsEvents();
+   clear();
 }
-
 inline std::string HDDM::getClass() const {
    return "r";
 }
@@ -13259,6 +14397,18 @@ inline std::string HDDM::getXmlns() const {
 
 inline void HDDM::clear() {
    deleteReconstructedPhysicsEvents();
+#ifdef HDF5_SUPPORT
+   if (m_hdf5_record_count > 0) {
+      for (unsigned i=0; i < m_hdf5_strings.size(); ++i) {
+         m_hdf5_strings[i]->std::string::~string();
+      }
+      m_hdf5_strings.clear();
+      H5Dvlen_reclaim(s_hdf5_memorytype["HDDM"],
+                      s_hdf5_memoryspace["HDDM"],
+                      H5P_DEFAULT, &m_hdf5_record);
+      m_hdf5_record_count = 0;
+   }
+#endif
 }
 
 inline const void *HDDM::getAttribute(const std::string &name,
@@ -13570,10 +14720,22 @@ inline TaghBeamPhotonList HDDM::getTaghBeamPhotons() {
                    m_taghBeamPhoton_plist.end());
 }
 
+inline TaghChannelList HDDM::getTaghChannels() {
+   return TaghChannelList(&m_taghChannel_plist,
+                   m_taghChannel_plist.begin(),
+                   m_taghChannel_plist.end());
+}
+
 inline TagmBeamPhotonList HDDM::getTagmBeamPhotons() {
    return TagmBeamPhotonList(&m_tagmBeamPhoton_plist,
                    m_tagmBeamPhoton_plist.begin(),
                    m_tagmBeamPhoton_plist.end());
+}
+
+inline TagmChannelList HDDM::getTagmChannels() {
+   return TagmChannelList(&m_tagmChannel_plist,
+                   m_tagmChannel_plist.begin(),
+                   m_tagmChannel_plist.end());
 }
 
 inline TflightPCorrelationList HDDM::getTflightPCorrelations() {
@@ -13722,20 +14884,40 @@ inline void Reaction::streamer(ostream &ostr) {
    ostr << m_vertex_list;
 }
 
+inline void TagmChannel::streamer(istream &istr) {
+   *istr.getXDRistream() >> m_column;
+}
+
+inline void TagmChannel::streamer(ostream &ostr) {
+   *ostr.getXDRostream() << m_column;
+}
+
 inline void TagmBeamPhoton::streamer(istream &istr) {
    *istr.getXDRistream() >> m_E >> m_jtag >> m_t;
+   istr >> m_tagmChannel_link;
 }
 
 inline void TagmBeamPhoton::streamer(ostream &ostr) {
    *ostr.getXDRostream() << m_E << m_jtag << m_t;
+   ostr << m_tagmChannel_link;
+}
+
+inline void TaghChannel::streamer(istream &istr) {
+   *istr.getXDRistream() >> m_counter;
+}
+
+inline void TaghChannel::streamer(ostream &ostr) {
+   *ostr.getXDRostream() << m_counter;
 }
 
 inline void TaghBeamPhoton::streamer(istream &istr) {
    *istr.getXDRistream() >> m_E >> m_jtag >> m_t;
+   istr >> m_taghChannel_link;
 }
 
 inline void TaghBeamPhoton::streamer(ostream &ostr) {
    *ostr.getXDRostream() << m_E << m_jtag << m_t;
+   ostr << m_taghChannel_link;
 }
 
 inline void FcalCorrelations::streamer(istream &istr) {
@@ -14181,8 +15363,12 @@ inline std::string HDDM::DocumentString() {
 "        </product>\n"
 "      </vertex>\n"
 "    </reaction>\n"
-"    <tagmBeamPhoton E=\"float\" Eunit=\"GeV\" jtag=\"string\" maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" tunit=\"ns\" />\n"
-"    <taghBeamPhoton E=\"float\" Eunit=\"GeV\" jtag=\"string\" maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" tunit=\"ns\" />\n"
+"    <tagmBeamPhoton E=\"float\" Eunit=\"GeV\" jtag=\"string\" maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" tunit=\"ns\">\n"
+"      <tagmChannel column=\"int\" minOccurs=\"0\" />\n"
+"    </tagmBeamPhoton>\n"
+"    <taghBeamPhoton E=\"float\" Eunit=\"GeV\" jtag=\"string\" maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" tunit=\"ns\">\n"
+"      <taghChannel counter=\"int\" minOccurs=\"0\" />\n"
+"    </taghBeamPhoton>\n"
 "    <fcalShower E=\"float\" Eerr=\"float\" Eunit=\"GeV\" Ezcorr=\"float\" jtag=\"string\" lunit=\"cm\" maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" terr=\"float\" tunit=\"ns\" tzcorr=\"float\" x=\"float\" xerr=\"float\" xycorr=\"float\" xzcorr=\"float\" y=\"float\" yerr=\"float\" yzcorr=\"float\" z=\"float\" zerr=\"float\">\n"
 "      <fcalCorrelations Etcorr=\"float\" Excorr=\"float\" Eycorr=\"float\" maxOccurs=\"1\" minOccurs=\"0\" txcorr=\"float\" tycorr=\"float\" />\n"
 "      <fcalShowerClassification classifierOuput=\"float\" minOccurs=\"0\" />\n"

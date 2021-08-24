@@ -11,14 +11,9 @@
 void FCAL_init(JFactorySet *factorySet)
 {
 	/// Create and register FCAL data factories
-	loop->AddFactory(new JFactory<DFCALDigiHit>());
-	loop->AddFactory(new DFCALHit_factory());
-	loop->AddFactory(new JFactory<DFCALHit>("TRUTH"));
-	loop->AddFactory(new DFCALCluster_factory());
-	loop->AddFactory(new DFCALCluster_factory_Island());
-	loop->AddFactory(new DFCALShower_factory());
-	loop->AddFactory(new DFCALGeometry_factory());
-	loop->AddFactory(new JFactory<DFCALTruthShower>());
-
-	return NOERROR;
+	factorySet->Add(new DFCALHit_factory());
+	factorySet->Add(new DFCALCluster_factory());
+	factorySet->Add(new DFCALCluster_factory_Island());
+	factorySet->Add(new DFCALShower_factory());
+	factorySet->Add(new DFCALGeometry_factory());
 }
