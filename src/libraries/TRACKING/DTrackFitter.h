@@ -14,7 +14,6 @@
 #ifdef PROFILE_TRK_TIMES
 #include <prof_time.h>
 #endif
-#include <DANA/DApplication.h>
 #include <TRACKING/DTrackingData.h>
 #include <HDGEOMETRY/DMagneticFieldMap.h>
 #include "HDGEOMETRY/DLorentzMapCalibDB.h"

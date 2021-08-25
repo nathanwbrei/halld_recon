@@ -157,7 +157,6 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		/************************************************************** MISCELLANEOUS ***************************************************************/
 
 		bool dIncludeBeamlineInVertexFitFlag;
-		// DApplication* dApplication;  // TODO: NWB: Delete me completely once I'm confident this isn't used anywhere
 		bool dWillBeamHaveErrorsFlag;
 };
 

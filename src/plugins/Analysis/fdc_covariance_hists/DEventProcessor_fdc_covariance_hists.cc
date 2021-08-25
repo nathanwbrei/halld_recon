@@ -17,7 +17,7 @@ using namespace std;
 #include <JANA/JApplication.h>
 #include <JANA/JEvent.h>
 
-#include <DANA/DApplication.h>
+#include <DANA/DEvent.h>
 #include <TRACKING/DMCThrown.h>
 #include <TRACKING/DMCTrackHit.h>
 #include <TRACKING/DMCTrajectoryPoint.h>
@@ -82,12 +82,7 @@ void DEventProcessor_fdc_covariance_hists::Init()
 //------------------
 void DEventProcessor_fdc_covariance_hists::BeginRun(const std::shared_ptr<const JEvent>& event)
 {	
-	DApplication* dapp = dynamic_cast<DApplication*>(event->GetJApplication());
-	if(!dapp){
-		_DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program perhaps?)"<<endl;
-		return RESOURCE_UNAVAILABLE;
-	}
-	bfield=dapp->GetBfield(runnumber);
+	bfield=GetBfield(event);
 	
 	// Get z-position of most upstream FDC layer
 	vector<double> z_wires;
@@ -169,9 +164,8 @@ void DEventProcessor_fdc_covariance_hists::Process(const std::shared_ptr<const J
 	}
 	s1 = s1_min;
 
-	DApplication* dapp = dynamic_cast<DApplication*>(event->GetJApplication());
 	DReferenceTrajectory *rt = new DReferenceTrajectory(bfield);
-	rt->SetDRootGeom(dapp->GetRootGeom());
+	rt->SetDRootGeom(GetRootGeom(event));
 	rt->Swim(pos_fdc1, mom_fdc1);
 
 	// Lock mutex

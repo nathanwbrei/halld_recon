@@ -19,7 +19,7 @@ using namespace std;
 #include <JANA/JApplication.h>
 #include <JANA/JEvent.h>
 
-#include <DANA/DApplication.h>
+#include <DANA/DEvent.h>
 #include <TRACKING/DMCThrown.h>
 #include <TRACKING/DMCTrajectoryPoint.h>
 #include <CDC/DCDCTrackHit.h>
@@ -84,11 +84,9 @@ void DEventProcessor_trkres_tree::BeginRun(const std::shared_ptr<const JEvent>& 
 	app->SetDefaultParameter("TRKFIT:SIGMA_FDC_ANODE",				locSIGMA_FDC_ANODE);
 	app->SetDefaultParameter("TRKFIT:SIGMA_FDC_CATHODE",			locSIGMA_FDC_CATHODE);
 
-	DApplication *dapp =  dynamic_cast<DApplication*>(event->GetJApplication());
-
 	pthread_mutex_lock(&mutex);
 
-	bfield = dapp->GetBfield(runnumber);
+	bfield = GetBfield(event);
 	
 	SIGMA_CDC = locSIGMA_CDC;
 	SIGMA_FDC_ANODE = locSIGMA_FDC_ANODE;

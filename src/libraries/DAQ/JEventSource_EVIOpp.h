@@ -140,7 +140,6 @@ class JEventSource_EVIOpp: public JEventSource{
 		               void DumpBinary(const uint32_t *iptr, const uint32_t *iend, uint32_t MaxWords=0, const uint32_t *imark=NULL);
 
 
-		// DApplication *dapp = NULL;  // TODO: NWB: Get rid of me completely
 		bool DONE;
 		bool DISPATCHER_END;
 		std::chrono::high_resolution_clock::time_point tstart;

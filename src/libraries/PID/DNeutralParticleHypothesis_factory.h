@@ -14,7 +14,6 @@
 #include <TMatrixFSym.h>
 
 #include <JANA/JFactoryT.h>
-#include <DANA/DApplication.h>
 #include <HDGEOMETRY/DGeometry.h>
 #include <PID/DNeutralParticleHypothesis.h>
 #include <PID/DNeutralShower.h>

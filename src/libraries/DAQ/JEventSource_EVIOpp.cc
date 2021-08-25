@@ -62,7 +62,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	
 	// Define base set of status bits
 	DStatusBits::SetStatusBitDescriptions();
-	// dapp = dynamic_cast<DApplication*>(japp);  // TODO: NWB: Figure out a better way of setting nevts_read correctly
+	// TODO: NWB: Figure out a better way of setting nevts_read correctly
 
 	// Get configuration parameters
 	VERBOSE = 0;

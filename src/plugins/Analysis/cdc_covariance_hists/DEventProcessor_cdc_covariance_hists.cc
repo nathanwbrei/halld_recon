@@ -17,7 +17,7 @@ using namespace std;
 #include <JANA/JApplication.h>
 #include <JANA/JEvent.h>
 
-#include <DANA/DApplication.h>
+#include <DANA/DEvent.h>
 #include <TRACKING/DMCThrown.h>
 #include <TRACKING/DMCTrackHit.h>
 #include <TRACKING/DMCTrajectoryPoint.h>
@@ -80,14 +80,9 @@ void DEventProcessor_cdc_covariance_hists::Init()
 void DEventProcessor_cdc_covariance_hists::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
 	// We need to make a DReferenceTrajectory which means we need the B-field
-	DApplication* dapp = dynamic_cast<DApplication*>(event->GetJApplication());
-	if(!dapp){
-		_DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program perhaps?)"<<endl;
-		return RESOURCE_UNAVAILABLE;
-	}
 	LockState();
 	{
-		bfield=dapp->GetBfield(runnumber);
+		bfield=GetBfield(event);
 
 		// Get radius of innermost CDC layer
 		//const DCDCWire *wire1=DCDCTrackHit_factory::GetCDCWire(1,1);
@@ -172,8 +167,7 @@ void DEventProcessor_cdc_covariance_hists::Process(const std::shared_ptr<const J
 	s1 = s1_min;
 
 	DReferenceTrajectory *rt = new DReferenceTrajectory(bfield);
-	DApplication* dapp = dynamic_cast<DApplication*>(event->GetJApplication());
-	rt->SetDRootGeom(dapp->GetRootGeom());
+	rt->SetDRootGeom(GetRootGeom(event));
 	rt->Swim(pos_cdc1, mom_cdc1);
 
 	// FILL HISTOGRAMS

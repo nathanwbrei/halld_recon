@@ -17,7 +17,7 @@ using namespace std;
 #include <JANA/JApplication.h>
 #include <JANA/JEvent.h>
 
-#include <DANA/DApplication.h>
+#include <DANA/DEvent.h>
 #include <TRACKING/DMCThrown.h>
 #include <TRACKING/DMCTrackHit.h>
 #include <TRACKING/DTrackCandidate.h>
@@ -102,15 +102,9 @@ void DEventProcessor_candidate_tree::Init()
 //------------------
 void DEventProcessor_candidate_tree::BeginRun(const std::shared_ptr<const JEvent>& event)
 {	
-	DApplication* dapp = dynamic_cast<DApplication*>(event->GetJApplication());
-	if(!dapp){
-		_DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program perhaps?)"<<endl;
-		return RESOURCE_UNAVAILABLE;
-	}
-
 	LockState();
-	lorentz_def=dapp->GetLorentzDeflections();
-	bfield = dapp->GetBfield(runnumber);
+	lorentz_def = GetLorentzDeflections(event);
+	bfield = GetBfield(event);
 	UnlockState();
 }
 

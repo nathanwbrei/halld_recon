@@ -129,8 +129,7 @@ jerror_t JEventProcessor_Pi0Finder::brun(jana::JEventLoop* loop, int32_t runnumb
 {
 	// This is called whenever the run number changes
 
-	DApplication *dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
-	const DGeometry *geom = dapp->GetDGeometry(runnumber);
+	const DGeometry *geom = GetDGeometry(event);
 
 	if( geom ) {
 

@@ -11,7 +11,6 @@
 #define DTOFGEOMETRY_VERSION 2
 
 #include <HDGEOMETRY/DGeometry.h>
-#include <DANA/DApplication.h>
 
 #include <math.h>
 

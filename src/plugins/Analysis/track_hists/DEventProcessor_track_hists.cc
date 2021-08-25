@@ -18,7 +18,7 @@ using namespace std;
 #include <JANA/JApplication.h>
 #include <JANA/JEvent.h>
 
-#include <DANA/DApplication.h>
+#include <DANA/DEvent.h>
 #include <TRACKING/DMCThrown.h>
 #include <TRACKING/DMCTrackHit.h>
 #include <TRACKING/DTrackCandidate.h>
@@ -105,14 +105,7 @@ void DEventProcessor_track_hists::Init()
 //------------------
 void DEventProcessor_track_hists::BeginRun(const std::shared_ptr<const JEvent>& event)
 {	
-	DApplication* dapp = dynamic_cast<DApplication*>(event->GetJApplication());
-	if(!dapp){
-		_DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program perhaps?)"<<endl;
-		return RESOURCE_UNAVAILABLE;
-	}
-	lorentz_def=dapp->GetLorentzDeflections();
-
-	return;
+	lorentz_def=GetLorentzDeflections(event);
 }
 
 //------------------
@@ -120,8 +113,6 @@ void DEventProcessor_track_hists::BeginRun(const std::shared_ptr<const JEvent>& 
 //------------------
 void DEventProcessor_track_hists::EndRun()
 {
-
-	return;
 }
 
 //------------------
@@ -139,8 +130,6 @@ void DEventProcessor_track_hists::Finish()
 	cout<<"Percentage bad: "<<str<<endl;
 	cout<<"       Nevents: "<<Nevents<<endl;
 	cout<<endl;
-
-	return;
 }
 
 //------------------
@@ -334,8 +323,6 @@ void DEventProcessor_track_hists::Process(const std::shared_ptr<const JEvent>& e
 	ttrack->Fill();
 
 	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK
-	
-	return;
 }
 
 //------------------

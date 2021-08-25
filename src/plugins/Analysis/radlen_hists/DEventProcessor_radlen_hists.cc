@@ -15,7 +15,7 @@ using namespace std;
 
 extern JApplication *japp;
 
-#include <DANA/DApplication.h>
+#include <DANA/DEvent.h>
 
 #include "DEventProcessor_radlen_hists.h"
 #include "TRACKING/DMCTrajectoryPoint.h"
@@ -118,10 +118,7 @@ void DEventProcessor_radlen_hists::Init()
 //------------------
 void DEventProcessor_radlen_hists::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-	DApplication *dapp = dynamic_cast<DApplication*>(japp);
-	bfield = dapp->GetBfield(runnumber);
-
-	return;
+	bfield = GetBfield(event);
 }
 
 //------------------

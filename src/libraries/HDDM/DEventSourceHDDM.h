@@ -63,7 +63,6 @@ using namespace std;
 #include "DIRC/DDIRCTruthPmtHit.h"
 #include "DIRC/DDIRCPmtHit.h"
 #include <RF/DRFTime.h>
-#include <DANA/DApplication.h>
 #include "PAIR_SPECTROMETER/DPSHit.h"
 #include "PAIR_SPECTROMETER/DPSCHit.h"
 #include "PAIR_SPECTROMETER/DPSTruthHit.h"
@@ -154,7 +153,6 @@ class DEventSourceHDDM:public JEventSource
 
       std::ifstream *ifs;
       hddm_s::istream *fin;
-      DApplication *dapp;
       const DMagneticFieldMap *bfield;
       const DGeometry *geom;
 
