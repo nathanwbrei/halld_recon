@@ -41,7 +41,7 @@ using namespace std;
 
 #include <JANA/JEvent.h>
 #include <JANA/Calibrations/JCalibrationManager.h>
-#include <JANA/Services/JGlobalRootLock.h>
+#include <JANA/Compatibility/JLockService.h>
 #include "DANA/DGeometryManager.h"
 #include "HDGEOMETRY/DGeometry.h"
 
@@ -135,7 +135,7 @@ void DTrackCandidate_factory::BeginRun(const std::shared_ptr<const JEvent>& even
   auto event_number = event->GetEventNumber();
   auto run_number = event->GetRunNumber();
   auto app = GetApplication();
-  auto root_lock = app->GetService<JGlobalRootLock>();
+  auto root_lock = app->GetService<JLockService>();
   auto jcalib = app->GetService<JCalibrationManager>()->GetJCalibration(run_number);
   auto geo_manager = app->GetService<DGeometryManager>();
   auto dgeom = geo_manager->GetDGeometry(run_number);
@@ -180,7 +180,7 @@ void DTrackCandidate_factory::BeginRun(const std::shared_ptr<const JEvent>& even
   app->SetDefaultParameter("TRKFIND:DEBUG_HISTS",DEBUG_HISTS);
 
   if(DEBUG_HISTS){
-    root_lock->acquire_write_lock();
+    root_lock->RootWriteLock();
     /*
     match_center_dist2=(TH2F*)gROOT->FindObject("match_center_dist2");
     if (!match_center_dist2){
@@ -203,7 +203,7 @@ void DTrackCandidate_factory::BeginRun(const std::shared_ptr<const JEvent>& even
       match_dist_vs_p->SetYTitle("#Deltar (cm)");
       match_dist_vs_p->SetXTitle("p (GeV/c)");
     }
-      root_lock->release_lock();
+      root_lock->RootUnLock();
   }
 
   app->SetDefaultParameter("TRKFIND:MAX_NUM_TRACK_CANDIDATES", MAX_NUM_TRACK_CANDIDATES); 

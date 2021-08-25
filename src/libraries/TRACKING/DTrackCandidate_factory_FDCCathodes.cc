@@ -11,7 +11,7 @@
 
 #include <JANA/JEvent.h>
 #include <JANA/Calibrations/JCalibrationManager.h>
-#include <JANA/Services/JGlobalRootLock.h>
+#include <JANA/Compatibility/JLockService.h>
 #include "DANA/DGeometryManager.h"
 #include "HDGEOMETRY/DGeometry.h"
 
@@ -32,7 +32,7 @@ void DTrackCandidate_factory_FDCCathodes::BeginRun(const std::shared_ptr<const J
   auto run_number = event->GetRunNumber();
   auto app = event->GetJApplication();
   auto jcalib = app->GetService<JCalibrationManager>()->GetJCalibration(run_number);
-  auto root_lock = app->GetService<JGlobalRootLock>();
+  auto root_lock = app->GetService<JLockService>();
   auto geo_manager = app->GetService<DGeometryManager>();
   auto dgeom = geo_manager->GetDGeometry(run_number);
   bfield = geo_manager->GetBfield(run_number);
@@ -63,7 +63,7 @@ void DTrackCandidate_factory_FDCCathodes::BeginRun(const std::shared_ptr<const J
   app->SetDefaultParameter("TRKFIND:FDC_HOUGH_THRESHOLD",FDC_HOUGH_THRESHOLD);
 
   if(DEBUG_HISTS) {
-    root_lock->acquire_write_lock();
+    root_lock->RootWriteLock();
     match_dist_fdc=(TH2F*)gROOT->FindObject("match_dist_fdc");
     if (!match_dist_fdc){ 
       match_dist_fdc=new TH2F("match_dist_fdc",
@@ -77,7 +77,7 @@ void DTrackCandidate_factory_FDCCathodes::BeginRun(const std::shared_ptr<const J
       match_center_dist2->SetYTitle("(#Deltad)^{2} [cm^{2}]");
     }
 
-    root_lock->release_lock();
+    root_lock->RootUnLock();
   }
     
   // Initialize the stepper

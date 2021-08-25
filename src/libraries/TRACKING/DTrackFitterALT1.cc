@@ -15,7 +15,7 @@ using namespace std;
 #include <DVector3.h>
 #include <DMatrix.h>
 
-#include <JANA/Services/JGlobalRootLock.h>
+#include <JANA/Compatibility/JLockService.h>
 
 #include "GlueX.h"
 #include "PID/DParticleID.h"
@@ -134,10 +134,10 @@ DTrackFitterALT1::DTrackFitterALT1(const std::shared_ptr<const JEvent>& event):D
 
 	cout<<__FILE__<<":"<<__LINE__<<"-------------- Least Squares TRACKING --------------"<<endl;
 
-	auto root_lock = app->GetService<JGlobalRootLock>();
+	auto root_lock = app->GetService<JLockService>();
 
 	if(DEBUG_HISTS){
-		root_lock->acquire_write_lock();
+		root_lock->RootWriteLock();
 		
 		// Histograms may already exist. (Another thread may have created them)
 		// Try and get pointers to the existing ones.
@@ -202,7 +202,7 @@ DTrackFitterALT1::DTrackFitterALT1(const std::shared_ptr<const JEvent>& event):D
 		if(!fdc_can_resi_cath)fdc_can_resi_cath = new TH1F("fdc_can_resi_cath","Residual of FDC cathode hits with candidate tracks", 200, -1.0, 1.0);
 		if(!lambda)lambda = new TH1F("lambda","Scaling factor #lambda for Newton-Raphson calculated step", 2048, -2.0, 2.0);
 
-		root_lock->release_lock();
+		root_lock->RootUnLock();
 	}
 }
 

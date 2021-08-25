@@ -53,16 +53,16 @@ DApplication::DApplication(JApplication *app) {
 
 void DApplication::RootUnLock() {
 	if (m_rootlock == nullptr) {
-		m_rootlock = m_japp->GetService<JGlobalRootLock>();
+		m_rootlock = m_japp->GetService<JLockService>();
 	}
-	m_rootlock->release_lock();
+	m_rootlock->RootUnLock();
 }
 
 void DApplication::RootWriteLock() {
 	if (m_rootlock == nullptr) {
-		m_rootlock = m_japp->GetService<JGlobalRootLock>();
+		m_rootlock = m_japp->GetService<JLockService>();
 	}
-	m_rootlock->acquire_write_lock();
+	m_rootlock->RootWriteLock();
 }
 
 DMagneticFieldMap* DApplication::GetBfield(uint32_t run_number) {
@@ -73,7 +73,6 @@ void DApplication::InitHallDLibraries(JApplication* app) {
 
 	// Add services
 	app->ProvideService(std::make_shared<JLockService>());
-	app->ProvideService(std::make_shared<JGlobalRootLock>());
 	auto calib_man = make_shared<JCalibrationManager>();
 	calib_man->AddCalibrationGenerator(new JCalibrationGeneratorCCDB);
 	app->ProvideService(calib_man);

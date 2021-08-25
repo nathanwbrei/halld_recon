@@ -10,7 +10,7 @@
 
 #include <JANA/JEvent.h>
 #include <JANA/Calibrations/JCalibrationManager.h>
-#include <JANA/Services/JGlobalRootLock.h>
+#include <JANA/Compatibility/JLockService.h>
 #include "DANA/DGeometryManager.h"
 #include "HDGEOMETRY/DGeometry.h"
 
@@ -132,7 +132,7 @@ void DFDCPseudo_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
   auto run_number = event->GetRunNumber();
   auto app = event->GetJApplication();
   auto jcalib = app->GetService<JCalibrationManager>()->GetJCalibration(run_number);
-  auto root_lock = app->GetService<JGlobalRootLock>();
+  auto root_lock = app->GetService<JLockService>();
   auto geo_manager = app->GetService<DGeometryManager>();
   auto dgeom = geo_manager->GetDGeometry(run_number);
 
@@ -182,7 +182,7 @@ void DFDCPseudo_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
   FDC_RES_PAR2=fdcparms["res_par2"];
   
   if(DEBUG_HISTS){
-    root_lock->acquire_write_lock();
+    root_lock->RootWriteLock();
 
     // Histograms may already exist. (Another thread may have created them)
     // Try and get pointers to the existing ones.
@@ -256,10 +256,8 @@ void DFDCPseudo_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 	Hxy[i]=new TH2F(hname,hname,4000,-50,50,200,-50,50);
       }
     }
-    root_lock->release_lock();
+    root_lock->RootUnLock();
   }
-
-  return;
 }
 
 void DFDCPseudo_factory::EndRun(){
@@ -279,10 +277,9 @@ void DFDCPseudo_factory::EndRun(){
     }    
   }
   fdccathodes.clear();
-
-
-  return;
 }
+
+
 ///
 /// DFDCPseudo_factory::Process
 /// this is the place that anode hits and DFDCCathodeClusters are organized into pseudopoints.
@@ -358,8 +355,6 @@ void DFDCPseudo_factory::Process(const std::shared_ptr<const JEvent>& event) {
 	}
 	// Make sure the data are both time- and z-ordered
 	std::sort(mData.begin(),mData.end(),DFDCPseudo_cmp);
-	
-	return;
 }
 
 /// 

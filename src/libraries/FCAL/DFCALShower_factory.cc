@@ -13,8 +13,7 @@ using namespace std;
 
 #include <JANA/JEvent.h>
 #include <JANA/Calibrations/JCalibrationManager.h>
-#include <JANA/Services/JGlobalRootLock.h>
-// TODO: NWB: IMPORTANT: JGlobalRootLock needs to be replaced with JLockService as otherwise ROOT locks don't happen
+#include <JANA/Compatibility/JLockService.h>
 
 #include "FCAL/DFCALShower_factory.h"
 #include "FCAL/DFCALGeometry.h"
@@ -119,7 +118,7 @@ void DFCALShower_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
   auto runnumber = event->GetRunNumber();
   auto app = event->GetJApplication();
   auto jcalib = app->GetService<JCalibrationManager>()->GetJCalibration(runnumber);
-  auto root_lock = app->GetService<JGlobalRootLock>();
+  auto root_lock = app->GetService<JLockService>();
   auto geo_manager = app->GetService<DGeometryManager>();
   auto geom = geo_manager->GetDGeometry(runnumber);
 
@@ -620,7 +619,7 @@ DFCALShower_factory::LoadCovarianceLookupTables(const std::shared_ptr<const JEve
   auto runnumber = event->GetRunNumber();
   auto app = event->GetJApplication();
   auto calibration = app->GetService<JCalibrationManager>()->GetJCalibration(runnumber);
-  auto root_lock = app->GetService<JGlobalRootLock>();
+  auto root_lock = app->GetService<JLockService>();
 
   std::thread::id this_id = std::this_thread::get_id();
   stringstream idstring;
@@ -655,7 +654,7 @@ DFCALShower_factory::LoadCovarianceLookupTables(const std::shared_ptr<const JEve
   for (int i=0; i<5; i++) {
     for (int j=0; j<=i; j++) {
 
-      root_lock->acquire_write_lock();
+      root_lock->RootWriteLock();
       // change directory to memory so that histograms are not saved to file
       TDirectory *savedir = gDirectory;
 
@@ -724,7 +723,7 @@ DFCALShower_factory::LoadCovarianceLookupTables(const std::shared_ptr<const JEve
 	ifs.close();
       }
       savedir->cd();
-      root_lock->release_lock();
+      root_lock->RootUnLock();
     }
   }
   return NOERROR;

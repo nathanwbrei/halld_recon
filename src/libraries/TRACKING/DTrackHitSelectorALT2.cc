@@ -12,7 +12,7 @@ using namespace std;
 
 #include <JANA/JEvent.h>
 #include <JANA/Calibrations/JCalibrationManager.h>
-#include <JANA/Services/JGlobalRootLock.h>
+#include <JANA/Compatibility/JLockService.h>
 
 #include "DANA/DGeometryManager.h"
 #include "HDGEOMETRY/DGeometry.h"
@@ -76,7 +76,7 @@ DTrackHitSelectorALT2::DTrackHitSelectorALT2(const std::shared_ptr<const JEvent>
 {
 	auto runnumber = event->GetRunNumber();
 	auto app = event->GetJApplication();
-	auto root_lock = app->GetService<JGlobalRootLock>();
+	auto root_lock = app->GetService<JLockService>();
 	auto geo_manager = app->GetService<DGeometryManager>();
 
 	HS_DEBUG_LEVEL = 0;
@@ -105,7 +105,7 @@ DTrackHitSelectorALT2::DTrackHitSelectorALT2(const std::shared_ptr<const JEvent>
 	cdchitsel = NULL;
 	fdchitsel = NULL;
 	if(MAKE_DEBUG_TREES){
-		root_lock->acquire_write_lock();
+		root_lock->RootWriteLock();
 
 		cdchitsel= (TTree*)gROOT->FindObject("cdchitsel");
 		if(!cdchitsel){
@@ -137,7 +137,7 @@ DTrackHitSelectorALT2::DTrackHitSelectorALT2(const std::shared_ptr<const JEvent>
 			fdchitsel = NULL;
 		}
 
-		root_lock->release_lock();
+		root_lock->RootUnLock();
 	}
 
 	bfield = geo_manager->GetBfield(runnumber); // this should be run number based!

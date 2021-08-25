@@ -7,7 +7,7 @@
 #define _DDIRCLut_
 
 #include <JANA/JObject.h>
-#include <JANA/Services/JGlobalRootLock.h>
+#include <JANA/Compatibility/JLockService.h>
 
 #include <DANA/DGeometryManager.h>
 #include <PID/DDetectorMatches.h>
@@ -46,7 +46,7 @@ public:
 	
 private:
 	std::shared_ptr<DGeometryManager> dGeometryManager;
-	std::shared_ptr<JGlobalRootLock> jGlobalRootLock;
+	std::shared_ptr<JLockService> lockService;
 
 	DDIRCLutReader *dDIRCLutReader;
 	const DDIRCGeometry *dDIRCGeometry;

@@ -25,7 +25,7 @@ bool DDIRCLut::Init(const std::shared_ptr<const JEvent>& event) {
 	auto app = event->GetJApplication();
 	auto calibration = app->GetService<JCalibrationManager>()->GetJCalibration(runnumber);
 	dGeometryManager = app->GetService<DGeometryManager>();
-	jGlobalRootLock = app->GetService<JGlobalRootLock>();
+	lockService = app->GetService<JLockService>();
 
 	DIRC_TRUTH_BARHIT = false;
 	app->SetDefaultParameter("DIRC:TRUTH_BARHIT",DIRC_TRUTH_BARHIT);
@@ -219,9 +219,9 @@ bool DDIRCLut::CalcLUT(TVector3 locProjPos, TVector3 locProjMom, const vector<co
 	}// end loop over hits
 		
 	if(DIRC_DEBUG_HISTS) {
-		jGlobalRootLock->acquire_write_lock();
+		lockService->RootWriteLock();
 		hNph->Fill(nPhotons);
-		jGlobalRootLock->release_lock();
+		lockService->RootUnLock();
 	}
 	
 	// skip tracks without enough photons
@@ -354,7 +354,7 @@ vector<pair<double,double>> DDIRCLut::CalcPhoton(const DDIRCPmtHit *locDIRCHit, 
 				double locDeltaT = totalTime-hitTime;
 
 				if(DIRC_DEBUG_HISTS) {
-					jGlobalRootLock->acquire_write_lock();
+					lockService->RootWriteLock();
 					hTime->Fill(hitTime);
 					hCalc->Fill(totalTime);
 					
@@ -367,7 +367,7 @@ vector<pair<double,double>> DDIRCLut::CalcPhoton(const DDIRCPmtHit *locDIRCHit, 
 							else hDiffD->Fill(locDeltaT);
 						}
 					}
-					jGlobalRootLock->release_lock();
+					lockService->RootUnLock();
 				}
 				
 				// save hits array which pass some lose time and angle criteria
@@ -382,10 +382,10 @@ vector<pair<double,double>> DDIRCLut::CalcPhoton(const DDIRCPmtHit *locDIRCHit, 
 				if( r && fabs(locDeltaT)>DIRC_CUT_TDIFFR) continue;
 				
 				if(DIRC_DEBUG_HISTS) {
-					jGlobalRootLock->acquire_write_lock();
+					lockService->RootWriteLock();
 					//hDeltaThetaC[locPID]->Fill(tangle-locAngle);
 					//hDeltaThetaC_Pixel[locPID]->Fill(channel, tangle-locAngle);
-					jGlobalRootLock->release_lock();
+					lockService->RootUnLock();
 				}
 				
 				// remove photon candidates not used in likelihood

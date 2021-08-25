@@ -6,7 +6,6 @@
 
 #include <JANA/JEvent.h>
 #include <JANA/Calibrations/JCalibrationManager.h>
-#include <JANA/Services/JGlobalRootLock.h>
 #include "DANA/DGeometryManager.h"
 #include "CDC/DCDCTrackHit.h"
 #include "HDGEOMETRY/DLorentzDeflections.h"
