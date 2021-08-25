@@ -10,7 +10,6 @@
 #include <TLorentzVector.h>
 #include "TMath.h"
 
-#include "DANA/DApplication.h"
 #include "BCAL/DBCALShower.h"
 #include "BCAL/DBCALTruthShower.h"
 //#include "BCAL/DBCALCluster.h"

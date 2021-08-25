@@ -9,7 +9,6 @@
 #define _DEventProcessor_mcthrown_tree_
 
 #include "JANA/JEventProcessor.h"
-#include "DANA/DApplication.h"
 #include <ANALYSIS/DEventWriterROOT.h>
 
 

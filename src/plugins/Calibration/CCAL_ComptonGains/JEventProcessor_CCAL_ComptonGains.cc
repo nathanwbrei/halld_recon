@@ -204,10 +204,7 @@ jerror_t JEventProcessor_CCAL_ComptonGains::init(void)
 jerror_t JEventProcessor_CCAL_ComptonGains::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	
-	DGeometry*   dgeom = NULL;
-  	DApplication* dapp = dynamic_cast< DApplication* >( eventLoop->GetJApplication() );
-  	if( dapp )   dgeom = dapp->GetDGeometry( runnumber );
-   	
+	DGeometry*   dgeom = GetDGeometry(event);
 	if( dgeom ){
     	  	dgeom->GetTargetZ( m_beamZ );
 		dgeom->GetFCALPosition( m_fcalX, m_fcalY, m_fcalZ );

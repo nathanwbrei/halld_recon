@@ -8,7 +8,6 @@
 #include <DVector3.h>
 #include <particleType.h>
 
-#include <DANA/DApplication.h>
 #include <TRACKING/DMCThrown.h>
 #include <TRACKING/DTrackTimeBased.h>
 #include <PID/DParticleID.h>

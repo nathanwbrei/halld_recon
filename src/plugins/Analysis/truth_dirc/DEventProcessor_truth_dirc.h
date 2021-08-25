@@ -13,7 +13,6 @@ using namespace std;
 #include <JANA/JEventProcessor.h>
 #include <JANA/JEvent.h>
 #include <JANA/JApplication.h>
-#include <DANA/DApplication.h>
 #include <HDGEOMETRY/DGeometry.h>
 
 

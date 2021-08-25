@@ -70,7 +70,7 @@ void InitPlugin(JApplication *app){
 //------------------------------------------------------------------
 DTrackLSFitter::DTrackLSFitter(const std::shared_ptr<const JEvent>& loop):DTrackFitter(loop),debug_level(1), ppEnd(5)
 {
-	// Get the DApplication pointer so we can get pointers to the Lorentz deflections
+	// Get the pointers to the Lorentz deflections
 	// table for the FDC and the DFDCSegment factory pointer.
 	// NOTE: The bfield member is supplied by the DTrackFitter base class and
 	// set in the DTrackFitter(loop) constructor.

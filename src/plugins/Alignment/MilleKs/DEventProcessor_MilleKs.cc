@@ -38,9 +38,8 @@ jerror_t DEventProcessor_MilleKs::brun(jana::JEventLoop* locEventLoop, int32_t l
   // This is called whenever the run number changes
   // Check for magnetic field
   bfield = NULL;
-  DApplication *dapp = dynamic_cast<DApplication *>(locEventLoop->GetJApplication());
   bool dIsNoFieldFlag = (dynamic_cast<const DMagneticFieldMapNoField *>(
-                             dapp->GetBfield(locRunNumber)) != nullptr);
+                             GetBfield(event)) != nullptr);
 
   // This plugin is designed for field on data. If this is used for field off
   // data, Abort...
