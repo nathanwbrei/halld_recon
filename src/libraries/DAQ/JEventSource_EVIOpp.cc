@@ -46,7 +46,7 @@ bool sortf250pulsenumbers(const Df250PulseData *a, const Df250PulseData *b) {
 //----------------
 // Constructor
 //----------------
-JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(source_name)
+JEventSource_EVIOpp::JEventSource_EVIOpp(std::string source_name):JEventSource(source_name)
 {
 	DONE = false;
 	DISPATCHER_END = false;
@@ -185,7 +185,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 		hdet = new HDET(source_name, ET_STATION_NEVENTS, ET_STATION_CREATE_BLOCKING);
 		if( ! hdet->is_connected ){
 			cerr << hdet->err_mess.str() << endl;
-			throw JException("Failed to open ET system: %s", source_name);
+			throw JException("Failed to open ET system: %s", source_name.c_str());
 		}
 		hdet->VERBOSE = VERBOSE_ET;
 		source_type = kETSource;
@@ -198,7 +198,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 		hdevio = new HDEVIO(source_name, true, VERBOSE);
 		if( ! hdevio->is_open ){
 			cerr << hdevio->err_mess.str() << endl;
-			throw JException("Failed to open EVIO file: %s", source_name); // throw exception indicating error
+			throw JException("Failed to open EVIO file: %s", source_name.c_str()); // throw exception indicating error
 		}
 		source_type = kFileSource;
 		hdevio->IGNORE_EMPTY_BOR = IGNORE_EMPTY_BOR;

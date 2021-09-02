@@ -116,7 +116,7 @@ class JEventSource_EVIOpp: public JEventSource{
 		};
 
 
-		                    JEventSource_EVIOpp(const char* source_name);
+		                    JEventSource_EVIOpp(std::string source_name);
 		           virtual ~JEventSource_EVIOpp();
 		virtual const char* className(void){return static_className();}
 		 static const char* static_className(void){return "JEventSource_EVIOpp";}

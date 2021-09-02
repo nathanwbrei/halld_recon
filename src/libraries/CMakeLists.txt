@@ -234,12 +234,12 @@ set(HALLD_RECON_SOURCES
         DAQ/HDET.h
         DAQ/HDEVIO.cc
         DAQ/HDEVIO.h
-        #        DAQ/JEventSource_EVIO.cc
+        DAQ/JEventSource_EVIO.cc
         DAQ/JEventSource_EVIO.h
         DAQ/JEventSource_EVIOpp.cc
         DAQ/JEventSource_EVIOpp.h
-        #        DAQ/JEventSourceGenerator_EVIO.cc
-        #        DAQ/JEventSourceGenerator_EVIO.h
+        DAQ/JEventSourceGenerator_EVIO.cc
+        DAQ/JEventSourceGenerator_EVIO.h
         DAQ/JEventSourceGenerator_EVIOpp.cc
         DAQ/JEventSourceGenerator_EVIOpp.h
         DAQ/JFactoryGenerator_DAQ.h

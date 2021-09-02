@@ -127,7 +127,7 @@ void DApplication::InitHallDLibraries(JApplication* app) {
 		app->Add(event_source_generator);
 		app->Add(new DEventSourceRESTGenerator());
 		app->Add(new JEventSourceGenerator_EVIOpp());
-		// app->Add(new JEventSourceGenerator_EVIO()); // TODO: NWB: Re-add
+		app->Add(new JEventSourceGenerator_EVIO());
 		app->Add(new DEventSourceEventStoreGenerator());
 	}
 	factory_generator = new DFactoryGenerator();

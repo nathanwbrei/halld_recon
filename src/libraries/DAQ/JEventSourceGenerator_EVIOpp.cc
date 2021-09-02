@@ -54,6 +54,6 @@ double JEventSourceGenerator_EVIOpp::CheckOpenable(std::string source)
 //---------------------------------
 JEventSource* JEventSourceGenerator_EVIOpp::MakeJEventSource(string source)
 {
-	return new JEventSource_EVIOpp(source.c_str());
+	return new JEventSource_EVIOpp(source);
 }
 
