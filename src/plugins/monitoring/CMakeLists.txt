@@ -59,6 +59,7 @@ set (monitoring_projects
         # Optional
         TAGH_doubles
         ST_ZEff
+        fa125_itrig
         )
 
 set (optional_monitoring_projects
