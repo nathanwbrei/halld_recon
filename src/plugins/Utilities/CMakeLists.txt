@@ -29,6 +29,7 @@ set (utilities_plugins
         cal_high_energy_skim
         syncskim
         Pi0Finder
+        dedx_tree
 
         # Optional
 
