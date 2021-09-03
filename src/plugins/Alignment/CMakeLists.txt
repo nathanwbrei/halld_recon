@@ -3,6 +3,7 @@
 set(alignment_projects
         MilleFieldOn
         MilleFieldOff
+        MilleKs
         FDCProjectionResiduals
         FDC_InternalAlignment
         )
