@@ -61,6 +61,8 @@ set (monitoring_projects
         ST_ZEff
         fa125_itrig
         cppFMWPC
+        scaler_primex
+        lumi_mon
         )
 
 set (optional_monitoring_projects
