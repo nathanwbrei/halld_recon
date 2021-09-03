@@ -60,6 +60,7 @@ set (monitoring_projects
         TAGH_doubles
         ST_ZEff
         fa125_itrig
+        cppFMWPC
         )
 
 set (optional_monitoring_projects
