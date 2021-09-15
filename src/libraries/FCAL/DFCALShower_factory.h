@@ -23,13 +23,14 @@ class DTrackWireBased;
 
 class DFCALShower_factory:public JFactoryT<DFCALShower>{
  public:
-  DFCALShower_factory();
-  ~DFCALShower_factory(){};
+  DFCALShower_factory() = default;
+  ~DFCALShower_factory() override = default;
   jerror_t LoadCovarianceLookupTables(const std::shared_ptr<const JEvent>& event);
   jerror_t FillCovarianceMatrix(DFCALShower* shower);
 	
  private:
 
+  void Init() override;
   void Process(const std::shared_ptr<const JEvent>& event) override;
   void BeginRun(const std::shared_ptr<const JEvent>& event) override;
   void EndRun() override;

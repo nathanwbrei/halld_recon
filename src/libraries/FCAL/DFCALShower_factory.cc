@@ -24,10 +24,11 @@ using namespace std;
 #include "HDGEOMETRY/DGeometry.h"
 
 
+
 //----------------
-// Constructor
+// Init
 //----------------
-DFCALShower_factory::DFCALShower_factory()
+void DFCALShower_factory::Init()
 {
   auto app = GetApplication();
 
