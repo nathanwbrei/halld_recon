@@ -41,7 +41,6 @@ using std::string;
 DApplication::DApplication(int argc, char* argv[]) {
 	m_options = jana::ParseCommandLineOptions(argc, argv);
 	m_japp = jana::CreateJApplication(m_options);
-	m_japp = new JApplication();
 	japp = m_japp;
 	InitHallDLibraries(m_japp);
 }
