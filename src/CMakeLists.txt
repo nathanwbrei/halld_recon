@@ -33,8 +33,8 @@ if (EVIO_FOUND)
 endif()
 
 find_package(MySQL REQUIRED)
+add_definitions(-DHAVE_RCDB -DRCDB_MYSQL)
 
-add_definitions(-DHAVE_RCDB)
 # TODO: Move these into Find* scripts
 set(CCDB_INCLUDE_DIRS $ENV{CCDB_HOME}/include)
 set(CCDB_LIBRARY $ENV{CCDB_HOME}/lib/libccdb.a)
