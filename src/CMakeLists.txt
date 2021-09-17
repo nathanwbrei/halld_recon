@@ -15,7 +15,7 @@ set(XercesC_DIR $ENV{XERCESCROOT})
 
 find_package(ROOT REQUIRED COMPONENTS Geom)
 find_package(XercesC REQUIRED)
-set(HAVE_XERCES)
+add_compile_definitions(HAVE_XERCES)
 find_package(JANA REQUIRED)
 find_package(Threads REQUIRED)
 set(THREADS_PREFER_PTHREAD_FLAG ON)

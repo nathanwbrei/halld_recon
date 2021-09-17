@@ -729,6 +729,7 @@ add_library(halld_recon
 target_include_directories(halld_recon PRIVATE . ../include include
         ${CCDB_INCLUDE_DIRS}
         ${ROOT_INCLUDE_DIRS}
+        ${XercesC_INCLUDE_DIR}
         ${JANA_INCLUDE_DIR}
         ${EVIO_INCLUDE_DIR}
         ${HDDS_INCLUDE_DIR}
@@ -743,6 +744,7 @@ target_link_libraries(halld_recon Threads::Threads
         ${SQLITE_LIBRARY}
         ${JANA_LIBRARY}
         ${EVIO_LIBS}
+        ${XercesC_LIBRARY}
         ${EXPAT_LIBRARY}
         ${ROOT_LIBRARIES}
         ${HDDS_LIBRARY}
