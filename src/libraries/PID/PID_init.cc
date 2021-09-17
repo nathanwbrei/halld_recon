@@ -35,7 +35,7 @@
 void PID_init(JFactorySet *factorySet)
 {
 	/// Create and register PID data factories
-	// factorySet->Add(new JFactoryT<DMCReaction>());  // TODO: NWB: Verify that we don't need these any more and excise
+	factorySet->Add(new JFactoryT<DMCReaction>());
 	factorySet->Add(new DBeamPhoton_factory);
 	factorySet->Add(new DBeamPhoton_factory_TRUTH);
 	factorySet->Add(new DBeamPhoton_factory_TAGGEDMCGEN);
