@@ -76,6 +76,14 @@ void DAQ_init(JFactorySet *factorySet) {
     factorySet->Add(new JGetObjectsFactory<Df250PulseData>());
     factorySet->Add(new JGetObjectsFactory<Df250WindowRawData>());
     factorySet->Add(new JGetObjectsFactory<Df125Config>());
+    factorySet->Add(new JGetObjectsFactory<Df125TriggerTime>());
+    factorySet->Add(new JGetObjectsFactory<Df125PulseIntegral>());
+    factorySet->Add(new JGetObjectsFactory<Df125PulseTime>());
+    factorySet->Add(new JGetObjectsFactory<Df125PulsePedestal>());
+    factorySet->Add(new JGetObjectsFactory<Df125PulseRawData>());
+    factorySet->Add(new JGetObjectsFactory<Df125WindowRawData>());
+    factorySet->Add(new JGetObjectsFactory<Df125CDCPulse>());
+    factorySet->Add(new JGetObjectsFactory<Df125FDCPulse>());
     factorySet->Add(new JGetObjectsFactory<DF1TDCHit>());
     factorySet->Add(new JGetObjectsFactory<DF1TDCConfig>());
     factorySet->Add(new JGetObjectsFactory<DF1TDCTriggerTime>());
