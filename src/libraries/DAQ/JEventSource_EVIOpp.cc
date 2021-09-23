@@ -703,6 +703,8 @@ bool JEventSource_EVIOpp::GetObjects(const std::shared_ptr<const JEvent> &event,
 	// Optionally record call stack
 	if(RECORD_CALL_STACK) AddToCallStack(pe, event);
 
+
+	// TODO: NWB: JANA1 queries GetObjects FIRST, this is going to break calibration skims
 	// Decide whether this is a data type the source supplies
     // If the data type is that of some derived data that is nominally
     // supplied by another factory, but is being stored in EVIO format
@@ -710,21 +712,16 @@ bool JEventSource_EVIOpp::GetObjects(const std::shared_ptr<const JEvent> &event,
     // say that we supply this data ONLY IF we actually have data
     // of this type.  Otherwise, we feign ignorance so that the 
     // data is produced by its usual factory
-	bool isSuppliedType = pe->IsParsedDataType(dataClassName)
-                           && pe->IsNonEmptyDerivedDataType(dataClassName);
+	bool isParsed = pe->IsParsedDataType(dataClassName);
+	bool isDerived = pe->IsNonEmptyDerivedDataType(dataClassName);
+	bool isSuppliedType = isParsed || isDerived;
 	for(auto tt : translationTables){
 		if(isSuppliedType) break;  // once this is set, it's set
 		isSuppliedType = tt->IsSuppliedType(dataClassName);
 	}
 
 	// Check if this is a class we provide and return appropriate value
-	if( isSuppliedType ){
-		// We do produce this type
-		return NOERROR;
-	}else{
-		// We do not produce this type
-		return OBJECT_NOT_AVAILABLE;
-	}
+	return isSuppliedType;
 }
 
 //----------------
