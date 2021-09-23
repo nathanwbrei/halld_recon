@@ -14,10 +14,14 @@
 #include "DGEMStripCluster_factory.h"
 #include "DGEMPoint_factory.h"
 
+#include <JANA/Compatibility/JGetObjectsFactory.h>
 
 void TRD_init(JFactorySet *factorySet) {
 
 	/// Create and register TRD data factories
+	factorySet->Add(new JGetObjectsFactory<DTRDDigiHit>());
+	factorySet->Add(new JGetObjectsFactory<DGEMDigiWindowRawData>());
+
 	factorySet->Add(new DTRDHit_factory());
 	factorySet->Add(new DGEMHit_factory());
 

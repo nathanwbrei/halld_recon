@@ -70,14 +70,18 @@ void DTRDStripCluster_factory::Process(const std::shared_ptr<const JEvent>& even
 	if (allHits.size()>0) {
 		// Sort hits by layer number and by time
 		sort(allHits.begin(),allHits.end(),DTRDHit_cmp);
-		
+
 		// Sift through all hits and select out X and Y hits.
 		for (vector<const DTRDHit*>::iterator i = allHits.begin(); i != allHits.end(); ++i){
 			if ((*i)->plane == 0 || (*i)->plane == 4) continue;
 			int stripPlane = (*i)->plane - 1;
 			if(stripPlane > 2) stripPlane -= 3;
-			planeHits[stripPlane].push_back(*i);
-		} 
+
+			// TODO: NWB: This was destroying the stack because stripPlane=3. Probably a bug upstream.
+			if ((stripPlane >= 0) && stripPlane <= 2) {
+				planeHits[stripPlane].push_back(*i);
+			}
+		}
 
 		// Plane by plane, create clusters of strips
 		for(uint iplane = 0; iplane < 3; iplane++) {

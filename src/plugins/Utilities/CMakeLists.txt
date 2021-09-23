@@ -1,5 +1,6 @@
 
 set (utilities_plugins
+        tinytest
         danarest
         evio_writer
         evio-hddm
