@@ -6,12 +6,16 @@
  *  Modified on: 0ct 7, 2013, yqiang, added DIRCTruthHit factory
  */
 
-#include <JANA/JFactorySet.h>
-
 #include "DDIRCLut_factory.h"
 #include "DDIRCPmtHit_factory.h"
 #include "DDIRCLEDRef_factory.h"
 #include "DDIRCGeometry_factory.h"
+#include "DDIRCTDCDigiHit.h"
+#include "DDIRCTruthPmtHit.h"
+#include "DDIRCTruthBarHit.h"
+
+#include <JANA/JFactorySet.h>
+#include <JANA/Compatibility/JGetObjectsFactory.h>
 
 void DIRC_init(JFactorySet *factorySet) {
 
@@ -20,5 +24,9 @@ void DIRC_init(JFactorySet *factorySet) {
 	factorySet->Add(new DDIRCPmtHit_factory());
 	factorySet->Add(new DDIRCLEDRef_factory());
 	factorySet->Add(new DDIRCLut_factory());
+	factorySet->Add(new JGetObjectsFactory<DDIRCTDCDigiHit>());
+	factorySet->Add(new JGetObjectsFactory<DDIRCTruthPmtHit>());
+	factorySet->Add(new JGetObjectsFactory<DDIRCTruthBarHit>());
+
 }
 
