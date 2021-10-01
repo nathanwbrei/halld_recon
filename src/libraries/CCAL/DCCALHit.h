@@ -18,7 +18,7 @@ class DCCALHit: public JObject {
 		
 		DCCALHit(){}
 
-		oid_t id; // TODO: NWB: This is set in DEventSourceHDDM, but I don't think it is used anywhere
+		oid_t id = reinterpret_cast<oid_t>(this);
 		int row;
 		int column;
 		float x;

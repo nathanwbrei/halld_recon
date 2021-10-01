@@ -14,7 +14,7 @@ class DBCALShower: public JObject{
 
  DBCALShower():ExyztCovariance(5) {} ///< Constructor initializes matrix to 5x5
 
-    oid_t id;
+    oid_t id = reinterpret_cast<oid_t>(this);
     float E;
     float E_raw;
     float E_preshower;
