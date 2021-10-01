@@ -152,7 +152,7 @@ void DFCALShower_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
   else{
       
     cerr << "No geometry accessible." << endl;
-    return; // RESOURCE_UNAVAILABLE; // TODO: Verify
+    return; // RESOURCE_UNAVAILABLE;
   }
   // 29/03/2020 ijaegle@jlab.org add x,y
   std::map<string, float> beam_spot;

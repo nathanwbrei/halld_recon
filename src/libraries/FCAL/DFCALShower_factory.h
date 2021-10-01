@@ -103,7 +103,7 @@ class DFCALShower_factory:public JFactoryT<DFCALShower>{
   TH2F *CovarianceLookupTable[5][5];
   
   double log_position_const;
-  int debug_level; // TODO: Expose via param manager
+  int debug_level;
 };
 
 
