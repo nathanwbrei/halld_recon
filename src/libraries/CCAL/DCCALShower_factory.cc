@@ -102,7 +102,7 @@ void DCCALShower_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
     	}
     	else{
       	  jerr << "No geometry accessible." << endl;
-      	  return; // RESOURCE_UNAVAILABLE; // TODO: Reconsider
+      	  return; // RESOURCE_UNAVAILABLE;
     	}
 	
 	
@@ -139,7 +139,7 @@ void DCCALShower_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 	{
 	  if(print_messages)
 	    jerr << "Empty file..." << endl;
-	  return; // RESOURCE_UNAVAILABLE; // TODO: Verify
+	  return; // RESOURCE_UNAVAILABLE;
 	}
 	
 	ifstream ccal_profile(ccal_profile_file.c_str());
@@ -269,7 +269,7 @@ void DCCALShower_factory::Process(const std::shared_ptr<const JEvent>& event)
 	vector< const DCCALGeometry* > ccalGeomVect;
     	event->Get( ccalGeomVect );
 	if (ccalGeomVect.size() < 1)
-      	  return; // OBJECT_NOT_AVAILABLE; // TODO: Verify
+      	  return; // OBJECT_NOT_AVAILABLE;
     	const DCCALGeometry& ccalGeom = *(ccalGeomVect[0]);
 	
 	

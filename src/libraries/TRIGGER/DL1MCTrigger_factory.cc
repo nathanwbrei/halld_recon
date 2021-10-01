@@ -238,7 +238,7 @@ void DL1MCTrigger_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
   vector<const DFCALGeometry*> fcalGeomVect;
   event->Get( fcalGeomVect );
   if (fcalGeomVect.size() < 1)
-    return; // OBJECT_NOT_AVAILABLE;  // TODO: #1
+    return; // OBJECT_NOT_AVAILABLE;
   const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
   
   if(print_messages) jout << "In DL1MCTrigger_factory, loading constants..." << jendl;

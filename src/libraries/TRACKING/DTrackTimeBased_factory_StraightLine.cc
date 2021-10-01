@@ -88,7 +88,7 @@ void DTrackTimeBased_factory_StraightLine::BeginRun(const std::shared_ptr<const 
   
   if(finders.size()<1){
     _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
-    return; // RESOURCE_UNAVAILABLE; // TODO: Discuss
+    return; // RESOURCE_UNAVAILABLE;
   }
   
    // Drop the const qualifier from the DTrackFinder pointer
@@ -99,7 +99,7 @@ void DTrackTimeBased_factory_StraightLine::BeginRun(const std::shared_ptr<const 
   event->Get(fitters,"StraightTrack");
   if(fitters.size()<1){
     _DBG_<<"Unable to get a DTrackFitter object!"<<endl;
-    return; // RESOURCE_UNAVAILABLE; // TODO: Discuss
+    return; // RESOURCE_UNAVAILABLE;
   }
   
   // Drop the const qualifier from the DTrackFitter pointer

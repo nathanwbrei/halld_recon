@@ -109,7 +109,7 @@ void DTOFHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
     // read in geometry information
     vector<const DTOFGeometry*> tofGeomVect;
     event->Get( tofGeomVect );
-    if(tofGeomVect.size()<1)  return; // OBJECT_NOT_AVAILABLE;  // TODO: #1
+    if(tofGeomVect.size()<1)  return; // OBJECT_NOT_AVAILABLE;
     const DTOFGeometry& tofGeom = *(tofGeomVect[0]);
     
     TOF_NUM_PLANES = tofGeom.Get_NPlanes();

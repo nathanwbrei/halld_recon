@@ -39,7 +39,7 @@ void DVertex_factory_THROWN::Process(const std::shared_ptr<const JEvent>& event)
 	event->Get(locThrownTracks);
 
 	if(locThrownTracks.size() == 0)
-		return; // RESOURCE_UNAVAILABLE; // TODO: Verify
+		return; // RESOURCE_UNAVAILABLE;
 
 	DVertex* locVertex = new DVertex;
 	locVertex->dKinFitNDF = 0;

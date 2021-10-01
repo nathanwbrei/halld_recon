@@ -47,7 +47,6 @@ public:
 			auto run_number = m_event->GetRunNumber();
 			m_calibration = m_app->GetService<JCalibrationManager>()->GetJCalibration(run_number);
 		}
-		// TODO: Assert not null?
 		return m_calibration;
 	}
 

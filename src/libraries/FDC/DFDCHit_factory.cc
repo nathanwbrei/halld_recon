@@ -43,7 +43,7 @@ void DFDCHit_factory::Init()
 //------------------
 void DFDCHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-  if (USE_FDC==false) return; // RESOURCE_UNAVAILABLE; // TODO: Verify
+  if (USE_FDC==false) return; // RESOURCE_UNAVAILABLE;
 
    auto runnumber = event->GetRunNumber();
    DEvent devent(event);
@@ -130,7 +130,7 @@ void DFDCHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 //------------------
 void DFDCHit_factory::Process(const std::shared_ptr<const JEvent>& event)
 {
-  if (USE_FDC==false) return; // RESOURCE_UNAVAILABLE; // TODO: Verify
+  if (USE_FDC==false) return; // RESOURCE_UNAVAILABLE;
 
    /// Generate DFDCHit object for each DFDCCathodeDigiHit and
    /// each DFDCWireDigiHit object.

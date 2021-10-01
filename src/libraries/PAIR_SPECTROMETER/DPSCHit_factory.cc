@@ -74,7 +74,7 @@ void DPSCHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
   vector<const DPSGeometry*> psGeomVect;
   event->Get( psGeomVect );
   if (psGeomVect.size() < 1)
-    return; // OBJECT_NOT_AVAILABLE;  # TODO: Verify
+    return; // OBJECT_NOT_AVAILABLE;
   const DPSGeometry& psGeom = *(psGeomVect[0]);
 
   // load scale factors

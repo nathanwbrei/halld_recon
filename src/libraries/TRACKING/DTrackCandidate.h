@@ -56,7 +56,6 @@ class DTrackCandidate:public DTrackingData{
 
 		void Summarize(JObjectSummary& summary) const override {
 			DKinematicData::Summarize(summary);
-			// summary.add(id, "id", "0x%x");   // TODO: Check that we aren't actually using the ids
 			summary.add(chisq, "chisq", "%f");
 			summary.add(Ndof, "Ndof", "%d");
 		}

@@ -86,7 +86,7 @@ void DBCALCluster_factory::BeginRun(const std::shared_ptr<const JEvent>& event) 
 
   if(fitters.size()<1){
     _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
-    return; // RESOURCE_UNAVAILABLE; // TODO: Verify
+    return; // RESOURCE_UNAVAILABLE;
   }
 
   fitter = fitters[0];

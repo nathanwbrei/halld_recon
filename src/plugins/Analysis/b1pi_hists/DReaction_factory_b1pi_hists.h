@@ -20,7 +20,7 @@ class DReaction_factory_b1pi_hists : public JFactoryT<DReaction>
             SetFactoryName("DReaction_factory_b1pi_hists");
             SetObjectName("DReaction");
             SetTag("b1pi_hists");
-            SetFactoryFlag(PERSISTENT); // TODO: NWB: Verify that PERSISTENT has the right semantics
+            SetFactoryFlag(PERSISTENT);
 		};
 		~DReaction_factory_b1pi_hists(){};
 

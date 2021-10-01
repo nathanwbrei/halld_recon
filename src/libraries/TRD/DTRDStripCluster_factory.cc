@@ -77,7 +77,6 @@ void DTRDStripCluster_factory::Process(const std::shared_ptr<const JEvent>& even
 			int stripPlane = (*i)->plane - 1;
 			if(stripPlane > 2) stripPlane -= 3;
 
-			// TODO: NWB: This was destroying the stack because stripPlane=3. Probably a bug upstream.
 			if ((stripPlane >= 0) && stripPlane <= 2) {
 				planeHits[stripPlane].push_back(*i);
 			}

@@ -76,7 +76,7 @@ void DFactoryGenerator::GenerateFactories(JFactorySet *factory_set)
 	PAIR_SPECTROMETER_init(factory_set);
 	TPOL_init(factory_set);
 	FMWPC_init(factory_set);
-	// EVENTSTORE_init(factory_set);  // TODO: NWB: Re-enable
+	EVENTSTORE_init(factory_set);
 	TAC_init(factory_set);
 	TRD_init(factory_set);	
 }

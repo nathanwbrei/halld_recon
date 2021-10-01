@@ -45,7 +45,6 @@ using namespace std;
 #include "DANA/DGeometryManager.h"
 #include "HDGEOMETRY/DGeometry.h"
 
-// #include "DTrackCandidate_factory_CDC.h"  // TODO: Why is this here?
 #include "START_COUNTER/DSCHit.h"
 #include <TRACKING/DHoughFind.h>
 
