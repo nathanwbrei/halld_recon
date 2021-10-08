@@ -9,6 +9,20 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
+
+option(USE_ASAN "Compile with address sanitizer" OFF)
+option(USE_TSAN "Compile with thread sanitizer" OFF)
+
+if (${USE_ASAN})
+    add_compile_options(-fsanitize=address)
+    add_link_options(-fsanitize=address)
+endif()
+
+if (${USE_TSAN})
+    add_compile_options(-fsanitize=thread)
+    add_link_options(-fsanitize=thread)
+endif()
+
 # Set CMake variables according to env variables defined by build_scripts
 set(ROOT_DIR $ENV{ROOTSYS}/cmake)
 set(XercesC_DIR $ENV{XERCESCROOT})
@@ -21,10 +35,7 @@ find_package(JANA REQUIRED)
 find_package(Threads REQUIRED)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-# Only add ET if ETROOT is set
-# etroot = os.getenv('ETROOT')
-#if(etroot != None):
-
+# TODO: ET? From $ETROOT iff set
 
 find_package(EVIO)
 if (EVIO_FOUND)
@@ -36,7 +47,6 @@ endif()
 find_package(MySQL REQUIRED)
 add_definitions(-DHAVE_RCDB -DRCDB_MYSQL)
 
-# TODO: Move these into Find* scripts
 set(CCDB_INCLUDE_DIRS $ENV{CCDB_HOME}/include)
 set(CCDB_LIBRARY $ENV{CCDB_HOME}/lib/libccdb.a)
 set(SQLITE_LIBRARY -L$ENV{SQLITE_HOME}/lib -lsqlite3)
