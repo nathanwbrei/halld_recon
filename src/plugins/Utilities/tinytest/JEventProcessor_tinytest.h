@@ -8,7 +8,12 @@
 #define _JEventProcessor_tinytest_
 
 #include <string>
-using namespace std;
+#include <map>
+#include <ostream>
+
+using std::map;
+using std::tuple;
+using std::string;
 
 #include <JANA/JEventProcessor.h>
 
@@ -22,9 +27,10 @@ class JEventProcessor_tinytest : public JEventProcessor
 		void EndRun() override;
 		void Finish() override;
 
- private:
-		std::string m_factory_name;
-                std::string m_factory_tag;
+private:
+		map<tuple<uint64_t, string, string>, uint64_t> results;
+		std::ofstream outfile;
+		std::string outfile_name;
 };
 
 #endif // _JEventProcessor_tinytest_

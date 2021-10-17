@@ -6,7 +6,8 @@
 // Richard Jones, 1-July-2012
 
 #include "JEventProcessor_tinytest.h"
-#include <TRD/DTRDStripCluster.h>
+
+#include <tuple>
 
 // Make us a plugin
 // for initializing plugins
@@ -22,6 +23,16 @@ extern "C" {
 //-------------------------------
 void JEventProcessor_tinytest::Init()
 {
+    auto app = GetApplication();
+    auto nevts = app->GetParameterValue<int>("jana:nevents");
+    auto nskip = app->GetParameterValue<int>("jana:nskip");
+    auto nthreads = app->GetNThreads();
+    auto filename = app->GetComponentSummary().event_sources[0].source_name;
+    std::stringstream ss;
+    ss << "/app/objcounts/objcounts_" << nevts << "_" << nskip << "_" << nthreads << "_jana2_" << filename << ".tsv";
+    outfile_name = ss.str();
+    app->SetDefaultParameter("tinytest:outfile_name", outfile_name);
+
 }
 
 //-------------------------------
@@ -36,7 +47,18 @@ void JEventProcessor_tinytest::BeginRun(const std::shared_ptr<const JEvent>& eve
 //-------------------------------
 void JEventProcessor_tinytest::Process(const std::shared_ptr<const JEvent>& event)
 {
-    auto v = event->Get<DTRDStripCluster>();
+    auto app = GetApplication();
+    auto evt_nr = event->GetEventNumber();
+    auto run_nr = event->GetRunNumber();
+    auto facs = event->GetAllFactories();
+
+    std::cout << "Processing event number " << evt_nr << std::endl;
+
+    for (auto fac : facs) {
+        auto item_ct = fac->Create(event, app, run_nr);
+        auto key = make_tuple(evt_nr, fac->GetObjectName(), fac->GetTag());
+        results.insert({key, item_ct});
+    }
 }
 
 //-------------------------------
@@ -51,4 +73,15 @@ void JEventProcessor_tinytest::EndRun()
 //-------------------------------
 void JEventProcessor_tinytest::Finish()
 {
+    outfile.open(outfile_name);
+
+    for (auto pair : results) {
+        string fac_name, fac_tag;
+        uint64_t evt_nr, obj_count;
+        std::tie(evt_nr, fac_name, fac_tag) = pair.first;
+        obj_count = pair.second;
+        outfile << evt_nr << "\t" << fac_name << "\t" << fac_tag << "\t" << obj_count << std::endl;
+    }
+    outfile.close();
+
 }
