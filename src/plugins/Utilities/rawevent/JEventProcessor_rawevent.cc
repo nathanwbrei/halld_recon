@@ -312,9 +312,7 @@ void JEventProcessor_rawevent::Init() {
                                            "Fallback filename of translation table XML file."
                                            " If set to non-default, CCDB will not be checked.");
 
-  // TODO: NWB: Aesthetics of testing for whether param value is defaulted or not
-  // if (p->GetDefault() != p->GetValue())
-  if (p->default_value != p->value)
+  if (!p->IsDefault())
     NO_CCDB = true;
 
 

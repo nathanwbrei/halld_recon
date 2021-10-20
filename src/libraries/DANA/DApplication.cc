@@ -104,11 +104,10 @@ void DApplication::InitHallDLibraries(JApplication* app) {
 	// that time gets counted against the thread as being non-reponsive. The default timeout of 8 seconds is
 	// therefore too small. Change it to 30 here, unless the user has set it explicitly on the command line.
 
-	// TODO: NWB: Want a better way to check if value has a default, and if so, change the default
-	// TODO: Verify this does the same thing as the old version
+	// TODO: NWB: Verify this does the same thing as the old version
 	string thread_timeout; // = "30 seconds";
 	auto thread_timeout_param = app->GetParameter("THREAD_TIMEOUT", thread_timeout);
-	if (thread_timeout_param && thread_timeout_param->default_value == thread_timeout_param->value) {
+	if (thread_timeout_param && thread_timeout_param->IsDefault()) {
 		app->SetParameterValue("THREAD_TIMEOUT", "30 seconds");
 	}
 

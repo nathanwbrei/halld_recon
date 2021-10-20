@@ -119,7 +119,7 @@ DTranslationTable::DTranslationTable(JApplication* app, JEvent* event)
    JParameter *p = app->SetDefaultParameter("TT:XML_FILENAME", XML_FILENAME,
            "Fallback filename of translation table XML file."
            " If set to non-default, CCDB will not be checked.");
-   if (p->default_value != p->value)
+   if (!p->IsDefault())
      NO_CCDB = true;
    app->SetDefaultParameter("TT:VERBOSE", VERBOSE,
            "Verbosity level for Applying Translation Table."
