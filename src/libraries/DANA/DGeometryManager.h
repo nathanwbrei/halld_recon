@@ -9,9 +9,7 @@
 #include <JANA/JApplication.h>
 #include <JANA/Services/JServiceLocator.h>
 
-#include <vector>
 #include <mutex>
-
 
 class DMagneticFieldMap;
 class DLorentzDeflections;
@@ -22,7 +20,7 @@ class DDIRCLutReader;
 class DGeometryManager: public JService {
 
 public:
-	DGeometryManager(JApplication* app);
+	explicit DGeometryManager(JApplication* app);
 	~DGeometryManager() override;
 
 	DMagneticFieldMap* GetBfield(unsigned int run_number=1);
@@ -32,21 +30,19 @@ public:
 	DDIRCLutReader *GetDIRCLut(unsigned int run_number);
 
 private:
-	DMagneticFieldMap *bfield = nullptr;
-	DLorentzDeflections *lorentz_def = nullptr;
-	DRootGeom *RootGeom = nullptr;
-	std::vector<DGeometry*> geometries;
-	DDIRCLutReader *dircLut = nullptr;
+	JApplication* m_app;
 
-	// These are used to ensure that the cached objects correspond to the desired run number
-	size_t bfield_run_nr;
-	size_t lorenzdef_run_nr;
-	size_t rootgeom_run_nr;
-	size_t dirclut_run_nr;
+	std::map<unsigned int, DMagneticFieldMap*> m_bfields;
+	std::map<unsigned int, DLorentzDeflections*> m_lorentz_defs;
+	std::map<unsigned int, DRootGeom*> m_root_geoms;
+	std::map<unsigned int, DGeometry*> m_dgeometries;
+	std::map<unsigned int, DDIRCLutReader*> m_dirclut_readers;
 
-	JApplication* app;
-
-	std::mutex mutex;
+	std::mutex m_bfield_mutex;
+	std::mutex m_lorentz_mutex;
+	std::mutex m_rootgeoms_mutex;
+	std::mutex m_dgeoms_mutex;
+	std::mutex m_dirclut_mutex;
 };
 
 
