@@ -20,8 +20,6 @@ void DAnalysisResults_factory::Init()
 	dDebugLevel = 0;
 	dMinThrownMatchFOM = 5.73303E-7;
 	dResourcePool_KinFitResults.Set_ControlParams(100, 20, 300, 500, 0);
-
-	return;
 }
 
 //------------------
@@ -38,9 +36,9 @@ void DAnalysisResults_factory::BeginRun(const std::shared_ptr<const JEvent>& loc
 	// a JEventLoop object (i.e. most of it).  In subsequent brun() calls, only the
 	// run-dependent settings are updated
 	// - sdobbs -- 28 August 2019
-	dEvent = new DEvent(locEvent);
 
 	auto app = locEvent->GetJApplication();
+	jLockService = app->GetService<JLockService>();
 	app->SetDefaultParameter("ANALYSIS:DEBUG_LEVEL", dDebugLevel);
 	app->SetDefaultParameter("ANALYSIS:KINFIT_CONVERGENCE", dRequireKinFitConvergence);
 
@@ -153,7 +151,7 @@ void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& 
 	TH1D* loc1DHist;
 	TH2D* loc2DHist;
 
-	dEvent->GetLockService()->RootWriteLock(); //to prevent undefined behavior due to directory changes, etc.
+	jLockService->RootWriteLock(); //to prevent undefined behavior due to directory changes, etc.
 	{
 		TDirectory* locCurrentDir = gDirectory;
 
@@ -305,7 +303,7 @@ void DAnalysisResults_factory::Make_ControlHistograms(vector<const DReaction*>& 
 		}
 		locCurrentDir->cd();
 	}
-	dEvent->GetLockService()->RootUnLock(); //unlock
+	jLockService->RootUnLock(); //unlock
 }
 
 //------------------
@@ -443,7 +441,7 @@ void DAnalysisResults_factory::Process(const std::shared_ptr<const JEvent>& locE
 				cout << "Action loop completed, # surviving combos: " << locAnalysisResults->Get_NumPassedParticleCombos() << endl;
 
 			//FILL HISTOGRAMS
-			GetLockService(locEvent)->WriteLock("DAnalysisResults");
+			jLockService->WriteLock("DAnalysisResults");
 			{
 				dHistMap_NumEventsSurvivedAction_All[locReaction]->Fill(locStartIndex); //initial: a new event
 				if(locTrueBeamE > 0.) {
@@ -504,14 +502,12 @@ void DAnalysisResults_factory::Process(const std::shared_ptr<const JEvent>& locE
 					}
 				}
 			}
-			GetLockService(locEvent)->Unlock("DAnalysisResults");
+			jLockService->Unlock("DAnalysisResults");
 
 			//SAVE ANALYSIS RESULTS
 			Insert(locAnalysisResults);
 		}
 	}
-
-	return;
 }
 
 bool DAnalysisResults_factory::Execute_Actions(const std::shared_ptr<const JEvent>& locEvent, bool locIsKinFit, const DParticleCombo* locCombo, const DParticleCombo* locTrueCombo, bool locPreKinFitFlag, const vector<DAnalysisAction*>& locActions, size_t& locActionIndex, vector<size_t>& locNumCombosSurvived, int& locLastActionTrueComboSurvives)

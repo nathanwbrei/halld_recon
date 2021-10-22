@@ -75,7 +75,7 @@ void DBeamCurrent_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 	string electron_beam_proxy; //will be either PS counts (default) or current as measured by EPICS
 	double cutoffval=0; // either counts in PS or minimum bean current
 	
-	GetCalib(event, "/ELECTRON_BEAM/timestamp_to_unix", mcalib);
+	DEvent::GetCalib(event, "/ELECTRON_BEAM/timestamp_to_unix", mcalib);
 	if(mcalib.size() == 3){
 		//ticks_per_sec           = atof(mcalib["tics_per_sec"].c_str());
 		rcdb_250MHz_offset_tics = stoull(mcalib["rcdb_250MHz_offset_tics"].c_str());
@@ -83,14 +83,14 @@ void DBeamCurrent_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 	}
 		
 	if(USE_EPICS_FOR_BEAM_ON){
-		GetCalib(event, "/ELECTRON_BEAM/current_map_epics", mstr);
+		DEvent::GetCalib(event, "/ELECTRON_BEAM/current_map_epics", mstr);
 		if(mstr.empty()) return;
 		electron_beam_proxy = mstr.begin()->second;
 		cutoffval = BEAM_ON_MIN_nA;
 		jout << "Use map from EPICS in DBeamCurrent to decide if the beam is \"on\" (MIGHT BE BROKEN!)" << endl;
 	}
 	else{
-		GetCalib(event, "/ELECTRON_BEAM/ps_counts", mstr);
+		DEvent::GetCalib(event, "/ELECTRON_BEAM/ps_counts", mstr);
 		if(mstr.empty()) return;
 		electron_beam_proxy = mstr.begin()->second;
 		cutoffval = BEAM_ON_MIN_PSCOUNTS;

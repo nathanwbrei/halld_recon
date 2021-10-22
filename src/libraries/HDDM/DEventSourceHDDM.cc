@@ -197,12 +197,11 @@ bool DEventSourceHDDM::GetObjects(const std::shared_ptr<const JEvent> &event, JF
    // The ref field of the JEvent is just the HDDM object pointer.
    hddm_s::HDDM *record = const_cast<hddm_s::HDDM*>(event->GetSingleStrict<hddm_s::HDDM>());
 
-   DEvent devent(event);
    // Get pointer to the B-field object and Geometry object
    if (initialized == false && event) {
       initialized = true;
       dRunNumber = event->GetRunNumber();
-      jcalib = devent.GetJCalibration();
+      jcalib = DEvent::GetJCalibration(event);
       // Make sure jcalib is set
       if (!jcalib) {
          _DBG_ << "ERROR - no jcalib set!" <<endl;
@@ -269,7 +268,7 @@ bool DEventSourceHDDM::GetObjects(const std::shared_ptr<const JEvent> &event, JF
    }
    if(locNewRunNumber)
    {
-      DGeometry* locGeometry = devent.GetDGeometry();
+      DGeometry* locGeometry = DEvent::GetDGeometry(event);
       double locTargetCenterZ = 0.0;
       locGeometry->GetTargetZ(locTargetCenterZ);
 

@@ -46,8 +46,7 @@ void JEventProcessor_MilleFieldOn::Init() {
 void JEventProcessor_MilleFieldOn::BeginRun(const std::shared_ptr<const JEvent> &event, int32_t runnumber) {
   // This is called whenever the run number changes
   // Check for magnetic field
-  DEvent devent(event);
-  bool dIsNoFieldFlag = (dynamic_cast<const DMagneticFieldMapNoField *>(devent.GetBfield()) != nullptr);
+  bool dIsNoFieldFlag = (dynamic_cast<const DMagneticFieldMapNoField *>(DEvent::GetBfield(event)) != nullptr);
 
   // This plugin is designed for field on data. If this is used for field off
   // data, Abort...

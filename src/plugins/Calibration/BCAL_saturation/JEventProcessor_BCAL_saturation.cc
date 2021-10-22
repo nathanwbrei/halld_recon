@@ -147,7 +147,6 @@ void JEventProcessor_BCAL_saturation::Process(const std::shared_ptr<const JEvent
 	// loop-Get(...) to get reconstructed objects (and thereby activating the
 	// reconstruction algorithm) should be done outside of any mutex lock
 	// since multiple threads may call this method at the same time.
-	DEvent devent(event);
 
 	vector<const DBCALDigiHit*> dbcaldigihits;
 	
@@ -164,7 +163,7 @@ void JEventProcessor_BCAL_saturation::Process(const std::shared_ptr<const JEvent
 		}
 	} else {
 		// HDDM files are from simulation, so keep them even though they have no trigger
-		bool locIsHDDMEvent = devent.GetStatusBit(kSTATUS_HDDM);
+		bool locIsHDDMEvent = DEvent::GetStatusBit(event, kSTATUS_HDDM);
 		if (!locIsHDDMEvent) goodtrigger=0;		
 	}
 	

@@ -178,8 +178,7 @@ void JEventProcessor_BCAL_attenlength_gainratio::BeginRun(const std::shared_ptr<
 {
 	// This is called whenever the run number changes
 
-	DEvent devent(event);
-	DGeometry* geom = devent.GetDGeometry();
+	DGeometry* geom = DEvent::GetDGeometry(event);
 	geom->GetTargetZ(z_target_center);
 }
 
@@ -189,10 +188,9 @@ void JEventProcessor_BCAL_attenlength_gainratio::BeginRun(const std::shared_ptr<
 void JEventProcessor_BCAL_attenlength_gainratio::Process(const std::shared_ptr<const JEvent>& event)
 {
 	auto eventnumber = event->GetEventNumber();
-	DEvent devent (event);
 
     // simulation is tagged by being an HDDM file
-    bool locIsHDDMEvent = devent.GetStatusBit(kSTATUS_HDDM);
+    bool locIsHDDMEvent = DEvent::GetStatusBit(event, kSTATUS_HDDM);
 
 	// load BCAL geometry
   	vector<const DBCALGeometry *> BCALGeomVec;

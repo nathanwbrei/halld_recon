@@ -62,8 +62,8 @@ class DAnalysisResults_factory : public JFactoryT<DAnalysisResults>
 		pair<shared_ptr<const DKinFitChain>, const DKinFitResults*> Fit_Kinematics(const DReactionVertexInfo* locReactionVertexInfo, const DReaction* locReaction, const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, bool locUpdateCovMatricesFlag);
 		DKinFitResults* Build_KinFitResults(const DParticleCombo* locParticleCombo, DKinFitType locKinFitType, const shared_ptr<const DKinFitChain>& locKinFitChain);
 
+		std::shared_ptr<JLockService> jLockService;
 		unsigned int dDebugLevel = 0;
-		DEvent* dEvent = nullptr;
 		double dMinThrownMatchFOM;
 		DSourceComboer* dSourceComboer = nullptr;
 		DParticleComboCreator* dParticleComboCreator = nullptr;

@@ -30,9 +30,8 @@ void DEventRFBunch_factory::Init()
 //------------------
 void DEventRFBunch_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-	DEvent devent = DEvent(event);
-	DGeometry* locGeometry = devent.GetDGeometry();
-	JCalibration* calibration = devent.GetJCalibration();
+	DGeometry* locGeometry = DEvent::GetDGeometry(event);
+	JCalibration* calibration = DEvent::GetJCalibration(event);
 
 	vector<double> locBeamPeriodVector;
 	calibration->Get("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);

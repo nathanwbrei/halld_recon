@@ -52,8 +52,7 @@ void DNeutralShower_factory::Init()
 //------------------
 void DNeutralShower_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-  DEvent devent(event);
-  DGeometry* locGeometry = devent.GetDGeometry();
+  DGeometry* locGeometry = DEvent::GetDGeometry(event);
 
   double locTargetCenterZ;
   locGeometry->GetTargetZ(locTargetCenterZ);

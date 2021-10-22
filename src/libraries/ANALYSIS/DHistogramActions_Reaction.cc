@@ -16,7 +16,7 @@ void DHistogramAction_PID::Initialize(const std::shared_ptr<const JEvent>& locEv
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
 		for(size_t loc_i = 0; loc_i < locDesiredPIDs.size(); ++loc_i)
@@ -451,7 +451,7 @@ void DHistogramAction_PID::Initialize(const std::shared_ptr<const JEvent>& locEv
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DHistogramAction_PID::Run_Update(const std::shared_ptr<const JEvent>& locEvent)
@@ -789,7 +789,7 @@ void DHistogramAction_TrackVertexComparison::Initialize(const std::shared_ptr<co
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
 		for(size_t loc_i = 0; loc_i < locNumSteps; ++loc_i)
@@ -888,7 +888,7 @@ void DHistogramAction_TrackVertexComparison::Initialize(const std::shared_ptr<co
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DHistogramAction_TrackVertexComparison::Run_Update(const std::shared_ptr<const JEvent>& locEvent)
@@ -1037,7 +1037,7 @@ void DHistogramAction_ParticleComboKinematics::Initialize(const std::shared_ptr<
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
 		
@@ -1254,7 +1254,7 @@ void DHistogramAction_ParticleComboKinematics::Initialize(const std::shared_ptr<
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DHistogramAction_ParticleComboKinematics::Run_Update(const std::shared_ptr<const JEvent>& locEvent)
@@ -1265,7 +1265,7 @@ void DHistogramAction_ParticleComboKinematics::Run_Update(const std::shared_ptr<
 	vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
 	locEvent->Get(locAnalysisUtilitiesVector);
 	
-	DGeometry *locGeometry = GetDGeometry(locEvent);
+	DGeometry *locGeometry = DEvent::GetDGeometry(locEvent);
 	locGeometry->GetTargetZ(dTargetZCenter);
 
 	dParticleID = locParticleIDs[0];
@@ -1465,7 +1465,7 @@ void DHistogramAction_InvariantMass::Initialize(const std::shared_ptr<const JEve
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
 
@@ -1485,19 +1485,19 @@ void DHistogramAction_InvariantMass::Initialize(const std::shared_ptr<const JEve
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DHistogramAction_InvariantMass::Run_Update(const std::shared_ptr<const JEvent>& locEvent)
 {
-	DGeometry *locGeometry = GetDGeometry(locEvent);
+	DGeometry *locGeometry = DEvent::GetDGeometry(locEvent);
 	locGeometry->GetTargetZ(dTargetZCenter);
 
 	locEvent->GetSingle(dAnalysisUtilities);
 
 	//BEAM BUNCH PERIOD
 	vector<double> locBeamPeriodVector;
-	GetCalib(locEvent, "PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
+	DEvent::GetCalib(locEvent, "PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
 	dBeamBunchPeriod = locBeamPeriodVector[0];
 }
 
@@ -1591,7 +1591,7 @@ void DHistogramAction_MissingMass::Initialize(const std::shared_ptr<const JEvent
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
 
@@ -1617,19 +1617,19 @@ void DHistogramAction_MissingMass::Initialize(const std::shared_ptr<const JEvent
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DHistogramAction_MissingMass::Run_Update(const std::shared_ptr<const JEvent>& locEvent)
 {
-	DGeometry *locGeometry = GetDGeometry(locEvent);
+	DGeometry *locGeometry = DEvent::GetDGeometry(locEvent);
 	locGeometry->GetTargetZ(dTargetZCenter);
 
 	locEvent->GetSingle(dAnalysisUtilities);
 
 	//BEAM BUNCH PERIOD
 	vector<double> locBeamPeriodVector;
-	GetCalib(locEvent, "PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
+	DEvent::GetCalib(locEvent, "PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
 	dBeamBunchPeriod = locBeamPeriodVector[0];
 }
 
@@ -1706,7 +1706,7 @@ void DHistogramAction_MissingMassSquared::Initialize(const std::shared_ptr<const
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
 
@@ -1732,19 +1732,19 @@ void DHistogramAction_MissingMassSquared::Initialize(const std::shared_ptr<const
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DHistogramAction_MissingMassSquared::Run_Update(const std::shared_ptr<const JEvent>& locEvent)
 {
-	DGeometry *locGeometry = GetDGeometry(locEvent);
+	DGeometry *locGeometry = DEvent::GetDGeometry(locEvent);
 	locGeometry->GetTargetZ(dTargetZCenter);
 
 	locEvent->GetSingle(dAnalysisUtilities);
 
 	//BEAM BUNCH PERIOD
 	vector<double> locBeamPeriodVector;
-	GetCalib(locEvent, "PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
+	DEvent::GetCalib(locEvent, "PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
 	dBeamBunchPeriod = locBeamPeriodVector[0];
 }
 
@@ -1826,7 +1826,7 @@ void DHistogramAction_2DInvariantMass::Initialize(const std::shared_ptr<const JE
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
 
@@ -1837,19 +1837,19 @@ void DHistogramAction_2DInvariantMass::Initialize(const std::shared_ptr<const JE
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DHistogramAction_2DInvariantMass::Run_Update(const std::shared_ptr<const JEvent>& locEvent)
 {
-	DGeometry *locGeometry = GetDGeometry(locEvent);
+	DGeometry *locGeometry = DEvent::GetDGeometry(locEvent);
 	locGeometry->GetTargetZ(dTargetZCenter);
 
 	locEvent->GetSingle(dAnalysisUtilities);
 
 	//BEAM BUNCH PERIOD
 	vector<double> locBeamPeriodVector;
-	GetCalib(locEvent, "PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
+	DEvent::GetCalib(locEvent, "PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
 	dBeamBunchPeriod = locBeamPeriodVector[0];
 }
 
@@ -1945,7 +1945,7 @@ void DHistogramAction_Dalitz::Initialize(const std::shared_ptr<const JEvent>& lo
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
 
@@ -1956,7 +1956,7 @@ void DHistogramAction_Dalitz::Initialize(const std::shared_ptr<const JEvent>& lo
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DHistogramAction_Dalitz::Run_Update(const std::shared_ptr<const JEvent>& locEvent)
@@ -2061,7 +2061,7 @@ void DHistogramAction_KinFitResults::Initialize(const std::shared_ptr<const JEve
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
 
@@ -2203,7 +2203,7 @@ void DHistogramAction_KinFitResults::Initialize(const std::shared_ptr<const JEve
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DHistogramAction_KinFitResults::Run_Update(const std::shared_ptr<const JEvent>& locEvent)
@@ -2582,7 +2582,7 @@ void DHistogramAction_MissingTransverseMomentum::Initialize(const std::shared_pt
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
 
@@ -2595,7 +2595,7 @@ void DHistogramAction_MissingTransverseMomentum::Initialize(const std::shared_pt
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DHistogramAction_MissingTransverseMomentum::Run_Update(const std::shared_ptr<const JEvent>& locEvent)

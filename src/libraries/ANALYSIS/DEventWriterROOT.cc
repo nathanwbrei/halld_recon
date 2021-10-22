@@ -49,8 +49,7 @@ void DEventWriterROOT::Initialize(const std::shared_ptr<const JEvent>& locEvent)
 	locEvent->Get(locVertexInfos);
 
 	//Get Target Center Z
-	DEvent devent(locEvent);
-	DGeometry* locGeometry = devent.GetDGeometry();
+	DGeometry* locGeometry = DEvent::GetDGeometry(locEvent);
 	dTargetCenterZ = 65.0;
 	locGeometry->GetTargetZ(dTargetCenterZ);
 
@@ -72,8 +71,7 @@ void DEventWriterROOT::Run_Update(const std::shared_ptr<const JEvent>& locEvent)
 	locEvent->GetSingle(dAnalysisUtilities);
 
 	//Get Target Center Z
-	DEvent devent(locEvent);
-	DGeometry* locGeometry = devent.GetDGeometry();
+	DGeometry* locGeometry = DEvent::GetDGeometry(locEvent);
 	dTargetCenterZ = 65.0;
 	locGeometry->GetTargetZ(dTargetCenterZ);
 
@@ -1116,7 +1114,7 @@ void DEventWriterROOT::Fill_ThrownTree(const std::shared_ptr<const JEvent>& locE
 
 	const DBeamPhoton* locTaggedMCGenBeam = locTaggedMCGenBeams.empty() ? locMCGenBeams[0] : locTaggedMCGenBeams[0]; //if empty: will have to do. 
 
-	GetLockService(locEvent)->RootWriteLock();
+	DEvent::GetLockService(locEvent)->RootWriteLock();
 
 	//primary event info
 	dThrownTreeFillData.Fill_Single<UInt_t>("RunNumber", locEvent->GetRunNumber());
@@ -1132,7 +1130,7 @@ void DEventWriterROOT::Fill_ThrownTree(const std::shared_ptr<const JEvent>& locE
 	dThrownTreeInterface->Fill(dThrownTreeFillData);
 
 	
-	GetLockService(locEvent)->RootUnLock();
+	DEvent::GetLockService(locEvent)->RootUnLock();
 
 }
 
@@ -1303,7 +1301,7 @@ void DEventWriterROOT::Fill_DataTree(const std::shared_ptr<const JEvent>& locEve
 
 	/************************************************* EXECUTE ANALYSIS ACTIONS ************************************************/
 	       
-	GetLockService(locEvent)->RootWriteLock();
+	DEvent::GetLockService(locEvent)->RootWriteLock();
 
 	Bool_t locIsThrownTopologyFlag = kFALSE;
 	vector<Bool_t> locIsTrueComboFlags;
@@ -1409,7 +1407,7 @@ void DEventWriterROOT::Fill_DataTree(const std::shared_ptr<const JEvent>& locEve
 	DTreeInterface* locTreeInterface = dTreeInterfaceMap.find(locReaction)->second;
 	locTreeInterface->Fill(*locTreeFillData);	
 	
-	GetLockService(locEvent)->RootUnLock();
+	DEvent::GetLockService(locEvent)->RootUnLock();
 
 }
 

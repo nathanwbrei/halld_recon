@@ -25,8 +25,7 @@ DKinFitUtils_GlueX::DKinFitUtils_GlueX(const std::shared_ptr<const JEvent>& locE
 void DKinFitUtils_GlueX::Set_RunDependent_Data(const std::shared_ptr<const JEvent>& locEvent)
 {
 	locEvent->GetSingle(dAnalysisUtilities);
-	DEvent devent(locEvent);
-	dMagneticFieldMap = devent.GetBfield();
+	dMagneticFieldMap = DEvent::GetBfield(locEvent);
 }
 
 

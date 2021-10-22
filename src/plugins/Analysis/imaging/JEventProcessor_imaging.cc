@@ -101,8 +101,7 @@ void JEventProcessor_imaging::Init()
 void JEventProcessor_imaging::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
   // This is called whenever the run number changes
-  DEvent devent(event);
-  bfield=devent.GetBfield(); // TODO: NWB: Aesthetics
+  bfield=DEvent::GetBfield(event);
 
   dIsNoFieldFlag = ((dynamic_cast<const DMagneticFieldMapNoField*>(bfield)) != NULL);
 

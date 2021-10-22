@@ -16,7 +16,7 @@ void DHistogramAction_ObjectMemory::Initialize(const std::shared_ptr<const JEven
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
 
@@ -45,7 +45,7 @@ void DHistogramAction_ObjectMemory::Initialize(const std::shared_ptr<const JEven
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 bool DHistogramAction_ObjectMemory::Perform_Action(const std::shared_ptr<const JEvent>& locEvent, const DParticleCombo* locParticleCombo)
@@ -317,7 +317,7 @@ void DHistogramAction_Reconstruction::Initialize(const std::shared_ptr<const JEv
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
 			//If another thread has already created the folder, it just changes to it.
@@ -487,12 +487,12 @@ void DHistogramAction_Reconstruction::Initialize(const std::shared_ptr<const JEv
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DHistogramAction_Reconstruction::Run_Update(const std::shared_ptr<const JEvent>& locEvent)
 {
-	DGeometry* locGeometry = GetDGeometry(locEvent);
+	DGeometry* locGeometry = DEvent::GetDGeometry(locEvent);
 	double locTargetZCenter = 0.0;
 	locGeometry->GetTargetZ(locTargetZCenter);
 	
@@ -823,7 +823,7 @@ void DHistogramAction_DetectorMatching::Initialize(const std::shared_ptr<const J
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
@@ -1120,7 +1120,7 @@ void DHistogramAction_DetectorMatching::Initialize(const std::shared_ptr<const J
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DHistogramAction_DetectorMatching::Run_Update(const std::shared_ptr<const JEvent>& locEvent)
@@ -1129,7 +1129,7 @@ void DHistogramAction_DetectorMatching::Run_Update(const std::shared_ptr<const J
 	const DTOFGeometry *locTOFGeometry = nullptr;
 	locEvent->GetSingle(locTOFGeometry);
 	string locTOFParmsTable = locTOFGeometry->Get_CCDB_DirectoryName() + "/tof_parms";
-	GetCalib(locEvent, locTOFParmsTable.c_str(), tofparms);
+	DEvent::GetCalib(locEvent, locTOFParmsTable.c_str(), tofparms);
 	TOF_E_THRESHOLD = tofparms["TOF_E_THRESHOLD"];
 }
 
@@ -1688,7 +1688,7 @@ void DHistogramAction_DetectorPID::Initialize(const std::shared_ptr<const JEvent
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//So: Default tag is "", User can set it to something else
 		//In here, if tag is "", get from gparms, if not, leave it alone
@@ -2040,7 +2040,7 @@ void DHistogramAction_DetectorPID::Initialize(const std::shared_ptr<const JEvent
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 bool DHistogramAction_DetectorPID::Perform_Action(const std::shared_ptr<const JEvent>& locEvent, const DParticleCombo* locParticleCombo)
@@ -2262,7 +2262,7 @@ void DHistogramAction_Neutrals::Initialize(const std::shared_ptr<const JEvent>& 
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
 			//If another thread has already created the folder, it just changes to it.
@@ -2309,12 +2309,12 @@ void DHistogramAction_Neutrals::Initialize(const std::shared_ptr<const JEvent>& 
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DHistogramAction_Neutrals::Run_Update(const std::shared_ptr<const JEvent>& locEvent)
 {
-	DGeometry* locGeometry = GetDGeometry(locEvent);
+	DGeometry* locGeometry = DEvent::GetDGeometry(locEvent);
 	double locTargetZCenter = 0.0;
 	locGeometry->GetTargetZ(locTargetZCenter);
 
@@ -2426,7 +2426,7 @@ void DHistogramAction_DetectorMatchParams::Initialize(const std::shared_ptr<cons
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//So: Default tag is "", User can set it to something else
 		//In here, if tag is "", get from gparms, if not, leave it alone
@@ -2519,12 +2519,12 @@ void DHistogramAction_DetectorMatchParams::Initialize(const std::shared_ptr<cons
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 void DHistogramAction_DetectorMatchParams::Run_Update(const std::shared_ptr<const JEvent>& locEvent)
 {
-	DGeometry* locGeometry = GetDGeometry(locEvent);
+	DGeometry* locGeometry = DEvent::GetDGeometry(locEvent);
 	double locTargetZCenter = 0.0;
 	locGeometry->GetTargetZ(locTargetZCenter);
 	
@@ -2648,7 +2648,7 @@ void DHistogramAction_EventVertex::Initialize(const std::shared_ptr<const JEvent
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//So: Default tag is "", User can set it to something else
 		//In here, if tag is "", get from gparms, if not, leave it alone
@@ -2752,7 +2752,7 @@ void DHistogramAction_EventVertex::Initialize(const std::shared_ptr<const JEvent
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 bool DHistogramAction_EventVertex::Perform_Action(const std::shared_ptr<const JEvent>& locEvent, const DParticleCombo* locParticleCombo)
@@ -2875,7 +2875,7 @@ void DHistogramAction_DetectedParticleKinematics::Initialize(const std::shared_p
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//So: Default tag is "", User can set it to something else
 		//In here, if tag is "", get from gparms, if not, leave it alone
@@ -2981,7 +2981,7 @@ void DHistogramAction_DetectedParticleKinematics::Initialize(const std::shared_p
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 bool DHistogramAction_DetectedParticleKinematics::Perform_Action(const std::shared_ptr<const JEvent>& locEvent, const DParticleCombo* locParticleCombo)
@@ -3120,7 +3120,7 @@ void DHistogramAction_TrackShowerErrors::Initialize(const std::shared_ptr<const 
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//So: Default tag is "", User can set it to something else
 		//In here, if tag is "", get from gparms, if not, leave it alone
@@ -3303,7 +3303,7 @@ void DHistogramAction_TrackShowerErrors::Initialize(const std::shared_ptr<const 
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 bool DHistogramAction_TrackShowerErrors::Perform_Action(const std::shared_ptr<const JEvent>& locEvent, const DParticleCombo* locParticleCombo)
@@ -3432,7 +3432,7 @@ void DHistogramAction_NumReconstructedObjects::Initialize(const std::shared_ptr<
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
 
@@ -3571,7 +3571,7 @@ void DHistogramAction_NumReconstructedObjects::Initialize(const std::shared_ptr<
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 bool DHistogramAction_NumReconstructedObjects::Perform_Action(const std::shared_ptr<const JEvent>& locEvent, const DParticleCombo* locParticleCombo)
@@ -3813,7 +3813,7 @@ void DHistogramAction_TrackMultiplicity::Initialize(const std::shared_ptr<const 
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//So: Default tag is "", User can set it to something else
 		//In here, if tag is "", get from gparms, if not, leave it alone
@@ -3864,7 +3864,7 @@ void DHistogramAction_TrackMultiplicity::Initialize(const std::shared_ptr<const 
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 bool DHistogramAction_TrackMultiplicity::Perform_Action(const std::shared_ptr<const JEvent>& locEvent, const DParticleCombo* locParticleCombo)
@@ -3991,7 +3991,7 @@ void DHistogramAction_TriggerStudies::Initialize(const std::shared_ptr<const JEv
 
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
-	GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
 
@@ -4006,7 +4006,7 @@ void DHistogramAction_TriggerStudies::Initialize(const std::shared_ptr<const JEv
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
-	GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
+	DEvent::GetLockService(locEvent)->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 bool DHistogramAction_TriggerStudies::Perform_Action(const std::shared_ptr<const JEvent>& locEvent, const DParticleCombo* locParticleCombo)

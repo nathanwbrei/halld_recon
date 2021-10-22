@@ -74,7 +74,7 @@ void JEventProcessor_BCAL_SiPM_saturation::BeginRun(const std::shared_ptr<const 
 	// This is called whenever the run number changes
 
     attenuation_parameters.clear();
-    GetCalib(event, "/BCAL/attenuation_parameters", attenuation_parameters);
+    DEvent::GetCalib(event, "/BCAL/attenuation_parameters", attenuation_parameters);
     /*int channel = 0;
        for (int module=1; module<=48; module++) {
            for (int layer=1; layer<=4; layer++) {
@@ -96,15 +96,14 @@ void JEventProcessor_BCAL_SiPM_saturation::BeginRun(const std::shared_ptr<const 
 void JEventProcessor_BCAL_SiPM_saturation::Process(const std::shared_ptr<const JEvent>& event)
 {
 
-	DEvent devent(event);
   // If not Physics event call BCAL showers to initialize parameters
-  if (!devent.GetStatusBit(kSTATUS_PHYSICS_EVENT)) {
+  if (!DEvent::GetStatusBit(event, kSTATUS_PHYSICS_EVENT)) {
   	vector<const DBCALShower*> BCALShowers;
   	event->Get(BCALShowers);
   }
 
   // Check to see if this is a physics event
-  if (devent.GetStatusBit(kSTATUS_PHYSICS_EVENT)) {
+  if (DEvent::GetStatusBit(event, kSTATUS_PHYSICS_EVENT)) {
 
   // Check if thrown information is available
   vector<const DMCThrown*> MCThrowns;

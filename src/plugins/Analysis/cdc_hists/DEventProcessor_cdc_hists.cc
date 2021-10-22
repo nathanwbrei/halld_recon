@@ -84,9 +84,8 @@ void DEventProcessor_cdc_hists::Init()
 //------------------
 void DEventProcessor_cdc_hists::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-	DEvent devent(event);
 	LockState();
-	bfield = devent.GetBfield();
+	bfield = DEvent::GetBfield(event);
 	UnlockState();
 }
 

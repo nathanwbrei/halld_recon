@@ -582,7 +582,7 @@ void DSourceComboer::Set_RunDependent_Data(const std::shared_ptr<const JEvent>& 
 {
 	// Set member data
 	//GET THE GEOMETRY
-	DGeometry* locGeometry = GetDGeometry(locEvent);
+	DGeometry* locGeometry = DEvent::GetDGeometry(locEvent);
 
 	//TARGET INFORMATION
 	double locTargetCenterZ = 65.0;

@@ -34,9 +34,8 @@ void DEventRFBunch_factory_CalorimeterOnly::Init()
 //------------------
 void DEventRFBunch_factory_CalorimeterOnly::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-	DEvent locDEvent(event);
-	DGeometry* locGeometry = locDEvent.GetDGeometry();
-	JCalibration* locCalib = locDEvent.GetJCalibration();
+	DGeometry* locGeometry = DEvent::GetDGeometry(event);
+	JCalibration* locCalib = DEvent::GetJCalibration(event);
 
 	vector<double> locBeamPeriodVector;
 	locCalib->Get("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
@@ -64,7 +63,6 @@ void DEventRFBunch_factory_CalorimeterOnly::Process(const std::shared_ptr<const 
 		Select_RFBunch(event, locRFTimes[0]);
 	else
 		Create_NaNRFBunch();   // there should always be RFTime data, otherwise there's not enough info to choose
-	// TODO: Verify return value doesn't need exception
 }
 
 jerror_t DEventRFBunch_factory_CalorimeterOnly::Select_RFBunch(const std::shared_ptr<const JEvent>& event, const DRFTime* locRFTime)

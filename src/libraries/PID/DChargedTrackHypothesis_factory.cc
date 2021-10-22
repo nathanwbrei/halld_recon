@@ -55,13 +55,13 @@ void DChargedTrackHypothesis_factory::BeginRun(const std::shared_ptr<const JEven
 	   string dedx_theta_correction_file, dedx_i_theta_correction_file;
 	   map< string,string > dedx_theta_file_name, dedx_i_theta_file_name;
 
-	  if( GetCalib(event, "/CDC/dedx_theta/dedx_amp_theta_correction", dedx_theta_file_name) ) {
+	  if( DEvent::GetCalib(event, "/CDC/dedx_theta/dedx_amp_theta_correction", dedx_theta_file_name) ) {
 	    jerr << "Cannot find requested /CDC/dedx_theta/dedx_amp_theta_correction in CCDB for this run!" << endl;
 	    return; // RESOURCE_UNAVAILABLE;
 	  }
 	  else if( dedx_theta_file_name.find("file_name") != dedx_theta_file_name.end()
 		  && dedx_theta_file_name["file_name"] != "None" ) {
-	    auto *jlargecalib = GetJLargeCalibration(event);
+	    auto *jlargecalib = DEvent::GetJLargeCalibration(event);
 	    dedx_theta_correction_file = jlargecalib->GetResource(dedx_theta_file_name["file_name"]);
 	  }
 
@@ -73,7 +73,7 @@ void DChargedTrackHypothesis_factory::BeginRun(const std::shared_ptr<const JEven
 
          // get overall scaling factor 
 	 map<string,double> scale_factors;
-	 if( GetCalib(event, "/CDC/dedx_theta/dedx_amp_scale", scale_factors) ) {
+	 if( DEvent::GetCalib(event, "/CDC/dedx_theta/dedx_amp_scale", scale_factors) ) {
 	    jerr << "Cannot find requested /CDC/dedx_theta/dedx_amp_scale in CCDB for this run!" << endl;
 	    return; // RESOURCE_UNAVAILABLE;
 	 }
@@ -114,13 +114,13 @@ void DChargedTrackHypothesis_factory::BeginRun(const std::shared_ptr<const JEven
 	 fclose(dedxfile);
 
 	 // repeat for dedx from integral
-	 if( GetCalib(event, "/CDC/dedx_theta/dedx_int_theta_correction", dedx_i_theta_file_name) ) {
+	 if( DEvent::GetCalib(event, "/CDC/dedx_theta/dedx_int_theta_correction", dedx_i_theta_file_name) ) {
 	   jerr << "Cannot find requested /CDC/dedx_theta/dedx_int_theta_correction in CCDB for this run!" << endl;
 	   return; // RESOURCE_UNAVAILABLE;
 	 }
 	 else if( dedx_i_theta_file_name.find("file_name") != dedx_i_theta_file_name.end()
 		 && dedx_i_theta_file_name["file_name"] != "None" ) {
-	   auto *jlargecalib = GetJLargeCalibration(event);
+	   auto *jlargecalib = DEvent::GetJLargeCalibration(event);
 	   dedx_i_theta_correction_file = jlargecalib->GetResource(dedx_i_theta_file_name["file_name"]);
 	 }
 
@@ -132,7 +132,7 @@ void DChargedTrackHypothesis_factory::BeginRun(const std::shared_ptr<const JEven
 
 	 
          // get overall scaling factor 
-	 if( GetCalib(event, "/CDC/dedx_theta/dedx_int_scale", scale_factors) ) {
+	 if( DEvent::GetCalib(event, "/CDC/dedx_theta/dedx_int_scale", scale_factors) ) {
            jerr << "Cannot find requested /CDC/dedx_theta/dedx_int_scale in CCDB for this run!" << endl;
            return; // RESOURCE_UNAVAILABLE;
 	 }

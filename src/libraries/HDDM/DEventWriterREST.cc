@@ -56,7 +56,7 @@ DEventWriterREST::DEventWriterREST(const std::shared_ptr<const JEvent>& locEvent
 
     CCDB_CONTEXT_STRING = "";
     // if we can get the calibration context from the DANA interface, then save this as well
-	JCalibration *jcalib = GetJCalibration(locEventLoop);
+	JCalibration *jcalib = DEvent::GetJCalibration(locEventLoop);
 	if (jcalib) {
 		CCDB_CONTEXT_STRING = jcalib->GetContext();
 	}

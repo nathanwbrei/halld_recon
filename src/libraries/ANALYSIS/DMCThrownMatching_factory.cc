@@ -42,7 +42,7 @@ void DMCThrownMatching_factory::BeginRun(const std::shared_ptr<const JEvent>& lo
 	app->SetDefaultParameter("MCMATCH:MAX_TOTAL_ERROR", dMaxTotalParticleErrorForMatch);
 	app->SetDefaultParameter("MCMATCH:MIN_TRACK_MATCH", dMinTrackMatchHitFraction);
 
-	DGeometry* locGeometry = GetDGeometry(locEvent);
+	DGeometry* locGeometry = DEvent::GetDGeometry(locEvent);
 	locGeometry->GetTargetZ(dTargetCenter);
 }
 

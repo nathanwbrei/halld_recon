@@ -245,7 +245,7 @@ bool DEventSourceREST::GetObjects(const std::shared_ptr<const JEvent> &event, JF
    // TODO: NWB: Remove const cast if possible
 
    string dataClassName = factory->GetObjectName();
-   JCalibration *jcalib = GetJCalibration(event);
+   JCalibration *jcalib = DEvent::GetJCalibration(event);
 
 	//Get target center
 	//multiple reader threads can access this object: need lock
@@ -257,16 +257,16 @@ bool DEventSourceREST::GetObjects(const std::shared_ptr<const JEvent> &event, JF
 	}
 	if(locNewRunNumber)
 	{
-		DGeometry* locGeometry = GetDGeometry(event);
+		DGeometry* locGeometry = DEvent::GetDGeometry(event);
 		double locTargetCenterZ = 0.0;
 		locGeometry->GetTargetZ(locTargetCenterZ);
 		
 		map<string, double> beam_vals;
-		if (GetCalib(event, "PHOTON_BEAM/beam_spot",beam_vals))
+		if (DEvent::GetCalib(event, "PHOTON_BEAM/beam_spot",beam_vals))
 		  throw JException("Could not load CCDB table: PHOTON_BEAM/beam_spot");
 	
 		vector<double> locBeamPeriodVector;
-		if(GetCalib(event, "PHOTON_BEAM/RF/beam_period", locBeamPeriodVector))
+		if(DEvent::GetCalib(event, "PHOTON_BEAM/RF/beam_period", locBeamPeriodVector))
 			throw JException("Could not load CCDB table: PHOTON_BEAM/RF/beam_period");
 		double locBeamBunchPeriod = locBeamPeriodVector[0];
 
@@ -275,9 +275,9 @@ bool DEventSourceREST::GetObjects(const std::shared_ptr<const JEvent> &event, JF
 		locDIRCChannelStatus.push_back(new_dirc_status); 
 		locDIRCChannelStatus.push_back(new_dirc_status);
 		if(RECO_DIRC_CALC_LUT) { // get DIRC channel status from DB
-			if (GetCalib(event, "/DIRC/North/channel_status", locDIRCChannelStatus[0]))
+			if (DEvent::GetCalib(event, "/DIRC/North/channel_status", locDIRCChannelStatus[0]))
 				jout << "Error loading /DIRC/North/channel_status !" << endl;
-			if (GetCalib(event, "/DIRC/South/channel_status", locDIRCChannelStatus[1]))
+			if (DEvent::GetCalib(event, "/DIRC/South/channel_status", locDIRCChannelStatus[1]))
 				jout << "Error loading /DIRC/South/channel_status !" << endl;
 		}
 		
