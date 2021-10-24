@@ -1,11 +1,11 @@
 //
-// JEventProcessor_tinytest.cc
+// JEventProcessor_regressiontest.cc
 //
 // JANA event processor plugin writes out rest events to a file
 //
 // Richard Jones, 1-July-2012
 
-#include "JEventProcessor_tinytest.h"
+#include "JEventProcessor_regressiontest.h"
 
 #include <tuple>
 
@@ -14,31 +14,31 @@
 extern "C" {
    void InitPlugin(JApplication *app) {
       InitJANAPlugin(app);
-      app->Add(new JEventProcessor_tinytest());
+      app->Add(new JEventProcessor_regressiontest());
    }
 } // "extern C"
 
 //-------------------------------
 // Init
 //-------------------------------
-void JEventProcessor_tinytest::Init()
+void JEventProcessor_regressiontest::Init()
 {
     auto app = GetApplication();
-    app->SetDefaultParameter("tinytest:outfile_name", outfile_name);
+    app->SetDefaultParameter("regressiontest:outfile_name", outfile_name);
 
 }
 
 //-------------------------------
 // BeginRun
 //-------------------------------
-void JEventProcessor_tinytest::BeginRun(const std::shared_ptr<const JEvent>& event)
+void JEventProcessor_regressiontest::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
 }
 
 //-------------------------------
 // Process
 //-------------------------------
-void JEventProcessor_tinytest::Process(const std::shared_ptr<const JEvent>& event)
+void JEventProcessor_regressiontest::Process(const std::shared_ptr<const JEvent>& event)
 {
     auto app = GetApplication();
     auto evt_nr = event->GetEventNumber();
@@ -57,14 +57,14 @@ void JEventProcessor_tinytest::Process(const std::shared_ptr<const JEvent>& even
 //-------------------------------
 // EndRun
 //-------------------------------
-void JEventProcessor_tinytest::EndRun()
+void JEventProcessor_regressiontest::EndRun()
 {
 }
 
 //-------------------------------
 // Finish
 //-------------------------------
-void JEventProcessor_tinytest::Finish()
+void JEventProcessor_regressiontest::Finish()
 {
     outfile.open(outfile_name);
 

@@ -4,8 +4,8 @@
 // Creator: Richard Jones
 //
 
-#ifndef _JEventProcessor_tinytest_
-#define _JEventProcessor_tinytest_
+#ifndef _JEventProcessor_regressiontest_
+#define _JEventProcessor_regressiontest_
 
 #include <string>
 #include <map>
@@ -18,7 +18,7 @@ using std::string;
 #include <JANA/JEventProcessor.h>
 
 
-class JEventProcessor_tinytest : public JEventProcessor
+class JEventProcessor_regressiontest : public JEventProcessor
 {
 	public:
 		void Init() override;
@@ -33,4 +33,4 @@ private:
 		std::string outfile_name = "objcounts.tsv";
 };
 
-#endif // _JEventProcessor_tinytest_
+#endif // _JEventProcessor_regressiontest_
