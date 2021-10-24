@@ -37,7 +37,7 @@ class DTrackHitSelector_factory_ALT1:public JFactoryT<DTrackHitSelector>{
 		//------------------
 		// Process
 		//------------------
-		 void Process(const std::shared_ptr<const JEvent>& loop, uint64_t eventnumber)
+		 void Process(const std::shared_ptr<const JEvent>& loop) override
 		 {
 			// Reuse existing DTrackHitSelectorALT1 object.
 			if( selector ) Insert( selector );
