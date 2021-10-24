@@ -30,7 +30,7 @@ class JEventProcessor_tinytest : public JEventProcessor
 private:
 		map<tuple<uint64_t, string, string>, uint64_t> results;
 		std::ofstream outfile;
-		std::string outfile_name;
+		std::string outfile_name = "objcounts.tsv";
 };
 
 #endif // _JEventProcessor_tinytest_

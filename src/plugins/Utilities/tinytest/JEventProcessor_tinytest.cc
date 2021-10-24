@@ -24,13 +24,6 @@ extern "C" {
 void JEventProcessor_tinytest::Init()
 {
     auto app = GetApplication();
-    auto nevts = app->GetParameterValue<int>("jana:nevents");
-    auto nskip = app->GetParameterValue<int>("jana:nskip");
-    auto nthreads = app->GetNThreads();
-    auto filename = app->GetComponentSummary().event_sources[0].source_name;
-    std::stringstream ss;
-    ss << "/app/objcounts/objcounts_" << nevts << "_" << nskip << "_" << nthreads << "_jana2_" << filename << ".tsv";
-    outfile_name = ss.str();
     app->SetDefaultParameter("tinytest:outfile_name", outfile_name);
 
 }
