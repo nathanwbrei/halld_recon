@@ -130,7 +130,7 @@ void JEventProcessor_F250_mode10_pedestal::Process(const std::shared_ptr<const J
 	std::vector<const Df250WindowRawData*> f250WindowRawData_vec;
 	event->Get(f250WindowRawData_vec);
 
-	GetLockService(event)->RootWriteLock();
+	DEvent::GetLockService(event)->RootWriteLock();
 	// printf("in the lock\n");
 
 	
@@ -242,7 +242,7 @@ void JEventProcessor_F250_mode10_pedestal::Process(const std::shared_ptr<const J
 		}
 	}
 
-	GetLockService(event)->RootUnLock();
+	DEvent::GetLockService(event)->RootUnLock();
 }
 
 //------------------

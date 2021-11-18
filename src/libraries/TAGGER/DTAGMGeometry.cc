@@ -55,7 +55,7 @@ DTAGMGeometry::DTAGMGeometry(const std::shared_ptr<const JEvent>& event)
 	}
 	pthread_mutex_unlock(&print_mutex);
 
-	JCalibrationCCDB *jcalib =  dynamic_cast<JCalibrationCCDB*>( GetJCalibration(event) );
+	JCalibrationCCDB *jcalib =  dynamic_cast<JCalibrationCCDB*>( DEvent::GetJCalibration(event) );
 
 	Initialize(jcalib, print_messages);
 }

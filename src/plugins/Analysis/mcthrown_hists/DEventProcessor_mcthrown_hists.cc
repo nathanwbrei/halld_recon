@@ -89,7 +89,7 @@ void DEventProcessor_mcthrown_hists::Process(const std::shared_ptr<const JEvent>
 	
 	// FILL HISTOGRAMS
 	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
-	GetLockService(event)->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+	DEvent::GetLockService(event)->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
 	// Loop over thrown tracks
 	Nparticles_per_event->Fill(mcthrowns.size());
@@ -130,7 +130,7 @@ void DEventProcessor_mcthrown_hists::Process(const std::shared_ptr<const JEvent>
 		}
 	}
 
-	GetLockService(event)->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+	DEvent::GetLockService(event)->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 }
 
 //------------------

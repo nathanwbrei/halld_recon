@@ -243,7 +243,7 @@ void DL1MCTrigger_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
   
   if(print_messages) jout << "In DL1MCTrigger_factory, loading constants..." << jendl;
 
-  auto calibration = GetJCalibration(event);
+  auto calibration = DEvent::GetJCalibration(event);
   
   vector< double > fcal_gains_ch;
   vector< double > fcal_pedestals_ch;

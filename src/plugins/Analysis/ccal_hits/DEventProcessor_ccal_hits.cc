@@ -118,7 +118,7 @@ void DEventProcessor_ccal_hits::Process(const std::shared_ptr<const JEvent>& eve
 	nsamples_pedestal = 0;
 
 
-	GetLockService(event)->RootWriteLock();
+	DEvent::GetLockService(event)->RootWriteLock();
 
 
         for(unsigned int ii = 0; ii < ccal_digihits.size(); ii++){
@@ -182,7 +182,7 @@ void DEventProcessor_ccal_hits::Process(const std::shared_ptr<const JEvent>& eve
 	  tree1->Fill();
 	}
 
-	GetLockService(event)->RootUnLock();
+	DEvent::GetLockService(event)->RootUnLock();
 }
 
 //------------------

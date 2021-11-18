@@ -115,7 +115,7 @@ void DEventProcessor_ccal_display::Process(const std::shared_ptr<const JEvent>& 
 
 	cout << " Number of hits = " << ccal_digihits.size() <<  endl;
 
-	GetLockService(event)->RootWriteLock();
+	DEvent::GetLockService(event)->RootWriteLock();
 
         for(unsigned int ii = 0; ii < ccal_digihits.size(); ii++){
           const DCCALDigiHit *ccal_hit = ccal_digihits[ii];          
@@ -159,7 +159,7 @@ void DEventProcessor_ccal_display::Process(const std::shared_ptr<const JEvent>& 
 	      ccal_wave[ii]->Reset();
 	    }
 
-	    GetLockService(event)->RootUnLock();
+	    DEvent::GetLockService(event)->RootUnLock();
 	    return;
 	  }
 	}
@@ -191,7 +191,7 @@ void DEventProcessor_ccal_display::Process(const std::shared_ptr<const JEvent>& 
 	}
 	
 
-	GetLockService(event)->RootUnLock();
+	DEvent::GetLockService(event)->RootUnLock();
 }
 
 //------------------
