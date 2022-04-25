@@ -27,7 +27,7 @@ private:
     int m_format = (int) Format::Table;
     JEventLoop* m_event;
     bool m_indexes_built = false;
-    std::map<std::pair<std::string, std::string>, std::pair<int, const JFactory_base*>> m_factory_index;
+    std::map<std::string, std::pair<int, const JFactory_base*>> m_factory_index;
     std::ostream& m_out = std::cout;
     std::istream& m_in = std::cin;
 
@@ -37,15 +37,14 @@ public:
 
     void PrintEvent();
     void PrintFactories(int filter_level);
-    void PrintFactory(int factory_idx);
-    void PrintObjects(int factory_idx);
-    void PrintObject(int factory_idx, int object_idx);
-    void PrintFactoryParents(int factory_idx);
-    void PrintObjectParents(int factory_idx, int object_idx);
-    void PrintObjectAncestors(int factory_idx, int object_idx);
+    void PrintFactoryDetails(std::string factory_key);
+    void PrintObjects(std::string factory_key);
+    void PrintObject(std::string factory_key, int object_idx);
+    void PrintFactoryParents(std::string factory_key);
+    void PrintObjectParents(std::string factory_key, int object_idx);
+    void PrintObjectAncestors(std::string factory_key, int object_idx);
     void PrintHelp();
-
-    uint64_t DoReplLoop(uint64_t current_evt_nr);
+    void Loop();
 
     static void ToText(JEventLoop* event, bool asJson=false, std::ostream& out=std::cout);
     static void ToText(const std::vector<JFactory_base*>& factories, int filter_level, bool asJson=false, std::ostream& out=std::cout);
@@ -57,8 +56,25 @@ private:
     void BuildIndices();
     static std::vector<const JObject*> FindAllAncestors(const JObject*);
     static std::tuple<JFactory_base*, size_t, size_t> LocateObject(JEventLoop&, const JObject* obj);
-    static std::pair<std::string, std::vector<int>> Parse(const std::string&);
 };
 
+template <>
+inline std::string JParameterManager::stringify(JInspector::Format value) {
+    switch (value) {
+        case JInspector::Format::Table: return "table";
+        case JInspector::Format::Json: return "json";
+        case JInspector::Format::Tsv: return "tsv";
+        default: return "unknown";
+    }
+}
+
+template <>
+inline JInspector::Format JParameterManager::parse(const std::string& value) {
+    auto lowered = JParameterManager::to_lower(value);
+    if (lowered == "table") return JInspector::Format::Table;
+    if (lowered == "json") return JInspector::Format::Json;
+    if (lowered == "tsv") return JInspector::Format::Tsv;
+    else return JInspector::Format::Table;
+}
 
 #endif // _JIntrospection_h_

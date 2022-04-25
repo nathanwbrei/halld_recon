@@ -7,24 +7,24 @@
 #include "JTablePrinter.h"
 
 
-JInspector::JInspector(JEventLoop* event) : m_event(event) {
-    gPARMS->SetDefaultParameter("jana:enable_inspector", m_enabled);
-    gPARMS->SetDefaultParameter("jana:inspector_format", m_format, "Options are 'table','json'");
-}
+JInspector::JInspector(JEventLoop* event) : m_event(event) {}
 
-void JInspector::SetEvent(JEventLoop* event) {
-    m_event = event;
-    m_indexes_built = false;
-    m_factory_index.clear();
-}
 void JInspector::BuildIndices() {
     if (m_indexes_built) return;
-    auto facs = m_event->GetFactories();
+    m_factories.clear();
+    for (auto fac: m_event->GetFactorySet()->GetAllFactories()) {
+        m_factories.push_back(fac);
+    }
+    std::sort(m_factories.begin(), m_factories.end(), [](const JFactory_base* first, const JFactory_base* second){
+        return std::make_pair(first->GetDataClassName(), first->Tag()) <
+               std::make_pair(second->GetDataClassName(), second->Tag());});
+
     int i = 0;
-    for (auto fac : facs) {
-        std::pair<std::string, std::string> key = {fac->GetDataClassName(), fac->Tag()};
+    for (auto fac : m_factories) {
+        std::string key = MakeFactoryKey(fac->GetDataClassName(), fac->Tag());
         std::pair<int, const JFactory_base*> value = {i++, fac};
         m_factory_index.insert({key, value});
+        m_factory_index.insert({std::to_string(i), value});
     }
     m_indexes_built = true;
 }
@@ -70,47 +70,55 @@ void JInspector::PrintEvent() {
 }
 void JInspector::PrintFactories(int filter_level=0) {
     auto facs = m_event->GetFactories();
-    std::sort(facs.begin(), facs.end(), [](JFactory* first, JFactory* second){
+    std::sort(facs.begin(), facs.end(), [](JFactory_base* first, JFactory_base* second){
 		    return std::make_pair(first->GetDataClassName(), first->Tag()) <
 		           std::make_pair(second->GetDataClassName(), second->Tag());});
     ToText(facs, filter_level, m_format==(int)Format::Json, m_out);
 }
-void JInspector::PrintFactory(int factory_idx) {
-    auto facs = m_event->GetFactories();
-    if (factory_idx >= facs.size()) {
-        m_out << "(Error: Factory index out of range)\n";
+void JInspector::PrintObjects(std::string factory_key) {
+
+    auto result = m_factory_index.find(factory_key);
+    if (result == m_factory_index.end()) {
+        m_out << "(Error: Invalid factory name or index)\n";
         return;
     }
-    auto fac = facs[factory_idx];
-    ToText(fac, m_format==(int)Format::Json, m_out);
+    auto fac = const_cast<JFactory_base*>(result->second.second);
+    auto objs = fac->GetAs<JObject>();
+    ToText(objs, m_format==Format::Json, m_out);
 }
-void JInspector::PrintObjects(int factory_idx) {
-    auto facs = m_event->GetFactories();
-    if (factory_idx >= facs.size()) {
-        m_out << "(Error: Factory index out of range)" << std::endl;
+void JInspector::PrintFactoryDetails(std::string fac_key) {
+    BuildIndices();
+    auto result = m_factory_index.find(fac_key);
+    if (result == m_factory_index.end()) {
+        m_out << "(Error: Invalid factory name or index)\n";
         return;
     }
-    auto fac = facs[factory_idx];
-    std::vector<void*> voids = fac->Get();
-    std::vector<JObject*> objs;
-    for (void* item : voids) {
-	    objs.push_back((JObject*) item);
-    }
-    ToText(objs, m_format==(int)Format::Json, m_out);
+    auto fac = result->second.second;
+    ToText(fac, m_format==Format::Json, m_out);
 }
-void JInspector::PrintObject(int factory_idx, int object_idx) {
-    auto facs = m_event->GetFactories();
-    if (factory_idx >= facs.size()) {
-        m_out << "(Error: Factory index out of range)" << std::endl;
+void JInspector::PrintObject(std::string fac_key, int object_idx) {
+    BuildIndices();
+    auto result = m_factory_index.find(fac_key);
+    if (result == m_factory_index.end()) {
+        m_out << "(Error: Invalid factory name or index)\n";
         return;
     }
-    auto objs = facs[factory_idx]->Get();
-    if (object_idx >= objs.size()) {
+    JFactory_base* fac = const_cast<JFactory_base*>(result->second.second);
+    auto objs = fac->GetAs<JObject>();
+    if ((size_t) object_idx >= objs.size()) {
         m_out << "(Error: Object index out of range)" << std::endl;
         return;
     }
-    auto obj = (JObject*) objs[object_idx];
-    ToText(obj, m_format==(int)Format::Json, m_out);
+    auto obj = objs[object_idx];
+    ToText(obj, m_format==Format::Json, m_out);
+}
+std::string JInspector::MakeFactoryKey(std::string name, std::string tag) {
+    std::ostringstream ss;
+    ss << name;
+    if (!tag.empty()) {
+        ss << ":" << tag;
+    }
+    return ss.str();
 }
 void JInspector::PrintHelp() {
     m_out << "  -----------------------------------------" << std::endl;
@@ -126,9 +134,7 @@ void JInspector::PrintHelp() {
     m_out << "  poa  PrintObjectAncestors fac_idx obj_idx" << std::endl;
     m_out << "  vt   ViewAsTable" << std::endl;
     m_out << "  vj   ViewAsJson" << std::endl;
-    m_out << "  n    Next [evt_nr]" << std::endl;
-    m_out << "  f    Finish" << std::endl;
-    m_out << "  q    Quit" << std::endl;
+    m_out << "  x    Exit" << std::endl;
     m_out << "  h    Help" << std::endl;
     m_out << "  -----------------------------------------" << std::endl;
 }
@@ -602,24 +608,9 @@ void JInspector::PrintObjectAncestors(int factory_idx, int object_idx) {
     }
 }
 
-std::pair<std::string, std::vector<int>> JInspector::Parse(const std::string& user_input) {
-    std::string token;
-    std::stringstream ss(user_input);
-    ss >> token;
-    std::vector<int> args;
-    int arg;
-    while (ss >> arg) {
-        args.push_back(arg);
-    }
-    return {token, args};
-}
 
-uint64_t JInspector::DoReplLoop(uint64_t next_evt_nr) {
-    if (!m_enabled) {
-        return 0;
-    }
+void JInspector::Loop() {
     bool stay_in_loop = true;
-    next_evt_nr = 0;  // 0 denotes that Repl stops at the next event number by default
     m_out << std::endl;
     m_out << "--------------------------------------------------------------------------------------" << std::endl;
     m_out << "Welcome to JANA's interactive inspector! Type `Help` or `h` to see available commands." << std::endl;
@@ -628,10 +619,17 @@ uint64_t JInspector::DoReplLoop(uint64_t next_evt_nr) {
     while (stay_in_loop) {
         std::string user_input;
         m_out << std::endl << "JANA: ";
+        // Obtain a single line
         std::getline(m_in, user_input);
-        auto result = Parse(user_input);
-        auto token = result.first;
-        auto args = result.second;
+        // Split into tokens
+        std::stringstream ss(user_input);
+        std::string token;
+        ss >> token;
+        std::vector<std::string> args;
+        std::string arg;
+        while (ss >> arg) {
+            args.push_back(arg);
+        }
         if (token == "PrintEvent" || token == "pe") {
             PrintEvent();
         }
@@ -639,49 +637,39 @@ uint64_t JInspector::DoReplLoop(uint64_t next_evt_nr) {
             PrintFactories(0);
         }
         else if ((token == "PrintFactories" || token == "pf") && args.size() == 1) {
-            PrintFactories(args[0]);
+            PrintFactories(std::stoi(args[0]));
         }
         else if ((token == "PrintFactoryDetails" || token == "pfd") && (args.size() == 1)) {
-            PrintFactory(args[0]);
+            PrintFactoryDetails(args[0]);
         }
         else if ((token == "PrintObjects" || token == "po") && (args.size() == 1)) {
             PrintObjects(args[0]);
         }
         else if ((token == "PrintObject" || token == "po") && (args.size() == 2)) {
-            PrintObject(args[0], args[1]);
+            PrintObject(args[0], std::stoi(args[1]));
         }
         else if ((token == "PrintFactoryParents" || token == "pfp") && (args.size() == 1)) {
             PrintFactoryParents(args[0]);
         }
         else if ((token == "PrintObjectParents" || token == "pop") && (args.size() == 2)) {
-            PrintObjectParents(args[0], args[1]);
+            PrintObjectParents(args[0], std::stoi(args[1]));
         }
         else if ((token == "PrintObjectAncestors" || token == "poa") && (args.size() == 2)) {
-            PrintObjectAncestors(args[0], args[1]);
+            PrintObjectAncestors(args[0], std::stoi(args[1]));
         }
         else if (token == "ViewAsTable" || token == "vt") {
-            m_format = (int)Format::Table;
+            m_format = Format::Table;
             m_out << "(Switching to table view mode)" << std::endl;
         }
         else if (token == "ViewAsJson" || token == "vj") {
-            m_format = (int)Format::Json;
+            m_format = Format::Json;
             m_out << "(Switching to JSON view mode)" << std::endl;
         }
-        else if (token == "Next" || token == "n") {
+        else if (token == "Continue" || token == "c") {
             stay_in_loop = false;
-            m_enabled = true;
-            if (args.size() > 0) {
-                next_evt_nr = args[0];
-            }
         }
-        else if (token == "Finish" || token == "f") {
+        else if (token == "Exit" || token == "x") {
             stay_in_loop = false;
-            m_enabled = false;
-        }
-        else if (token == "Quit" || token == "q") {
-            stay_in_loop = false;
-            m_enabled = false;
-            m_event->GetJApplication()->Quit(false);
         }
         else if (token == "Help" || token == "h") {
             PrintHelp();
@@ -694,5 +682,4 @@ uint64_t JInspector::DoReplLoop(uint64_t next_evt_nr) {
             PrintHelp();
         }
     }
-    return next_evt_nr;
 }
