@@ -23,12 +23,16 @@ void DEventProcessor_dirc_hists::Init() {
 
 	auto params = GetApplication()->GetJParameterManager();
   DIRC_TRUTH_BARHIT = false;
-  if(params->Exists("DIRC:TRUTH_BARHIT"))
-	  params->GetParameter("DIRC:TRUTH_BARHIT",DIRC_TRUTH_BARHIT);
-
   DIRC_CUT_TDIFF = 3.0;
-  if(params->Exists("DIRC:HIST_CUT_TDIFF"))
-          params->GetParameter("DIRC:HIST_CUT_TDIFF",DIRC_CUT_TDIFF);
+  DIRC_BAR_DIAGNOSTIC = false;
+  DIRC_BAR_HIT_MAP = -1;
+
+  if(gPARMS) {
+    gPARMS->SetDefaultParameter("DIRC:TRUTH_BARHIT",DIRC_TRUTH_BARHIT);
+    gPARMS->SetDefaultParameter("DIRC:HIST_CUT_TDIFF",DIRC_CUT_TDIFF);
+    gPARMS->SetDefaultParameter("DIRC:BAR_DIAGNOSTIC",DIRC_BAR_DIAGNOSTIC);
+    gPARMS->SetDefaultParameter("DIRC:BAR_HIT_MAP",DIRC_BAR_HIT_MAP);
+  }
 
   TDirectory *dir = new TDirectoryFile("DIRC","DIRC");
   dir->cd();
@@ -47,27 +51,29 @@ void DEventProcessor_dirc_hists::Init() {
   dMaxChannels = DDIRCGeometry::kPMTs*DDIRCGeometry::kPixels;
 
   // plots for each bar
-  TDirectory *locBarDir = new TDirectoryFile("PerBarDiagnostic","PerBarDiagnostic");
-  locBarDir->cd();
-  for(int i=0; i<DDIRCGeometry::kBars; i++) {
-	  hDiffBar[i] = new TH2I(Form("hDiff_bar%02d",i), Form("Bar %02d; Channel ID; t_{calc}-t_{measured} [ns]; entries [#]", i), dMaxChannels, 0, dMaxChannels, 400,-20,20);
-	  hNphCBar[i] = new TH1I(Form("hNphC_bar%02d",i), Form("Bar %02d; # photons", i), 150, 0, 150);
-	  hNphCBarVsP[i] = new TH2I(Form("hNphCVsP_bar%d",i), Form("Bar %02d # photons vs. momentum; p (GeV/c); # photons", i), 120, 0, 12.0, 150, 0, 150);
-	  hNphCBarInclusive[i] = new TH1I(Form("hNphCInclusive_bar%02d",i), Form("Bar %02d; # photons", i), 150, 0, 150);
-	  hNphCBarInclusiveVsP[i] = new TH2I(Form("hNphCInclusiveVsP_bar%d",i), Form("Bar %02d # photons vs. momentum; p (GeV/c); # photons", i), 120, 0, 12.0, 150, 0, 150);
-	  hDeltaThetaCBar[i] = new TH1I(Form("hDeltaThetaC_bar%d",i), Form("Bar %02d cherenkov angle; #Delta#theta_{C} [rad]", i), 200,-0.2,0.2);
-	  hDeltaThetaCVsDeltaYBar[i] = new TH2I(Form("hDeltaThetaCVsDeltaYBar_bar%d", i), Form("Bar %02d cherenkov angle vs. Y position vs cherenkov angle; #Delta#theta_{C} [rad]; #Delta Y (cm)", i), 200,-0.2,0.2, 100, -2.0, 2.0);
-	  for(int locXbin=0; locXbin<40; locXbin++) {
-	    double xbin_min = -100.0 + locXbin*5.0;
-	    double xbin_max = xbin_min + 5.0;
-	    
-	    hDeltaThetaCVsDeltaYBarX[i][locXbin] = new TH2I(Form("hDeltaThetaCVsDeltaYBar_bar%d_%d", i,locXbin), Form("Bar %02d, xbin [%0.0f,%0.0f] Y position vs cherenkov angle; #Delta#theta_{C} [rad]; #Delta Y (cm)", i,xbin_min,xbin_max), 200,-0.2,0.2, 100, -2.0, 2.0);
-	    hDeltaThetaCVsDeltaYBarXPos[i][locXbin] = new TH2I(Form("hDeltaThetaCVsDeltaYBarPos_bar%d_%d", i,locXbin), Form("PiPlus Bar %02d, xbin [%0.0f,%0.0f] Y position vs cherenkov angle; #Delta#theta_{C} [rad]; #Delta Y (cm)", i,xbin_min,xbin_max), 200,-0.2,0.2, 100, -2.0, 2.0);
-	    hDeltaThetaCVsDeltaYBarXNeg[i][locXbin] = new TH2I(Form("hDeltaThetaCVsDeltaYBarNeg_bar%d_%d", i,locXbin), Form("PiMinus Bar %02d, xbin [%0.0f,%0.0f] Y position vs cherenkov angle; #Delta#theta_{C} [rad]; #Delta Y (cm)", i,xbin_min,xbin_max), 200,-0.2,0.2, 100, -2.0, 2.0);
-	  }
-  }
-  dir->cd();
- 
+  if(DIRC_BAR_DIAGNOSTIC) {
+    TDirectory *locBarDir = new TDirectoryFile("PerBarDiagnostic","PerBarDiagnostic");
+    locBarDir->cd();
+    for(int i=0; i<DDIRCGeometry::kBars; i++) {
+      hDiffBar[i] = new TH2I(Form("hDiff_bar%02d",i), Form("Bar %02d; Channel ID; t_{calc}-t_{measured} [ns]; entries [#]", i), dMaxChannels, 0, dMaxChannels, 400,-20,20);
+      hNphCBar[i] = new TH1I(Form("hNphC_bar%02d",i), Form("Bar %02d; # photons", i), 150, 0, 150);
+      hNphCBarVsP[i] = new TH2I(Form("hNphCVsP_bar%d",i), Form("Bar %02d # photons vs. momentum; p (GeV/c); # photons", i), 120, 0, 12.0, 150, 0, 150);
+      hNphCBarInclusive[i] = new TH1I(Form("hNphCInclusive_bar%02d",i), Form("Bar %02d; # photons", i), 150, 0, 150);
+      hNphCBarInclusiveVsP[i] = new TH2I(Form("hNphCInclusiveVsP_bar%d",i), Form("Bar %02d # photons vs. momentum; p (GeV/c); # photons", i), 120, 0, 12.0, 150, 0, 150);
+      hDeltaThetaCBar[i] = new TH1I(Form("hDeltaThetaC_bar%d",i), Form("Bar %02d cherenkov angle; #Delta#theta_{C} [rad]", i), 200,-0.2,0.2);
+      hDeltaThetaCVsDeltaYBar[i] = new TH2I(Form("hDeltaThetaCVsDeltaYBar_bar%d", i), Form("Bar %02d cherenkov angle vs. Y position vs cherenkov angle; #Delta#theta_{C} [rad]; #Delta Y (cm)", i), 200,-0.2,0.2, 100, -2.0, 2.0);
+      for(int locXbin=0; locXbin<40; locXbin++) {
+	double xbin_min = -100.0 + locXbin*5.0;
+	double xbin_max = xbin_min + 5.0;
+	
+	hDeltaThetaCVsDeltaYBarX[i][locXbin] = new TH2I(Form("hDeltaThetaCVsDeltaYBar_bar%d_%d", i,locXbin), Form("Bar %02d, xbin [%0.0f,%0.0f] Y position vs cherenkov angle; #Delta#theta_{C} [rad]; #Delta Y (cm)", i,xbin_min,xbin_max), 200,-0.2,0.2, 100, -2.0, 2.0);
+	hDeltaThetaCVsDeltaYBarXPos[i][locXbin] = new TH2I(Form("hDeltaThetaCVsDeltaYBarPos_bar%d_%d", i,locXbin), Form("PiPlus Bar %02d, xbin [%0.0f,%0.0f] Y position vs cherenkov angle; #Delta#theta_{C} [rad]; #Delta Y (cm)", i,xbin_min,xbin_max), 200,-0.2,0.2, 100, -2.0, 2.0);
+	hDeltaThetaCVsDeltaYBarXNeg[i][locXbin] = new TH2I(Form("hDeltaThetaCVsDeltaYBarNeg_bar%d_%d", i,locXbin), Form("PiMinus Bar %02d, xbin [%0.0f,%0.0f] Y position vs cherenkov angle; #Delta#theta_{C} [rad]; #Delta Y (cm)", i,xbin_min,xbin_max), 200,-0.2,0.2, 100, -2.0, 2.0);
+      }
+    }
+    dir->cd();
+  } 
+
   // plots for each hypothesis
   for(uint loc_i=0; loc_i<dFinalStatePIDs.size(); loc_i++) {
 	  Particle_t locPID = dFinalStatePIDs[loc_i];
@@ -156,18 +162,20 @@ void DEventProcessor_dirc_hists::Init() {
 	  dir->cd();
   }
   
-  int locBar = 3;
-  string locParticleName = "PiPlus";
-  // occupancy for fixed position and momentum
-  TDirectory *locMapDir = new TDirectoryFile("HitMapBar3","HitMapBar3");
-  locMapDir->cd();
-  for(int locXbin=0; locXbin<40; locXbin++) {
-	  double xbin_min = -100.0 + locXbin*5.0;
-	  double xbin_max = xbin_min + 5.0;
-	 
-	  hHitTimeMap[locXbin] = new TH1I(Form("hHitTimeMap_%s_%d_%d",locParticleName.data(),locBar,locXbin), Form("Bar %d, xbin [%0.0f,%0.0f]; t_{measured} [ns]; entries [#]",locBar,xbin_min,xbin_max), 100,0,100); 
-	  hPixelHitMap[locXbin] = new TH2S(Form("hPixelHit_%s_%d_%d",locParticleName.data(),locBar,locXbin), Form("Bar %d, xbin [%0.0f,%0.0f]; pixel rows; pixel columns", locBar,xbin_min,xbin_max), 144, -0.5, 143.5, DDIRCGeometry::kBars, -0.5, 47.5);
-	  hPixelHitMapReflected[locXbin] = new TH2S(Form("hPixelHitReflected_%s_%d_%d",locParticleName.data(),locBar,locXbin), Form("Bar %d, xbin [%0.0f,%0.0f]; pixel rows; pixel columns", locBar,xbin_min,xbin_max), 144, -0.5, 143.5, DDIRCGeometry::kBars, -0.5, 47.5);
+  if(DIRC_BAR_HIT_MAP > 0) {
+    int locBar = DIRC_BAR_HIT_MAP;
+    string locParticleName = "PiPlus";
+    // occupancy for fixed position and momentum
+    TDirectory *locMapDir = new TDirectoryFile(Form("HitMapBar%d",locBar),Form("HitMapBar%d",locBar));
+    locMapDir->cd();
+    for(int locXbin=0; locXbin<40; locXbin++) {
+      double xbin_min = -100.0 + locXbin*5.0;
+      double xbin_max = xbin_min + 5.0;
+      
+      hHitTimeMap[locXbin] = new TH1I(Form("hHitTimeMap_%s_%d_%d",locParticleName.data(),locBar,locXbin), Form("Bar %d, xbin [%0.0f,%0.0f]; t_{measured} [ns]; entries [#]",locBar,xbin_min,xbin_max), 100,0,100); 
+      hPixelHitMap[locXbin] = new TH2S(Form("hPixelHit_%s_%d_%d",locParticleName.data(),locBar,locXbin), Form("Bar %d, xbin [%0.0f,%0.0f]; pixel rows; pixel columns", locBar,xbin_min,xbin_max), 144, -0.5, 143.5, DDIRCGeometry::kBars, -0.5, 47.5);
+      hPixelHitMapReflected[locXbin] = new TH2S(Form("hPixelHitReflected_%s_%d_%d",locParticleName.data(),locBar,locXbin), Form("Bar %d, xbin [%0.0f,%0.0f]; pixel rows; pixel columns", locBar,xbin_min,xbin_max), 144, -0.5, 143.5, DDIRCGeometry::kBars, -0.5, 47.5);
+    }
   }
 
   gDirectory->cd("/");
@@ -286,15 +294,17 @@ void DEventProcessor_dirc_hists::Process(const std::shared_ptr<const JEvent>& ev
 
 			  // if find track which points to relevant bar, fill photon yield and matched
 			  int locXbin = (int)(posInBar.X()/5.0) + 19;
-			  if(locXbin >= 0 && locXbin < 40 && locBar == 3 && locPID == PiPlus && momInBar.Mag() > 4.0) {
-				  
-				  GetLockService(event)->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
-				  hHitTimeMap[locXbin]->Fill(locHitTime);
-				  if(locHitTime < 38)
-					  hPixelHitMap[locXbin]->Fill(pixel_row, pixel_col);
-				  else
-					  hPixelHitMapReflected[locXbin]->Fill(pixel_row, pixel_col);	  
-				  GetLockService(event)->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+			  if(DIRC_BAR_HIT_MAP > 0) {
+			    if(locXbin >= 0 && locXbin < 40 && locBar == DIRC_BAR_HIT_MAP && locPID == PiPlus && momInBar.Mag() > 4.0) {
+			      
+			      japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+			      hHitTimeMap[locXbin]->Fill(locHitTime);
+			      if(locHitTime < 38)
+				hPixelHitMap[locXbin]->Fill(pixel_row, pixel_col);
+			      else
+				hPixelHitMapReflected[locXbin]->Fill(pixel_row, pixel_col);	  
+			      japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+			    }
 			  }
 
 			  if(locDIRCPhotons.size() > 0) {
@@ -333,7 +343,7 @@ void DEventProcessor_dirc_hists::Process(const std::shared_ptr<const JEvent>& ev
 							  hDiffVsChannelDirect[locPID][locBox]->Fill(locChannel,locDeltaT);
 						  else 
 							  hDiffVsChannelReflected[locPID][locBox]->Fill(locChannel,locDeltaT);
-						  if(locPID == PiPlus || locPID == PiMinus) 
+						  if(DIRC_BAR_DIAGNOSTIC && (locPID == PiPlus || locPID == PiMinus)) 
 							  hDiffBar[locBar]->Fill(locChannel,locDeltaT);
 					  }
 					  
@@ -342,7 +352,7 @@ void DEventProcessor_dirc_hists::Process(const std::shared_ptr<const JEvent>& ev
 						  hThetaC[locPID][locBox]->Fill(locThetaC);
 						  hDeltaThetaC[locPID][locBox]->Fill(locThetaC-locExpectedThetaC);
 						  hDeltaThetaCVsP[locPID][locBox]->Fill(momInBar.Mag(), locThetaC-locExpectedThetaC);
-						  if(locPID == PiPlus || locPID == PiMinus) {
+						  if(DIRC_BAR_DIAGNOSTIC && (locPID == PiPlus || locPID == PiMinus)) {
 							  hDeltaThetaCBar[locBar]->Fill(locThetaC-locExpectedThetaC);
 							  if(momInBar.Mag() > 2.0) {
 							    hDeltaThetaCVsDeltaYBar[locBar]->Fill(locThetaC-locExpectedThetaC,posInBar.Y() - locDIRCGeometry->GetBarY(locBar));
@@ -372,7 +382,7 @@ void DEventProcessor_dirc_hists::Process(const std::shared_ptr<const JEvent>& ev
 		  hThetaCVsP[locPID][locBox]->Fill(momInBar.Mag(), locDIRCMatchParams->dThetaC); 
 		  hDeltaTVsP[locPID][locBox]->Fill(momInBar.Mag(), locDIRCMatchParams->dDeltaT);
 
-		  if(locPID == PiPlus || locPID == PiMinus) {
+		  if(DIRC_BAR_DIAGNOSTIC && (locPID == PiPlus || locPID == PiMinus)) {
 			  hNphCBar[locBar]->Fill(locDIRCMatchParams->dNPhotons);
 			  hNphCBarInclusive[locBar]->Fill(locPhotonInclusive);
 			  hNphCBarVsP[locBar]->Fill(momInBar.Mag(), locDIRCMatchParams->dNPhotons);

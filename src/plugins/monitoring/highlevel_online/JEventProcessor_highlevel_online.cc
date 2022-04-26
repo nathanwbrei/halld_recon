@@ -225,8 +225,11 @@ void JEventProcessor_highlevel_online::Init()
 	}
 	dHist_NumTriggers->GetXaxis()->SetBinLabel(33, "Total");
 
+
 	dHist_BCALVsFCAL_TrigBit1 = new TH2I("BCALVsFCAL_TrigBit1","TRIG BIT 1;E (FCAL) (count);E (BCAL) (count)", 200, 0., 10000, 200, 0., 50000);
-	
+
+	dHist_CCALVsFCAL_TrigBit1 = new TH2I("CCALVsFCAL_TrigBit1","TRIG BIT 1;E (FCAL) (count);E (CCAL) (count)", 100, 0., 20000, 200, 0., 35000);
+
 	dHist_L1bits_gtp = new TH1I("L1bits_gtp", "L1 trig bits from GTP;Trig. bit (1-32)", 34, 0.5, 34.5);
 	dHist_L1bits_fp  = new TH1I("L1bits_fp", "L1 trig bits from FP;Trig. bit (1-32)", 32, 0.5, 32.5);
         // BCAL LED Pseudo Trigger(1200 hits in BCAL) //
@@ -347,8 +350,9 @@ void JEventProcessor_highlevel_online::BeginRun(const std::shared_ptr<const JEve
 	if(GetCalib(event, "/ANALYSIS/beam_asymmetry/coherent_energy", photon_beam_param) == false)
 		dCoherentPeakRange = pair<double, double>(photon_beam_param["cohmin_energy"], photon_beam_param["cohedge_energy"]);
 
-	fcal_cell_thr  =  64;
+	fcal_cell_thr  =  65;
 	bcal_cell_thr  =  20;
+	ccal_cell_thr  =  30;
 
 	fcal_row_mask_min = 26;
 	fcal_row_mask_max = 32;
@@ -405,6 +409,9 @@ void JEventProcessor_highlevel_online::Process(const std::shared_ptr<const JEven
 	vector<const DBCALDigiHit*> locBCALDigiHits;
 	locEvent->Get(locBCALDigiHits);
         
+	vector<const DCCALDigiHit*> locCCALDigiHits;
+	locEventLoop->Get(locCCALDigiHits);
+
         // BCAL LED Pseudo Trigger//
         vector<const DBCALHit*> locdbcalhits;
         locEvent->Get(locdbcalhits);
@@ -570,22 +577,24 @@ void JEventProcessor_highlevel_online::Process(const std::shared_ptr<const JEven
 	//Get total FCAL energy
 	int fcal_tot_en = 0;
 	for( auto fcal_hit : locFCALDigiHits){
-		int row = fcal_hit->row;
-		int col = fcal_hit->column;
-		if( (row >= fcal_row_mask_min) && (row <= fcal_row_mask_max) ){
-			if( (col >= fcal_col_mask_min) && (col <= fcal_col_mask_max) ) continue;
-		}
 
-		if( ((int32_t)fcal_hit->pulse_peak-100) <= fcal_cell_thr) continue;
-
-		uint32_t adc_time = (fcal_hit->pulse_time >> 6) & 0x1FF; // consider only course time
-		if((adc_time < 15) || (adc_time > 50)) continue; // changed from 20 and 70 based on run 30284  2/5/2017 DL
-
-		Int_t pulse_int = fcal_hit->pulse_integral - fcal_hit->nsamples_integral*100;
-		if(pulse_int < 0) continue;
-		fcal_tot_en += pulse_int;
+	  //		int row = fcal_hit->row;
+	  //		int col = fcal_hit->column;
+	  
+	  //		if( (row >= fcal_row_mask_min) && (row <= fcal_row_mask_max) ){
+	  //			if( (col >= fcal_col_mask_min) && (col <= fcal_col_mask_max) ) continue;
+	  //		}
+	  
+	  if( ((int32_t)fcal_hit->pulse_peak-100) <= fcal_cell_thr) continue;
+	  
+	  uint32_t adc_time = (fcal_hit->pulse_time >> 6) & 0x1FF; // consider only course time
+	  if((adc_time < 15) || (adc_time > 50)) continue; // changed from 20 and 70 based on run 30284  2/5/2017 DL
+	  
+	  Int_t pulse_int = fcal_hit->pulse_integral - fcal_hit->nsamples_integral*100;
+	  if(pulse_int < 0) continue;
+	  fcal_tot_en += pulse_int;
 	}
-
+	
 	//Get total BCAL energy
 	int bcal_tot_en = 0;
 	for(auto bcal_hit : locBCALDigiHits){
@@ -594,6 +603,16 @@ void JEventProcessor_highlevel_online::Process(const std::shared_ptr<const JEven
 		if(pulse_int < 0) continue;
 		bcal_tot_en += pulse_int;
 	}
+
+	//Get total CCAL energy
+	int ccal_tot_en = 0;
+	for(auto ccal_hit : locCCALDigiHits){
+	  if( ((int32_t)ccal_hit->pulse_peak-100) <= ccal_cell_thr) continue;
+	  Int_t pulse_int = ccal_hit->pulse_integral - ccal_hit->nsamples_integral*100;
+	  if(pulse_int < 0) continue;
+	  ccal_tot_en += pulse_int;
+	}
+
 	
 	/********************************************************* PREPARE BEAM PHOTONS *******************************************************/
 
@@ -719,8 +738,12 @@ void JEventProcessor_highlevel_online::Process(const std::shared_ptr<const JEven
 
 	if(locL1Trigger != NULL)
 	{
+	  
 		if(locgtpTrigBits[0] == 1) //bit 1
-			dHist_BCALVsFCAL_TrigBit1->Fill(Float_t(fcal_tot_en), Float_t(bcal_tot_en));
+                  {
+                    dHist_BCALVsFCAL_TrigBit1->Fill(Float_t(fcal_tot_en), Float_t(bcal_tot_en));
+                    dHist_CCALVsFCAL_TrigBit1->Fill(Float_t(fcal_tot_en), Float_t(ccal_tot_en));
+                  }
 
 		// trigger bits
 		for(int bit=1; bit<=32; bit++){

@@ -289,7 +289,8 @@ std::set<uint32_t> DTranslationTable::GetSystemsToParse(string systems, int syst
 		rocid_map[name_to_id[        "CCAL_REF"]] = {90};
 		rocid_map[name_to_id[        "DIRC"]] = {92};
 		rocid_map[name_to_id[         "TRD"]] = {76};
-
+		rocid_map[name_to_id[       "FMWPC"]] = {88};
+		
 	}
 
 	// Parse string of system names
@@ -565,6 +566,7 @@ void DTranslationTable::ApplyTranslationTable(const std::shared_ptr<const JEvent
       // Create the appropriate hit type based on detector type
       switch (chaninfo.det_sys) {
          case CDC:  MakeCDCDigiHit(chaninfo.cdc, p); break;
+         case FMWPC:  MakeFMWPCDigiHit(chaninfo.fmwpc, p); break;
 		 //case TRD:  MakeTRDDigiHit(chaninfo.trd, p); break;
          default: 
              if (VERBOSE > 4) ttout << "       - Don't know how to make DigiHit objects for this detector type!"<<jendl;
@@ -800,25 +802,27 @@ void DTranslationTable::ApplyTranslationTable(const std::shared_ptr<const JEvent
       // re-enable call stack recording
       // loop->EnableCallStackRecording();
 
-		// if(CALL_STACK){
-      	// Addf250ObjectsToCallStack(loop, "DBCALDigiHit");
-      	// Addf250ObjectsToCallStack(loop, "DFCALDigiHit");
-      	// Addf250ObjectsToCallStack(loop, "DCCALDigiHit");
-      	// Addf250ObjectsToCallStack(loop, "DCCALRefDigiHit");
-      	// Addf250ObjectsToCallStack(loop, "DSCDigiHit");
-      	// Addf250ObjectsToCallStack(loop, "DTOFDigiHit");
-      	// Addf250ObjectsToCallStack(loop, "DTACDigiHit");
-      	// Addf125CDCObjectsToCallStack(loop, "DCDCDigiHit", cdcpulses.size()>0);
-      	// Addf125FDCObjectsToCallStack(loop, "DFDCCathodeDigiHit", fdcpulses.size()>0);
-      	// AddF1TDCObjectsToCallStack(loop, "DBCALTDCDigiHit");
-      	// AddF1TDCObjectsToCallStack(loop, "DFDCWireDigiHit");
-      	// AddF1TDCObjectsToCallStack(loop, "DRFDigiTime");
-      	// AddF1TDCObjectsToCallStack(loop, "DRFTDCDigiTime");
-      	// AddF1TDCObjectsToCallStack(loop, "DSCTDCDigiHit");
-      	// AddCAEN1290TDCObjectsToCallStack(loop, "DTOFTDCDigiHit");
-      	// AddCAEN1290TDCObjectsToCallStack(loop, "DTACTDCDigiHit");
-		// }
-   //}
+		if(CALL_STACK){
+      	Addf250ObjectsToCallStack(loop, "DBCALDigiHit");
+      	Addf250ObjectsToCallStack(loop, "DFCALDigiHit");
+      	Addf250ObjectsToCallStack(loop, "DCCALDigiHit");
+      	Addf250ObjectsToCallStack(loop, "DCCALRefDigiHit");
+      	Addf250ObjectsToCallStack(loop, "DSCDigiHit");
+      	Addf250ObjectsToCallStack(loop, "DTOFDigiHit");
+      	Addf250ObjectsToCallStack(loop, "DTACDigiHit");
+      	Addf125CDCObjectsToCallStack(loop, "DCDCDigiHit", cdcpulses.size()>0);
+      	Addf125FDCObjectsToCallStack(loop, "DFDCCathodeDigiHit", fdcpulses.size()>0);
+      	Addf125CDCObjectsToCallStack(loop, "DFMWPCDigiHit", cdcpulses.size()>0);
+      	AddF1TDCObjectsToCallStack(loop, "DBCALTDCDigiHit");
+      	AddF1TDCObjectsToCallStack(loop, "DFDCWireDigiHit");
+      	AddF1TDCObjectsToCallStack(loop, "DRFDigiTime");
+      	AddF1TDCObjectsToCallStack(loop, "DRFTDCDigiTime");
+      	AddF1TDCObjectsToCallStack(loop, "DSCTDCDigiHit");
+      	AddCAEN1290TDCObjectsToCallStack(loop, "DTOFTDCDigiHit");
+      	AddCAEN1290TDCObjectsToCallStack(loop, "DTACTDCDigiHit");
+      	AddCAEN1290TDCObjectsToCallStack(loop, "DFWMPCDigiHit");
+		}
+   }
 }
 
 //---------------------------------
@@ -1383,6 +1387,31 @@ DTRDDigiHit* DTranslationTable::MakeTRDDigiHit(
 }
 
 //---------------------------------
+// MakeFMWPCDigiHit
+//---------------------------------
+DFMWPCDigiHit* DTranslationTable::MakeFMWPCDigiHit(const FMWPCIndex_t &idx,
+                                                 const Df125CDCPulse *p) const
+{
+	DFMWPCDigiHit *h = new DFMWPCDigiHit();
+	h->layer             = idx.layer;
+	h->wire              = idx.wire;
+	h->pulse_peak        = p->first_max_amp;
+	h->pulse_integral    = p->integral;
+	h->pulse_time        = p->le_time;
+	h->pedestal          = p->pedestal;
+	h->QF                = p->time_quality_bit + (p->overflow_count<<1);
+	h->nsamples_integral = p->nsamples_integral;
+	h->nsamples_pedestal = p->nsamples_pedestal;
+
+	h->AddAssociatedObject(p);
+
+	vDFMWPCDigiHit.push_back(h);
+   
+	return h;
+}
+
+
+//---------------------------------
 // MakeDigiWindowRawData
 //---------------------------------
 DGEMDigiWindowRawData* DTranslationTable::MakeGEMDigiWindowRawData(
@@ -1815,6 +1844,10 @@ const DTranslationTable::csc_t
              if ( det_channel.trd == in_channel.trd )
                 found = true;
              break;
+	  case DTranslationTable::FMWPC:
+             if ( det_channel.fmwpc == in_channel.fmwpc )
+                found = true;
+             break;
 
           default:
              jerr << "DTranslationTable::GetDAQIndex(): "
@@ -1907,6 +1940,10 @@ string DTranslationTable::Channel2Str(const DChannelInfo &in_channel) const
     case DTranslationTable::TRD:
        ss << "plane = " << in_channel.trd.plane;
        ss << "strip = " << in_channel.trd.strip;
+       break;
+    case DTranslationTable::FMWPC:
+       ss << "layer = " << in_channel.fmwpc.layer;
+       ss << "wire = " << in_channel.fmwpc.wire;
        break;
 
     default:
@@ -2202,6 +2239,8 @@ DTranslationTable::Detector_t DetectorStr2DetID(string &type)
 	   return DTranslationTable::DIRC;
    } else if ( type == "trd" ) {
 	   return DTranslationTable::TRD;
+   } else if ( type == "fmwpc" ) {
+	   return DTranslationTable::FMWPC;
    } else
    {
       return DTranslationTable::UNKNOWN_DETECTOR;
@@ -2476,6 +2515,10 @@ void StartElement(void *userData, const char *xmlname, const char **atts)
          case DTranslationTable::TRD:
 	      ci.trd.plane = plane;
 	      ci.trd.strip = strip;
+	      break;
+         case DTranslationTable::FMWPC:
+	      ci.fmwpc.layer = layer;
+	      ci.fmwpc.wire = wire;
 	      break;
         case DTranslationTable::UNKNOWN_DETECTOR:
 		 default:

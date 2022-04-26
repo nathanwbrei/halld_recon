@@ -56,8 +56,8 @@ void JEventProcessor_cppFMWPC::Init()
     FMWPCwiresT[k] = new TH2D(hnam, htit,  145, 0., 145., 100, 0., 500.);
 
     sprintf(hnam,"FMWPCwiresE%d",k);
-    sprintf(htit,"Chamber %d FMWPC hit dE vs. wire number",k);
-    FMWPCwiresE[k] = new TH2D(hnam, htit,  145, 0., 145., 500, 0., 100.);
+    sprintf(htit,"Chamber %d FMWPC hit q vs. wire number",k);
+    FMWPCwiresQ[k] = new TH2D(hnam, htit,  145, 0., 145., 500, 0., 100.);
   }
 
 
@@ -117,7 +117,7 @@ void JEventProcessor_cppFMWPC::Process(const std::shared_ptr<const JEvent> &even
     const DFMWPCHit *hit1 = fmwpcHits[k];
     //std::cout<<hit->layer<<" / "<<hit->wire<<" / "<<hit->t<<std::endl;
     FMWPCwiresT[hit1->layer-1]->Fill((double)hit1->wire, (double)hit1->t);
-    FMWPCwiresE[hit1->layer-1]->Fill((double)hit1->wire, (double)hit1->dE);
+    FMWPCwiresQ[hit1->layer-1]->Fill((double)hit1->wire, (double)hit1->q);
   }
 
 

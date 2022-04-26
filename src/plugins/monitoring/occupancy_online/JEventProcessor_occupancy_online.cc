@@ -16,6 +16,7 @@
 #include <CDC/DCDCDigiHit.h>
 #include <FDC/DFDCCathodeDigiHit.h>
 #include <FDC/DFDCWireDigiHit.h>
+#include <FMWPC/DFMWPCDigiHit.h>
 #include <FCAL/DFCALDigiHit.h>
 #include <PAIR_SPECTROMETER/DPSCDigiHit.h>
 #include <PAIR_SPECTROMETER/DPSCTDCDigiHit.h>
@@ -45,6 +46,7 @@
 	X(DCDCDigiHit) \
 	X(DFDCCathodeDigiHit) \
 	X(DFDCWireDigiHit) \
+	X(DFMWPCDigiHit) \
 	X(DFCALDigiHit) \
 	X(DPSCDigiHit) \
 	X(DPSCTDCDigiHit) \
@@ -181,6 +183,10 @@ void JEventProcessor_occupancy_online::Init()
     fdc_cathode_occ = new TH2F("fdc_cathode_occ","FDC Cathode Occupancy; Channel;", 48, 0.5, 48.5, 216, 0.5, 216.5); 
     fdc_wire_occ = new TH2F("fdc_wire_occ", "FDC Wire Occupancy; Channel;", 24, 0.5, 24.5, 96, 0.5, 96.5); 
     fdc_num_events = new TH1I("fdc_num_events", "FDC number of events", 1, 0.0, 1.0);
+
+	//------------------------ FMWPC ----------------------
+    fmwpc_occ = new TH2F("fmwpc_occ","FMWPC Occupancy; Layer; Channel;", 6, 0.5, 6.5, 144, 0.5, 144.5);
+    fmwpc_num_events = new TH1I("fmwpc_num_events", "FMWPC number of events", 1, 0.0, 1.0); 
 
 	//------------------------ PS/PSC ---------------------
 	psc_adc_left_occ   = new TH1I("psc_adc_left_occ",  "PSC fADC hit occupancy Left", 8, 0.5, 8.5);
@@ -338,6 +344,7 @@ void JEventProcessor_occupancy_online::Process(const std::shared_ptr<const JEven
 	//------------------------ BCAL -----------------------
 	
 	// don't fill occupancy plots for BCAL LED events
+	if(l1trigger){
 	if( !((l1trigger->fp_trig_mask & 0x100) || (l1trigger->fp_trig_mask & 0x200)) 
                && (total_bcal_energy < 20.) ) {
   
@@ -368,6 +375,7 @@ void JEventProcessor_occupancy_online::Process(const std::shared_ptr<const JEven
 			bcal_tdc_occ->Fill(ix, iy);
 	    }
         }
+	}
 
 	//------------------------ CCAL -----------------------
 	ccal_num_events->Fill(0.5);
@@ -404,6 +412,12 @@ void JEventProcessor_occupancy_online::Process(const std::shared_ptr<const JEven
 	}
 	for(unsigned int i = 0; i < vDFDCWireDigiHit.size(); i++){
 		fdc_wire_occ->Fill((vDFDCWireDigiHit[i]->package - 1)*6 + vDFDCWireDigiHit[i]->chamber, vDFDCWireDigiHit[i]->wire);
+	}
+
+	//------------------------ FMWPC ----------------------
+	fmwpc_num_events->Fill(0.5);
+	for(unsigned int i = 0; i < vDFMWPCDigiHit.size(); i++){
+		fmwpc_occ->Fill(vDFMWPCDigiHit[i]->layer, vDFMWPCDigiHit[i]->wire);
 	}
 
 	//------------------------ PS/PSC ---------------------

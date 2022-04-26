@@ -16,6 +16,7 @@
 #include <PID/DParticleID.h>
 #include <BCAL/DBCALShower.h>
 #include <FCAL/DFCALShower.h>
+#include <FCAL/DFCALHit.h>
 #include <TOF/DTOFPoint.h>
 #include <CDC/DCDCHit.h>
 #include <START_COUNTER/DSCHit.h>
@@ -69,6 +70,7 @@ class DTrackTimeBased_factory:public JFactoryT<DTrackTimeBased>{
 			   vector<const DTOFPoint*>&tof_points,
 			   vector<const DBCALShower*>&bcal_showers,	  
 			   vector<const DFCALShower*>&fcal_showers,
+			   vector<const DFCALHit*>&fcal_hits,
 			   vector<DTrackTimeBased::DStartTime_t>&start_times);
   bool DoFit(const DTrackWireBased *track,
 	     vector<DTrackTimeBased::DStartTime_t>&start_times,

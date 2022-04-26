@@ -76,7 +76,7 @@ void JEventProcessor_BCAL_attenlength_gainratio::Init()
 	TDirectory *bcalgainratio = main->mkdir("bcalgainratio");
 	bcalgainratio->cd();
 
-	char histname[255], modtitle[255], histtitle[255];
+	char histname[255], modtitle[50], histtitle[255];
 
 	sprintf(histtitle,"All channels;Z Position (cm);log of integral ratio US/DS");
 	logintratiovsZ_all = new TH2I("logintratiovsZ_all",histtitle,500,-250.0,250.0,500,-3,3);
@@ -135,7 +135,7 @@ void JEventProcessor_BCAL_attenlength_gainratio::Init()
                     sprintf(histname,"logpeakratiovsZ_%02i%i%i",module+1,layer+1,sector+1);
                     sprintf(modtitle,"Channel (M%i,L%i,S%i)",module+1,layer+1,sector+1);
                     sprintf(histtitle,"%s;Z Position (cm);log of pulse height ratio US/DS",modtitle);
-                    logpeakratiovsZ[module][layer][sector] = new TH2I(histname,histtitle,220,-220.0,220.0,400,-4,4);
+                    logpeakratiovsZ[module][layer][sector] = new TH2I(histname,histtitle,110,-220.0,220.0,100,-5,5);
                 }
             }
         }
@@ -147,7 +147,7 @@ void JEventProcessor_BCAL_attenlength_gainratio::Init()
 				sprintf(histname,"logintratiovsZ_%02i%i%i",module+1,layer+1,sector+1);
 				sprintf(modtitle,"Channel (M%i,L%i,S%i)",module+1,layer+1,sector+1);
 				sprintf(histtitle,"%s;Z Position (cm);log of integral ratio US/DS",modtitle);
-				logintratiovsZ[module][layer][sector] = new TH2I(histname,histtitle,220,-220.0,220.0,400,-4,4);
+				logintratiovsZ[module][layer][sector] = new TH2I(histname,histtitle,110,-220.0,220.0,100,-5,5);
 			}
 		}
 	}

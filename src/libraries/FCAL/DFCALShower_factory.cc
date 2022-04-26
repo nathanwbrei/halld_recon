@@ -46,6 +46,8 @@ void DFCALShower_factory::Init()
   SHOWER_ENERGY_THRESHOLD = 50*k_MeV;
   app->SetDefaultParameter("FCAL:SHOWER_ENERGY_THRESHOLD", SHOWER_ENERGY_THRESHOLD);
 
+  SHOWER_POSITION_LOG = false;
+  gPARMS->SetDefaultParameter("FCAL:SHOWER_POSITION_LOG", SHOWER_POSITION_LOG);
   // these need to come from database to ensure accuracy
   // remove default value which might be close to the right solution,
   // but not quite correct -- allow command line tuning
@@ -100,15 +102,25 @@ void DFCALShower_factory::Init()
   INSERT_CRITICAL_ENERGY = 0.00964;
   INSERT_SHOWER_OFFSET = 1.0;
 
-  INSERT_PAR1=1.365;
-  INSERT_PAR2=0.04;
-  INSERT_PAR3=1.185;
-  INSERT_PAR4=2.;
-  app->SetDefaultParameter("FCAL:INSERT_PAR1",INSERT_PAR1);
-  app->SetDefaultParameter("FCAL:INSERT_PAR2",INSERT_PAR2);
-  app->SetDefaultParameter("FCAL:INSERT_PAR3",INSERT_PAR3);
-  app->SetDefaultParameter("FCAL:INSERT_PAR4",INSERT_PAR4);
+  INSERT_PAR1=0.155;
+  INSERT_PAR2=1.1425;
+  gPARMS->SetDefaultParameter("FCAL:INSERT_PAR1",INSERT_PAR1);
+  gPARMS->SetDefaultParameter("FCAL:INSERT_PAR2",INSERT_PAR2);
 
+  INSERT_POS_RES1=0.11;
+  INSERT_POS_RES2=0.22;
+  // For Island algorithm:
+  // INSERT_POS_RES1=0.18;
+  // INSERT_POS_RES2=0.055;
+  INSERT_E_VAR1=0.001223;
+  INSERT_E_VAR2=0.;
+  INSERT_E_VAR3=2.025e-5;
+  gPARMS->SetDefaultParameter("FCAL:INSERT_POS_RES1",INSERT_POS_RES1);
+  gPARMS->SetDefaultParameter("FCAL:INSERT_POS_RES2",INSERT_POS_RES2);
+  gPARMS->SetDefaultParameter("FCAL:INSERT_E_VAR2",INSERT_E_VAR2);
+  gPARMS->SetDefaultParameter("FCAL:INSERT_E_VAR3",INSERT_E_VAR3);
+  gPARMS->SetDefaultParameter("FCAL:INSERT_E_VAR1",INSERT_E_VAR1);
+ 
 }
 
 //------------------
@@ -302,7 +314,10 @@ void DFCALShower_factory::Process(const std::shared_ptr<const JEvent>& event)
       DFCALShower* shower = new DFCALShower;
       
       shower->setEnergy( Ecorrected );
-      shower->setPosition( pos_corrected );
+      if (!SHOWER_POSITION_LOG)
+	shower->setPosition( pos_corrected );
+      else
+	shower->setPosition( pos_log );
       shower->setPosition_log( pos_log ); 
       shower->setTime ( cTime );
 
@@ -310,13 +325,14 @@ void DFCALShower_factory::Process(const std::shared_ptr<const JEvent>& event)
 	FillCovarianceMatrix( shower );
       }
       else{
-	// Some guesses for insert resolution, currently hard-coded...
-	double sigx=0.1016/sqrt(Ecorrected)+0.2219;
+	// Some guesses for insert resolution
+	double sigx=INSERT_POS_RES1/sqrt(Ecorrected)+INSERT_POS_RES2;
 	shower->ExyztCovariance(1,1)=sigx*sigx;
 	shower->ExyztCovariance(2,2)=sigx*sigx;
-	shower->ExyztCovariance(0,0)=Ecorrected*Ecorrected*(0.01586/Ecorrected
-							    +0.0002342/(Ecorrected*Ecorrected)
-							    +1.695e-6);
+	shower->ExyztCovariance(0,0)
+	  =Ecorrected*Ecorrected*(INSERT_E_VAR1/Ecorrected
+				  + INSERT_E_VAR2/(Ecorrected*Ecorrected)
+				  + INSERT_E_VAR3);
 	for (unsigned int i=0;i<5;i++){
 	  for(unsigned int j=0;j<5;j++){
 	    if (i!=j) shower->ExyztCovariance(i,j)=0.;
@@ -359,6 +375,7 @@ void DFCALShower_factory::Process(const std::shared_ptr<const JEvent>& event)
 	// with each track
 	
 	DVector3 fcalFacePos = ( shower->getPosition() - vertex );
+	//if (SHOWER_POSITION_LOG) fcalFacePos = ( shower->getPosition_log() - vertex );
 	fcalFacePos.SetMag( fcalFacePos.Mag() * projPos.Z() / fcalFacePos.Z() );
  
 	double distance = ( fcalFacePos - projPos ).Mag();
@@ -394,10 +411,15 @@ void DFCALShower_factory::Process(const std::shared_ptr<const JEvent>& event)
       double sumV = 0;
       // if there is no nearest track, the defaults for xTr and yTr will result
       // in using the beam axis as the directional axis
+      //if (!SHOWER_POSITION_LOG)
       getUVFromHits( sumU, sumV, fcalHits,
 		     DVector3( shower->getPosition().X(), shower->getPosition().Y(), 0 ),
 		     DVector3( xTr, yTr, 0 ) );
-      
+      //else
+      //getUVFromHits( sumU, sumV, fcalHits,
+      //	       DVector3( shower->getPosition_log().X(), shower->getPosition_log().Y(), 0 ),
+      //	       DVector3( xTr, yTr, 0 ) );
+
       shower->setSumU( sumU );
       shower->setSumV( sumV );
       
@@ -446,14 +468,7 @@ void DFCALShower_factory::Process(const std::shared_ptr<const JEvent>& event)
     critical_energy=INSERT_CRITICAL_ENERGY;
     zfront=m_insertFront;
 
-    A=INSERT_PAR1;
-    B=INSERT_PAR2;
-    C=INSERT_PAR3;
-    D=INSERT_PAR4;
-    if (Eclust<D){
-      Egamma=A*Eclust/(1.+B*Eclust);
-    }
-    else Egamma=A*D/(1.+D*B)+C*(Eclust-D);
+    Egamma=INSERT_PAR1*sqrt(Eclust)+INSERT_PAR2*Eclust;
   }
   else{
      // 06/04/2020 ijaegle@jlab.org allows two different energy dependence correction
@@ -570,6 +585,11 @@ DFCALShower_factory::FillCovarianceMatrix(DFCALShower *shower){
   float shower_x = shower->getPosition().X();
   float shower_y = shower->getPosition().Y();
   float shower_z = shower->getPosition().Z();
+  //if (SHOWER_POSITION_LOG) {
+  //shower_x = shower->getPosition_log().X();
+  //shower_y = shower->getPosition_log().Y();
+  //shower_z = shower->getPosition_log().Z();
+  //}
   float shower_r = sqrt(shower_x*shower_x + shower_y*shower_y);
   float shower_theta = atan2(shower_r,shower_z);
   float thlookup = shower_theta/3.14159265*180;

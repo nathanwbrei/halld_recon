@@ -67,6 +67,7 @@ using namespace std;
 #include <DIRC/DDIRCTDCDigiHit.h>
 #include <TRD/DTRDDigiHit.h>
 #include <TRD/DGEMDigiWindowRawData.h>
+#include <FMWPC/DFMWPCDigiHit.h>
 
 // (See comments in DParsedEvent.h for enlightenment)
 #define MyTypes(X) \
@@ -96,7 +97,8 @@ using namespace std;
 		X(DTACTDCDigiHit) \
 		X(DDIRCTDCDigiHit) \
 		X(DTRDDigiHit) \
-		X(DGEMDigiWindowRawData)
+		X(DGEMDigiWindowRawData) \
+		X(DFMWPCDigiHit) 
 
 #define MyfADCTypes(X) \
 		X(DBCALDigiHit) \
@@ -113,7 +115,8 @@ using namespace std;
 		X(DPSCDigiHit) \
 		X(DTPOLSectorDigiHit) \
 		X(DTACDigiHit) \
-		X(DTRDDigiHit)
+		X(DTRDDigiHit) \
+		X(DFMWPCDigiHit) 
 
 
 #include "GlueX.h"
@@ -160,6 +163,7 @@ class DTranslationTable:public JObject{
 			CCAL_REF,
 			DIRC,
 			TRD,
+			FMWPC,
 			NUM_DETECTOR_TYPES
 		};
 
@@ -183,6 +187,7 @@ class DTranslationTable:public JObject{
 				case TAC: return "TAC";
 				case DIRC: return "DIRC";
 			        case TRD: return "TRD";
+			        case FMWPC: return "FMWPC";
 				case UNKNOWN_DETECTOR:
 				default:
 					return "UNKNOWN";
@@ -369,6 +374,16 @@ class DTranslationTable:public JObject{
 			}
 		};
 
+		class FMWPCIndex_t{
+			public:
+			uint32_t layer;
+			uint32_t wire;
+
+			inline bool operator==(const FMWPCIndex_t &rhs) const {
+			    return (layer==rhs.layer) && (wire==rhs.wire);
+			}
+		};
+
 		// DChannelInfo holds translation between indexing schemes
 		// for one channel.
 		class DChannelInfo{
@@ -395,6 +410,7 @@ class DTranslationTable:public JObject{
 					CCALRefIndex_t ccal_ref;
 					DIRCIndex_t dirc;
 					TRDIndex_t trd;
+					FMWPCIndex_t fmwpc;
 				};
 		};
 
@@ -507,6 +523,7 @@ class DTranslationTable:public JObject{
                 DTRDDigiHit* MakeTRDDigiHit(const TRDIndex_t &idx, const Df125CDCPulse *p) const;
 		DTRDDigiHit* MakeTRDDigiHit(const TRDIndex_t &idx, const Df125FDCPulse *p) const;
 		DGEMDigiWindowRawData *MakeGEMDigiWindowRawData(const TRDIndex_t &idx, const DGEMSRSWindowRawData *p) const;
+		DFMWPCDigiHit* MakeFMWPCDigiHit(const FMWPCIndex_t &idx, const Df125CDCPulse *p) const;
 
 		// F1TDC
 		DBCALTDCDigiHit* MakeBCALTDCDigiHit(const BCALIndex_t &idx,      const DF1TDCHit *hit) const;

@@ -6,14 +6,31 @@
 //
 
 #include "DFMWPCHit.h"
+#include "DFMWPCHit_factory.h"
+#include "DFMWPCCluster_factory.h"
 #include "DFMWPCTruthHit.h"
+#include "DFMWPCTruth.h"
+#include "DCTOFTruth.h"
+#include "DCTOFHit.h"
+#include "DCTOFPoint_factory.h"
+#include "DFMWPCMatchedTrack_factory.h"
 
 #include <JANA/Compatibility/JGetObjectsFactory.h>
 
-void FMWPC_init(JFactorySet* factorySet) {
+  /// Create and register FMWPC data factories
+  //loop->AddFactory(new JFactory<DFMWPCHit>());
+  loop->AddFactory(new JFactory<DFMWPCDigiHit>());
+  loop->AddFactory(new JFactory<DFMWPCTruthHit>());
+  loop->AddFactory(new JFactory<DFMWPCTruth>());
+  loop->AddFactory(new DFMWPCHit_factory());
+  loop->AddFactory(new DFMWPCCluster_factory());
+  loop->AddFactory(new DFMWPCMatchedTrack_factory());
 
-	/// Create and register FMWPC data factories
-	factorySet->Add(new JGetObjectsFactory<DFMWPCHit>());
-	factorySet->Add(new JGetObjectsFactory<DFMWPCTruthHit>());
+  /// Factories for downstream scintillators
+  loop->AddFactory(new JFactory<DCTOFHit>());
+  loop->AddFactory(new JFactory<DCTOFTruth>());
+  loop->AddFactory(new DCTOFPoint_factory());
+
+  return NOERROR;
 }
 

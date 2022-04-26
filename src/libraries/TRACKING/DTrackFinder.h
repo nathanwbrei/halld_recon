@@ -152,6 +152,7 @@ class DTrackFinder:public JObject{
 
       bool COSMICS, DEBUG_HISTS, VERBOSE;
       double CDC_MATCH_RADIUS,CDC_MATCH_PHI,CDC_COSMIC_MATCH_PHI;
+      double FDC_MATCH_RADIUS;
 };
 
 #endif // _DTrackFinder_

@@ -28,13 +28,15 @@ class DTrackTimeBased_factory_StraightLine:public JFactoryT<DTrackTimeBased>{
   void EndRun() override;
   void Finish() override;
 
+  void FilterDuplicates(void);
   void GetStartTime(const DTrackWireBased *track,
 		    vector<const DSCHit*>&sc_hits,
 		    vector<const DTOFPoint*>&tof_points,
 		    vector<const DBCALShower*>&bcal_showers,	
 		    vector<const DFCALShower*>&fcal_showers,
 		    double &t0,DetectorSystem_t &t0_detector) const;
-  
+
+  int DEBUG_LEVEL=0;
   double CDC_MATCH_CUT,FDC_MATCH_CUT;
 
   // outer detector geom info

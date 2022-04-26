@@ -291,8 +291,10 @@ void DTrackTimeBased_factory::Process(const std::shared_ptr<const JEvent>& event
     event->Get(bcal_showers);
   }
   vector<const DFCALShower*>fcal_showers;
+  vector<const DFCALHit*>fcal_hits; // for fallback to single hits in FCAL
   if (USE_FCAL_TIME){
-    event->Get(fcal_showers);
+    loop->Get(fcal_hits);
+    loop->Get(fcal_showers);
   }
   
   vector<const DMCThrown*> mcthrowns;
@@ -306,7 +308,7 @@ void DTrackTimeBased_factory::Process(const std::shared_ptr<const JEvent>& event
 
     // Create vector of start times from various sources
     vector<DTrackTimeBased::DStartTime_t>start_times;
-    CreateStartTimeList(track,sc_hits,tof_points,bcal_showers,fcal_showers,start_times);
+    CreateStartTimeList(track,sc_hits,tof_points,bcal_showers,fcal_showers,fcal_hits,start_times);
 	
     // Fit the track
     DoFit(track,start_times,event,track->mass());
@@ -642,6 +644,7 @@ void DTrackTimeBased_factory
 			vector<const DTOFPoint*>&tof_points,
 			vector<const DBCALShower*>&bcal_showers,	
 			vector<const DFCALShower*>&fcal_showers,
+			vector<const DFCALHit*>&fcal_hits,
 			vector<DTrackTimeBased::DStartTime_t>&start_times){
   DTrackTimeBased::DStartTime_t start_time;
    
@@ -677,6 +680,16 @@ void DTrackTimeBased_factory
     //    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
     start_time.system=SYS_FCAL;
     start_times.push_back(start_time); 
+  }
+  // look for matches to single FCAL hits
+  else if (pid_algorithm->Get_StartTime(track->extrapolations.at(SYS_FCAL),fcal_hits,locStartTime)){
+    // Fill in the start time vector
+    start_time.t0=locStartTime;
+    start_time.t0_sigma=sqrt(locStartTimeVariance);
+    //    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
+    start_time.system=SYS_FCAL;
+    start_times.push_back(start_time); 
+
   }
   // Get start time estimate from BCAL
   locStartTime=track_t0;

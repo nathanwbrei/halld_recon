@@ -37,9 +37,6 @@ void DL3Trigger_factory::Init()
 	L1_FP_TRIG_MASK = 0xffffffff;
 	MVA_WEIGHTS = "";
 	MVA_CUT = -0.2;
-#ifdef HAVE_TMVA
-	mvareader = NULL;
-#endif
 
 	auto app = GetApplication();
 	app->SetDefaultParameter("L3:FRACTION_TO_KEEP", FRACTION_TO_KEEP ,"Random Fraction of event L3 should keep. (Only used for debugging).");

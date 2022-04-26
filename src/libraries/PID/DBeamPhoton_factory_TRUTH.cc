@@ -49,10 +49,7 @@ void DBeamPhoton_factory_TRUTH::Process(const std::shared_ptr<const JEvent>& eve
 		gamma->setMomentum(mom);
 		gamma->setPosition(pos);
 		gamma->setTime(tagm_hits[ih]->t);
-		if(gamma->dCounter == 0)   // handle photons from simulation that miss tagger counters
-			gamma->dSystem = SYS_NULL;
-		else
-		    gamma->dSystem = SYS_TAGM;
+		gamma->dSystem = SYS_TAGM;
 		gamma->dCounter = tagm_hits[ih]->column;
 		gamma->AddAssociatedObject(tagm_hits[ih]);
 		Insert(gamma);
@@ -68,10 +65,7 @@ void DBeamPhoton_factory_TRUTH::Process(const std::shared_ptr<const JEvent>& eve
 		gamma->setMomentum(mom);
 		gamma->setPosition(pos);
 		gamma->setTime(tagh_hits[ih]->t);
-		if(gamma->dCounter == 0)   // handle photons from simulation that miss tagger counters
-			gamma->dSystem = SYS_NULL;
-		else
-		    gamma->dSystem = SYS_TAGH;
+		gamma->dSystem = SYS_TAGH;
 		gamma->dCounter = tagh_hits[ih]->counter_id;
 		gamma->AddAssociatedObject(tagh_hits[ih]);
 		Insert(gamma);

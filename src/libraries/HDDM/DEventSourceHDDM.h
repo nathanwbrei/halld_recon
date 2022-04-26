@@ -69,6 +69,10 @@ using namespace std;
 #include "PAIR_SPECTROMETER/DPSCTruthHit.h"
 #include "FMWPC/DFMWPCTruthHit.h"
 #include "FMWPC/DFMWPCHit.h"
+#include "FMWPC/DFMWPCTruth.h"
+#include "FMWPC/DCTOFHit.h"
+#include "FMWPC/DCTOFHit.h"
+#include "FMWPC/DCTOFTruth.h"
 #include "PAIR_SPECTROMETER/DPSGeometry.h"
 #include "TPOL/DTPOLHit.h"
 #include "TPOL/DTPOLTruthHit.h"
@@ -135,8 +139,11 @@ class DEventSourceHDDM:public JEventSource
 			      string tag);
       jerror_t Extract_DPSCTruthHit(hddm_s::HDDM *record,JFactoryT<DPSCTruthHit>* factory, 
 			       string tag);
-      jerror_t Extract_DFMWPCTruthHit(hddm_s::HDDM *record,  JFactoryT<DFMWPCTruthHit> *factory, string tag);
-      jerror_t Extract_DFMWPCHit(hddm_s::HDDM *record,  JFactoryT<DFMWPCHit> *factory, string tag);
+      jerror_t Extract_DFMWPCTruthHit(hddm_s::HDDM *record,  JFactory<DFMWPCTruthHit> *factory, string tag);
+      jerror_t Extract_DFMWPCHit(hddm_s::HDDM *record,  JFactory<DFMWPCHit> *factory, string tag);
+      jerror_t Extract_DFMWPCTruth(hddm_s::HDDM *record,  JFactory<DFMWPCTruth> *factory, string tag);
+      jerror_t Extract_DCTOFHit(hddm_s::HDDM *record,  JFactory<DCTOFHit> *factory, string tag);
+      jerror_t Extract_DCTOFTruth(hddm_s::HDDM *record,  JFactory<DCTOFTruth> *factory, string tag);
 
       jerror_t Extract_DTPOLHit(hddm_s::HDDM *record, JFactoryT<DTPOLHit>* factory, string tag);
       jerror_t Extract_DTPOLTruthHit(hddm_s::HDDM *record, JFactoryT<DTPOLTruthHit>* factory, string tag);

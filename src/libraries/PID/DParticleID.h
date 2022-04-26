@@ -13,6 +13,7 @@
 #include <memory>
 #include <limits>
 #include <cmath>
+#include <algorithm>
 
 #include <JANA/JObject.h>
 
@@ -23,7 +24,9 @@
 #include <BCAL/DBCALShower.h>
 #include <BCAL/DBCALCluster.h>
 #include <FCAL/DFCALShower.h>
-#include <FCAL/DFCALGeometry.h>
+#include <FCAL/DFCALCluster.h>
+#include <FCAL/DFCALHit.h>
+#include <FCAL/DFCALGeometry_factory.h>
 #include <TOF/DTOFPoint.h>
 #include <TOF/DTOFPaddleHit.h>
 #include <TOF/DTOFGeometry.h>
@@ -100,6 +103,9 @@ class DParticleID: public JObject
 		virtual double GetTimeVariance(DetectorSystem_t detector,
 					       Particle_t particle,
 					       double p) const=0;
+		virtual double GetTimeMean(DetectorSystem_t detector,
+					       Particle_t particle,
+					       double p) const=0;
 		virtual double GetEOverPMean(DetectorSystem_t detector,
 					     double p) const=0;
 		virtual double GetEOverPSigma(DetectorSystem_t detector,
@@ -116,10 +122,13 @@ class DParticleID: public JObject
 
 		double Distance_ToTrack(const DFCALShower *locFCALShower,
 					const DVector3 &locProjPos) const;
+		double Distance_ToTrack(const DFCALHit *locFCALHit,
+					const DVector3 &locProjPos) const;
 		bool Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DFCALShower* locFCALShower, double locInputStartTime, shared_ptr<DFCALShowerMatchParams>& locShowerMatchParams, DVector3* locOutputProjPos=nullptr, DVector3* locOutputProjMom=nullptr) const;
 		bool Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t>&extrapolations, const DTOFPoint* locTOFPoint, double locInputStartTime,shared_ptr<DTOFHitMatchParams>& locTOFHitMatchParams, DVector3* locOutputProjPos=nullptr, DVector3* locOutputProjMom=nullptr) const;
 		bool Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DSCHit* locSCHit, double locInputStartTime,shared_ptr<DSCHitMatchParams>& locSCHitMatchParams, DVector3* locOutputProjPos=nullptr, DVector3* locOutputProjMom=nullptr) const;
 		bool Distance_ToTrack(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DBCALShower* locBCALShower, double locInputStartTime,shared_ptr<DBCALShowerMatchParams>& locShowerMatchParams, DVector3* locOutputProjPos=nullptr, DVector3* locOutputProjMom=nullptr) const;
+		bool Distance_ToTrack(double locStartTime,const DTrackFitter::Extrapolation_t &extrapolation,const DFCALHit *locFCALHit,double &locDOCA,double &locHitTime) const;
 
 		/********************************************************** CUT MATCH DISTANCE **********************************************************/
 
@@ -142,6 +151,7 @@ class DParticleID: public JObject
 		bool Get_BestSCMatchParams(const DTrackingData* locTrack, const DDetectorMatches* locDetectorMatches, shared_ptr<const DSCHitMatchParams>& locBestMatchParams) const;
 		bool Get_BestTOFMatchParams(const DTrackingData* locTrack, const DDetectorMatches* locDetectorMatches, shared_ptr<const DTOFHitMatchParams>& locBestMatchParams) const;
 		bool Get_BestFCALMatchParams(const DTrackingData* locTrack, const DDetectorMatches* locDetectorMatches, shared_ptr<const DFCALShowerMatchParams>& locBestMatchParams) const;
+		bool Get_BestFCALSingleHitMatchParams(const DTrackingData* locTrack, const DDetectorMatches* locDetectorMatches, shared_ptr<const DFCALSingleHitMatchParams>& locBestMatchParams) const;
 		bool Get_DIRCMatchParams(const DTrackingData* locTrack, const DDetectorMatches* locDetectorMatches, shared_ptr<const DDIRCMatchParams>& locBestMatchParams) const;
 
 		// Actual
@@ -149,6 +159,7 @@ class DParticleID: public JObject
 		shared_ptr<const DSCHitMatchParams> Get_BestSCMatchParams(vector<shared_ptr<const DSCHitMatchParams> >& locSCHitMatchParams) const;
 		shared_ptr<const DTOFHitMatchParams> Get_BestTOFMatchParams(vector<shared_ptr<const DTOFHitMatchParams> >& locTOFHitMatchParams) const;
 		shared_ptr<const DFCALShowerMatchParams> Get_BestFCALMatchParams(vector<shared_ptr<const DFCALShowerMatchParams> >& locShowerMatchParams) const;
+		shared_ptr<const DFCALSingleHitMatchParams> Get_BestFCALSingleHitMatchParams(vector<shared_ptr<const DFCALSingleHitMatchParams> >& locMatchParams) const;
 
 		/********************************************************** GET CLOSEST TO TRACK **********************************************************/
 
@@ -186,6 +197,9 @@ class DParticleID: public JObject
 		/************** Routines to get start time for tracking *****/
 		bool Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &extrapolations,
 				   const vector<const DFCALShower*>& FCALShowers,
+				   double& StartTime) const;
+		bool Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &extrapolations,
+				   const vector<const DFCALHit*>& FCALHits,
 				   double& StartTime) const;
 		bool Get_StartTime(const vector<DTrackFitter::Extrapolation_t> &extrapolations,
 				   const vector<const DSCHit*>& SCHits, 
@@ -229,6 +243,7 @@ class DParticleID: public JObject
 					    const DVector3 &locProjPos) const;
 		
 		const DDIRCLut *Get_DIRCLut() const;
+		void GetSingleFCALHits(vector<const DFCALShower*>&locFCALShowers,vector<const DFCALHit*>&locFCALHits,vector<const DFCALHit*>&singleHits) const;
 	
 
 	protected:
@@ -292,6 +307,9 @@ class DParticleID: public JObject
 		// FCAL geometry
 		double dFCALz;
 		const DFCALGeometry *dFCALGeometry;
+
+		// FCAL calibration constants
+		double dFCALTimewalkPar1,dFCALTimewalkPar2;
 
 		// TOF calibration constants
 		// used to update hit energy & time when matching to un-matched, position-ill-defined bars

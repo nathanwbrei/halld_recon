@@ -1,5 +1,12 @@
 // TOF Geometry class
-#include "DTOFGeometry.h"
+
+/*! \file DTOFGeometry.cc
+ * implementation of constructor and all member functions of the DTOFGeometry class
+ * The constructor reads forward TOF geometry implementation and initializes corresponding parameters
+ * like the number of paddles, planes, paddle widths ect. ... 
+ */
+
+#include <DTOFGeometry.h>
 #include <map>
 #include <vector>
 

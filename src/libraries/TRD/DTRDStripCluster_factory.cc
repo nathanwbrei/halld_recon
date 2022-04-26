@@ -76,6 +76,16 @@ void DTRDStripCluster_factory::Process(const std::shared_ptr<const JEvent>& even
 			if ((*i)->plane == 0 || (*i)->plane == 4) continue;
 			int stripPlane = (*i)->plane - 1;
 			if(stripPlane > 2) stripPlane -= 3;
+			if( (stripPlane<0) || (stripPlane>=3) ){
+				static int Nwarn = 0;
+				if( Nwarn<10 ){
+					jerr << " stripPlane is outside of array bounds!! stripPlane="<< stripPlane << std::endl;
+					if( ++Nwarn==10 )jerr << " LAST WARNING!" << std::endl;
+				}
+				continue;
+			}
+			planeHits[stripPlane].push_back(*i);
+		} 
 
 			if ((stripPlane >= 0) && stripPlane <= 2) {
 				planeHits[stripPlane].push_back(*i);

@@ -11,7 +11,7 @@
 class TTree;
 
 #include <JANA/JEventProcessor.h>
-#include <JANA/Compatibility/JLockService.h>
+#include "HistogramTools.h"
 
 class JEventProcessor_FCALLEDTree:public JEventProcessor{
  public:
@@ -33,7 +33,7 @@ class JEventProcessor_FCALLEDTree:public JEventProcessor{
   TTree* m_tree;
 
   int m_nHits;
-
+  int btree;
   int m_chan[kMaxHits];
   float m_x[kMaxHits];
   float m_y[kMaxHits];

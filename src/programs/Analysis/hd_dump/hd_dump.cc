@@ -142,6 +142,15 @@ void ParseCommandLineArguments(int &narg, char *argv[])
 			case 'D':
 				toprint.insert(&argv[i][2]);
 				break;
+     		        case 'q':
+		                QUIT_AFTER_FINDING_NTH = true;
+				SKIP_BORING_EVENTS = true;
+				PAUSE_BETWEEN_EVENTS = false;
+				if (strlen(argv[i])>2) {  // N_TO_FIND defaults to 0(=all events) if not specified
+				  long int number_to_find = strtol(&argv[i][2],NULL,10);
+				  N_TO_FIND = (int)number_to_find;
+				}
+				break;
 			case 'p':
 				PAUSE_BETWEEN_EVENTS = false;
 				break;
@@ -201,14 +210,15 @@ void Usage()
 	cout<<endl;
 	cout<<"   -h        Print this message"<<endl;
 	cout<<"   -Dname    Print the data of type \"name\" (can be used multiple times)"<<endl;
-	cout<<"   -A        Print ALL data types (overrides and -DXXX options)"<<endl;
+	cout<<"   -A        Print ALL data types (overrides -s and -DXXX options)"<<endl;
 	cout<<"   -L        List available factories and exit"<<endl;
 	cout<<"   -p        Don't pause for keystroke between events (def. is to pause)"<<endl;
 	cout<<"   -s        Skip events which don't have any of the specified data types"<<endl;
+	cout<<"   -qn       Quit after printing n events (default n=1), skip boring events, and don't pause"<<endl;
 	cout<<"   -a        List types and number of associated objects"<<endl;
 	cout<<"   -S        Don't suppress printing of factories with no objects in summary"<<endl;
-	cout<<"   -c        Print summary header listing for select factories."<<endl;
-	cout<<"   -V        Print summary header listing for all factories."<<endl;
+	cout<<"   -c        Print summary header lisiting for select factories."<<endl;
+	cout<<"   -V        Print summary header lisiting for all factories."<<endl;
 	cout<<"             (warning: this activates every single factory!)"<<endl;
 	cout<<"   -b        Print event status bits"<<endl;
 	cout<<"   -e        Don't allow automatic EVIO sparse readout for EPICS data"<<endl;
