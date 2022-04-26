@@ -157,8 +157,6 @@ void DTrackTimeBased_factory::Init()
 	
 	USE_BCAL_TIME=true;
 	app->SetDefaultParameter("TRKFIT:USE_BCAL_TIME",USE_BCAL_TIME);
-       
-	return;
 }
 
 //------------------
@@ -170,7 +168,7 @@ void DTrackTimeBased_factory::BeginRun(const std::shared_ptr<const JEvent>& even
   auto run_number = event->GetRunNumber();
   auto app = GetApplication();
   auto geo_manager = app->GetService<DGeometryManager>();
-  auto root_lock = app->GetService<JGlobalRootLock>();
+  auto root_lock = app->GetService<JLockService>();
 
   // Get the geometry
   auto geom = geo_manager->GetDGeometry(run_number);
@@ -224,7 +222,7 @@ void DTrackTimeBased_factory::BeginRun(const std::shared_ptr<const JEvent>& even
   
 
 	if(DEBUG_HISTS){
-		root_lock->acquire_write_lock();
+		root_lock->RootWriteLock();
 
 		// Histograms may already exist. (Another thread may have created them)
 		// Try and get pointers to the existing ones.
@@ -244,7 +242,7 @@ void DTrackTimeBased_factory::BeginRun(const std::shared_ptr<const JEvent>& even
 						       "vertex time source vs. time",
 						 300,-50,50,9,-0.5,8.5);
 
-		root_lock->release_lock();
+		root_lock->RootUnLock();
 	}
 }
 

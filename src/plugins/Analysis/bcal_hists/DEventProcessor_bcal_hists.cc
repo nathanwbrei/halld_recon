@@ -9,7 +9,6 @@
 
 #include <TLorentzVector.h>
 
-#include "DANA/DApplication.h"
 #include "BCAL/DBCALShower.h"
 #include "BCAL/DBCALTruthShower.h"
 #include "BCAL/DHDDMBCALHit.h"

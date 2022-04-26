@@ -1,6 +1,7 @@
 // $Id$
 
-#include "JANA/JFactorySet.h"
+#include <JANA/Compatibility/JGetObjectsFactory.h>
+
 #include "DTrackWireBased_factory.h"
 #include "DTrackTimeBased_factory.h"
 #include "DTrackWireBased_factory_StraightLine.h"
@@ -26,6 +27,9 @@
 #include "DTrackHitSelector_factory_THROWN.h"
 #include "DTrackFitter_factory_KalmanSIMD.h"
 #include "DTrackFitter_factory_KalmanSIMD_ALT1.h"
+#include "DMCThrown.h"
+#include "DMCTrackHit.h"
+#include "DMCTrajectoryPoint.h"
 
 void TRACKING_init(JFactorySet *factorySet)
 {
@@ -57,7 +61,6 @@ void TRACKING_init(JFactorySet *factorySet)
    factorySet->Add(new DTrackFitter_factory_StraightTrack());
 
    factorySet->Add(new JFactoryT<DMCThrown>());
-   // TODO: NWB: We need this but not the other JFactoryT's because a lot of code relies on `event->Get<DMCThrown>("")`
-   //      silently returning the empty vector even when event sources (such as EVIO) don't insert anything because they
-   //      don't even know about DMCThrowns. So this is an old-style 'dummy factory' which I had hoped to get rid of.
+   factorySet->Add(new JFactoryT<DMCTrackHit>());
+   factorySet->Add(new JFactoryT<DMCTrajectoryPoint>());
 }

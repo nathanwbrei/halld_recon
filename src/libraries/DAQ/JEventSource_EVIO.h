@@ -213,7 +213,8 @@ class JEventSource_EVIO: public JEventSource {
 		
 		int32_t last_run_number;
 		int32_t filename_run_number;
-		
+
+		uint64_t Nevents_read = 0;
 		uint32_t Nunparsed;
 		bool no_more_events_in_source;
 		bool et_connected;
@@ -377,8 +378,8 @@ class JEventSource_EVIO: public JEventSource {
 		void CopyBOR(const std::shared_ptr<const JEvent>& event, map<string, vector<JObject*> > &hit_objs_by_type);
 		void AddSourceObjectsToCallStack(const std::shared_ptr<const JEvent>& loop, string className);
 		void AddEmulatedObjectsToCallStack(const std::shared_ptr<const JEvent>& loop, string caller, string callee);
-        void EmulateDf250Firmware(JEvent &event, vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs, vector<JObject*> &pi_objs);
-        void EmulateDf125Firmware(JEvent &event, vector<JObject*> &wrd_objs, vector<JObject*> &cp_objs, vector<JObject*> &fp_objs); 
+        void EmulateDf250Firmware(const std::shared_ptr<const JEvent> &event, vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs, vector<JObject*> &pi_objs);
+        void EmulateDf125Firmware(const std::shared_ptr<const JEvent> &event, vector<JObject*> &wrd_objs, vector<JObject*> &cp_objs, vector<JObject*> &fp_objs);
 
 		jerror_t ParseEvents(ObjList *objs_ptr);
 		int32_t FindRunNumber(uint32_t *iptr);

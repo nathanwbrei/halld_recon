@@ -21,7 +21,7 @@ void DSourceComboVertexer::Set_RunDependent_Data(const std::shared_ptr<const JEv
 	locEvent->GetSingle(dAnalysisUtilities);
 
 	//GET THE GEOMETRY
-	DGeometry* locGeometry = GetDGeometry(locEvent);
+	DGeometry* locGeometry = DEvent::GetDGeometry(locEvent);
 
 	//TARGET INFORMATION
 	double locTargetCenterZ = 65.0;

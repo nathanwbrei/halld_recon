@@ -8,7 +8,7 @@
 #ifndef _DApplication_
 #define _DApplication_
 
-#include <JANA/Services/JGlobalRootLock.h>
+#include <JANA/Compatibility/JLockService.h>
 #include <JANA/CLI/JMain.h>
 
 class JApplication;
@@ -19,7 +19,7 @@ class DMagneticFieldMap;
 class DApplication {
 
 	JApplication* m_japp = nullptr;
-	std::shared_ptr<JGlobalRootLock> m_rootlock = nullptr;
+	std::shared_ptr<JLockService> m_rootlock = nullptr;
 	jana::UserOptions m_options;
 
 	JEventSourceGenerator *event_source_generator;

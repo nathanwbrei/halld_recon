@@ -27,8 +27,6 @@ void DNeutralParticleHypothesis_factory::Init()
 	dResourcePool_NeutralParticleHypothesis->Set_ControlParams(50, 20, 400, 4000, 0);
 	dResourcePool_TMatrixFSym = std::make_shared<DResourcePool<TMatrixFSym>>();
 	dResourcePool_TMatrixFSym->Set_ControlParams(50, 20, 1000, 15000, 0);
-
-	return NOERROR;
 }
 
 //------------------
@@ -43,9 +41,7 @@ void DNeutralParticleHypothesis_factory::BeginRun(const std::shared_ptr<const JE
 
 	// Get Target parameters from XML
 	locGeometry->GetTargetZ(dTargetCenterZ);
-	locEventLoop->GetSingle(dParticleID);
-	
-	return NOERROR;
+	event->GetSingle(dParticleID);
 }
 
 //------------------
@@ -79,12 +75,11 @@ void DNeutralParticleHypothesis_factory::Process(const std::shared_ptr<const JEv
 		{
 			DNeutralParticleHypothesis* locNeutralParticleHypothesis = Create_DNeutralParticleHypothesis(locNeutralShower, locPIDHypotheses[loc_j], locEventRFBunch, locVertex->dSpacetimeVertex, &locVertex->dCovarianceMatrix);
 			if(locNeutralParticleHypothesis != nullptr)
-				_data.push_back(locNeutralParticleHypothesis);	
+				Insert(locNeutralParticleHypothesis);
 		}
 	}
 
 	dCreated = mData;
-	return;
 }
 
 DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralParticleHypothesis(const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch, const DLorentzVector& dSpacetimeVertex, const TMatrixFSym* locVertexCovMatrix, bool locPerfomBetaCut)

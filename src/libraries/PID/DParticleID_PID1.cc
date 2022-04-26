@@ -13,8 +13,7 @@
 //---------------------------------
 DParticleID_PID1::DParticleID_PID1(const std::shared_ptr<const JEvent>& jevent):DParticleID(jevent)
 {
-  DEvent devent(jevent);
-  JCalibration * jcalib = devent.GetJCalibration();
+  JCalibration * jcalib = DEvent::GetJCalibration(jevent);
   vector<map<string,double> >vals;
   if (jcalib->Get("CDC/ElectrondEdxMean",vals)==false){
     map<string,double> &row = vals[0];

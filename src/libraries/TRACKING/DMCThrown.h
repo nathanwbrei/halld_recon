@@ -16,7 +16,7 @@ class DMCThrown:public DKinematicData{
 	public:
 		JOBJECT_PUBLIC(DMCThrown);
 
-		oid_t id;           ///< TODO: What is this and why?
+		oid_t id = reinterpret_cast<oid_t>(this);
 		int type;			///< GEANT particle ID
 		int pdgtype;		///< PDG particle type (not used by GEANT)
 		int myid;			///< id of this particle from original generator

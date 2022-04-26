@@ -17,6 +17,6 @@ src/SBMS/*.pyc
 *.mil
 halld_recon_prereqs_version.xml
 
-src/cmake-build-debug/
-src/cmake-build-debug-remote-host/
+cmake-build*
+src/cmake-build*
 .idea/

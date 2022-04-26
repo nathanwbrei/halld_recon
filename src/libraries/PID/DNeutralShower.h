@@ -27,7 +27,7 @@ class DNeutralShower : public JObject
  public:
   JOBJECT_PUBLIC(DNeutralShower);
 
-  oid_t id;  // TODO: NWB: Make sure this is being set/used properly
+  oid_t id = reinterpret_cast<oid_t>(this);
   oid_t dShowerID;
   DetectorSystem_t dDetectorSystem;
 

@@ -161,6 +161,7 @@ void MyProcessor::Process(const std::shared_ptr<const JEvent>& event)
 // Finish
 //------------------------------------------------------------------
 void MyProcessor::Finish()
-{	
+{
+    ROOTfile->Close();
 }
 

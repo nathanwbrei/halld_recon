@@ -26,7 +26,7 @@ void DCDCHit_factory::Init()
   auto app = GetApplication();
   USE_CDC=true;
   app->SetDefaultParameter("CDC:ENABLE",USE_CDC);
-  if (USE_CDC==false) return; // RESOURCE_UNAVAILABLE;  // TODO: Verify
+  if (USE_CDC==false) return; // RESOURCE_UNAVAILABLE;
   
   LowTCut = -10000.;
   HighTCut = 10000.;
@@ -57,7 +57,7 @@ void DCDCHit_factory::Init()
 
   // Setting this flag makes it so that JANA does not delete the objects in _data.
   // This factory will manage this memory.
-  SetFactoryFlag(NOT_OBJECT_OWNER);  // TODO: This is
+  SetFactoryFlag(NOT_OBJECT_OWNER);  // TODO: Make sure we don't need PERSISTENT as well
 }
 
 //------------------
@@ -65,7 +65,7 @@ void DCDCHit_factory::Init()
 //------------------
 void DCDCHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-  if (USE_CDC==false) return; // RESOURCE_UNAVAILABLE; // TODO: Verify
+  if (USE_CDC==false) return; // RESOURCE_UNAVAILABLE;
 
   /// Read in calibration constants
   auto runnumber = event->GetRunNumber();

@@ -11,17 +11,15 @@ DAnalysisUtilities::DAnalysisUtilities(const std::shared_ptr<const JEvent>& locE
 	auto app = locEvent->GetJApplication();
 	app->SetDefaultParameter("DAnalysisUtilities:DEBUG_LEVEL",DEBUG_LEVEL);
 
-	DEvent devent(locEvent);
-
 	locEvent->GetSingle(dPIDAlgorithm);
 
 	dTargetZCenter = 65.0;
 	// Get Target parameters from XML
-	DGeometry *locGeometry = devent.GetDGeometry();
+	DGeometry *locGeometry = DEvent::GetDGeometry(locEvent);
 	locGeometry->GetTargetZ(dTargetZCenter);
 
 	//Get magnetic field map
-	dMagneticFieldMap = devent.GetBfield();
+	dMagneticFieldMap = DEvent::GetBfield(locEvent);
 	dIsNoFieldFlag = (dynamic_cast<const DMagneticFieldMapNoField*>(dMagneticFieldMap) != NULL);
 
 	//For "Unused" tracks/showers

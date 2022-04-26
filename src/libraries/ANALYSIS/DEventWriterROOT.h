@@ -133,7 +133,7 @@ class DEventWriterROOT : public JObject
 		void Create_Branches_Beam(DTreeBranchRegister& locTreeBranchRegister, bool locIsMCDataFlag) const;
 		void Create_Branches_NeutralHypotheses(DTreeBranchRegister& locTreeBranchRegister, bool locIsMCDataFlag) const;
 		void Create_Branches_ChargedHypotheses(DTreeBranchRegister& locTreeBranchRegister, bool locIsMCDataFlag) const;
-		void Create_Branches_KinFitData(DTreeBranchRegister& locBranchRegister, JEventLoop* locEventLoop, const DReaction* locReaction, bool locIsMCDataFlag) const;
+		void Create_Branches_KinFitData(DTreeBranchRegister& locBranchRegister, const std::shared_ptr<const JEvent>& locEventLoop, const DReaction* locReaction, bool locIsMCDataFlag) const;
 
 		//TREE CREATION: COMBO INFO
 			//TMap is locPositionToNameMap
@@ -172,7 +172,7 @@ class DEventWriterROOT : public JObject
 		void Fill_ComboData(DTreeFillData* locTreeFillData, const DReaction* locReaction, const DParticleCombo* locParticleCombo, unsigned int locComboIndex, const map<pair<oid_t, Particle_t>, size_t>& locObjectToArrayIndexMap) const;
 		void Fill_ComboStepData(DTreeFillData* locTreeFillData, const DReaction* locReaction, const DParticleCombo* locParticleCombo, unsigned int locStepIndex, unsigned int locComboIndex,
 				DKinFitType locKinFitType, const map<pair<oid_t, Particle_t>, size_t>& locObjectToArrayIndexMap) const;
-		void Fill_KinFitData(DTreeFillData* locTreeFillData, JEventLoop* locEventLoop, const DReaction* locReaction, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
+		void Fill_KinFitData(DTreeFillData* locTreeFillData, const std::shared_ptr<const JEvent>& locEvent, const DReaction* locReaction, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
 				const DMCThrownMatching* locMCThrownMatching, const DDetectorMatches* locDetectorMatches,
 				const vector<const DBeamPhoton*>& locBeamPhotons, const vector<const DChargedTrackHypothesis*>& locChargedHypos,
 				const vector<const DNeutralParticleHypothesis*>& locNeutralHypos, const deque<const DParticleCombo*>& locParticleCombos) const;   // FIX

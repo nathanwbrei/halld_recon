@@ -21,6 +21,11 @@ namespace DAnalysis
 
 class DReactionVertexInfo_factory : public JFactoryT<DReactionVertexInfo>
 {
+	public:
+	DReactionVertexInfo_factory() {
+		SetObjectName("DReactionVertexInfo"); 
+		// As opposed to "DAnalysis::DReactionInfo"
+	}
 	private:
 
 		//PRIMARY FUNCTIONS

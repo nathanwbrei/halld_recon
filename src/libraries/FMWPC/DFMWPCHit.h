@@ -10,7 +10,6 @@
 
 #include <JANA/JObject.h>
 
-using namespace jana;
 
 class DFMWPCHit:public JObject{
 	public:

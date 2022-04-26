@@ -31,7 +31,6 @@
 #include <PID/DBeamPhoton.h>
 
 #include <HDGEOMETRY/DGeometry.h>
-#include <DANA/DApplication.h>
 
 using namespace std;
 

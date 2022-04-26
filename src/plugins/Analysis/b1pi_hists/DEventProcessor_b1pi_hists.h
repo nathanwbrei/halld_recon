@@ -13,7 +13,6 @@
 
 #include "JANA/JEventProcessor.h"
 
-#include "DANA/DApplication.h"
 #include "ANALYSIS/DAnalysisResults.h"
 #include "ANALYSIS/DEventWriterROOT.h"
 #include "HDDM/DEventWriterREST.h"

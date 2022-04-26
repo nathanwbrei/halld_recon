@@ -7,8 +7,6 @@ using namespace std;
 #include "TAGGER/DTAGHGeometry.h"
 #include "TAGGER/DTAGMGeometry.h"
 
-using namespace jana;
-
 
 //------------------
 // BeginRun
@@ -68,16 +66,16 @@ void DBeamPhoton_factory_MCGEN::Process(const std::shared_ptr<const JEvent>& eve
 
 	// extract the TAGH geometry
    vector<const DTAGHGeometry*> taghGeomVect;
-   eventLoop->Get(taghGeomVect);
+   event->Get(taghGeomVect);
    if (taghGeomVect.empty())
-      return NOERROR;
+      return;
    const DTAGHGeometry* taghGeom = taghGeomVect[0];
 
    // extract the TAGM geometry
    vector<const DTAGMGeometry*> tagmGeomVect;
-   eventLoop->Get(tagmGeomVect);
+   event->Get(tagmGeomVect);
    if (tagmGeomVect.empty())
-      return NOERROR;
+      return;
    const DTAGMGeometry* tagmGeom = tagmGeomVect[0];
 
 
@@ -90,9 +88,7 @@ void DBeamPhoton_factory_MCGEN::Process(const std::shared_ptr<const JEvent>& eve
 		locBeamPhoton->dSystem = SYS_TAGH;
 	else
 		locBeamPhoton->dSystem = SYS_NULL;
-	_data.push_back(locBeamPhoton);
-
-	return NOERROR;
+	Insert(locBeamPhoton);
 }
 
 //------------------

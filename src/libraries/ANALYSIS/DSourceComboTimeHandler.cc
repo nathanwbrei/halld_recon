@@ -512,7 +512,7 @@ void DSourceComboTimeHandler::Set_RunDependent_Data(const std::shared_ptr<const 
 	locEvent->GetSingle(dAnalysisUtilities);
 
 	//GET THE GEOMETRY
-	DGeometry* locGeometry = GetDGeometry(locEvent);
+	DGeometry* locGeometry = DEvent::GetDGeometry(locEvent);
 
 	//TARGET INFORMATION
 	double locTargetCenterZ = 65.0;
@@ -524,7 +524,7 @@ void DSourceComboTimeHandler::Set_RunDependent_Data(const std::shared_ptr<const 
 
 	//BEAM BUNCH PERIOD
 	vector<double> locBeamPeriodVector;
-	GetCalib(locEvent, "PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
+	DEvent::GetCalib(locEvent, "PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
 	dBeamBunchPeriod = locBeamPeriodVector[0];
 
 }

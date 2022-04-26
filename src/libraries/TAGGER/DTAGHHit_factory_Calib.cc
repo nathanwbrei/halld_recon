@@ -138,7 +138,7 @@ void DTAGHHit_factory_Calib::Process(const std::shared_ptr<const JEvent>& event)
     vector<const DTAGHGeometry*> taghGeomVect;
     event->Get( taghGeomVect );
     if (taghGeomVect.size() < 1)
-        return; // OBJECT_NOT_AVAILABLE;  // TODO: Reexamine
+        return; // OBJECT_NOT_AVAILABLE;
     const DTAGHGeometry& taghGeom = *(taghGeomVect[0]);
 
     const DTTabUtilities* locTTabUtilities = nullptr;

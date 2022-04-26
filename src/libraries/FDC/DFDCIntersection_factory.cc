@@ -35,7 +35,7 @@ void DFDCIntersection_factory::Init()
 void DFDCIntersection_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
   // Get pointer to DGeometry object
-  DGeometry *dgeom  = DEvent(event).GetDGeometry();
+  DGeometry *dgeom  = DEvent::GetDGeometry(event);
   if (!dgeom->GetFDCWires(fdcwires)){
     _DBG_<< "FDC geometry not available!" <<endl;
     USE_FDC=false;

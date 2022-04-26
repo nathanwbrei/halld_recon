@@ -13,12 +13,11 @@
 #include <JANA/JObject.h>
 #include <JANA/JApplication.h>
 #include <JANA/JEvent.h>
-#include <JANA/JCalibration.h>
-#include <JANA/JCalibrationCCDB.h>
-#include <JANA/JCalibrationGeneratorCCDB.h>
-using namespace jana;
+#include <JANA/Calibrations/JCalibration.h>
+#include <JANA/Calibrations/JCalibrationCCDB.h>
+#include <JANA/Calibrations/JCalibrationGeneratorCCDB.h>
 
-#include <DANA/DApplication.h>
+#include <DANA/DEvent.h>
 
 #include "units.h"
 
@@ -31,7 +30,7 @@ class DTAGMGeometry : public JObject {
    
    JOBJECT_PUBLIC(DTAGMGeometry);
 
-   DTAGMGeometry(JEventLoop *loop);
+   DTAGMGeometry(const std::shared_ptr<const JEvent>& event);
    DTAGMGeometry(JCalibration *jcalib, int32_t runnumber);
    ~DTAGMGeometry();
 

@@ -19,7 +19,7 @@ class DEventWriterROOT_factory : public JFactoryT<DEventWriterROOT>
 		//------------------
 		// BeginRun
 		//------------------
-		void BeginRun(const std::shared_ptr<const JEvent>& loop, int32_t runnumber)
+		void BeginRun(const std::shared_ptr<const JEvent>& loop) override
 		{
 			// (See DTAGHGeometry_factory.h)
 			SetFactoryFlag(NOT_OBJECT_OWNER);
@@ -36,7 +36,7 @@ class DEventWriterROOT_factory : public JFactoryT<DEventWriterROOT>
 		//------------------
 		// Process
 		//------------------
-		 void Process(const std::shared_ptr<const JEvent>& loop, uint64_t eventnumber)
+		 void Process(const std::shared_ptr<const JEvent>& loop) override
 		 {
 			// Reuse existing DBCALGeometry object.
 			if( dROOTEventWriter ) Insert( dROOTEventWriter );
@@ -46,7 +46,7 @@ class DEventWriterROOT_factory : public JFactoryT<DEventWriterROOT>
 		//------------------
 		// Finish
 		//------------------
-		void Finish()
+		void Finish() override
 		{
 			// Delete object: Must be "this" thread so that interfaces deleted properly
 			delete dROOTEventWriter;

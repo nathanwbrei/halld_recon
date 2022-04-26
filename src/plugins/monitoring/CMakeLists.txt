@@ -59,6 +59,10 @@ set (monitoring_projects
         # Optional
         TAGH_doubles
         ST_ZEff
+        fa125_itrig
+        cppFMWPC
+        scaler_primex
+        lumi_mon
         )
 
 set (optional_monitoring_projects
@@ -68,11 +72,12 @@ set (optional_monitoring_projects
 
 
 
-foreach (project ${monitoring_projects})
-    file(GLOB ${project}_SOURCES ${project}/*.cc)
-    set(target_name plugin_monitoring_${project})
-    add_library(${target_name} ${${project}_SOURCES})
-    target_include_directories(${target_name} PRIVATE ../include ../../libraries ../../libraries/include ../../include ${ROOT_INCLUDE_DIRS} ${EVIO_INCLUDE_DIR} ${JANA_INCLUDE_DIR})
-    target_link_libraries(${target_name} halld_recon ${EVIO_LIB})
+foreach (target_name ${monitoring_projects})
+    file(GLOB ${target_name}_SOURCES ${target_name}/*.cc)
+    add_library(${target_name} SHARED ${${target_name}_SOURCES})
+    target_include_directories(${target_name} PRIVATE ../include ../../libraries ../../libraries/include ../../include ${ROOT_INCLUDE_DIRS} ${EVIO_INCLUDE_DIR} ${JANA_INCLUDE_DIR} ${CCDB_INCLUDE_DIRS})
+    target_link_libraries(${target_name} halld_recon ${EVIO_LIB} ${CCDB_LIB})
+    set_target_properties(${target_name} PROPERTIES PREFIX "")
+    install(TARGETS ${target_name} DESTINATION plugins)
 endforeach ()
 

@@ -234,12 +234,12 @@ set(HALLD_RECON_SOURCES
         DAQ/HDET.h
         DAQ/HDEVIO.cc
         DAQ/HDEVIO.h
-        #        DAQ/JEventSource_EVIO.cc
+        DAQ/JEventSource_EVIO.cc
         DAQ/JEventSource_EVIO.h
         DAQ/JEventSource_EVIOpp.cc
         DAQ/JEventSource_EVIOpp.h
-        #        DAQ/JEventSourceGenerator_EVIO.cc
-        #        DAQ/JEventSourceGenerator_EVIO.h
+        DAQ/JEventSourceGenerator_EVIO.cc
+        DAQ/JEventSourceGenerator_EVIO.h
         DAQ/JEventSourceGenerator_EVIOpp.cc
         DAQ/JEventSourceGenerator_EVIOpp.h
         DAQ/JFactoryGenerator_DAQ.h
@@ -280,6 +280,8 @@ set(HALLD_RECON_SOURCES
         FCAL/DFCALCluster.h
         FCAL/DFCALCluster_factory.cc
         FCAL/DFCALCluster_factory.h
+        FCAL/DFCALCluster_factory_Island.cc
+        FCAL/DFCALCluster_factory_Island.h
         FCAL/DFCALDigiHit.h
         FCAL/DFCALGeometry.cc
         FCAL/DFCALGeometry.h
@@ -468,6 +470,8 @@ set(HALLD_RECON_SOURCES
         PID/DNeutralShower.h
         PID/DNeutralShower_factory.cc
         PID/DNeutralShower_factory.h
+        PID/DNeutralShower_factory_HadronPreSelect.cc
+        PID/DNeutralShower_factory_HadronPreSelect.h
         PID/DNeutralShower_factory_PreSelect.cc
         PID/DNeutralShower_factory_PreSelect.h
         PID/DNeutralShower_FCALQualityMLP.h
@@ -725,6 +729,7 @@ add_library(halld_recon
 target_include_directories(halld_recon PRIVATE . ../include include
         ${CCDB_INCLUDE_DIRS}
         ${ROOT_INCLUDE_DIRS}
+        ${XercesC_INCLUDE_DIR}
         ${JANA_INCLUDE_DIR}
         ${EVIO_INCLUDE_DIR}
         ${HDDS_INCLUDE_DIR}
@@ -739,6 +744,7 @@ target_link_libraries(halld_recon Threads::Threads
         ${SQLITE_LIBRARY}
         ${JANA_LIBRARY}
         ${EVIO_LIBS}
+        ${XercesC_LIBRARY}
         ${EXPAT_LIBRARY}
         ${ROOT_LIBRARIES}
         ${HDDS_LIBRARY}

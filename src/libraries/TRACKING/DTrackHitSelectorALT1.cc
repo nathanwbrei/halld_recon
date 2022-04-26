@@ -10,7 +10,7 @@ using namespace std;
 
 #include <TROOT.h>
 
-#include <JANA/Services/JGlobalRootLock.h>
+#include <JANA/Compatibility/JLockService.h>
 
 #include <TRACKING/DReferenceTrajectory.h>
 
@@ -52,12 +52,12 @@ DTrackHitSelectorALT1::DTrackHitSelectorALT1(const std::shared_ptr<const JEvent>
 	auto app = event->GetJApplication();
 	app->SetDefaultParameter("TRKFIT:HS_DEBUG_LEVEL", HS_DEBUG_LEVEL, "Debug verbosity level for hit selector used in track fitting (0=no debug messages)");
 	app->SetDefaultParameter("TRKFIT:MAKE_DEBUG_TREES", MAKE_DEBUG_TREES, "Create a TTree with debugging info on hit selection for the FDC and CDC");
-	auto root_lock = app->GetService<JGlobalRootLock>();
+	auto root_lock = app->GetService<JLockService>();
 
 	cdchitsel = NULL;
 	fdchitsel = NULL;
 	if(MAKE_DEBUG_TREES){
-		root_lock->acquire_write_lock();
+		root_lock->RootWriteLock();
 		
 		cdchitsel= (TTree*)gROOT->FindObject("cdchitsel");
 		if(!cdchitsel){
@@ -89,7 +89,7 @@ DTrackHitSelectorALT1::DTrackHitSelectorALT1(const std::shared_ptr<const JEvent>
 			fdchitsel = NULL;
 		}
 
-		root_lock->release_lock();
+		root_lock->RootUnLock();
 	}
 }
 

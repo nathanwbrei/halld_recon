@@ -12,7 +12,7 @@ static bool STORE_PULL_INFO = false;
 static bool STORE_ERROR_MATRIX_INFO = false;
 static bool STORE_MC_TRAJECTORIES = false;
 
-void DEventWriterROOT::Initialize(JEventLoop* locEventLoop)
+void DEventWriterROOT::Initialize(const std::shared_ptr<const JEvent>& locEvent)
 {
 	dInitNumThrownArraySize = 20;
 	dInitNumBeamArraySize = 20;
@@ -49,8 +49,7 @@ void DEventWriterROOT::Initialize(JEventLoop* locEventLoop)
 	locEvent->Get(locVertexInfos);
 
 	//Get Target Center Z
-	DEvent devent(locEvent);
-	DGeometry* locGeometry = devent.GetDGeometry();
+	DGeometry* locGeometry = DEvent::GetDGeometry(locEvent);
 	dTargetCenterZ = 65.0;
 	locGeometry->GetTargetZ(dTargetCenterZ);
 
@@ -72,8 +71,7 @@ void DEventWriterROOT::Run_Update(const std::shared_ptr<const JEvent>& locEvent)
 	locEvent->GetSingle(dAnalysisUtilities);
 
 	//Get Target Center Z
-	DEvent devent(locEvent);
-	DGeometry* locGeometry = devent.GetDGeometry();
+	DGeometry* locGeometry = DEvent::GetDGeometry(locEvent);
 	dTargetCenterZ = 65.0;
 	locGeometry->GetTargetZ(dTargetCenterZ);
 
@@ -191,7 +189,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, const std::
 	Create_Branches_Combo(locBranchRegister, locReaction, locIsMCDataFlag, locPositionToNameMap);
 
 	//Kinematic fit data (pulls and covariance matrices)
-	Create_Branches_KinFitData(locBranchRegister, locEventLoop, locReaction, locIsMCDataFlag);
+	Create_Branches_KinFitData(locBranchRegister, locEvent, locReaction, locIsMCDataFlag);
 
 	//Custom branches
 	Create_CustomBranches_DataTree(locBranchRegister, locEvent, locReaction, locIsMCDataFlag);
@@ -266,21 +264,22 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegist
 	if(REST_JANA_CALIB_CONTEXT != "")
 		locMiscInfoMap->Add(new TObjString("REST:JANACALIBCONTEXT"), new TObjString(REST_JANA_CALIB_CONTEXT.c_str()));
 
+	auto params = locEvent->GetJApplication()->GetJParameterManager();
 	// Note: adding these parameters (e.g. in hd_root) will create warnings with "<-- NO DEFAULT! (TYPO?)". Safe to ignore these.
-	if(gPARMS->Exists("ANALYSIS:BCAL_VERBOSE_ROOT_OUTPUT"))
-		{gPARMS->GetParameter("ANALYSIS:BCAL_VERBOSE_ROOT_OUTPUT", BCAL_VERBOSE_OUTPUT); cout << "ANALYSIS:BCAL_VERBOSE_ROOT_OUTPUT set to " << BCAL_VERBOSE_OUTPUT << ", IGNORE the \"<-- NO DEFAULT! (TYPO?)\" message " << endl;}
-	if(gPARMS->Exists("ANALYSIS:FCAL_VERBOSE_ROOT_OUTPUT"))
-		{gPARMS->GetParameter("ANALYSIS:FCAL_VERBOSE_ROOT_OUTPUT", FCAL_VERBOSE_OUTPUT); cout << "ANALYSIS:FCAL_VERBOSE_ROOT_OUTPUT set to " << FCAL_VERBOSE_OUTPUT << ", IGNORE the \"<-- NO DEFAULT! (TYPO?)\" message " << endl;}
-	if(gPARMS->Exists("ANALYSIS:CCAL_VERBOSE_ROOT_OUTPUT"))
-		{gPARMS->GetParameter("ANALYSIS:CCAL_VERBOSE_ROOT_OUTPUT", CCAL_VERBOSE_OUTPUT); cout << "ANALYSIS:CCAL_VERBOSE_ROOT_OUTPUT set to " << CCAL_VERBOSE_OUTPUT << ", IGNORE the \"<-- NO DEFAULT! (TYPO?)\" message " << endl;}
-	if(gPARMS->Exists("ANALYSIS:DIRC_ROOT_OUTPUT"))
-		{gPARMS->GetParameter("ANALYSIS:DIRC_ROOT_OUTPUT", DIRC_OUTPUT); cout << "ANALYSIS:DIRC_ROOT_OUTPUT set to " << DIRC_OUTPUT << ", IGNORE the \"<-- NO DEFAULT! (TYPO?)\" message " << endl;}
-	if(gPARMS->Exists("ANALYSIS:STORE_PULL_INFO"))
-	    {gPARMS->GetParameter("ANALYSIS:STORE_PULL_INFO",STORE_PULL_INFO); cout << "ANALYSIS:STORE_PULL_INFO set to " << STORE_PULL_INFO << ", IGNORE the \"<-- NO DEFAULT! (TYPO?)\" message " << endl;}
-	if(gPARMS->Exists("ANALYSIS:STORE_ERROR_MATRIX_INFO"))
-    	{gPARMS->GetParameter("ANALYSIS:STORE_ERROR_MATRIX_INFO",STORE_ERROR_MATRIX_INFO); cout << "ANALYSIS:STORE_ERROR_MATRIX_INFO set to " << STORE_ERROR_MATRIX_INFO << ", IGNORE the \"<-- NO DEFAULT! (TYPO?)\" message " << endl;}
-	if(gPARMS->Exists("ANALYSIS:STORE_MC_TRAJECTORIES")) 
-		{gPARMS->GetParameter("ANALYSIS:STORE_MC_TRAJECTORIES",STORE_MC_TRAJECTORIES); cout << "ANALYSIS:STORE_MC_TRAJECTORIES set to " << STORE_MC_TRAJECTORIES << ", IGNORE the \"<-- NO DEFAULT! (TYPO?)\" message " << endl;}
+	if(params->Exists("ANALYSIS:BCAL_VERBOSE_ROOT_OUTPUT"))
+		{params->GetParameter("ANALYSIS:BCAL_VERBOSE_ROOT_OUTPUT", BCAL_VERBOSE_OUTPUT); cout << "ANALYSIS:BCAL_VERBOSE_ROOT_OUTPUT set to " << BCAL_VERBOSE_OUTPUT << ", IGNORE the \"<-- NO DEFAULT! (TYPO?)\" message " << endl;}
+	if(params->Exists("ANALYSIS:FCAL_VERBOSE_ROOT_OUTPUT"))
+		{params->GetParameter("ANALYSIS:FCAL_VERBOSE_ROOT_OUTPUT", FCAL_VERBOSE_OUTPUT); cout << "ANALYSIS:FCAL_VERBOSE_ROOT_OUTPUT set to " << FCAL_VERBOSE_OUTPUT << ", IGNORE the \"<-- NO DEFAULT! (TYPO?)\" message " << endl;}
+	if(params->Exists("ANALYSIS:CCAL_VERBOSE_ROOT_OUTPUT"))
+		{params->GetParameter("ANALYSIS:CCAL_VERBOSE_ROOT_OUTPUT", CCAL_VERBOSE_OUTPUT); cout << "ANALYSIS:CCAL_VERBOSE_ROOT_OUTPUT set to " << CCAL_VERBOSE_OUTPUT << ", IGNORE the \"<-- NO DEFAULT! (TYPO?)\" message " << endl;}
+	if(params->Exists("ANALYSIS:DIRC_ROOT_OUTPUT"))
+		{params->GetParameter("ANALYSIS:DIRC_ROOT_OUTPUT", DIRC_OUTPUT); cout << "ANALYSIS:DIRC_ROOT_OUTPUT set to " << DIRC_OUTPUT << ", IGNORE the \"<-- NO DEFAULT! (TYPO?)\" message " << endl;}
+	if(params->Exists("ANALYSIS:STORE_PULL_INFO"))
+	    {params->GetParameter("ANALYSIS:STORE_PULL_INFO",STORE_PULL_INFO); cout << "ANALYSIS:STORE_PULL_INFO set to " << STORE_PULL_INFO << ", IGNORE the \"<-- NO DEFAULT! (TYPO?)\" message " << endl;}
+	if(params->Exists("ANALYSIS:STORE_ERROR_MATRIX_INFO"))
+    	{params->GetParameter("ANALYSIS:STORE_ERROR_MATRIX_INFO",STORE_ERROR_MATRIX_INFO); cout << "ANALYSIS:STORE_ERROR_MATRIX_INFO set to " << STORE_ERROR_MATRIX_INFO << ", IGNORE the \"<-- NO DEFAULT! (TYPO?)\" message " << endl;}
+	if(params->Exists("ANALYSIS:STORE_MC_TRAJECTORIES"))
+		{params->GetParameter("ANALYSIS:STORE_MC_TRAJECTORIES",STORE_MC_TRAJECTORIES); cout << "ANALYSIS:STORE_MC_TRAJECTORIES set to " << STORE_MC_TRAJECTORIES << ", IGNORE the \"<-- NO DEFAULT! (TYPO?)\" message " << endl;}
 
 	if(locKinFitType != d_NoFit)
 	{
@@ -971,7 +970,7 @@ void DEventWriterROOT::Create_Branches_ComboNeutral(DTreeBranchRegister& locBran
 	}
 }
 
-void DEventWriterROOT::Create_Branches_KinFitData(DTreeBranchRegister& locBranchRegister, JEventLoop* locEventLoop, const DReaction* locReaction, bool locIsMCDataFlag) const
+void DEventWriterROOT::Create_Branches_KinFitData(DTreeBranchRegister& locBranchRegister, const std::shared_ptr<const JEvent>& locEventLoop, const DReaction* locReaction, bool locIsMCDataFlag) const
 {
 
 	if(!STORE_PULL_INFO && !STORE_ERROR_MATRIX_INFO)
@@ -1086,7 +1085,7 @@ void DEventWriterROOT::Create_Branches_KinFitData(DTreeBranchRegister& locBranch
     abundanceMap.clear();
 }
 
-void DEventWriterROOT::Fill_ThrownTree(JEventLoop* locEventLoop) const
+void DEventWriterROOT::Fill_ThrownTree(const std::shared_ptr<const JEvent>& locEvent) const
 {
 	vector<const DMCThrown*> locMCThrowns_FinalState;
 	locEvent->Get(locMCThrowns_FinalState, "FinalState");
@@ -1111,11 +1110,11 @@ void DEventWriterROOT::Fill_ThrownTree(JEventLoop* locEventLoop) const
 	locEvent->Get(locMCGenBeams, "MCGEN");
 
 	vector<const DMCTrajectoryPoint*> locDMCTrajectoryPoints;
-	locEventLoop->Get(locDMCTrajectoryPoints);
+	locEvent->Get(locDMCTrajectoryPoints);
 
 	const DBeamPhoton* locTaggedMCGenBeam = locTaggedMCGenBeams.empty() ? locMCGenBeams[0] : locTaggedMCGenBeams[0]; //if empty: will have to do. 
 
-	GetLockService(locEvent)->RootWriteLock();
+	DEvent::GetLockService(locEvent)->RootWriteLock();
 
 	//primary event info
 	dThrownTreeFillData.Fill_Single<UInt_t>("RunNumber", locEvent->GetRunNumber());
@@ -1131,7 +1130,7 @@ void DEventWriterROOT::Fill_ThrownTree(JEventLoop* locEventLoop) const
 	dThrownTreeInterface->Fill(dThrownTreeFillData);
 
 	
-	GetLockService(locEvent)->RootUnLock();
+	DEvent::GetLockService(locEvent)->RootUnLock();
 
 }
 
@@ -1212,7 +1211,7 @@ void DEventWriterROOT::Fill_DataTree(const std::shared_ptr<const JEvent>& locEve
 	locEvent->Get(locMCGenBeams, "MCGEN");
 
 	vector<const DMCTrajectoryPoint*> locDMCTrajectoryPoints;
-	locEventLoop->Get(locDMCTrajectoryPoints);
+	locEvent->Get(locDMCTrajectoryPoints);
 
    const DBeamPhoton* locTaggedMCGenBeam = nullptr;
 
@@ -1302,7 +1301,7 @@ void DEventWriterROOT::Fill_DataTree(const std::shared_ptr<const JEvent>& locEve
 
 	/************************************************* EXECUTE ANALYSIS ACTIONS ************************************************/
 	       
-	GetLockService(locEvent)->RootWriteLock();
+	DEvent::GetLockService(locEvent)->RootWriteLock();
 
 	Bool_t locIsThrownTopologyFlag = kFALSE;
 	vector<Bool_t> locIsTrueComboFlags;
@@ -1399,7 +1398,7 @@ void DEventWriterROOT::Fill_DataTree(const std::shared_ptr<const JEvent>& locEve
 	}
 
 	//Kinematic fit data (pulls and covariance matrices)
-	Fill_KinFitData(locTreeFillData, locEventLoop, locReaction, locMCReaction, locMCThrownsToSave, locMCThrownMatching, locDetectorMatches, locBeamPhotons, locChargedTrackHypotheses, locNeutralParticleHypotheses, locParticleCombos);
+	Fill_KinFitData(locTreeFillData, locEvent, locReaction, locMCReaction, locMCThrownsToSave, locMCThrownMatching, locDetectorMatches, locBeamPhotons, locChargedTrackHypotheses, locNeutralParticleHypotheses, locParticleCombos);
 
 	//CUSTOM
 	Fill_CustomBranches_DataTree(locTreeFillData, locEvent, locReaction, locMCReaction, locMCThrownsToSave, locMCThrownMatching, locDetectorMatches, locBeamPhotons, locChargedTrackHypotheses, locNeutralParticleHypotheses, locParticleCombos);
@@ -1408,7 +1407,7 @@ void DEventWriterROOT::Fill_DataTree(const std::shared_ptr<const JEvent>& locEve
 	DTreeInterface* locTreeInterface = dTreeInterfaceMap.find(locReaction)->second;
 	locTreeInterface->Fill(*locTreeFillData);	
 	
-	GetLockService(locEvent)->RootUnLock();
+	DEvent::GetLockService(locEvent)->RootUnLock();
 
 }
 
@@ -2296,7 +2295,7 @@ void DEventWriterROOT::Fill_ComboNeutralData(DTreeFillData* locTreeFillData, uns
 	}
 }
 
-void DEventWriterROOT::Fill_KinFitData(DTreeFillData* locTreeFillData, JEventLoop* locEventLoop, const DReaction* locReaction, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
+void DEventWriterROOT::Fill_KinFitData(DTreeFillData* locTreeFillData, const std::shared_ptr<const JEvent>& locEventLoop, const DReaction* locReaction, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
 		const DMCThrownMatching* locMCThrownMatching, const DDetectorMatches* locDetectorMatches,
 		const vector<const DBeamPhoton*>& locBeamPhotons, const vector<const DChargedTrackHypothesis*>& locChargedHypos,
 		const vector<const DNeutralParticleHypothesis*>& locNeutralHypos, const deque<const DParticleCombo*>& locParticleCombos) const

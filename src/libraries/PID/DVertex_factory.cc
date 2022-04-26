@@ -25,8 +25,6 @@ void DVertex_factory::Init()
 //------------------
 void DVertex_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-	DEvent devent(event);
-
 	dKinFitUtils = new DKinFitUtils_GlueX(event);
 	dKinFitter = new DKinFitter(dKinFitUtils);
 	dKinFitUtils->Set_UpdateCovarianceMatricesFlag(false);
@@ -37,16 +35,16 @@ void DVertex_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 	dTargetRadius = 1.5; //FIX: grab from database!!!
 	m_beamSpotX = 0;
 	m_beamSpotY = 0;
-	DGeometry* locGeometry = devent.GetDGeometry();
+	DGeometry* locGeometry = DEvent::GetDGeometry(event);
 	locGeometry->GetTargetZ(dTargetZCenter);
 	locGeometry->GetTargetLength(dTargetLength);
-	JCalibration *jcalib = devent.GetJCalibration();
+	JCalibration *jcalib = DEvent::GetJCalibration(event);
 	std::map<string, float> beam_spot;
 	jcalib->Get("PHOTON_BEAM/beam_spot", beam_spot);
 	m_beamSpotX = beam_spot.at("x");
 	m_beamSpotY = beam_spot.at("y");
 
-	JApplication* app = devent.GetJApplication();
+	JApplication* app = event->GetJApplication();
 	app->SetDefaultParameter("VERTEX:USE_TARGET_CENTER", dForceTargetCenter);
 	app->SetDefaultParameter("VERTEX:NO_KINFIT_FLAG", dNoKinematicFitFlag);
 	app->SetDefaultParameter("VERTEX:DEBUGLEVEL", dKinFitDebugLevel);

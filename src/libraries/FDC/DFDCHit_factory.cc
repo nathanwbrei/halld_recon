@@ -43,11 +43,10 @@ void DFDCHit_factory::Init()
 //------------------
 void DFDCHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-  if (USE_FDC==false) return; // RESOURCE_UNAVAILABLE; // TODO: Verify
+  if (USE_FDC==false) return; // RESOURCE_UNAVAILABLE;
 
    auto runnumber = event->GetRunNumber();
-   DEvent devent(event);
-   JCalibration* calibration = devent.GetJCalibration();
+   JCalibration* calibration = DEvent::GetJCalibration(event);
 
    // Only print messages for one thread whenever run number change
    static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -130,7 +129,7 @@ void DFDCHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 //------------------
 void DFDCHit_factory::Process(const std::shared_ptr<const JEvent>& event)
 {
-  if (USE_FDC==false) return; // RESOURCE_UNAVAILABLE; // TODO: Verify
+  if (USE_FDC==false) return; // RESOURCE_UNAVAILABLE;
 
    /// Generate DFDCHit object for each DFDCCathodeDigiHit and
    /// each DFDCWireDigiHit object.
@@ -379,8 +378,7 @@ void DFDCHit_factory::LoadPackageCalibTables(const std::shared_ptr<const JEvent>
    vector< vector<double> >  new_gains, new_pedestals, new_strip_t0s, new_wire_t0s;
    char str[256];
 
-   DEvent devent(event);
-   JCalibration* calibration = devent.GetJCalibration();
+   JCalibration* calibration = DEvent::GetJCalibration(event);
 
    if(calibration->Get(ccdb_prefix+"/strip_gains_v2", new_gains))
       cout << "Error loading "+ccdb_prefix+"/strip_gains_v2 !" << endl;

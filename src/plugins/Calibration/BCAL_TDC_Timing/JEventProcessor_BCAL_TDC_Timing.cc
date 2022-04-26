@@ -79,8 +79,7 @@ void JEventProcessor_BCAL_TDC_Timing::Init()
 void JEventProcessor_BCAL_TDC_Timing::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
     // This is called whenever the run number changes
-    DEvent devent(event);
-    DGeometry* geom = devent.GetDGeometry();
+    DGeometry* geom = DEvent::GetDGeometry(event);
     geom->GetTargetZ(Z_TARGET);
 
 	// load BCAL geometry
@@ -127,7 +126,7 @@ void JEventProcessor_BCAL_TDC_Timing::BeginRun(const std::shared_ptr<const JEven
     /// Read in initial calibration constants and write to root file for use in later calibration
     vector<double> raw_channel_global_offset;
     //if(print_messages) jout << "In BCAL_TDC_Timing, loading constants..." << endl;
-    if(GetCalib(event, "/BCAL/channel_global_offset", raw_channel_global_offset))
+    if(DEvent::GetCalib(event, "/BCAL/channel_global_offset", raw_channel_global_offset))
         jout << "Error loading /BCAL/channel_global_offset !" << endl;
 
     lockService->RootFillLock(this);
@@ -154,7 +153,6 @@ void JEventProcessor_BCAL_TDC_Timing::BeginRun(const std::shared_ptr<const JEven
 void JEventProcessor_BCAL_TDC_Timing::Process(const std::shared_ptr<const JEvent>& event)
 {
    auto eventnumber = event->GetEventNumber();
-   DEvent devent(event);
 
    // First check that this is not a font panel trigger or no trigger
    bool goodtrigger=1;
@@ -169,7 +167,7 @@ void JEventProcessor_BCAL_TDC_Timing::Process(const std::shared_ptr<const JEvent
        }
    } else {
        // HDDM files are from simulation, so keep them even though they have no trigger
-       bool locIsHDDMEvent = devent.GetStatusBit(kSTATUS_HDDM);
+       bool locIsHDDMEvent = DEvent::GetStatusBit(event, kSTATUS_HDDM);
        if (!locIsHDDMEvent) goodtrigger=0;
    }
    

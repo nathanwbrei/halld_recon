@@ -9,8 +9,7 @@
 
 void DCustomAction_p2pi_hists::Initialize(const std::shared_ptr<const JEvent>& locEvent)
 {
-	DEvent devent(locEvent);
-	JCalibration *jcalib = devent.GetJCalibration();
+	JCalibration *jcalib = DEvent::GetJCalibration(event);
 
 	// Parameters for event selection to fill histograms
 	endpoint_energy = 12.;

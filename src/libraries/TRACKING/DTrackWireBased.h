@@ -17,7 +17,7 @@ class DTrackWireBased:public DTrackingData{
 	public:
 		JOBJECT_PUBLIC(DTrackWireBased);
 
-		oid_t id;               ///< TODO: What is this and why?
+		oid_t id = reinterpret_cast<oid_t>(this);
 		oid_t candidateid;		///< which DTrackCandidate this came from
 		float chisq;			///< Chi-squared for the track (not chisq/dof!)
 		int Ndof;				///< Number of degrees of freedom in the fit

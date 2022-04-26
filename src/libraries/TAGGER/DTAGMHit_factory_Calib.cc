@@ -141,7 +141,8 @@ void DTAGMHit_factory_Calib::BeginRun(const std::shared_ptr<const JEvent>& event
     // the above logic is applied, which makes it possible to suspend
     // or reverse the logic of the above cuts at reconstruction time.
 
-    return; // UNRECOVERABLE_ERROR; // TODO: Verify
+    // return UNRECOVERABLE_ERROR;
+    throw JException("DTAGMHit_factory_Calib: Unrecoverable error");
 }
 
 //------------------
@@ -162,7 +163,7 @@ void DTAGMHit_factory_Calib::Process(const std::shared_ptr<const JEvent>& event)
     vector<const DTAGMGeometry*> tagmGeomVect;
     event->Get( tagmGeomVect );
     if (tagmGeomVect.size() < 1)
-        return; // OBJECT_NOT_AVAILABLE; // TODO: Verify
+        return; // OBJECT_NOT_AVAILABLE;
     const DTAGMGeometry& tagmGeom = *(tagmGeomVect[0]);
 
     const DTTabUtilities* locTTabUtilities = nullptr;

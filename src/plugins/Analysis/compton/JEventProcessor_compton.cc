@@ -248,8 +248,7 @@ void JEventProcessor_compton::Init()
 void JEventProcessor_compton::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
 
-	DEvent devent(event);
-	DGeometry*   dgeom = devent.GetDGeometry();
+	DGeometry*   dgeom = DEvent::GetDGeometry(event);
 
 	if( dgeom ){
     	  	dgeom->GetTargetZ( m_beamZ );
@@ -260,7 +259,7 @@ void JEventProcessor_compton::BeginRun(const std::shared_ptr<const JEvent>& even
     	  	throw JException("No geometry accessible to compton_analysis plugin");
   	}
 
-	JCalibration *jcalib = devent.GetJCalibration();
+	JCalibration *jcalib = DEvent::GetJCalibration(event);
   	std::map<string, float> beam_spot;
   	jcalib->Get("PHOTON_BEAM/beam_spot", beam_spot);
   	m_beamX  =  beam_spot.at("x");
@@ -276,7 +275,7 @@ void JEventProcessor_compton::BeginRun(const std::shared_ptr<const JEvent>& even
 //------------------
 void JEventProcessor_compton::Process(const std::shared_ptr<const JEvent>& event)
 {
-	auto lockService = GetLockService(event);
+	auto lockService = DEvent::GetLockService(event);
 	
 	
 	//----------   Reject front panel triggers   ----------//

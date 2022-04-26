@@ -27,7 +27,6 @@ using std::map;
 #include <JANA/JEvent.h>
 #include <JANA/JApplication.h>
 #include <JANA/JEvent.h>
-#include <DANA/DApplication.h>
 
 #include <PID/DKinematicData.h>
 #include <PID/DParticleID.h>

@@ -21,7 +21,7 @@ Distinquish actions between Monte Carlo and real data.
 #include <TRACKING/DTrackWireBased.h>
 #include <TRACKING/DMCTrackHit.h>
 #include <TRACKING/DReferenceTrajectory.h>
-#include <DANA/DApplication.h>
+#include <DANA/DEvent.h>
 
 #include "MyTrajectory.h"
 #include "MyTrajectoryBfield.h"
@@ -70,16 +70,11 @@ void InitPlugin(JApplication *app){
 //------------------------------------------------------------------
 DTrackLSFitter::DTrackLSFitter(const std::shared_ptr<const JEvent>& loop):DTrackFitter(loop),debug_level(1), ppEnd(5)
 {
-	// Get the DApplication pointer so we can get pointers to the Lorentz deflections
+	// Get the pointers to the Lorentz deflections
 	// table for the FDC and the DFDCSegment factory pointer.
 	// NOTE: The bfield member is supplied by the DTrackFitter base class and
 	// set in the DTrackFitter(loop) constructor.
-	DApplication* dapp = dynamic_cast<DApplication*>(event->GetJApplication());
-	if(!dapp){
-		_DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program?)"<<endl;
-		return;
-	}
-  lorentz_def = dapp->GetLorentzDeflections();
+  lorentz_def = GetLorentzDeflections(loop);
   JFactory *base = event->GetFactory("DFDCSegment");
   segment_factory = dynamic_cast<DFDCSegment_factory*>(base);
 }

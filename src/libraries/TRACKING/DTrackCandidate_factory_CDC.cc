@@ -230,7 +230,7 @@ void DTrackCandidate_factory_CDC::Process(const std::shared_ptr<const JEvent>& e
 	if(Get_CDCHits(event) != NOERROR)
 	{
 		Reset_Pools();
-		return; // RESOURCE_UNAVAILABLE;  // TODO: #1
+		return; // RESOURCE_UNAVAILABLE;
 	}
 
 	// Build Super Layer Seeds
@@ -256,7 +256,7 @@ void DTrackCandidate_factory_CDC::Process(const std::shared_ptr<const JEvent>& e
 	{
 		//SHOULD SET JEVENT STATUS BIT HERE!!!
 		Reset_Pools();
-		return; // OBJECT_NOT_AVAILABLE; // TODO: #1
+		return; // OBJECT_NOT_AVAILABLE;
 	}
 	if(locCDCTrackCircles.empty())
 	{

@@ -49,7 +49,7 @@ void DTrackCandidate_factory_THROWN::BeginRun(const std::shared_ptr<const JEvent
 	event->Get(fitters);
 	if(fitters.size()<1){
 		_DBG_<<"Unable to get a DTrackFitter object! NO Charged track fitting will be done!"<<endl;
-		return; // RESOURCE_UNAVAILABLE;  # TODO: Verify
+		return; // RESOURCE_UNAVAILABLE;
 	}
 	
 	// Drop the const qualifier from the DTrackFitter pointer (I'm surely going to hell for this!)
@@ -58,7 +58,7 @@ void DTrackCandidate_factory_THROWN::BeginRun(const std::shared_ptr<const JEvent
 	// Warn user if something happened that caused us NOT to get a fitter object pointer
 	if(!fitter){
 		_DBG_<<"ERROR: Unable to get a DTrackFitter object! Chisq for DTrackCandidate:THROWN will NOT be calculated!"<<endl;
-		return; // RESOURCE_UNAVAILABLE; # TODO: Verify
+		return; // RESOURCE_UNAVAILABLE;
 	}
 
 	// Get pointer to DTrackHitSelector object
@@ -66,7 +66,7 @@ void DTrackCandidate_factory_THROWN::BeginRun(const std::shared_ptr<const JEvent
 	event->Get(hitselectors);
 	if(hitselectors.size()<1){
 		_DBG_<<"ERROR: Unable to get a DTrackHitSelector object! NO DTrackCandidate:THROWN objects will be created!"<<endl;
-		return; // RESOURCE_UNAVAILABLE; # TODO: Verify
+		return; // RESOURCE_UNAVAILABLE;
 	}
 	hitselector = hitselectors[0];
 

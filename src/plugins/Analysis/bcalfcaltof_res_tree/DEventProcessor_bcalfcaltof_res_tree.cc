@@ -48,12 +48,7 @@ void DEventProcessor_bcalfcaltof_res_tree::Init()
 //------------------
 void DEventProcessor_bcalfcaltof_res_tree::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-	DApplication* locApplication = dynamic_cast<DApplication*>(event->GetJApplication());
-	if(!locApplication){
-		_DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program?)"<<endl;
-		return RESOURCE_UNAVAILABLE;
-	}
-	dRootGeom = locApplication->GetRootGeom();
+	dRootGeom = GetRootGeom(event);
 
 
 	// Get pointer to TrackFitter object that actually fits a track

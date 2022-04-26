@@ -284,7 +284,7 @@ class DParsedEvent{
 		#define checkclassname(A) if(classname==#A) return true;
 		bool IsParsedDataType(string &classname)const {
 			MyTypes(checkclassname)
-			MyDerivedTypes(checkclassname)
+			//MyDerivedTypes(checkclassname)
 			MyBORTypes(checkclassname)
 			return false;
 		}

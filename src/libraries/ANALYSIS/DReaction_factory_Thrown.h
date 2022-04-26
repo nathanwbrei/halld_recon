@@ -21,6 +21,7 @@ class DReaction_factory_Thrown:public JFactoryT<DReaction>
 {
 	public:
 		DReaction_factory_Thrown(){
+			SetObjectName("DReaction"); // As opposed to "DAnalysis::DReaction"
 			SetTag("Thrown");
 		}
 		~DReaction_factory_Thrown(){};

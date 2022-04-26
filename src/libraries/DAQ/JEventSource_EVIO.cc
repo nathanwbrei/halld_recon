@@ -37,7 +37,6 @@ extern "C" uint32_t *swap_int32_t(uint32_t *data, unsigned int length, uint32_t 
 #include <et.h>
 #endif // HAVE_ET
 
-// #include "JEventSourceGenerator_EVIO.h" // TODO: NWB: Delete me
 #include "JEventSource_EVIO.h"
 
 #include <DANA/DStatusBits.h>
@@ -603,6 +602,8 @@ void JEventSource_EVIO::Cleanup(void)
 void JEventSource_EVIO::GetEvent(std::shared_ptr<JEvent> event)
 {
 	auto app = event->GetJApplication();
+	DStatusBits* statusBits = new DStatusBits;
+
 	if(VERBOSE>1) evioout << "GetEvent called for &event = " << hex << &event << dec << endl;
 
 	// If we couldn't even open the source, then there's nothing to do
@@ -645,7 +646,7 @@ void JEventSource_EVIO::GetEvent(std::shared_ptr<JEvent> event)
 		// If this is a stored event then it almost certainly
 		// came from a multi-event block of physics events.
 		// Set the physics event status bit.
-		event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
+		statusBits->SetStatusBit(kSTATUS_PHYSICS_EVENT);
 	}
 	pthread_mutex_unlock(&stored_events_mutex);
 
@@ -673,15 +674,15 @@ void JEventSource_EVIO::GetEvent(std::shared_ptr<JEvent> event)
 
 			objs_ptr = stored_events.front();
 			stored_events.pop();
-			event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
+			statusBits->SetStatusBit(kSTATUS_PHYSICS_EVENT);
 
 			pthread_mutex_unlock(&stored_events_mutex);
 			
 			err = NOERROR;
 		}
-		if(err != NOERROR) return err;
+		if(err != NOERROR) throw JException("JEventSource_EVIO error %d", err);
 		if(objs_ptr == NULL){
-			if(buff == NULL) return MEMORY_ALLOCATION_ERROR;
+			if(buff == NULL) throw JException("Memory allocation error");
 			uint32_t buff_size = ((*buff) + 1)*4; // first word in EVIO buffer is total bank size in words
 
 			objs_ptr = new ObjList();
@@ -712,18 +713,18 @@ void JEventSource_EVIO::GetEvent(std::shared_ptr<JEvent> event)
 	event->SetEventNumber((uint64_t)objs_ptr->event_number);
 	event->SetRunNumber(objs_ptr->run_number);
 	event->Insert(objs_ptr);
-	event.SetStatusBit(kSTATUS_EVIO);
-	if( source_type == kFileSource ) event.SetStatusBit(kSTATUS_FROM_FILE);
-	if( source_type == kETSource   ) event.SetStatusBit(kSTATUS_FROM_ET);
+	statusBits->SetStatusBit(kSTATUS_EVIO);
+	if( source_type == kFileSource ) statusBits->SetStatusBit(kSTATUS_FROM_FILE);
+	if( source_type == kETSource   ) statusBits->SetStatusBit(kSTATUS_FROM_ET);
 	if(objs_ptr)
-		if(objs_ptr->eviobuff) FindEventType(objs_ptr->eviobuff, event);
+		if(objs_ptr->eviobuff) FindEventType(objs_ptr->eviobuff, statusBits);
 	
 	// EPICS and BOR events are barrier events
-	if(event.GetStatusBit(kSTATUS_EPICS_EVENT) || event.GetStatusBit(kSTATUS_BOR_EVENT) ){
-		event.SetSequential();
+	if(statusBits->GetStatusBit(kSTATUS_EPICS_EVENT) || statusBits->GetStatusBit(kSTATUS_BOR_EVENT) ){
+		event->SetSequential(true);
 	}
 	
-	// Nevents_read++;  // TODO: NWB: Verify that this is no longer needed
+	Nevents_read++;
 }
 
 //----------------
@@ -1090,7 +1091,7 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 						default:
 							cout << endl << "err_code=" << hdevio->err_code << endl;
 							cout << endl << mess << endl;
-							app->SetExitCode(hdevio->err_code);
+							japp->SetExitCode(hdevio->err_code);
 							if(hdevio) delete hdevio;
 							hdevio = NULL;
 							return NO_MORE_EVENTS_IN_SOURCE;
@@ -1282,7 +1283,7 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 			
 #else    // HAVE_ET
 
-			app->Quit();
+			japp->Quit();
 			evioout << "Attempting to read from ET system using binary that" << endl;
 			evioout << "does not have ET support built in! Try recompiling" << endl;
 			evioout << "programs/Utilities/plugins/DAQ with ETROOT defined" << endl;
@@ -1341,18 +1342,19 @@ bool JEventSource_EVIO::GetObjects(const std::shared_ptr<const JEvent> &event, J
 	// while in the brun method. The brun method won't get called until
 	// we ask for the DTranslationTable objects, thus, we must ask for them
 	// here, prior to calling ParseEvents.
-	// Note that we have to use the GetFromFactory() method here since
-	// if we just use Get() or GetSingle(), it will call us (the event
-	// source) again in an infinite loop!
-	// Also note that we use static_cast here instead of dynamic_cast
-	// since the latter requires that the type_info structure for
-	// the DTranslationTable_factory be present. It is not in this
-	// plugin (it is in the TTab plugin). Thus, with dynamic_cast there
-	// is an unresolved symbol error if the TTab plugin is not also
-	// present. (Make sense?)
+
+	// TODO: NWB: Everything below (and some above) is obsolete, delete once we verify that the new thing works
+		// Note that we have to use the GetFromFactory() method here since
+		// if we just use Get() or GetSingle(), it will call us (the event
+		// source) again in an infinite loop!
+		// Also note that we use static_cast here instead of dynamic_cast
+		// since the latter requires that the type_info structure for
+		// the DTranslationTable_factory be present. It is not in this
+		// plugin (it is in the TTab plugin). Thus, with dynamic_cast there
+		// is an unresolved symbol error if the TTab plugin is not also
+		// present. (Make sense?)
 	vector<const DTranslationTable*> translationTables;
-	DTranslationTable_factory *ttfac = static_cast<DTranslationTable_factory*>(event->GetFactory("DTranslationTable",""));
-	if(ttfac) ttfac->Get(translationTables);
+	event->Get(translationTables);
 
 	// We use a deferred parsing scheme for efficiency. If the event
 	// is not flagged as having already been parsed, then parse it
@@ -1775,7 +1777,7 @@ void JEventSource_EVIO::CopyBOR(const std::shared_ptr<const JEvent>& event, map<
     for(; iter!=bor_objs_by_type.end(); iter++){
         const string &bor_obj_name = iter->first;
         vector<JObject*> &bors = iter->second;
-        JFactory *fac = event->GetFactory(bor_obj_name, "", false); // false= don't allow default tag replacement
+        JFactory *fac = event->GetFactory(bor_obj_name, ""); // TODO: NWB: Revisit allow_gettag=false => don't allow default tag replacement
         if(fac){
             fac->Set(bors);
             fac->SetFactoryFlag(JFactory::NOT_OBJECT_OWNER);
@@ -1860,24 +1862,16 @@ void JEventSource_EVIO::AddEmulatedObjectsToCallStack(const std::shared_ptr<cons
 //----------------
 // EmulateDf250Firmware
 //----------------
-void JEventSource_EVIO::EmulateDf250Firmware(JEvent &event, vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs, vector<JObject*> &pi_objs)
+void JEventSource_EVIO::EmulateDf250Firmware(const std::shared_ptr<const JEvent> &event, vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs, vector<JObject*> &pi_objs)
 {
     // Cant emulate without the raw data
     if(wrd_objs.size() == 0) return;
     if(VERBOSE>3) evioout << " Entering  EmulateDf250Firmware ..." <<endl;
 
-    vector <const Df250EmulatorAlgorithm*> f250Emulator_const;
-    Df250EmulatorAlgorithm *f250Emulator = NULL;
-    Df250EmulatorAlgorithm_factory *f250EmFac = static_cast<Df250EmulatorAlgorithm_factory*>(loop->GetFactory("Df250EmulatorAlgorithm"));
-    if (f250EmFac) {
-        f250EmFac->GetSingle(f250Emulator_const);
-        // Drop const
-        if (f250Emulator_const.size() != 0) {
-	  f250Emulator = const_cast<Df250EmulatorAlgorithm*>(f250Emulator_const[0]);
-	} else {
-	  jerr << "Unable to load Df250EmulatorAlgorithm !  skipping emulation ..." << endl;
-	  return;
-	}
+    Df250EmulatorAlgorithm *f250Emulator = const_cast<Df250EmulatorAlgorithm*>(event->GetSingle<Df250EmulatorAlgorithm>());
+    if (!f250Emulator) {
+        jerr << "Unable to load Df250EmulatorAlgorithm !  skipping emulation ..." << endl;
+        return;
     }
 
     if(VERBOSE>3) evioout << " Looping over raw data ..." <<endl;
@@ -2114,18 +2108,10 @@ void JEventSource_EVIO::EmulateDf125Firmware( const std::shared_ptr<const JEvent
     if(wrd_objs.size() == 0) return; // Can't do anything without the raw data
     if(VERBOSE>3) evioout << " Entering  EmulateDf125Firmware ..." <<endl;
 
-    vector <const Df125EmulatorAlgorithm*> f125Emulator_const;
-    Df125EmulatorAlgorithm *f125Emulator = NULL;
-    Df125EmulatorAlgorithm_factory *f125EmFac = static_cast<Df125EmulatorAlgorithm_factory*>(event->GetFactory("Df125EmulatorAlgorithm"));
-    if (f125EmFac) {
-        f125EmFac->Get(f125Emulator_const);
-        // Drop const
-        if (f125Emulator_const.size() != 0) {
-	  f125Emulator = const_cast<Df125EmulatorAlgorithm*>(f125Emulator_const[0]);
-	} else {
+	Df125EmulatorAlgorithm *f125Emulator = const_cast<Df125EmulatorAlgorithm*>(event->GetSingle<Df125EmulatorAlgorithm>());
+	if (!f125Emulator) {
 	  jerr << "Unable to load Df125EmulatorAlgorithm !  skipping emulation ..." << endl;
 	  return;
-	}
     }
 
     // Loop over all window raw data objects
@@ -2549,22 +2535,22 @@ uint64_t JEventSource_EVIO::FindEventNumber(uint32_t *iptr)
 //----------------
 // FindEventType
 //----------------
-void JEventSource_EVIO::FindEventType(uint32_t *iptr, JEvent &event)
+void JEventSource_EVIO::FindEventType(uint32_t *iptr, DStatusBits *bits)
 {
     /// This is called from GetEvent to quickly determine the type of
     /// event this is (Physics, EPICS, SYNC, BOR, ...)
     uint32_t head = iptr[1];
     if( (head & 0xff000f) ==  0x600001){
-        event.SetStatusBit(kSTATUS_EPICS_EVENT);
+        bits->SetStatusBit(kSTATUS_EPICS_EVENT);
     }else if( (head & 0xffffffff) ==  0x00700E01){
-        event.SetStatusBit(kSTATUS_BOR_EVENT);
+        bits->SetStatusBit(kSTATUS_BOR_EVENT);
     }else if( (head & 0xffffff00) ==  0xff501000){
-        event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
+        bits->SetStatusBit(kSTATUS_PHYSICS_EVENT);
     }else if( (head & 0xffffff00) ==  0xff701000){
-        event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
+        bits->SetStatusBit(kSTATUS_PHYSICS_EVENT);
     }else if( (head & 0xfff000ff) ==  0xffd00000){
-        event.SetStatusBit(kSTATUS_CONTROL_EVENT);
-        if( (head>>16) == 0xffd0 ) event.SetStatusBit(kSTATUS_SYNC_EVENT);
+        bits->SetStatusBit(kSTATUS_CONTROL_EVENT);
+        if( (head>>16) == 0xffd0 ) bits->SetStatusBit(kSTATUS_SYNC_EVENT);
     }else{
         DumpBinary(iptr, &iptr[16]);
     }	

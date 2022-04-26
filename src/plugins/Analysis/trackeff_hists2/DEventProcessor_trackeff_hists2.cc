@@ -68,10 +68,9 @@ void DEventProcessor_trackeff_hists2::Init()
 //------------------
 void DEventProcessor_trackeff_hists2::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-    DEvent devent(event);
-	const DGeometry *dgeom = devent.GetDGeometry();
+	const DGeometry *dgeom = DEvent::GetDGeometry(event);
 	
-	rt_thrown = new DReferenceTrajectory(devent.GetBfield());
+	rt_thrown = new DReferenceTrajectory(DEvent::GetBfield(event));
 	
 	double dz, rmin, rmax;
 	dgeom->GetCDCEndplate(CDCZmax, dz, rmin, rmax);

@@ -340,8 +340,7 @@ void DEventProcessor_dc_alignment::Init()
 //------------------
 void DEventProcessor_dc_alignment::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-  DEvent devent(event);
-  dgeom  = devent.GetDGeometry();
+  dgeom  = DEvent::GetDGeometry(event);
   //dgeom->GetFDCWires(fdcwires);
 
   // Get the position of the CDC downstream endplate from DGeometry
@@ -350,7 +349,7 @@ void DEventProcessor_dc_alignment::BeginRun(const std::shared_ptr<const JEvent>&
   endplate_z+=0.5*endplate_dz;
 
    
-  JCalibration *jcalib = devent.GetJCalibration();
+  JCalibration *jcalib = DEvent::GetJCalibration(event);
   vector< map<string, double> > tvals;
   cdc_drift_table.clear();
   if (jcalib->Get("CDC/cdc_drift_table::NoBField", tvals)==false){    

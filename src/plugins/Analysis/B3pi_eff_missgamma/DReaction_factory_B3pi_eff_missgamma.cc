@@ -15,7 +15,7 @@
 void DReaction_factory_B3pi_eff_missgamma::BeginRun(const std::shared_ptr<const JEvent> &locEvent)
 {
 	vector<double> locBeamPeriodVector;
-	GetCalib(locEvent, "PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
+	DEvent::GetCalib(locEvent, "PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
 	dBeamBunchPeriod = locBeamPeriodVector[0];
 }
 

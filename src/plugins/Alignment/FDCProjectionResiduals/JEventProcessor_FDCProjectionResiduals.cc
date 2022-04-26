@@ -57,11 +57,10 @@ void JEventProcessor_FDCProjectionResiduals::BeginRun(const std::shared_ptr<cons
 {
    // This is called whenever the run number changes
 
-   auto devent = DEvent(event);
-   dIsNoFieldFlag = (dynamic_cast<const DMagneticFieldMapNoField*>(devent.GetBfield()) != nullptr);
-   JCalibration *jcalib = devent.GetJCalibration();
-   dgeom  = devent.GetDGeometry();
-   //bfield = dapp->GetBfield();
+   dIsNoFieldFlag = (dynamic_cast<const DMagneticFieldMapNoField*>(DEvent::GetBfield(event)) != nullptr);
+   JCalibration *jcalib = DEvent::GetJCalibration(event);
+   dgeom = DEvent::GetDGeometry(event);
+   //bfield = DEvent::GetBfield(event);
 
    //Get Target Center Z, length
    dgeom->GetTargetZ(dTargetCenterZ);

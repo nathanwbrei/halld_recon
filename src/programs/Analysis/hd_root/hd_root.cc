@@ -40,7 +40,7 @@ int main(int narg, char *argv[])
 
 	DecideOutputFilename(app); // Ensure that the command-line flag overrides the OUTPUT_FILENAME parameter
 
-	// app->monitor_heartbeat = 0; // TODO: NWB: Re-add me
+	app->SetTimeoutEnabled(false);
 
 	// Add the hd_root EventProcessor
 	app->Add(new MyProcessor);

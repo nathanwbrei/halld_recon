@@ -7,6 +7,7 @@
 
 #include "DChargedTrackHypothesis_factory.h"
 #include "DANA/DObjectID.h"
+#include "DANA/DEvent.h"
 
 inline bool DChargedTrackHypothesis_SortByEnergy(const DChargedTrackHypothesis* locChargedTrackHypothesis1, const DChargedTrackHypothesis* locChargedTrackHypothesis2)
 {
@@ -38,9 +39,7 @@ void DChargedTrackHypothesis_factory::Init()
 	dResourcePool_TMatrixFSym->Set_ControlParams(20, 20, 50);
 
 	CDC_CORRECT_DEDX_THETA = true;
-	gPARMS->SetDefaultParameter("PID:CDC_CORRECT_DEDX_THETA",CDC_CORRECT_DEDX_THETA);
-	
-	return NOERROR;
+	GetApplication()->SetDefaultParameter("PID:CDC_CORRECT_DEDX_THETA",CDC_CORRECT_DEDX_THETA);
 }
 
 //------------------
@@ -48,40 +47,35 @@ void DChargedTrackHypothesis_factory::Init()
 //------------------
 void DChargedTrackHypothesis_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-	locEventLoop->GetSingle(dPIDAlgorithm);
+	event->GetSingle(dPIDAlgorithm);
 
 	if (CDC_CORRECT_DEDX_THETA){
 	   // load CDC dEdx correction table
-	   DApplication* dapp = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-	   if(!dapp){
-	     _DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program?)"<<endl;
-	     return RESOURCE_UNAVAILABLE;
-	   }
 
 	   string dedx_theta_correction_file, dedx_i_theta_correction_file;
 	   map< string,string > dedx_theta_file_name, dedx_i_theta_file_name;
 
-	  if( locEventLoop->GetCalib("/CDC/dedx_theta/dedx_amp_theta_correction", dedx_theta_file_name) ) {
+	  if( DEvent::GetCalib(event, "/CDC/dedx_theta/dedx_amp_theta_correction", dedx_theta_file_name) ) {
 	    jerr << "Cannot find requested /CDC/dedx_theta/dedx_amp_theta_correction in CCDB for this run!" << endl;
-	    return RESOURCE_UNAVAILABLE;
+	    return; // RESOURCE_UNAVAILABLE;
 	  }
 	  else if( dedx_theta_file_name.find("file_name") != dedx_theta_file_name.end()
 		  && dedx_theta_file_name["file_name"] != "None" ) {
-	    JResourceManager *jresman = dapp->GetJResourceManager(runnumber);
-	    dedx_theta_correction_file = jresman->GetResource(dedx_theta_file_name["file_name"]);
+	    auto *jlargecalib = DEvent::GetJLargeCalibration(event);
+	    dedx_theta_correction_file = jlargecalib->GetResource(dedx_theta_file_name["file_name"]);
 	  }
 
 	 // check to see if we actually have a filename
 	 if(dedx_theta_correction_file.empty()) {
 	   jerr <<"Cannot read CDC dedx (from pulse amplitude) theta correction filename from CCDB" << endl;
-	   return RESOURCE_UNAVAILABLE;
+	   return; // RESOURCE_UNAVAILABLE;
 	 }
 
          // get overall scaling factor 
 	 map<string,double> scale_factors;
-	 if( locEventLoop->GetCalib("/CDC/dedx_theta/dedx_amp_scale", scale_factors) ) {
+	 if( DEvent::GetCalib(event, "/CDC/dedx_theta/dedx_amp_scale", scale_factors) ) {
 	    jerr << "Cannot find requested /CDC/dedx_theta/dedx_amp_scale in CCDB for this run!" << endl;
-	    return RESOURCE_UNAVAILABLE;
+	    return; // RESOURCE_UNAVAILABLE;
 	 }
 
          double dedx_amp_scale = 1.0; 
@@ -89,7 +83,7 @@ void DChargedTrackHypothesis_factory::BeginRun(const std::shared_ptr<const JEven
            dedx_amp_scale = scale_factors["amp_scale"];
          } else {
            jerr << "Unable to get amp_scale from /CDC/dedx_amp_scale !" << endl;
-           return RESOURCE_UNAVAILABLE;
+           return; // RESOURCE_UNAVAILABLE;
 	 }
 
 	 FILE *dedxfile = fopen(dedx_theta_correction_file.c_str(),"r");
@@ -120,27 +114,27 @@ void DChargedTrackHypothesis_factory::BeginRun(const std::shared_ptr<const JEven
 	 fclose(dedxfile);
 
 	 // repeat for dedx from integral
-	 if( locEventLoop->GetCalib("/CDC/dedx_theta/dedx_int_theta_correction", dedx_i_theta_file_name) ) {
+	 if( DEvent::GetCalib(event, "/CDC/dedx_theta/dedx_int_theta_correction", dedx_i_theta_file_name) ) {
 	   jerr << "Cannot find requested /CDC/dedx_theta/dedx_int_theta_correction in CCDB for this run!" << endl;
-	   return RESOURCE_UNAVAILABLE;
+	   return; // RESOURCE_UNAVAILABLE;
 	 }
 	 else if( dedx_i_theta_file_name.find("file_name") != dedx_i_theta_file_name.end()
 		 && dedx_i_theta_file_name["file_name"] != "None" ) {
-	   JResourceManager *jresman = dapp->GetJResourceManager(runnumber);
-	   dedx_i_theta_correction_file = jresman->GetResource(dedx_i_theta_file_name["file_name"]);
+	   auto *jlargecalib = DEvent::GetJLargeCalibration(event);
+	   dedx_i_theta_correction_file = jlargecalib->GetResource(dedx_i_theta_file_name["file_name"]);
 	 }
 
 	 // check to see if we actually have a filename
 	 if(dedx_i_theta_correction_file.empty()) {
 	   jerr <<"Cannot read CDC dedx (from pulse integral) theta correction filename from CCDB" << endl;
-	   return RESOURCE_UNAVAILABLE;
+	   return; // RESOURCE_UNAVAILABLE;
 	 }
 
 	 
          // get overall scaling factor 
-	 if( locEventLoop->GetCalib("/CDC/dedx_theta/dedx_int_scale", scale_factors) ) {
+	 if( DEvent::GetCalib(event, "/CDC/dedx_theta/dedx_int_scale", scale_factors) ) {
            jerr << "Cannot find requested /CDC/dedx_theta/dedx_int_scale in CCDB for this run!" << endl;
-           return RESOURCE_UNAVAILABLE;
+           return; // RESOURCE_UNAVAILABLE;
 	 }
 
          double dedx_int_scale = 1.0;
@@ -148,7 +142,7 @@ void DChargedTrackHypothesis_factory::BeginRun(const std::shared_ptr<const JEven
            dedx_int_scale = scale_factors["int_scale"];
          } else {
            jerr << "Unable to get int_scale from /CDC/dedx_int_scale !" << endl;
-           return RESOURCE_UNAVAILABLE;
+           return; // RESOURCE_UNAVAILABLE;
 	 }
 
 	 dedxfile = fopen(dedx_i_theta_correction_file.c_str(),"r");
@@ -178,8 +172,6 @@ void DChargedTrackHypothesis_factory::BeginRun(const std::shared_ptr<const JEven
 	 }
 	 fclose(dedxfile);
 	}
-
- 	return NOERROR;
 }
 
 //------------------

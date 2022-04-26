@@ -13,7 +13,6 @@ using namespace std;
 
 #include <JANA/JEvent.h>
 #include <JANA/Calibrations/JCalibrationManager.h>
-#include <JANA/Services/JGlobalRootLock.h>
 
 #include <DANA/DGeometryManager.h>
 #include <HDGEOMETRY/DGeometry.h>
@@ -53,7 +52,6 @@ void DCDCTrackHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
   auto runnumber = event->GetRunNumber();
   auto app = event->GetJApplication();
   auto jcalib = app->GetService<JCalibrationManager>()->GetJCalibration(runnumber);
-  auto root_lock = app->GetService<JGlobalRootLock>();
   auto geo_manager = app->GetService<DGeometryManager>();
   dgeom = geo_manager->GetDGeometry(runnumber);
 

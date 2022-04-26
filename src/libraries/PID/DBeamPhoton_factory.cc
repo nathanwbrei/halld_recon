@@ -13,7 +13,6 @@ using namespace std;
 #include "DBeamPhoton_factory.h"
 
 #include <JANA/JEvent.h>
-#include <JANA/Services/JGlobalRootLock.h>
 #include "DANA/DGeometryManager.h"
 #include "HDGEOMETRY/DGeometry.h"
 
@@ -59,7 +58,6 @@ void DBeamPhoton_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
     auto runnumber = event->GetRunNumber();
     auto app = event->GetJApplication();
-    auto root_lock = app->GetService<JGlobalRootLock>();
     auto geo_manager = app->GetService<DGeometryManager>();
     auto locGeometry = geo_manager->GetDGeometry(runnumber);
 

@@ -47,8 +47,7 @@ void DEventProcessor_pid_dirc::Init() {
 void DEventProcessor_pid_dirc::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
    // Get the geometry
-   DEvent devent(event);
-   DGeometry *geom = devent.GetDGeometry();
+   DGeometry *geom = DEvent::GetDGeometry(event);
 
    // Outer detector geometry parameters
    vector<double>tof_face;
@@ -94,7 +93,7 @@ void DEventProcessor_pid_dirc::Process(const std::shared_ptr<const JEvent>& even
   event->Get(trig);
 
   
-  GetLockService(event)->RootWriteLock(); //ACQUIRE ROOT LOCK
+  DEvent::GetLockService(event)->RootWriteLock(); //ACQUIRE ROOT LOCK
 
   // check for LED triggers
   int trigger = 0;
@@ -214,7 +213,7 @@ void DEventProcessor_pid_dirc::Process(const std::shared_ptr<const JEvent>& even
   }
   
   if(cevt.GetEntriesFast()>0) fTree->Fill();
-  GetLockService(event)->RootUnLock(); //RELEASE ROOT LOCK
+  DEvent::GetLockService(event)->RootUnLock(); //RELEASE ROOT LOCK
 }
 
 void DEventProcessor_pid_dirc::EndRun() {

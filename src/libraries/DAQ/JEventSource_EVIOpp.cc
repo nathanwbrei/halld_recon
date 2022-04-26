@@ -46,7 +46,7 @@ bool sortf250pulsenumbers(const Df250PulseData *a, const Df250PulseData *b) {
 //----------------
 // Constructor
 //----------------
-JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(source_name)
+JEventSource_EVIOpp::JEventSource_EVIOpp(std::string source_name):JEventSource(source_name)
 {
 	DONE = false;
 	DISPATCHER_END = false;
@@ -62,7 +62,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	
 	// Define base set of status bits
 	DStatusBits::SetStatusBitDescriptions();
-	// dapp = dynamic_cast<DApplication*>(japp);  // TODO: NWB: Figure out a better way of setting nevts_read correctly
+	// TODO: NWB: Figure out a better way of setting nevts_read correctly
 
 	// Get configuration parameters
 	VERBOSE = 0;
@@ -185,7 +185,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 		hdet = new HDET(source_name, ET_STATION_NEVENTS, ET_STATION_CREATE_BLOCKING);
 		if( ! hdet->is_connected ){
 			cerr << hdet->err_mess.str() << endl;
-			throw JException("Failed to open ET system: %s", source_name);
+			throw JException("Failed to open ET system: %s", source_name.c_str());
 		}
 		hdet->VERBOSE = VERBOSE_ET;
 		source_type = kETSource;
@@ -198,7 +198,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 		hdevio = new HDEVIO(source_name, true, VERBOSE);
 		if( ! hdevio->is_open ){
 			cerr << hdevio->err_mess.str() << endl;
-			throw JException("Failed to open EVIO file: %s", source_name); // throw exception indicating error
+			throw JException("Failed to open EVIO file: %s", source_name.c_str()); // throw exception indicating error
 		}
 		source_type = kFileSource;
 		hdevio->IGNORE_EMPTY_BOR = IGNORE_EMPTY_BOR;
@@ -703,6 +703,8 @@ bool JEventSource_EVIOpp::GetObjects(const std::shared_ptr<const JEvent> &event,
 	// Optionally record call stack
 	if(RECORD_CALL_STACK) AddToCallStack(pe, event);
 
+
+	// TODO: NWB: JANA1 queries GetObjects FIRST, this is going to break calibration skims
 	// Decide whether this is a data type the source supplies
     // If the data type is that of some derived data that is nominally
     // supplied by another factory, but is being stored in EVIO format
@@ -710,21 +712,16 @@ bool JEventSource_EVIOpp::GetObjects(const std::shared_ptr<const JEvent> &event,
     // say that we supply this data ONLY IF we actually have data
     // of this type.  Otherwise, we feign ignorance so that the 
     // data is produced by its usual factory
-	bool isSuppliedType = pe->IsParsedDataType(dataClassName)
-                           && pe->IsNonEmptyDerivedDataType(dataClassName);
+	bool isParsed = pe->IsParsedDataType(dataClassName);
+	bool isDerived = pe->IsNonEmptyDerivedDataType(dataClassName);
+	bool isSuppliedType = isParsed || isDerived;
 	for(auto tt : translationTables){
 		if(isSuppliedType) break;  // once this is set, it's set
 		isSuppliedType = tt->IsSuppliedType(dataClassName);
 	}
 
 	// Check if this is a class we provide and return appropriate value
-	if( isSuppliedType ){
-		// We do produce this type
-		return NOERROR;
-	}else{
-		// We do not produce this type
-		return OBJECT_NOT_AVAILABLE;
-	}
+	return isSuppliedType;
 }
 
 //----------------

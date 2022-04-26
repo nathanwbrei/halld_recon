@@ -87,7 +87,6 @@ DEventSourceHDDM::DEventSourceHDDM(const char* source_name)
 
    fin = new hddm_s::istream(*ifs);
    initialized = false;
-   dapp = NULL;
    bfield = NULL;
    geom = NULL;
    
@@ -198,38 +197,35 @@ bool DEventSourceHDDM::GetObjects(const std::shared_ptr<const JEvent> &event, JF
    // The ref field of the JEvent is just the HDDM object pointer.
    hddm_s::HDDM *record = const_cast<hddm_s::HDDM*>(event->GetSingleStrict<hddm_s::HDDM>());
 
-   DEvent devent(event);
    // Get pointer to the B-field object and Geometry object
    if (initialized == false && event) {
       initialized = true;
       dRunNumber = event->GetRunNumber();
-      if (dapp) {
-         jcalib = devent.GetJCalibration();
-         // Make sure jcalib is set
-         if (!jcalib) {
-            _DBG_ << "ERROR - no jcalib set!" <<endl;
-            return false; // RESOURCE_UNAVAILABLE;
+      jcalib = DEvent::GetJCalibration(event);
+      // Make sure jcalib is set
+      if (!jcalib) {
+         _DBG_ << "ERROR - no jcalib set!" <<endl;
+         return false; // RESOURCE_UNAVAILABLE;
+      }
+      // Get constants and do basic check on number of elements
+      vector< map<string, float> > tvals;
+      if(jcalib->Get("FDC/strip_calib", tvals))
+         throw JException("Could not load CCDB table: FDC/strip_calib");
+
+      if (tvals.size() != 192) {
+         _DBG_ << "ERROR - strip calibration vectors are not the right size!"
+               << endl;
+         return false; // VALUE_OUT_OF_RANGE;
+      }
+      map<string,float>::iterator iter;
+      for (iter=tvals[0].begin(); iter!=tvals[0].end(); iter++) {
+         // Copy values into tables. We preserve the order since
+         // that is how it was originally done in hitFDC.c
+         for (unsigned int i=0; i<tvals.size(); i++) {
+            map<string, float> &row = tvals[i];
+            uscale[i]=row["qru"];
+            vscale[i]=row["qrv"];
          }
-         // Get constants and do basic check on number of elements
-         vector< map<string, float> > tvals;
-         if(jcalib->Get("FDC/strip_calib", tvals))
-             throw JException("Could not load CCDB table: FDC/strip_calib");
- 
-         if (tvals.size() != 192) {
-            _DBG_ << "ERROR - strip calibration vectors are not the right size!"
-                  << endl;
-            return false; // VALUE_OUT_OF_RANGE;
-         }
-         map<string,float>::iterator iter;
-         for (iter=tvals[0].begin(); iter!=tvals[0].end(); iter++) {
-            // Copy values into tables. We preserve the order since
-            // that is how it was originally done in hitFDC.c
-            for (unsigned int i=0; i<tvals.size(); i++) {
-               map<string, float> &row = tvals[i];
-               uscale[i]=row["qru"];
-               vscale[i]=row["qrv"];
-            }
-         }     
       }
       // load BCAL geometry
       vector<const DBCALGeometry *> BCALGeomVec;
@@ -272,7 +268,7 @@ bool DEventSourceHDDM::GetObjects(const std::shared_ptr<const JEvent> &event, JF
    }
    if(locNewRunNumber)
    {
-      DGeometry* locGeometry = devent.GetDGeometry();
+      DGeometry* locGeometry = DEvent::GetDGeometry(event);
       double locTargetCenterZ = 0.0;
       locGeometry->GetTargetZ(locTargetCenterZ);
 
@@ -2688,7 +2684,7 @@ Particle_t DEventSourceHDDM::IDTrack(float locCharge, float locMass) const
       if (fabs(locMass - ParticleMass(Gamma)) < locMassTolerance) return Gamma;
       if (fabs(locMass - ParticleMass(Neutron)) < locMassTolerance) return Neutron;
    }
-   return Unknown;
+   return Particle_t::Unknown;
 }
 
 //------------------

@@ -26,14 +26,14 @@ JEventProcessor_FCAL_Pi0TOF::JEventProcessor_FCAL_Pi0TOF()
   DO_METHOD = 0;
   USE_TRACKS = 0;
 
-  gPARMS->SetDefaultParameter( "FCAL_Pi0TOF:DO_METH0D", DO_METHOD );
-  gPARMS->SetDefaultParameter( "FCAL_Pi0TOF:USE_TRACKS", USE_TRACKS );
+  japp->SetDefaultParameter( "FCAL_Pi0TOF:DO_METH0D", DO_METHOD );
+  japp->SetDefaultParameter( "FCAL_Pi0TOF:USE_TRACKS", USE_TRACKS );
 
   m_time_FCALRF_cut = 3.0;
   m_time_FCALFCAL_cut = 5.0;
   
-  gPARMS->SetDefaultParameter( "FCAL_Pi0TOF:time_FCALRF_cut", m_time_FCALRF_cut );
-  gPARMS->SetDefaultParameter( "FCAL_Pi0TOF:time_FCALFCAL_cut", m_time_FCALFCAL_cut );
+  japp->SetDefaultParameter( "FCAL_Pi0TOF:time_FCALRF_cut", m_time_FCALRF_cut );
+  japp->SetDefaultParameter( "FCAL_Pi0TOF:time_FCALFCAL_cut", m_time_FCALFCAL_cut );
   
   cout <<"DO_METHOD " << DO_METHOD << " USE_TRACKS " << USE_TRACKS << endl;
 }
@@ -1938,7 +1938,6 @@ void JEventProcessor_FCAL_Pi0TOF::Process(const std::shared_ptr<const JEvent>& e
       }
     }
   }
-  return NOERROR;
 }
 
 //------------------

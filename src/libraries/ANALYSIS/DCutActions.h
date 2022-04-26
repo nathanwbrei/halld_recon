@@ -480,7 +480,7 @@ class DCutAction_InvariantMass : public DAnalysisAction
 			//call with step = 0, PIDs = pi+, pi-, and will histogram rho mass
 		DCutAction_InvariantMass(const DReaction* locReaction, size_t locStepIndex, deque<Particle_t> locToIncludePIDs, bool locUseKinFitResultsFlag, double locMinMass, double locMaxMass, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Cut_InvariantMass", locUseKinFitResultsFlag, locActionUniqueString),
-		dInitialPID(Unknown), dStepIndex(locStepIndex), dToIncludePIDs(locToIncludePIDs), dMinMass(locMinMass), dMaxMass(locMaxMass){}
+		dInitialPID(Particle_t::Unknown), dStepIndex(locStepIndex), dToIncludePIDs(locToIncludePIDs), dMinMass(locMinMass), dMaxMass(locMaxMass){}
 
 		string Get_ActionName(void) const;
 		void Initialize(const std::shared_ptr<const JEvent>& locEvent);
@@ -654,7 +654,7 @@ class DCutAction_PIDDeltaT : public DAnalysisAction
 
 	public:
 
-		DCutAction_PIDDeltaT(const DReaction* locReaction, bool locUseKinFitResultsFlag, double locDeltaTCut, Particle_t locPID = Unknown, DetectorSystem_t locSystem = SYS_NULL, string locActionUniqueString = "") :
+		DCutAction_PIDDeltaT(const DReaction* locReaction, bool locUseKinFitResultsFlag, double locDeltaTCut, Particle_t locPID = Particle_t::Unknown, DetectorSystem_t locSystem = SYS_NULL, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Cut_PIDDeltaT", locUseKinFitResultsFlag, locActionUniqueString),
 		dDeltaTCut(locDeltaTCut), dPID(locPID), dSystem(locSystem){}
 
@@ -679,7 +679,7 @@ class DCutAction_PIDTimingBeta : public DAnalysisAction
 
 	public:
 
-		DCutAction_PIDTimingBeta(const DReaction* locReaction, double locMinBeta, double locMaxBeta, Particle_t locPID = Unknown, DetectorSystem_t locSystem = SYS_NULL, string locActionUniqueString = "") :
+		DCutAction_PIDTimingBeta(const DReaction* locReaction, double locMinBeta, double locMaxBeta, Particle_t locPID = Particle_t::Unknown, DetectorSystem_t locSystem = SYS_NULL, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Cut_PIDTimingBeta", false, locActionUniqueString),
 		dMinBeta(locMinBeta), dMaxBeta(locMaxBeta), dPID(locPID), dSystem(locSystem){}
 
@@ -703,7 +703,7 @@ class DCutAction_NoPIDHit : public DAnalysisAction
 
 	public:
 
-		DCutAction_NoPIDHit(const DReaction* locReaction, Particle_t locPID = Unknown, string locActionUniqueString = "") :
+		DCutAction_NoPIDHit(const DReaction* locReaction, Particle_t locPID = Particle_t::Unknown, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Cut_NoPIDHit", false, locActionUniqueString),
 		dPID(locPID){}
 
@@ -755,7 +755,7 @@ class DCutAction_FlightDistance : public DAnalysisAction
 
 	public:
 
-		DCutAction_FlightDistance(const DReaction* locReaction, bool locUseKinFitResultsFlag, double locMinFlightDistance, Particle_t locPID = Unknown, string locActionUniqueString = "") :
+		DCutAction_FlightDistance(const DReaction* locReaction, bool locUseKinFitResultsFlag, double locMinFlightDistance, Particle_t locPID = Particle_t::Unknown, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Cut_FlightDistance", locUseKinFitResultsFlag, locActionUniqueString),
 		dMinFlightDistance(locMinFlightDistance), dPID(locPID) {}
 
@@ -778,7 +778,7 @@ class DCutAction_FlightSignificance : public DAnalysisAction
 
 	public:
 
-		DCutAction_FlightSignificance(const DReaction* locReaction, bool locUseKinFitResultsFlag, double locMinFlightSignificance, Particle_t locPID = Unknown, string locActionUniqueString = "") :
+		DCutAction_FlightSignificance(const DReaction* locReaction, bool locUseKinFitResultsFlag, double locMinFlightSignificance, Particle_t locPID = Particle_t::Unknown, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Cut_FlightSignificance", locUseKinFitResultsFlag, locActionUniqueString),
 		dMinFlightSignificance(locMinFlightSignificance), dPID(locPID) {}
 

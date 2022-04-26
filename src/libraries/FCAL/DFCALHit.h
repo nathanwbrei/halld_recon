@@ -19,7 +19,7 @@ public:
 	
   DFCALHit(){}
 
-  oid_t id;
+  oid_t id = reinterpret_cast<oid_t>(this);
   int row;
   int column;
   float x;

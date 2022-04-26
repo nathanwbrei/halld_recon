@@ -20,17 +20,26 @@
 #include <JANA/Compatibility/JGeometryManager.h>
 
 
-DGeometryManager::DGeometryManager(JApplication* app) : app(app) {}
+DGeometryManager::DGeometryManager(JApplication* app) : m_app(app) {}
 
 
 DGeometryManager::~DGeometryManager() {
 
-	delete bfield;
-	delete lorentz_def;
-
-	std::lock_guard<std::mutex> lock(mutex);
-	for (auto geometry : geometries) delete geometry;
-	geometries.clear();
+	for (auto pair : m_bfields) {
+		delete pair.second;
+	}
+	for (auto pair : m_lorentz_defs) {
+		delete pair.second;
+	}
+	for (auto pair : m_root_geoms) {
+		delete pair.second;
+	}
+	for (auto pair : m_dgeometries) {
+		delete pair.second;
+	}
+	for (auto pair : m_dirclut_readers) {
+		delete pair.second;
+	}
 }
 
 
@@ -76,7 +85,13 @@ DGeometry *DGeometryManager::GetDGeometry(unsigned int run_number) {
 	// First, get the JGeometry object using our JApplication
 	// base class. Then, use that to find the correct DGeometry
 	// object if it exists.
-	JGeometry *jgeom = app->GetService<JGeometryManager>()->GetJGeometry(run_number);
+	std::lock_guard<std::mutex> lock(m_dgeoms_mutex);
+	auto it = m_dgeometries.find(run_number);
+	if (it != m_dgeometries.end()) {
+		return it->second;
+	}
+
+	JGeometry *jgeom = m_app->GetService<JGeometryManager>()->GetJGeometry(run_number);
 	if(!jgeom){
 		_DBG_<<"ERROR: Unable get geometry for run "<<run_number<<"!"<<endl;
 		_DBG_<<"Make sure you JANA_GEOMETRY_URL environment variable is set."<<endl;
@@ -85,19 +100,8 @@ DGeometry *DGeometryManager::GetDGeometry(unsigned int run_number) {
 		_DBG_<<"    xmlfile://${HALLD_RECON_HOME}/src/programs/Simulation/hdds/main_HDDS.xml"<<endl;
 		_DBG_<<endl;
 		_DBG_<<"Exiting now."<<endl;
-		app->Quit();
+		m_app->Quit();
 		exit(-1);
-		return NULL;
-	}
-
-
-	std::lock_guard<std::mutex> lock(mutex);
-
-	for(unsigned int i=0; i<geometries.size(); i++){
-		if(geometries[i]->GetJGeometry() == jgeom){
-			DGeometry *dgeom = geometries[i];
-			return dgeom;
-		}
 	}
 
 	jout<<"Creating DGeometry:"<<endl;
@@ -108,9 +112,9 @@ DGeometry *DGeometryManager::GetDGeometry(unsigned int run_number) {
 
 	// Couldn't find a DGeometry object that uses this JGeometry object.
 	// Create one and add it to the list.
-	DGeometry *dgeom = new DGeometry(jgeom, this, app, run_number);
-	geometries.push_back(dgeom);
+	DGeometry *dgeom = new DGeometry(jgeom, this, m_app, run_number);
 
+	m_dgeometries[run_number] = dgeom;
 	return dgeom;
 }
 
@@ -126,19 +130,22 @@ DMagneticFieldMap *DGeometryManager::GetBfield(unsigned int run_number) {
 			"   -PBFIELD_TYPE=NoField\n";
 
 
-	std::lock_guard<std::mutex> lock(mutex);
+	std::lock_guard<std::mutex> lock(m_bfield_mutex);
 
 	// If field map already exists, return it immediately
-	if (bfield && run_number == bfield_run_nr) {
-		return bfield;
+	auto it = m_bfields.find(run_number);
+	if (it != m_bfields.end()) {
+		return it->second;
 	}
+
+	DMagneticFieldMap* bfield;
 
 	// Create magnetic field object for use by everyone
 	// Allow a trivial homogeneous map to be used if
 	// specified on the command line
 	string bfield_type = "FineMesh";
 	string bfield_map = "";
-	auto params = app->GetJParameterManager();
+	auto params = m_app->GetJParameterManager();
 	params->SetDefaultParameter("BFIELD_TYPE", bfield_type);
 	if (params->Exists("BFIELD_MAP")) {
 		bfield_map = params->GetParameterValue<std::string>("BFIELD_MAP");
@@ -146,12 +153,12 @@ DMagneticFieldMap *DGeometryManager::GetBfield(unsigned int run_number) {
 	if (bfield_type == "CalibDB" || bfield_type == "FineMesh") {
 		// if the magnetic field map got passed in on the command line, then use that value instead of the CCDB values
 		if (bfield_map != "") {
-			bfield = new DMagneticFieldMapFineMesh(app, run_number, bfield_map);
+			bfield = new DMagneticFieldMapFineMesh(m_app, run_number, bfield_map);
 		}
 		else {
 			// otherwise, we load some default map
 			// see if we can load the name of the magnetic field map to use from the calib DB
-			JCalibration *jcalib = app->GetService<JCalibrationManager>()->GetJCalibration(run_number);
+			JCalibration *jcalib = m_app->GetService<JCalibrationManager>()->GetJCalibration(run_number);
 			map<string, string> bfield_map_name;
 			if (jcalib->GetCalib("/Magnets/Solenoid/solenoid_map", bfield_map_name)) {
 				// if we can't find information in the CCDB, then quit with an error message
@@ -162,11 +169,11 @@ DMagneticFieldMap *DGeometryManager::GetBfield(unsigned int run_number) {
 				if (bfield_map_name.find("map_name") != bfield_map_name.end()) {
 					if (bfield_map_name["map_name"] == "NoField") {
 						// special case for no magnetic field
-						bfield = new DMagneticFieldMapNoField(app);
+						bfield = new DMagneticFieldMapNoField(m_app);
 					}
 					else {
 						// pass along the name of the magnetic field map to load
-						bfield = new DMagneticFieldMapFineMesh(app, run_number, bfield_map_name["map_name"]);
+						bfield = new DMagneticFieldMapFineMesh(m_app, run_number, bfield_map_name["map_name"]);
 					}
 				}
 				else {
@@ -191,53 +198,54 @@ DMagneticFieldMap *DGeometryManager::GetBfield(unsigned int run_number) {
 		// jout<<"Created Magnetic field map of type DMagneticFieldMapParameterized."<<endl;
 		//}
 	} else if (bfield_type == "NoField") {
-		bfield = new DMagneticFieldMapNoField(app);
+		bfield = new DMagneticFieldMapNoField(m_app);
 		jout << "Created Magnetic field map with B=(0,0,0) everywhere." << endl;
 	} else {
 		_DBG_ << " Unknown DMagneticFieldMap subclass \"DMagneticFieldMap" << bfield_type << "\" !!" << endl;
 		exit(-1);
 	}
+	m_bfields[run_number] = bfield;
 	return bfield;
 }
 
 
 DLorentzDeflections *DGeometryManager::GetLorentzDeflections(unsigned int run_number) {
 
-	std::lock_guard<std::mutex> lock(mutex);
-
-	// If Lorentz deflection object does not exist or has wrong run nr, create it
-	if (!lorentz_def || run_number != lorenzdef_run_nr) {
-		delete lorentz_def;
-		lorentz_def = new DLorentzMapCalibDB(app, run_number);
-		lorenzdef_run_nr = run_number;
+	std::lock_guard<std::mutex> lock(m_lorentz_mutex);
+	auto it = m_lorentz_defs.find(run_number);
+	if (it != m_lorentz_defs.end()) {
+		return it->second;
 	}
+
+	auto lorentz_def = new DLorentzMapCalibDB(m_app, run_number);
+	m_lorentz_defs[run_number] = lorentz_def;
 	return lorentz_def;
 }
 
 
 DRootGeom *DGeometryManager::GetRootGeom(unsigned int run_number) {
 
-	std::lock_guard<std::mutex> lock(mutex);
-
-	// If field map does not exist or has wrong run nr, create it
-	if (!RootGeom || run_number != rootgeom_run_nr) {
-		delete RootGeom;
-		RootGeom = new DRootGeom(app, run_number);
-		rootgeom_run_nr = run_number;
+	std::lock_guard<std::mutex> lock(m_rootgeoms_mutex);
+	auto it = m_root_geoms.find(run_number);
+	if (it != m_root_geoms.end()) {
+		return it->second;
 	}
-	return RootGeom;
+
+	auto rootGeom = new DRootGeom(m_app, run_number);
+	m_root_geoms[run_number] = rootGeom;
+	return rootGeom;
 }
 
 
 DDIRCLutReader *DGeometryManager::GetDIRCLut(unsigned int run_number) {
 
-	std::lock_guard<std::mutex> lock(mutex);
-
-	// If DIRC LUT does not exist or has wrong run nr, create it
-	if (!dircLut || run_number != dirclut_run_nr) {
-		delete dircLut;
-		dircLut = new DDIRCLutReader(app, run_number);
-		dirclut_run_nr = run_number;
+	std::lock_guard<std::mutex> lock(m_dirclut_mutex);
+	auto it = m_dirclut_readers.find(run_number);
+	if (it != m_dirclut_readers.end()) {
+		return it->second;
 	}
+
+	auto dircLut = new DDIRCLutReader(m_app, run_number);
+	m_dirclut_readers[run_number] = dircLut;
 	return dircLut;
 }

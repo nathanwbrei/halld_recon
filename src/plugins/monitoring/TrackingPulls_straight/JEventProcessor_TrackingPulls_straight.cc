@@ -77,8 +77,8 @@ void JEventProcessor_TrackingPulls_straight::Init() {
 void JEventProcessor_TrackingPulls_straight::BeginRun(const std::shared_ptr<const JEvent> &event) {
 }
 
-jerror_t JEventProcessor_TrackingPulls_straight::evnt(JEventLoop *loop,
-                                                      uint64_t eventnumber) {
+void JEventProcessor_TrackingPulls_straight::Process(const std::shared_ptr<const JEvent> &event) {
+  auto eventnumber = event->GetEventNumber();
   const DTrigger *locTrigger = NULL;
   event->GetSingle(locTrigger);
   if (locTrigger->Get_L1FrontPanelTriggerBits() != 0) return;
@@ -114,7 +114,7 @@ jerror_t JEventProcessor_TrackingPulls_straight::evnt(JEventLoop *loop,
       cdc_left_right_[j] = -999;
       cdc_phi_intersect_[j] = -999.9;
     }
-    eventnumber_ = (int)eventnumber;
+    eventnumber_ = (int) eventnumber;
     track_index_ = (int)i;
     chi2_ = track->chisq;
     ndf_ = track->Ndof;
@@ -188,9 +188,9 @@ jerror_t JEventProcessor_TrackingPulls_straight::evnt(JEventLoop *loop,
             TMath::RadToDeg();
       }
     }
-    japp->RootWriteLock();
+    lockService->RootWriteLock();
     tree_->Fill();
-    japp->RootUnLock();
+    lockService->RootUnLock();
   }
 }
 

@@ -60,7 +60,7 @@ void DTrackCandidate_factory_StraightLine::BeginRun(const std::shared_ptr<const 
 
    if(finders.size()<1){
       _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
-      return; // RESOURCE_UNAVAILABLE;  # TODO: Verify me
+      return; // RESOURCE_UNAVAILABLE;
    }
 
    // Drop the const qualifier from the DTrackFinder pointer

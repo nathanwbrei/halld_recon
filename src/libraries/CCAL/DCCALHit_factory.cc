@@ -90,7 +90,7 @@ void DCCALHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
     vector<const DCCALGeometry*> ccalGeomVect;
     event->Get( ccalGeomVect );
     if (ccalGeomVect.size() < 1)
-      return; // OBJECT_NOT_AVAILABLE; // TODO: Verify
+      return; // OBJECT_NOT_AVAILABLE;
     const DCCALGeometry& ccalGeom = *(ccalGeomVect[0]);
 
 
@@ -214,7 +214,7 @@ void DCCALHit_factory::Process(const std::shared_ptr<const JEvent>& event)
     vector<const DCCALGeometry*> ccalGeomVect;
     event->Get( ccalGeomVect );
     if (ccalGeomVect.size() < 1)
-      return; // OBJECT_NOT_AVAILABLE; // TODO: Verify
+      return; // OBJECT_NOT_AVAILABLE;
     const DCCALGeometry& ccalGeom = *(ccalGeomVect[0]);
 
 

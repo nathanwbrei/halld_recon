@@ -133,12 +133,11 @@ void JEventProcessor_TRD_hists::BeginRun(const std::shared_ptr<const JEvent>& ev
     if(runnumber < 70000) wirePlaneOffset = 0;
     else wirePlaneOffset = 4;
 
-    DEvent devent(event);
-    const DGeometry *geom = devent.GetDGeometry();
+    const DGeometry *geom = DEvent::GetDGeometry(event);
     vector<double> z_trd;
     geom->GetTRDZ(z_trd);
 
-    const DMagneticFieldMap *bfield = devent.GetBfield();
+    const DMagneticFieldMap *bfield = DEvent::GetBfield(event);
     dIsNoFieldFlag = ((dynamic_cast<const DMagneticFieldMapNoField*>(bfield)) != NULL);
 }
 
@@ -205,7 +204,7 @@ void JEventProcessor_TRD_hists::Process(const std::shared_ptr<const JEvent>& eve
 
     // FILL HISTOGRAMS
     // Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
-	GetLockService(event)->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+	DEvent::GetLockService(event)->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
     ///////////////////////////
     // TRD DigiHits and Hits //
@@ -375,7 +374,7 @@ void JEventProcessor_TRD_hists::Process(const std::shared_ptr<const JEvent>& eve
 	    }
     }
 
-	GetLockService(event)->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+	DEvent::GetLockService(event)->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 }
 //----------------------------------------------------------------------------------
 

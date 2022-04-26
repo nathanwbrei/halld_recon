@@ -74,7 +74,7 @@ void DFCALCluster_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 	else{
 
 	  cerr << "No geometry accessible." << endl;
-	  return; // RESOURCE_UNAVAILABLE; // TODO: Verify
+	  return; // RESOURCE_UNAVAILABLE;
 	}
 
 	fcalFaceZ_TargetIsZeq0 = fcalFrontFaceZ - targetZ;

@@ -19,7 +19,7 @@ using namespace std;
 #include <JANA/JEvent.h>
 #include <JANA/JCalibration.h>
 
-#include <DANA/DApplication.h>
+#include <DANA/DEvent.h>
 #include <TRACKING/DMCThrown.h>
 #include <TRACKING/DMCTrackHit.h>
 #include <FDC/DFDCGeometry.h>
@@ -112,8 +112,7 @@ void DEventProcessor_fdc_hists::Init()
 //------------------
 void DEventProcessor_fdc_hists::BeginRun(const std::shared_ptr<const JEvent>& event)
 {	
-  DApplication* dapp=dynamic_cast<DApplication*>(event->GetJApplication());
-  const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
+  const DGeometry *dgeom  = GetDGeometry(event);
   dgeom->GetFDCWires(fdcwires);
 
   // Get the position of the CDC downstream endplate from DGeometry

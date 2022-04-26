@@ -120,7 +120,7 @@ void DEventProcessor_fcal_led::Process(const std::shared_ptr<const JEvent>& even
 	nsamples_pedestal = 0;
 
 
-	GetLockService(event)->RootWriteLock();
+	DEvent::GetLockService(event)->RootWriteLock();
 
 
         for(unsigned int ii = 0; ii < fcal_digihits.size(); ii++){
@@ -187,7 +187,7 @@ void DEventProcessor_fcal_led::Process(const std::shared_ptr<const JEvent>& even
 	  tree1->Fill();
 	}
 
-	GetLockService(event)->RootUnLock();
+	DEvent::GetLockService(event)->RootUnLock();
 }
 
 //------------------

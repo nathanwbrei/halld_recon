@@ -26,8 +26,7 @@ void DBeamPhoton_factory_TRUTH::Init()
 //------------------
 void DBeamPhoton_factory_TRUTH::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
-	auto devent = DEvent(event);
-	DGeometry* locGeometry = devent.GetDGeometry();
+	DGeometry* locGeometry = DEvent::GetDGeometry(event);
 	dTargetCenterZ = 0.0;
 	locGeometry->GetTargetZ(dTargetCenterZ);
 }

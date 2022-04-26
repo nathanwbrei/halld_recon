@@ -68,6 +68,55 @@ std::string Comment::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t Comment::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("comment");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "text", (char*)&mx_text - (char*)this, vl_string_tid);
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["comment"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["comment"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "comment", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "comment", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void Comment::hdf5DataPack()
+{
+   mx_text = m_text.c_str();
+}
+void Comment::hdf5DataUnpack()
+{
+   new(&m_text) std::string();
+   if (mx_text != 0) {
+      m_text = mx_text;
+      m_host->m_hdf5_strings.push_back(&m_text);
+   }
+}
+#endif
+
 std::string DataVersionString::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -88,6 +137,55 @@ std::string DataVersionString::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t DataVersionString::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("dataVersionString");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "text", (char*)&mx_text - (char*)this, vl_string_tid);
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["dataVersionString"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["dataVersionString"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "dataVersionString", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "dataVersionString", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void DataVersionString::hdf5DataPack()
+{
+   mx_text = m_text.c_str();
+}
+void DataVersionString::hdf5DataUnpack()
+{
+   new(&m_text) std::string();
+   if (mx_text != 0) {
+      m_text = mx_text;
+      m_host->m_hdf5_strings.push_back(&m_text);
+   }
+}
+#endif
+
 std::string CcdbContext::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -107,6 +205,55 @@ std::string CcdbContext::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t CcdbContext::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("ccdbContext");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "text", (char*)&mx_text - (char*)this, vl_string_tid);
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["ccdbContext"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["ccdbContext"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "ccdbContext", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "ccdbContext", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void CcdbContext::hdf5DataPack()
+{
+   mx_text = m_text.c_str();
+}
+void CcdbContext::hdf5DataUnpack()
+{
+   new(&m_text) std::string();
+   if (mx_text != 0) {
+      m_text = mx_text;
+      m_host->m_hdf5_strings.push_back(&m_text);
+   }
+}
+#endif
 
 std::string Origin::toString(int indent) {
    std::stringstream ostr;
@@ -135,6 +282,52 @@ std::string Origin::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t Origin::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("origin");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "t", (char*)&m_t - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "vx", (char*)&m_vx - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "vy", (char*)&m_vy - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "vz", (char*)&m_vz - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["origin"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["origin"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "origin", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "origin", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void Origin::hdf5DataPack()
+{
+}
+void Origin::hdf5DataUnpack()
+{
+}
+#endif
+
 std::string Momentum::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -162,6 +355,52 @@ std::string Momentum::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t Momentum::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("momentum");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "E", (char*)&m_E - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "px", (char*)&m_px - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "py", (char*)&m_py - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "pz", (char*)&m_pz - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["momentum"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["momentum"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "momentum", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "momentum", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void Momentum::hdf5DataPack()
+{
+}
+void Momentum::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string Product::toString(int indent) {
    std::stringstream ostr;
@@ -196,6 +435,64 @@ std::string Product::toXML(int indent) {
         << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t Product::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("product");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "id", (char*)&m_id - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "parentId", (char*)&m_parentId - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "pdgtype", (char*)&m_pdgtype - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "MomentumList_size", (char*)&m_momentum_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "MomentumList_offset", (char*)&m_momentum_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["product"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["product"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "product", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "product", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void Product::hdf5DataPack()
+{
+   m_momentum_link.deflate();
+}
+void Product::hdf5DataUnpack()
+{
+   {
+      std::list<Momentum*> *host_plist = &m_host->m_momentum_plist;
+      m_momentum_link.inflate(m_host, host_plist, this);
+      MomentumList::iterator iter;
+      for (iter = m_momentum_link.begin();
+           iter != m_momentum_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+}
+#endif
 
 std::string Vertex::toString(int indent) {
    std::stringstream ostr;
@@ -242,6 +539,74 @@ std::string Vertex::toXML(int indent) {
         << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t Vertex::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("vertex");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "OriginList_size", (char*)&m_origin_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "OriginList_offset", (char*)&m_origin_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "ProductList_size", (char*)&m_product_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "ProductList_offset", (char*)&m_product_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["vertex"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["vertex"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "vertex", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "vertex", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void Vertex::hdf5DataPack()
+{
+   m_origin_link.deflate();
+   m_product_list.deflate();
+}
+void Vertex::hdf5DataUnpack()
+{
+   {
+      std::list<Origin*> *host_plist = &m_host->m_origin_plist;
+      m_origin_link.inflate(m_host, host_plist, this);
+      OriginList::iterator iter;
+      for (iter = m_origin_link.begin();
+           iter != m_origin_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<Product*> *host_plist = &m_host->m_product_plist;
+      m_product_list.inflate(m_host, host_plist, this);
+      ProductList::iterator iter;
+      for (iter = m_product_list.begin();
+           iter != m_product_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+}
+#endif
 
 std::string Reaction::toString(int indent) {
    std::stringstream ostr;
@@ -294,6 +659,135 @@ std::string Reaction::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t Reaction::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("reaction");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "Ebeam", (char*)&m_Ebeam - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "jtag", (char*)&mx_jtag - (char*)this, vl_string_tid);
+   H5Tinsert(tid, "targetType", (char*)&m_targetType - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "type", (char*)&m_type - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "weight", (char*)&m_weight - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "VertexList_size", (char*)&m_vertex_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "VertexList_offset", (char*)&m_vertex_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["reaction"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["reaction"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "reaction", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "reaction", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void Reaction::hdf5DataPack()
+{
+   mx_jtag = m_jtag.c_str();
+   m_vertex_list.deflate();
+}
+void Reaction::hdf5DataUnpack()
+{
+   new(&m_jtag) std::string();
+   if (mx_jtag != 0) {
+      m_jtag = mx_jtag;
+      m_host->m_hdf5_strings.push_back(&m_jtag);
+   }
+   {
+      std::list<Vertex*> *host_plist = &m_host->m_vertex_plist;
+      m_vertex_list.inflate(m_host, host_plist, this);
+      VertexList::iterator iter;
+      for (iter = m_vertex_list.begin();
+           iter != m_vertex_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+}
+#endif
+
+std::string TagmChannel::toString(int indent) {
+   std::stringstream ostr;
+   for (int n=0; n < indent; ++n)
+      ostr << " ";
+   ostr << "tagmChannel"
+        << " column=" << m_column
+             << std::endl;
+   return ostr.str();
+}
+
+std::string TagmChannel::toXML(int indent) {
+   std::stringstream ostr;
+   for (int n=0; n < indent; ++n)
+      ostr << " ";
+   ostr << "<tagmChannel"
+        << " column=" << "\"" << getColumn() << "\""
+        << " />" << std::endl;
+   return ostr.str();
+}
+
+#ifdef HDF5_SUPPORT
+hid_t TagmChannel::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("tagmChannel");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "column", (char*)&m_column - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["tagmChannel"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["tagmChannel"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "tagmChannel", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "tagmChannel", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void TagmChannel::hdf5DataPack()
+{
+}
+void TagmChannel::hdf5DataUnpack()
+{
+}
+#endif
+
 std::string TagmBeamPhoton::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -303,6 +797,9 @@ std::string TagmBeamPhoton::toString(int indent) {
         << " jtag=" << "\"" << m_jtag << "\""
         << " t=" << m_t
              << std::endl;
+   if (! m_tagmChannel_link.empty()) {
+      ostr << m_tagmChannel_link.begin()->toString(indent + 2);
+   }
    return ostr.str();
 }
 
@@ -316,9 +813,143 @@ std::string TagmBeamPhoton::toXML(int indent) {
         << " jtag=" << "\"" << getJtag() << "\""
         << " t=" << "\"" << getT() << "\""
         << " tunit=" << "\"" << getTunit() << "\""
+        << ">" << std::endl;
+   if (! m_tagmChannel_link.empty()) {
+      ostr << m_tagmChannel_link.begin()->toXML(indent + 2);
+   }
+   for (int n=0; n < indent; ++n)
+      ostr << " ";
+   ostr << "</tagmBeamPhoton>"
+        << std::endl;
+   return ostr.str();
+}
+
+#ifdef HDF5_SUPPORT
+hid_t TagmBeamPhoton::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("tagmBeamPhoton");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "E", (char*)&m_E - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "jtag", (char*)&mx_jtag - (char*)this, vl_string_tid);
+   H5Tinsert(tid, "t", (char*)&m_t - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "TagmChannelList_size", (char*)&m_tagmChannel_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TagmChannelList_offset", (char*)&m_tagmChannel_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["tagmBeamPhoton"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["tagmBeamPhoton"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "tagmBeamPhoton", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "tagmBeamPhoton", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void TagmBeamPhoton::hdf5DataPack()
+{
+   mx_jtag = m_jtag.c_str();
+   m_tagmChannel_link.deflate();
+}
+void TagmBeamPhoton::hdf5DataUnpack()
+{
+   new(&m_jtag) std::string();
+   if (mx_jtag != 0) {
+      m_jtag = mx_jtag;
+      m_host->m_hdf5_strings.push_back(&m_jtag);
+   }
+   {
+      std::list<TagmChannel*> *host_plist = &m_host->m_tagmChannel_plist;
+      m_tagmChannel_link.inflate(m_host, host_plist, this);
+      TagmChannelList::iterator iter;
+      for (iter = m_tagmChannel_link.begin();
+           iter != m_tagmChannel_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+}
+#endif
+
+std::string TaghChannel::toString(int indent) {
+   std::stringstream ostr;
+   for (int n=0; n < indent; ++n)
+      ostr << " ";
+   ostr << "taghChannel"
+        << " counter=" << m_counter
+             << std::endl;
+   return ostr.str();
+}
+
+std::string TaghChannel::toXML(int indent) {
+   std::stringstream ostr;
+   for (int n=0; n < indent; ++n)
+      ostr << " ";
+   ostr << "<taghChannel"
+        << " counter=" << "\"" << getCounter() << "\""
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t TaghChannel::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("taghChannel");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "counter", (char*)&m_counter - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["taghChannel"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["taghChannel"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "taghChannel", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "taghChannel", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void TaghChannel::hdf5DataPack()
+{
+}
+void TaghChannel::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string TaghBeamPhoton::toString(int indent) {
    std::stringstream ostr;
@@ -329,6 +960,9 @@ std::string TaghBeamPhoton::toString(int indent) {
         << " jtag=" << "\"" << m_jtag << "\""
         << " t=" << m_t
              << std::endl;
+   if (! m_taghChannel_link.empty()) {
+      ostr << m_taghChannel_link.begin()->toString(indent + 2);
+   }
    return ostr.str();
 }
 
@@ -342,9 +976,80 @@ std::string TaghBeamPhoton::toXML(int indent) {
         << " jtag=" << "\"" << getJtag() << "\""
         << " t=" << "\"" << getT() << "\""
         << " tunit=" << "\"" << getTunit() << "\""
-        << " />" << std::endl;
+        << ">" << std::endl;
+   if (! m_taghChannel_link.empty()) {
+      ostr << m_taghChannel_link.begin()->toXML(indent + 2);
+   }
+   for (int n=0; n < indent; ++n)
+      ostr << " ";
+   ostr << "</taghBeamPhoton>"
+        << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t TaghBeamPhoton::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("taghBeamPhoton");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "E", (char*)&m_E - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "jtag", (char*)&mx_jtag - (char*)this, vl_string_tid);
+   H5Tinsert(tid, "t", (char*)&m_t - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "TaghChannelList_size", (char*)&m_taghChannel_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TaghChannelList_offset", (char*)&m_taghChannel_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["taghBeamPhoton"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["taghBeamPhoton"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "taghBeamPhoton", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "taghBeamPhoton", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void TaghBeamPhoton::hdf5DataPack()
+{
+   mx_jtag = m_jtag.c_str();
+   m_taghChannel_link.deflate();
+}
+void TaghBeamPhoton::hdf5DataUnpack()
+{
+   new(&m_jtag) std::string();
+   if (mx_jtag != 0) {
+      m_jtag = mx_jtag;
+      m_host->m_hdf5_strings.push_back(&m_jtag);
+   }
+   {
+      std::list<TaghChannel*> *host_plist = &m_host->m_taghChannel_plist;
+      m_taghChannel_link.inflate(m_host, host_plist, this);
+      TaghChannelList::iterator iter;
+      for (iter = m_taghChannel_link.begin();
+           iter != m_taghChannel_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+}
+#endif
 
 std::string FcalCorrelations::toString(int indent) {
    std::stringstream ostr;
@@ -374,6 +1079,53 @@ std::string FcalCorrelations::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t FcalCorrelations::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("fcalCorrelations");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "Etcorr", (char*)&m_Etcorr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "Excorr", (char*)&m_Excorr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "Eycorr", (char*)&m_Eycorr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "txcorr", (char*)&m_txcorr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "tycorr", (char*)&m_tycorr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["fcalCorrelations"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["fcalCorrelations"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "fcalCorrelations", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "fcalCorrelations", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void FcalCorrelations::hdf5DataPack()
+{
+}
+void FcalCorrelations::hdf5DataUnpack()
+{
+}
+#endif
+
 std::string FcalShowerClassification::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -393,6 +1145,49 @@ std::string FcalShowerClassification::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t FcalShowerClassification::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("fcalShowerClassification");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "classifierOuput", (char*)&m_classifierOuput - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["fcalShowerClassification"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["fcalShowerClassification"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "fcalShowerClassification", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "fcalShowerClassification", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void FcalShowerClassification::hdf5DataPack()
+{
+}
+void FcalShowerClassification::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string FcalShowerProperties::toString(int indent) {
    std::stringstream ostr;
@@ -424,6 +1219,54 @@ std::string FcalShowerProperties::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t FcalShowerProperties::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("fcalShowerProperties");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "E1E9", (char*)&m_E1E9 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "E9E25", (char*)&m_E9E25 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "docaTrack", (char*)&m_docaTrack - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "sumU", (char*)&m_sumU - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "sumV", (char*)&m_sumV - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "timeTrack", (char*)&m_timeTrack - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["fcalShowerProperties"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["fcalShowerProperties"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "fcalShowerProperties", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "fcalShowerProperties", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void FcalShowerProperties::hdf5DataPack()
+{
+}
+void FcalShowerProperties::hdf5DataUnpack()
+{
+}
+#endif
+
 std::string FcalShowerNBlocks::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -443,6 +1286,49 @@ std::string FcalShowerNBlocks::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t FcalShowerNBlocks::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("fcalShowerNBlocks");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "numBlocks", (char*)&m_numBlocks - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["fcalShowerNBlocks"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["fcalShowerNBlocks"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "fcalShowerNBlocks", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "fcalShowerNBlocks", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void FcalShowerNBlocks::hdf5DataPack()
+{
+}
+void FcalShowerNBlocks::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string FcalShower::toString(int indent) {
    std::stringstream ostr;
@@ -525,6 +1411,122 @@ std::string FcalShower::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t FcalShower::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("fcalShower");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "E", (char*)&m_E - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "Eerr", (char*)&m_Eerr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "Ezcorr", (char*)&m_Ezcorr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "jtag", (char*)&mx_jtag - (char*)this, vl_string_tid);
+   H5Tinsert(tid, "t", (char*)&m_t - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "terr", (char*)&m_terr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "tzcorr", (char*)&m_tzcorr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "x", (char*)&m_x - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "xerr", (char*)&m_xerr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "xycorr", (char*)&m_xycorr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "xzcorr", (char*)&m_xzcorr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "y", (char*)&m_y - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "yerr", (char*)&m_yerr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "yzcorr", (char*)&m_yzcorr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "z", (char*)&m_z - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "zerr", (char*)&m_zerr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "FcalCorrelationsList_size", (char*)&m_fcalCorrelations_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "FcalCorrelationsList_offset", (char*)&m_fcalCorrelations_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "FcalShowerClassificationList_size", (char*)&m_fcalShowerClassification_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "FcalShowerClassificationList_offset", (char*)&m_fcalShowerClassification_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "FcalShowerPropertiesList_size", (char*)&m_fcalShowerProperties_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "FcalShowerPropertiesList_offset", (char*)&m_fcalShowerProperties_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "FcalShowerNBlocksList_size", (char*)&m_fcalShowerNBlocks_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "FcalShowerNBlocksList_offset", (char*)&m_fcalShowerNBlocks_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["fcalShower"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["fcalShower"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "fcalShower", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "fcalShower", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void FcalShower::hdf5DataPack()
+{
+   mx_jtag = m_jtag.c_str();
+   m_fcalCorrelations_link.deflate();
+   m_fcalShowerClassification_link.deflate();
+   m_fcalShowerProperties_link.deflate();
+   m_fcalShowerNBlocks_link.deflate();
+}
+void FcalShower::hdf5DataUnpack()
+{
+   new(&m_jtag) std::string();
+   if (mx_jtag != 0) {
+      m_jtag = mx_jtag;
+      m_host->m_hdf5_strings.push_back(&m_jtag);
+   }
+   {
+      std::list<FcalCorrelations*> *host_plist = &m_host->m_fcalCorrelations_plist;
+      m_fcalCorrelations_link.inflate(m_host, host_plist, this);
+      FcalCorrelationsList::iterator iter;
+      for (iter = m_fcalCorrelations_link.begin();
+           iter != m_fcalCorrelations_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<FcalShowerClassification*> *host_plist = &m_host->m_fcalShowerClassification_plist;
+      m_fcalShowerClassification_link.inflate(m_host, host_plist, this);
+      FcalShowerClassificationList::iterator iter;
+      for (iter = m_fcalShowerClassification_link.begin();
+           iter != m_fcalShowerClassification_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<FcalShowerProperties*> *host_plist = &m_host->m_fcalShowerProperties_plist;
+      m_fcalShowerProperties_link.inflate(m_host, host_plist, this);
+      FcalShowerPropertiesList::iterator iter;
+      for (iter = m_fcalShowerProperties_link.begin();
+           iter != m_fcalShowerProperties_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<FcalShowerNBlocks*> *host_plist = &m_host->m_fcalShowerNBlocks_plist;
+      m_fcalShowerNBlocks_link.inflate(m_host, host_plist, this);
+      FcalShowerNBlocksList::iterator iter;
+      for (iter = m_fcalShowerNBlocks_link.begin();
+           iter != m_fcalShowerNBlocks_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+}
+#endif
+
 std::string Preshower::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -544,6 +1546,49 @@ std::string Preshower::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t Preshower::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("preshower");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "preshowerE", (char*)&m_preshowerE - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["preshower"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["preshower"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "preshower", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "preshower", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void Preshower::hdf5DataPack()
+{
+}
+void Preshower::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string Width::toString(int indent) {
    std::stringstream ostr;
@@ -569,6 +1614,51 @@ std::string Width::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t Width::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("width");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "sigLong", (char*)&m_sigLong - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "sigTheta", (char*)&m_sigTheta - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "sigTrans", (char*)&m_sigTrans - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["width"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["width"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "width", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "width", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void Width::hdf5DataPack()
+{
+}
+void Width::hdf5DataUnpack()
+{
+}
+#endif
+
 std::string BcalCluster::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -588,6 +1678,49 @@ std::string BcalCluster::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t BcalCluster::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("bcalCluster");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "ncell", (char*)&m_ncell - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["bcalCluster"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["bcalCluster"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "bcalCluster", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "bcalCluster", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void BcalCluster::hdf5DataPack()
+{
+}
+void BcalCluster::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string BcalCorrelations::toString(int indent) {
    std::stringstream ostr;
@@ -617,6 +1750,53 @@ std::string BcalCorrelations::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t BcalCorrelations::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("bcalCorrelations");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "Etcorr", (char*)&m_Etcorr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "Excorr", (char*)&m_Excorr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "Eycorr", (char*)&m_Eycorr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "txcorr", (char*)&m_txcorr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "tycorr", (char*)&m_tycorr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["bcalCorrelations"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["bcalCorrelations"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "bcalCorrelations", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "bcalCorrelations", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void BcalCorrelations::hdf5DataPack()
+{
+}
+void BcalCorrelations::hdf5DataUnpack()
+{
+}
+#endif
+
 std::string BcalLayers::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -642,6 +1822,52 @@ std::string BcalLayers::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t BcalLayers::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("bcalLayers");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "E_L2", (char*)&m_E_L2 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "E_L3", (char*)&m_E_L3 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "E_L4", (char*)&m_E_L4 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "rmsTime", (char*)&m_rmsTime - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["bcalLayers"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["bcalLayers"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "bcalLayers", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "bcalLayers", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void BcalLayers::hdf5DataPack()
+{
+}
+void BcalLayers::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string BcalShower::toString(int indent) {
    std::stringstream ostr;
@@ -730,6 +1956,135 @@ std::string BcalShower::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t BcalShower::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("bcalShower");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "E", (char*)&m_E - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "Eerr", (char*)&m_Eerr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "Ezcorr", (char*)&m_Ezcorr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "jtag", (char*)&mx_jtag - (char*)this, vl_string_tid);
+   H5Tinsert(tid, "t", (char*)&m_t - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "terr", (char*)&m_terr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "tzcorr", (char*)&m_tzcorr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "x", (char*)&m_x - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "xerr", (char*)&m_xerr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "xycorr", (char*)&m_xycorr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "xzcorr", (char*)&m_xzcorr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "y", (char*)&m_y - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "yerr", (char*)&m_yerr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "yzcorr", (char*)&m_yzcorr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "z", (char*)&m_z - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "zerr", (char*)&m_zerr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "PreshowerList_size", (char*)&m_preshower_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "PreshowerList_offset", (char*)&m_preshower_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "WidthList_size", (char*)&m_width_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "WidthList_offset", (char*)&m_width_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "BcalClusterList_size", (char*)&m_bcalCluster_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "BcalClusterList_offset", (char*)&m_bcalCluster_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "BcalCorrelationsList_size", (char*)&m_bcalCorrelations_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "BcalCorrelationsList_offset", (char*)&m_bcalCorrelations_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "BcalLayersList_size", (char*)&m_bcalLayers_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "BcalLayersList_offset", (char*)&m_bcalLayers_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["bcalShower"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["bcalShower"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "bcalShower", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "bcalShower", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void BcalShower::hdf5DataPack()
+{
+   mx_jtag = m_jtag.c_str();
+   m_preshower_link.deflate();
+   m_width_link.deflate();
+   m_bcalCluster_link.deflate();
+   m_bcalCorrelations_link.deflate();
+   m_bcalLayers_link.deflate();
+}
+void BcalShower::hdf5DataUnpack()
+{
+   new(&m_jtag) std::string();
+   if (mx_jtag != 0) {
+      m_jtag = mx_jtag;
+      m_host->m_hdf5_strings.push_back(&m_jtag);
+   }
+   {
+      std::list<Preshower*> *host_plist = &m_host->m_preshower_plist;
+      m_preshower_link.inflate(m_host, host_plist, this);
+      PreshowerList::iterator iter;
+      for (iter = m_preshower_link.begin();
+           iter != m_preshower_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<Width*> *host_plist = &m_host->m_width_plist;
+      m_width_link.inflate(m_host, host_plist, this);
+      WidthList::iterator iter;
+      for (iter = m_width_link.begin();
+           iter != m_width_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<BcalCluster*> *host_plist = &m_host->m_bcalCluster_plist;
+      m_bcalCluster_link.inflate(m_host, host_plist, this);
+      BcalClusterList::iterator iter;
+      for (iter = m_bcalCluster_link.begin();
+           iter != m_bcalCluster_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<BcalCorrelations*> *host_plist = &m_host->m_bcalCorrelations_plist;
+      m_bcalCorrelations_link.inflate(m_host, host_plist, this);
+      BcalCorrelationsList::iterator iter;
+      for (iter = m_bcalCorrelations_link.begin();
+           iter != m_bcalCorrelations_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<BcalLayers*> *host_plist = &m_host->m_bcalLayers_plist;
+      m_bcalLayers_link.inflate(m_host, host_plist, this);
+      BcalLayersList::iterator iter;
+      for (iter = m_bcalLayers_link.begin();
+           iter != m_bcalLayers_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+}
+#endif
+
 std::string CcalShower::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -782,6 +2137,70 @@ std::string CcalShower::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t CcalShower::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("ccalShower");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "E", (char*)&m_E - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "Eerr", (char*)&m_Eerr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "Emax", (char*)&m_Emax - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "chi2", (char*)&m_chi2 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "dime", (char*)&m_dime - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "id", (char*)&m_id - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "idmax", (char*)&m_idmax - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "jtag", (char*)&mx_jtag - (char*)this, vl_string_tid);
+   H5Tinsert(tid, "t", (char*)&m_t - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "terr", (char*)&m_terr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "type", (char*)&m_type - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "x", (char*)&m_x - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "x1", (char*)&m_x1 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "y", (char*)&m_y - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "y1", (char*)&m_y1 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "z", (char*)&m_z - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["ccalShower"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["ccalShower"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "ccalShower", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "ccalShower", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void CcalShower::hdf5DataPack()
+{
+   mx_jtag = m_jtag.c_str();
+}
+void CcalShower::hdf5DataUnpack()
+{
+   new(&m_jtag) std::string();
+   if (mx_jtag != 0) {
+      m_jtag = mx_jtag;
+      m_host->m_hdf5_strings.push_back(&m_jtag);
+   }
+}
+#endif
 
 std::string TrackFit::toString(int indent) {
    std::stringstream ostr;
@@ -856,6 +2275,74 @@ std::string TrackFit::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t TrackFit::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("trackFit");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "Ndof", (char*)&m_Ndof - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "chisq", (char*)&m_chisq - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "e11", (char*)&m_e11 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "e12", (char*)&m_e12 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "e13", (char*)&m_e13 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "e14", (char*)&m_e14 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "e15", (char*)&m_e15 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "e22", (char*)&m_e22 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "e23", (char*)&m_e23 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "e24", (char*)&m_e24 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "e25", (char*)&m_e25 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "e33", (char*)&m_e33 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "e34", (char*)&m_e34 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "e35", (char*)&m_e35 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "e44", (char*)&m_e44 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "e45", (char*)&m_e45 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "e55", (char*)&m_e55 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "px", (char*)&m_px - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "py", (char*)&m_py - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "pz", (char*)&m_pz - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "t0", (char*)&m_t0 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "t0det", (char*)&m_t0det - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "t0err", (char*)&m_t0err - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "x0", (char*)&m_x0 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "y0", (char*)&m_y0 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "z0", (char*)&m_z0 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["trackFit"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["trackFit"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "trackFit", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "trackFit", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void TrackFit::hdf5DataPack()
+{
+}
+void TrackFit::hdf5DataUnpack()
+{
+}
+#endif
+
 std::string TrackFlags::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -875,6 +2362,49 @@ std::string TrackFlags::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t TrackFlags::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("trackFlags");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "flags", (char*)&m_flags - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["trackFlags"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["trackFlags"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "trackFlags", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "trackFlags", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void TrackFlags::hdf5DataPack()
+{
+}
+void TrackFlags::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string Hitlayers::toString(int indent) {
    std::stringstream ostr;
@@ -897,6 +2427,50 @@ std::string Hitlayers::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t Hitlayers::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("hitlayers");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "CDCrings", (char*)&m_CDCrings - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "FDCplanes", (char*)&m_FDCplanes - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["hitlayers"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["hitlayers"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "hitlayers", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "hitlayers", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void Hitlayers::hdf5DataPack()
+{
+}
+void Hitlayers::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string Expectedhits::toString(int indent) {
    std::stringstream ostr;
@@ -924,6 +2498,52 @@ std::string Expectedhits::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t Expectedhits::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("expectedhits");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "expectedCDChits", (char*)&m_expectedCDChits - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "expectedFDChits", (char*)&m_expectedFDChits - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "measuredCDChits", (char*)&m_measuredCDChits - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "measuredFDChits", (char*)&m_measuredFDChits - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["expectedhits"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["expectedhits"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "expectedhits", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "expectedhits", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void Expectedhits::hdf5DataPack()
+{
+}
+void Expectedhits::hdf5DataUnpack()
+{
+}
+#endif
+
 std::string Mcmatch::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -946,6 +2566,50 @@ std::string Mcmatch::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t Mcmatch::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("mcmatch");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "ithrown", (char*)&m_ithrown - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "numhitsmatch", (char*)&m_numhitsmatch - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["mcmatch"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["mcmatch"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "mcmatch", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "mcmatch", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void Mcmatch::hdf5DataPack()
+{
+}
+void Mcmatch::hdf5DataUnpack()
+{
+}
+#endif
+
 std::string CDCAmpdEdx::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -967,6 +2631,50 @@ std::string CDCAmpdEdx::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t CDCAmpdEdx::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("CDCAmpdEdx");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "dEdxCDCAmp", (char*)&m_dEdxCDCAmp - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "dxCDCAmp", (char*)&m_dxCDCAmp - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["CDCAmpdEdx"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["CDCAmpdEdx"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "CDCAmpdEdx", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "CDCAmpdEdx", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void CDCAmpdEdx::hdf5DataPack()
+{
+}
+void CDCAmpdEdx::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string DEdxDC::toString(int indent) {
    std::stringstream ostr;
@@ -1010,6 +2718,67 @@ std::string DEdxDC::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t DEdxDC::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("dEdxDC");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "NsampleCDC", (char*)&m_NsampleCDC - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "NsampleFDC", (char*)&m_NsampleFDC - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "dEdxCDC", (char*)&m_dEdxCDC - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "dEdxFDC", (char*)&m_dEdxFDC - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "dxCDC", (char*)&m_dxCDC - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "dxFDC", (char*)&m_dxFDC - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "CDCAmpdEdxList_size", (char*)&m_CDCAmpdEdx_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "CDCAmpdEdxList_offset", (char*)&m_CDCAmpdEdx_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["dEdxDC"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["dEdxDC"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "dEdxDC", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "dEdxDC", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void DEdxDC::hdf5DataPack()
+{
+   m_CDCAmpdEdx_link.deflate();
+}
+void DEdxDC::hdf5DataUnpack()
+{
+   {
+      std::list<CDCAmpdEdx*> *host_plist = &m_host->m_CDCAmpdEdx_plist;
+      m_CDCAmpdEdx_link.inflate(m_host, host_plist, this);
+      CDCAmpdEdxList::iterator iter;
+      for (iter = m_CDCAmpdEdx_link.begin();
+           iter != m_CDCAmpdEdx_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+}
+#endif
+
 std::string ExitParams::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -1044,6 +2813,55 @@ std::string ExitParams::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t ExitParams::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("exitParams");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "px1", (char*)&m_px1 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "py1", (char*)&m_py1 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "pz1", (char*)&m_pz1 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "t1", (char*)&m_t1 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "x1", (char*)&m_x1 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "y1", (char*)&m_y1 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "z1", (char*)&m_z1 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["exitParams"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["exitParams"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "exitParams", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "exitParams", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void ExitParams::hdf5DataPack()
+{
+}
+void ExitParams::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string ChargedTrack::toString(int indent) {
    std::stringstream ostr;
@@ -1115,6 +2933,148 @@ std::string ChargedTrack::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t ChargedTrack::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("chargedTrack");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "candidateId", (char*)&m_candidateId - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "jtag", (char*)&mx_jtag - (char*)this, vl_string_tid);
+   H5Tinsert(tid, "ptype", (char*)&m_ptype - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "TrackFitList_size", (char*)&m_trackFit_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TrackFitList_offset", (char*)&m_trackFit_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TrackFlagsList_size", (char*)&m_trackFlags_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TrackFlagsList_offset", (char*)&m_trackFlags_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "HitlayersList_size", (char*)&m_hitlayers_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "HitlayersList_offset", (char*)&m_hitlayers_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "ExpectedhitsList_size", (char*)&m_expectedhits_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "ExpectedhitsList_offset", (char*)&m_expectedhits_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "McmatchList_size", (char*)&m_mcmatch_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "McmatchList_offset", (char*)&m_mcmatch_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "DEdxDCList_size", (char*)&m_dEdxDC_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "DEdxDCList_offset", (char*)&m_dEdxDC_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "ExitParamsList_size", (char*)&m_exitParams_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "ExitParamsList_offset", (char*)&m_exitParams_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["chargedTrack"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["chargedTrack"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "chargedTrack", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "chargedTrack", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void ChargedTrack::hdf5DataPack()
+{
+   mx_jtag = m_jtag.c_str();
+   m_trackFit_link.deflate();
+   m_trackFlags_link.deflate();
+   m_hitlayers_link.deflate();
+   m_expectedhits_link.deflate();
+   m_mcmatch_link.deflate();
+   m_dEdxDC_link.deflate();
+   m_exitParams_link.deflate();
+}
+void ChargedTrack::hdf5DataUnpack()
+{
+   new(&m_jtag) std::string();
+   if (mx_jtag != 0) {
+      m_jtag = mx_jtag;
+      m_host->m_hdf5_strings.push_back(&m_jtag);
+   }
+   {
+      std::list<TrackFit*> *host_plist = &m_host->m_trackFit_plist;
+      m_trackFit_link.inflate(m_host, host_plist, this);
+      TrackFitList::iterator iter;
+      for (iter = m_trackFit_link.begin();
+           iter != m_trackFit_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<TrackFlags*> *host_plist = &m_host->m_trackFlags_plist;
+      m_trackFlags_link.inflate(m_host, host_plist, this);
+      TrackFlagsList::iterator iter;
+      for (iter = m_trackFlags_link.begin();
+           iter != m_trackFlags_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<Hitlayers*> *host_plist = &m_host->m_hitlayers_plist;
+      m_hitlayers_link.inflate(m_host, host_plist, this);
+      HitlayersList::iterator iter;
+      for (iter = m_hitlayers_link.begin();
+           iter != m_hitlayers_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<Expectedhits*> *host_plist = &m_host->m_expectedhits_plist;
+      m_expectedhits_link.inflate(m_host, host_plist, this);
+      ExpectedhitsList::iterator iter;
+      for (iter = m_expectedhits_link.begin();
+           iter != m_expectedhits_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<Mcmatch*> *host_plist = &m_host->m_mcmatch_plist;
+      m_mcmatch_link.inflate(m_host, host_plist, this);
+      McmatchList::iterator iter;
+      for (iter = m_mcmatch_link.begin();
+           iter != m_mcmatch_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<DEdxDC*> *host_plist = &m_host->m_dEdxDC_plist;
+      m_dEdxDC_link.inflate(m_host, host_plist, this);
+      DEdxDCList::iterator iter;
+      for (iter = m_dEdxDC_link.begin();
+           iter != m_dEdxDC_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<ExitParams*> *host_plist = &m_host->m_exitParams_plist;
+      m_exitParams_link.inflate(m_host, host_plist, this);
+      ExitParamsList::iterator iter;
+      for (iter = m_exitParams_link.begin();
+           iter != m_exitParams_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+}
+#endif
+
 std::string StartHit::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -1143,6 +3103,58 @@ std::string StartHit::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t StartHit::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("startHit");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "dE", (char*)&m_dE - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "jtag", (char*)&mx_jtag - (char*)this, vl_string_tid);
+   H5Tinsert(tid, "sector", (char*)&m_sector - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "t", (char*)&m_t - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["startHit"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["startHit"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "startHit", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "startHit", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void StartHit::hdf5DataPack()
+{
+   mx_jtag = m_jtag.c_str();
+}
+void StartHit::hdf5DataUnpack()
+{
+   new(&m_jtag) std::string();
+   if (mx_jtag != 0) {
+      m_jtag = mx_jtag;
+      m_host->m_hdf5_strings.push_back(&m_jtag);
+   }
+}
+#endif
+
 std::string TofStatus::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -1162,6 +3174,49 @@ std::string TofStatus::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t TofStatus::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("tofStatus");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "status", (char*)&m_status - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["tofStatus"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["tofStatus"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "tofStatus", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "tofStatus", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void TofStatus::hdf5DataPack()
+{
+}
+void TofStatus::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string TofEnergyDeposition::toString(int indent) {
    std::stringstream ostr;
@@ -1184,6 +3239,50 @@ std::string TofEnergyDeposition::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t TofEnergyDeposition::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("tofEnergyDeposition");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "dE1", (char*)&m_dE1 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "dE2", (char*)&m_dE2 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["tofEnergyDeposition"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["tofEnergyDeposition"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "tofEnergyDeposition", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "tofEnergyDeposition", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void TofEnergyDeposition::hdf5DataPack()
+{
+}
+void TofEnergyDeposition::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string TofPoint::toString(int indent) {
    std::stringstream ostr;
@@ -1236,6 +3335,87 @@ std::string TofPoint::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t TofPoint::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("tofPoint");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "dE", (char*)&m_dE - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "jtag", (char*)&mx_jtag - (char*)this, vl_string_tid);
+   H5Tinsert(tid, "t", (char*)&m_t - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "terr", (char*)&m_terr - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "x", (char*)&m_x - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "y", (char*)&m_y - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "z", (char*)&m_z - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "TofStatusList_size", (char*)&m_tofStatus_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TofStatusList_offset", (char*)&m_tofStatus_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TofEnergyDepositionList_size", (char*)&m_tofEnergyDeposition_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TofEnergyDepositionList_offset", (char*)&m_tofEnergyDeposition_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["tofPoint"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["tofPoint"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "tofPoint", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "tofPoint", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void TofPoint::hdf5DataPack()
+{
+   mx_jtag = m_jtag.c_str();
+   m_tofStatus_link.deflate();
+   m_tofEnergyDeposition_link.deflate();
+}
+void TofPoint::hdf5DataUnpack()
+{
+   new(&m_jtag) std::string();
+   if (mx_jtag != 0) {
+      m_jtag = mx_jtag;
+      m_host->m_hdf5_strings.push_back(&m_jtag);
+   }
+   {
+      std::list<TofStatus*> *host_plist = &m_host->m_tofStatus_plist;
+      m_tofStatus_link.inflate(m_host, host_plist, this);
+      TofStatusList::iterator iter;
+      for (iter = m_tofStatus_link.begin();
+           iter != m_tofStatus_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<TofEnergyDeposition*> *host_plist = &m_host->m_tofEnergyDeposition_plist;
+      m_tofEnergyDeposition_link.inflate(m_host, host_plist, this);
+      TofEnergyDepositionList::iterator iter;
+      for (iter = m_tofEnergyDeposition_link.begin();
+           iter != m_tofEnergyDeposition_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+}
+#endif
+
 std::string DircHit::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -1263,6 +3443,58 @@ std::string DircHit::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t DircHit::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("dircHit");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "ch", (char*)&m_ch - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "jtag", (char*)&mx_jtag - (char*)this, vl_string_tid);
+   H5Tinsert(tid, "t", (char*)&m_t - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "tot", (char*)&m_tot - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["dircHit"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["dircHit"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "dircHit", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "dircHit", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void DircHit::hdf5DataPack()
+{
+   mx_jtag = m_jtag.c_str();
+}
+void DircHit::hdf5DataUnpack()
+{
+   new(&m_jtag) std::string();
+   if (mx_jtag != 0) {
+      m_jtag = mx_jtag;
+      m_host->m_hdf5_strings.push_back(&m_jtag);
+   }
+}
+#endif
+
 std::string RFtime::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -1286,6 +3518,56 @@ std::string RFtime::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t RFtime::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("RFtime");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "jtag", (char*)&mx_jtag - (char*)this, vl_string_tid);
+   H5Tinsert(tid, "tsync", (char*)&m_tsync - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["RFtime"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["RFtime"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "RFtime", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "RFtime", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void RFtime::hdf5DataPack()
+{
+   mx_jtag = m_jtag.c_str();
+}
+void RFtime::hdf5DataUnpack()
+{
+   new(&m_jtag) std::string();
+   if (mx_jtag != 0) {
+      m_jtag = mx_jtag;
+      m_host->m_hdf5_strings.push_back(&m_jtag);
+   }
+}
+#endif
+
 std::string TriggerEnergySums::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -1307,6 +3589,50 @@ std::string TriggerEnergySums::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t TriggerEnergySums::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("triggerEnergySums");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "BCALEnergySum", (char*)&m_BCALEnergySum - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "FCALEnergySum", (char*)&m_FCALEnergySum - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["triggerEnergySums"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["triggerEnergySums"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "triggerEnergySums", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "triggerEnergySums", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void TriggerEnergySums::hdf5DataPack()
+{
+}
+void TriggerEnergySums::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string Trigger::toString(int indent) {
    std::stringstream ostr;
@@ -1341,6 +3667,70 @@ std::string Trigger::toXML(int indent) {
         << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t Trigger::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("trigger");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "jtag", (char*)&mx_jtag - (char*)this, vl_string_tid);
+   H5Tinsert(tid, "l1_fp_trig_bits", (char*)&m_l1_fp_trig_bits - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "l1_trig_bits", (char*)&m_l1_trig_bits - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "TriggerEnergySumsList_size", (char*)&m_triggerEnergySums_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TriggerEnergySumsList_offset", (char*)&m_triggerEnergySums_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["trigger"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["trigger"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "trigger", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "trigger", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void Trigger::hdf5DataPack()
+{
+   mx_jtag = m_jtag.c_str();
+   m_triggerEnergySums_link.deflate();
+}
+void Trigger::hdf5DataUnpack()
+{
+   new(&m_jtag) std::string();
+   if (mx_jtag != 0) {
+      m_jtag = mx_jtag;
+      m_host->m_hdf5_strings.push_back(&m_jtag);
+   }
+   {
+      std::list<TriggerEnergySums*> *host_plist = &m_host->m_triggerEnergySums_plist;
+      m_triggerEnergySums_link.inflate(m_host, host_plist, this);
+      TriggerEnergySumsList::iterator iter;
+      for (iter = m_triggerEnergySums_link.begin();
+           iter != m_triggerEnergySums_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+}
+#endif
 
 std::string BcalMatchParams::toString(int indent) {
    std::stringstream ostr;
@@ -1378,6 +3768,56 @@ std::string BcalMatchParams::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t BcalMatchParams::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("bcalMatchParams");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "deltaphi", (char*)&m_deltaphi - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "deltaz", (char*)&m_deltaz - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "dx", (char*)&m_dx - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "pathlength", (char*)&m_pathlength - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "shower", (char*)&m_shower - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "tflight", (char*)&m_tflight - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "tflightvar", (char*)&m_tflightvar - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "track", (char*)&m_track - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["bcalMatchParams"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["bcalMatchParams"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "bcalMatchParams", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "bcalMatchParams", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void BcalMatchParams::hdf5DataPack()
+{
+}
+void BcalMatchParams::hdf5DataUnpack()
+{
+}
+#endif
+
 std::string FcalMatchParams::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -1412,6 +3852,55 @@ std::string FcalMatchParams::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t FcalMatchParams::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("fcalMatchParams");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "doca", (char*)&m_doca - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "dx", (char*)&m_dx - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "pathlength", (char*)&m_pathlength - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "shower", (char*)&m_shower - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "tflight", (char*)&m_tflight - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "tflightvar", (char*)&m_tflightvar - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "track", (char*)&m_track - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["fcalMatchParams"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["fcalMatchParams"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "fcalMatchParams", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "fcalMatchParams", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void FcalMatchParams::hdf5DataPack()
+{
+}
+void FcalMatchParams::hdf5DataUnpack()
+{
+}
+#endif
+
 std::string TofDedx::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -1433,6 +3922,50 @@ std::string TofDedx::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t TofDedx::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("tofDedx");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "dEdx1", (char*)&m_dEdx1 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "dEdx2", (char*)&m_dEdx2 - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["tofDedx"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["tofDedx"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "tofDedx", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "tofDedx", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void TofDedx::hdf5DataPack()
+{
+}
+void TofDedx::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string TofMatchParams::toString(int indent) {
    std::stringstream ostr;
@@ -1487,6 +4020,72 @@ std::string TofMatchParams::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t TofMatchParams::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("tofMatchParams");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "dEdx", (char*)&m_dEdx - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "deltax", (char*)&m_deltax - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "deltay", (char*)&m_deltay - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "ehit", (char*)&m_ehit - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "hit", (char*)&m_hit - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "pathlength", (char*)&m_pathlength - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "tflight", (char*)&m_tflight - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "tflightvar", (char*)&m_tflightvar - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "thit", (char*)&m_thit - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "thitvar", (char*)&m_thitvar - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "track", (char*)&m_track - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "TofDedxList_size", (char*)&m_tofDedx_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TofDedxList_offset", (char*)&m_tofDedx_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["tofMatchParams"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["tofMatchParams"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "tofMatchParams", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "tofMatchParams", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void TofMatchParams::hdf5DataPack()
+{
+   m_tofDedx_link.deflate();
+}
+void TofMatchParams::hdf5DataUnpack()
+{
+   {
+      std::list<TofDedx*> *host_plist = &m_host->m_tofDedx_plist;
+      m_tofDedx_link.inflate(m_host, host_plist, this);
+      TofDedxList::iterator iter;
+      for (iter = m_tofDedx_link.begin();
+           iter != m_tofDedx_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+}
+#endif
+
 std::string ScMatchParams::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -1529,6 +4128,58 @@ std::string ScMatchParams::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t ScMatchParams::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("scMatchParams");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "dEdx", (char*)&m_dEdx - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "deltaphi", (char*)&m_deltaphi - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "ehit", (char*)&m_ehit - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "hit", (char*)&m_hit - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "pathlength", (char*)&m_pathlength - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "tflight", (char*)&m_tflight - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "tflightvar", (char*)&m_tflightvar - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "thit", (char*)&m_thit - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "thitvar", (char*)&m_thitvar - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "track", (char*)&m_track - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["scMatchParams"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["scMatchParams"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "scMatchParams", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "scMatchParams", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void ScMatchParams::hdf5DataPack()
+{
+}
+void ScMatchParams::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string DircMatchParams::toString(int indent) {
    std::stringstream ostr;
@@ -1580,6 +4231,64 @@ std::string DircMatchParams::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t DircMatchParams::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("dircMatchParams");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "deltat", (char*)&m_deltat - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "expectthetac", (char*)&m_expectthetac - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "lele", (char*)&m_lele - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "lk", (char*)&m_lk - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "lp", (char*)&m_lp - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "lpi", (char*)&m_lpi - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "nphotons", (char*)&m_nphotons - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "px", (char*)&m_px - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "py", (char*)&m_py - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "pz", (char*)&m_pz - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "t", (char*)&m_t - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "thetac", (char*)&m_thetac - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "track", (char*)&m_track - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "x", (char*)&m_x - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "y", (char*)&m_y - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "z", (char*)&m_z - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["dircMatchParams"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["dircMatchParams"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "dircMatchParams", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "dircMatchParams", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void DircMatchParams::hdf5DataPack()
+{
+}
+void DircMatchParams::hdf5DataUnpack()
+{
+}
+#endif
+
 std::string DircMatchHit::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -1601,6 +4310,50 @@ std::string DircMatchHit::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t DircMatchHit::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("dircMatchHit");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "hit", (char*)&m_hit - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "track", (char*)&m_track - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["dircMatchHit"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["dircMatchHit"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "dircMatchHit", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "dircMatchHit", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void DircMatchHit::hdf5DataPack()
+{
+}
+void DircMatchHit::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string BcalDOCAtoTrack::toString(int indent) {
    std::stringstream ostr;
@@ -1627,6 +4380,51 @@ std::string BcalDOCAtoTrack::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t BcalDOCAtoTrack::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("bcalDOCAtoTrack");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "deltaphi", (char*)&m_deltaphi - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "deltaz", (char*)&m_deltaz - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "shower", (char*)&m_shower - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["bcalDOCAtoTrack"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["bcalDOCAtoTrack"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "bcalDOCAtoTrack", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "bcalDOCAtoTrack", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void BcalDOCAtoTrack::hdf5DataPack()
+{
+}
+void BcalDOCAtoTrack::hdf5DataUnpack()
+{
+}
+#endif
+
 std::string FcalDOCAtoTrack::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -1649,6 +4447,50 @@ std::string FcalDOCAtoTrack::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t FcalDOCAtoTrack::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("fcalDOCAtoTrack");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "doca", (char*)&m_doca - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "shower", (char*)&m_shower - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["fcalDOCAtoTrack"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["fcalDOCAtoTrack"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "fcalDOCAtoTrack", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "fcalDOCAtoTrack", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void FcalDOCAtoTrack::hdf5DataPack()
+{
+}
+void FcalDOCAtoTrack::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string TflightPCorrelation::toString(int indent) {
    std::stringstream ostr;
@@ -1675,6 +4517,51 @@ std::string TflightPCorrelation::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t TflightPCorrelation::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("tflightPCorrelation");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "correlation", (char*)&m_correlation - (char*)this, ((inmemory)? H5T_NATIVE_FLOAT : H5T_IEEE_F32LE));
+   H5Tinsert(tid, "system", (char*)&m_system - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "track", (char*)&m_track - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["tflightPCorrelation"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["tflightPCorrelation"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "tflightPCorrelation", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "tflightPCorrelation", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void TflightPCorrelation::hdf5DataPack()
+{
+}
+void TflightPCorrelation::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string DetectorMatches::toString(int indent) {
    std::stringstream ostr;
@@ -1862,6 +4749,172 @@ std::string DetectorMatches::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t DetectorMatches::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("detectorMatches");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "jtag", (char*)&mx_jtag - (char*)this, vl_string_tid);
+   H5Tinsert(tid, "BcalMatchParamsList_size", (char*)&m_bcalMatchParams_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "BcalMatchParamsList_offset", (char*)&m_bcalMatchParams_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "FcalMatchParamsList_size", (char*)&m_fcalMatchParams_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "FcalMatchParamsList_offset", (char*)&m_fcalMatchParams_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TofMatchParamsList_size", (char*)&m_tofMatchParams_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TofMatchParamsList_offset", (char*)&m_tofMatchParams_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "ScMatchParamsList_size", (char*)&m_scMatchParams_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "ScMatchParamsList_offset", (char*)&m_scMatchParams_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "DircMatchParamsList_size", (char*)&m_dircMatchParams_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "DircMatchParamsList_offset", (char*)&m_dircMatchParams_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "DircMatchHitList_size", (char*)&m_dircMatchHit_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "DircMatchHitList_offset", (char*)&m_dircMatchHit_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "BcalDOCAtoTrackList_size", (char*)&m_bcalDOCAtoTrack_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "BcalDOCAtoTrackList_offset", (char*)&m_bcalDOCAtoTrack_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "FcalDOCAtoTrackList_size", (char*)&m_fcalDOCAtoTrack_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "FcalDOCAtoTrackList_offset", (char*)&m_fcalDOCAtoTrack_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TflightPCorrelationList_size", (char*)&m_tflightPCorrelation_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TflightPCorrelationList_offset", (char*)&m_tflightPCorrelation_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["detectorMatches"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["detectorMatches"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "detectorMatches", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "detectorMatches", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void DetectorMatches::hdf5DataPack()
+{
+   mx_jtag = m_jtag.c_str();
+   m_bcalMatchParams_list.deflate();
+   m_fcalMatchParams_list.deflate();
+   m_tofMatchParams_list.deflate();
+   m_scMatchParams_list.deflate();
+   m_dircMatchParams_list.deflate();
+   m_dircMatchHit_list.deflate();
+   m_bcalDOCAtoTrack_list.deflate();
+   m_fcalDOCAtoTrack_list.deflate();
+   m_tflightPCorrelation_list.deflate();
+}
+void DetectorMatches::hdf5DataUnpack()
+{
+   new(&m_jtag) std::string();
+   if (mx_jtag != 0) {
+      m_jtag = mx_jtag;
+      m_host->m_hdf5_strings.push_back(&m_jtag);
+   }
+   {
+      std::list<BcalMatchParams*> *host_plist = &m_host->m_bcalMatchParams_plist;
+      m_bcalMatchParams_list.inflate(m_host, host_plist, this);
+      BcalMatchParamsList::iterator iter;
+      for (iter = m_bcalMatchParams_list.begin();
+           iter != m_bcalMatchParams_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<FcalMatchParams*> *host_plist = &m_host->m_fcalMatchParams_plist;
+      m_fcalMatchParams_list.inflate(m_host, host_plist, this);
+      FcalMatchParamsList::iterator iter;
+      for (iter = m_fcalMatchParams_list.begin();
+           iter != m_fcalMatchParams_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<TofMatchParams*> *host_plist = &m_host->m_tofMatchParams_plist;
+      m_tofMatchParams_list.inflate(m_host, host_plist, this);
+      TofMatchParamsList::iterator iter;
+      for (iter = m_tofMatchParams_list.begin();
+           iter != m_tofMatchParams_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<ScMatchParams*> *host_plist = &m_host->m_scMatchParams_plist;
+      m_scMatchParams_list.inflate(m_host, host_plist, this);
+      ScMatchParamsList::iterator iter;
+      for (iter = m_scMatchParams_list.begin();
+           iter != m_scMatchParams_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<DircMatchParams*> *host_plist = &m_host->m_dircMatchParams_plist;
+      m_dircMatchParams_list.inflate(m_host, host_plist, this);
+      DircMatchParamsList::iterator iter;
+      for (iter = m_dircMatchParams_list.begin();
+           iter != m_dircMatchParams_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<DircMatchHit*> *host_plist = &m_host->m_dircMatchHit_plist;
+      m_dircMatchHit_list.inflate(m_host, host_plist, this);
+      DircMatchHitList::iterator iter;
+      for (iter = m_dircMatchHit_list.begin();
+           iter != m_dircMatchHit_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<BcalDOCAtoTrack*> *host_plist = &m_host->m_bcalDOCAtoTrack_plist;
+      m_bcalDOCAtoTrack_list.inflate(m_host, host_plist, this);
+      BcalDOCAtoTrackList::iterator iter;
+      for (iter = m_bcalDOCAtoTrack_list.begin();
+           iter != m_bcalDOCAtoTrack_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<FcalDOCAtoTrack*> *host_plist = &m_host->m_fcalDOCAtoTrack_plist;
+      m_fcalDOCAtoTrack_list.inflate(m_host, host_plist, this);
+      FcalDOCAtoTrackList::iterator iter;
+      for (iter = m_fcalDOCAtoTrack_list.begin();
+           iter != m_fcalDOCAtoTrack_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<TflightPCorrelation*> *host_plist = &m_host->m_tflightPCorrelation_plist;
+      m_tflightPCorrelation_list.inflate(m_host, host_plist, this);
+      TflightPCorrelationList::iterator iter;
+      for (iter = m_tflightPCorrelation_list.begin();
+           iter != m_tflightPCorrelation_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+}
+#endif
+
 std::string StartCounters::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -1881,6 +4934,49 @@ std::string StartCounters::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t StartCounters::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("startCounters");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "count", (char*)&m_count - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["startCounters"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["startCounters"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "startCounters", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "startCounters", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void StartCounters::hdf5DataPack()
+{
+}
+void StartCounters::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string CdcStraws::toString(int indent) {
    std::stringstream ostr;
@@ -1902,6 +4998,49 @@ std::string CdcStraws::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t CdcStraws::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("cdcStraws");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "count", (char*)&m_count - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["cdcStraws"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["cdcStraws"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "cdcStraws", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "cdcStraws", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void CdcStraws::hdf5DataPack()
+{
+}
+void CdcStraws::hdf5DataUnpack()
+{
+}
+#endif
+
 std::string FdcPseudos::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -1921,6 +5060,49 @@ std::string FdcPseudos::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t FdcPseudos::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("fdcPseudos");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "count", (char*)&m_count - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["fdcPseudos"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["fdcPseudos"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "fdcPseudos", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "fdcPseudos", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void FdcPseudos::hdf5DataPack()
+{
+}
+void FdcPseudos::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string BcalCells::toString(int indent) {
    std::stringstream ostr;
@@ -1942,6 +5124,49 @@ std::string BcalCells::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t BcalCells::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("bcalCells");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "count", (char*)&m_count - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["bcalCells"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["bcalCells"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "bcalCells", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "bcalCells", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void BcalCells::hdf5DataPack()
+{
+}
+void BcalCells::hdf5DataUnpack()
+{
+}
+#endif
+
 std::string FcalBlocks::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -1961,6 +5186,49 @@ std::string FcalBlocks::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t FcalBlocks::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("fcalBlocks");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "count", (char*)&m_count - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["fcalBlocks"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["fcalBlocks"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "fcalBlocks", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "fcalBlocks", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void FcalBlocks::hdf5DataPack()
+{
+}
+void FcalBlocks::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string TofPaddles::toString(int indent) {
    std::stringstream ostr;
@@ -1982,6 +5250,49 @@ std::string TofPaddles::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t TofPaddles::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("tofPaddles");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "count", (char*)&m_count - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["tofPaddles"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["tofPaddles"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "tofPaddles", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "tofPaddles", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void TofPaddles::hdf5DataPack()
+{
+}
+void TofPaddles::hdf5DataUnpack()
+{
+}
+#endif
+
 std::string CcalBlocks::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -2002,6 +5313,49 @@ std::string CcalBlocks::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t CcalBlocks::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("ccalBlocks");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "count", (char*)&m_count - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["ccalBlocks"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["ccalBlocks"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "ccalBlocks", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "ccalBlocks", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void CcalBlocks::hdf5DataPack()
+{
+}
+void CcalBlocks::hdf5DataUnpack()
+{
+}
+#endif
+
 std::string DircPMTs::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -2021,6 +5375,49 @@ std::string DircPMTs::toXML(int indent) {
         << " />" << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t DircPMTs::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("dircPMTs");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "count", (char*)&m_count - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["dircPMTs"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["dircPMTs"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "dircPMTs", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "dircPMTs", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void DircPMTs::hdf5DataPack()
+{
+}
+void DircPMTs::hdf5DataUnpack()
+{
+}
+#endif
 
 std::string HitStatistics::toString(int indent) {
    std::stringstream ostr;
@@ -2093,6 +5490,159 @@ std::string HitStatistics::toXML(int indent) {
         << std::endl;
    return ostr.str();
 }
+
+#ifdef HDF5_SUPPORT
+hid_t HitStatistics::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("hitStatistics");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "jtag", (char*)&mx_jtag - (char*)this, vl_string_tid);
+   H5Tinsert(tid, "StartCountersList_size", (char*)&m_startCounters_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "StartCountersList_offset", (char*)&m_startCounters_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "CdcStrawsList_size", (char*)&m_cdcStraws_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "CdcStrawsList_offset", (char*)&m_cdcStraws_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "FdcPseudosList_size", (char*)&m_fdcPseudos_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "FdcPseudosList_offset", (char*)&m_fdcPseudos_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "BcalCellsList_size", (char*)&m_bcalCells_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "BcalCellsList_offset", (char*)&m_bcalCells_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "FcalBlocksList_size", (char*)&m_fcalBlocks_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "FcalBlocksList_offset", (char*)&m_fcalBlocks_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TofPaddlesList_size", (char*)&m_tofPaddles_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TofPaddlesList_offset", (char*)&m_tofPaddles_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "CcalBlocksList_size", (char*)&m_ccalBlocks_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "CcalBlocksList_offset", (char*)&m_ccalBlocks_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "DircPMTsList_size", (char*)&m_dircPMTs_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "DircPMTsList_offset", (char*)&m_dircPMTs_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["hitStatistics"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["hitStatistics"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "hitStatistics", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "hitStatistics", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void HitStatistics::hdf5DataPack()
+{
+   mx_jtag = m_jtag.c_str();
+   m_startCounters_link.deflate();
+   m_cdcStraws_link.deflate();
+   m_fdcPseudos_link.deflate();
+   m_bcalCells_link.deflate();
+   m_fcalBlocks_link.deflate();
+   m_tofPaddles_link.deflate();
+   m_ccalBlocks_link.deflate();
+   m_dircPMTs_link.deflate();
+}
+void HitStatistics::hdf5DataUnpack()
+{
+   new(&m_jtag) std::string();
+   if (mx_jtag != 0) {
+      m_jtag = mx_jtag;
+      m_host->m_hdf5_strings.push_back(&m_jtag);
+   }
+   {
+      std::list<StartCounters*> *host_plist = &m_host->m_startCounters_plist;
+      m_startCounters_link.inflate(m_host, host_plist, this);
+      StartCountersList::iterator iter;
+      for (iter = m_startCounters_link.begin();
+           iter != m_startCounters_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<CdcStraws*> *host_plist = &m_host->m_cdcStraws_plist;
+      m_cdcStraws_link.inflate(m_host, host_plist, this);
+      CdcStrawsList::iterator iter;
+      for (iter = m_cdcStraws_link.begin();
+           iter != m_cdcStraws_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<FdcPseudos*> *host_plist = &m_host->m_fdcPseudos_plist;
+      m_fdcPseudos_link.inflate(m_host, host_plist, this);
+      FdcPseudosList::iterator iter;
+      for (iter = m_fdcPseudos_link.begin();
+           iter != m_fdcPseudos_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<BcalCells*> *host_plist = &m_host->m_bcalCells_plist;
+      m_bcalCells_link.inflate(m_host, host_plist, this);
+      BcalCellsList::iterator iter;
+      for (iter = m_bcalCells_link.begin();
+           iter != m_bcalCells_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<FcalBlocks*> *host_plist = &m_host->m_fcalBlocks_plist;
+      m_fcalBlocks_link.inflate(m_host, host_plist, this);
+      FcalBlocksList::iterator iter;
+      for (iter = m_fcalBlocks_link.begin();
+           iter != m_fcalBlocks_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<TofPaddles*> *host_plist = &m_host->m_tofPaddles_plist;
+      m_tofPaddles_link.inflate(m_host, host_plist, this);
+      TofPaddlesList::iterator iter;
+      for (iter = m_tofPaddles_link.begin();
+           iter != m_tofPaddles_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<CcalBlocks*> *host_plist = &m_host->m_ccalBlocks_plist;
+      m_ccalBlocks_link.inflate(m_host, host_plist, this);
+      CcalBlocksList::iterator iter;
+      for (iter = m_ccalBlocks_link.begin();
+           iter != m_ccalBlocks_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<DircPMTs*> *host_plist = &m_host->m_dircPMTs_plist;
+      m_dircPMTs_link.inflate(m_host, host_plist, this);
+      DircPMTsList::iterator iter;
+      for (iter = m_dircPMTs_link.begin();
+           iter != m_dircPMTs_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+}
+#endif
 
 std::string ReconstructedPhysicsEvent::toString(int indent) {
    std::stringstream ostr;
@@ -2378,6 +5928,271 @@ std::string ReconstructedPhysicsEvent::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t ReconstructedPhysicsEvent::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("reconstructedPhysicsEvent");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   H5Tinsert(tid, "eventNo", (char*)&m_eventNo - (char*)this, ((inmemory)? H5T_NATIVE_LONG : H5T_STD_I64LE));
+   H5Tinsert(tid, "runNo", (char*)&m_runNo - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I32LE));
+   H5Tinsert(tid, "CommentList_size", (char*)&m_comment_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "CommentList_offset", (char*)&m_comment_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "DataVersionStringList_size", (char*)&m_dataVersionString_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "DataVersionStringList_offset", (char*)&m_dataVersionString_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "CcdbContextList_size", (char*)&m_ccdbContext_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "CcdbContextList_offset", (char*)&m_ccdbContext_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "ReactionList_size", (char*)&m_reaction_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "ReactionList_offset", (char*)&m_reaction_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TagmBeamPhotonList_size", (char*)&m_tagmBeamPhoton_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TagmBeamPhotonList_offset", (char*)&m_tagmBeamPhoton_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TaghBeamPhotonList_size", (char*)&m_taghBeamPhoton_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TaghBeamPhotonList_offset", (char*)&m_taghBeamPhoton_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "FcalShowerList_size", (char*)&m_fcalShower_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "FcalShowerList_offset", (char*)&m_fcalShower_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "BcalShowerList_size", (char*)&m_bcalShower_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "BcalShowerList_offset", (char*)&m_bcalShower_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "CcalShowerList_size", (char*)&m_ccalShower_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "CcalShowerList_offset", (char*)&m_ccalShower_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "ChargedTrackList_size", (char*)&m_chargedTrack_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "ChargedTrackList_offset", (char*)&m_chargedTrack_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "StartHitList_size", (char*)&m_startHit_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "StartHitList_offset", (char*)&m_startHit_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TofPointList_size", (char*)&m_tofPoint_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TofPointList_offset", (char*)&m_tofPoint_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "DircHitList_size", (char*)&m_dircHit_list.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "DircHitList_offset", (char*)&m_dircHit_list.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "RFtimeList_size", (char*)&m_RFtime_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "RFtimeList_offset", (char*)&m_RFtime_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TriggerList_size", (char*)&m_trigger_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "TriggerList_offset", (char*)&m_trigger_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "DetectorMatchesList_size", (char*)&m_detectorMatches_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "DetectorMatchesList_offset", (char*)&m_detectorMatches_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "HitStatisticsList_size", (char*)&m_hitStatistics_link.m_size - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   H5Tinsert(tid, "HitStatisticsList_offset", (char*)&m_hitStatistics_link.m_ref - (char*)this, ((inmemory)? H5T_NATIVE_INT : H5T_STD_I16LE));
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["reconstructedPhysicsEvent"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["reconstructedPhysicsEvent"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "reconstructedPhysicsEvent", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "reconstructedPhysicsEvent", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+void ReconstructedPhysicsEvent::hdf5DataPack()
+{
+   m_comment_list.deflate();
+   m_dataVersionString_list.deflate();
+   m_ccdbContext_list.deflate();
+   m_reaction_list.deflate();
+   m_tagmBeamPhoton_list.deflate();
+   m_taghBeamPhoton_list.deflate();
+   m_fcalShower_list.deflate();
+   m_bcalShower_list.deflate();
+   m_ccalShower_list.deflate();
+   m_chargedTrack_list.deflate();
+   m_startHit_list.deflate();
+   m_tofPoint_list.deflate();
+   m_dircHit_list.deflate();
+   m_RFtime_link.deflate();
+   m_trigger_link.deflate();
+   m_detectorMatches_link.deflate();
+   m_hitStatistics_link.deflate();
+}
+void ReconstructedPhysicsEvent::hdf5DataUnpack()
+{
+   {
+      std::list<Comment*> *host_plist = &m_host->m_comment_plist;
+      m_comment_list.inflate(m_host, host_plist, this);
+      CommentList::iterator iter;
+      for (iter = m_comment_list.begin();
+           iter != m_comment_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<DataVersionString*> *host_plist = &m_host->m_dataVersionString_plist;
+      m_dataVersionString_list.inflate(m_host, host_plist, this);
+      DataVersionStringList::iterator iter;
+      for (iter = m_dataVersionString_list.begin();
+           iter != m_dataVersionString_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<CcdbContext*> *host_plist = &m_host->m_ccdbContext_plist;
+      m_ccdbContext_list.inflate(m_host, host_plist, this);
+      CcdbContextList::iterator iter;
+      for (iter = m_ccdbContext_list.begin();
+           iter != m_ccdbContext_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<Reaction*> *host_plist = &m_host->m_reaction_plist;
+      m_reaction_list.inflate(m_host, host_plist, this);
+      ReactionList::iterator iter;
+      for (iter = m_reaction_list.begin();
+           iter != m_reaction_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<TagmBeamPhoton*> *host_plist = &m_host->m_tagmBeamPhoton_plist;
+      m_tagmBeamPhoton_list.inflate(m_host, host_plist, this);
+      TagmBeamPhotonList::iterator iter;
+      for (iter = m_tagmBeamPhoton_list.begin();
+           iter != m_tagmBeamPhoton_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<TaghBeamPhoton*> *host_plist = &m_host->m_taghBeamPhoton_plist;
+      m_taghBeamPhoton_list.inflate(m_host, host_plist, this);
+      TaghBeamPhotonList::iterator iter;
+      for (iter = m_taghBeamPhoton_list.begin();
+           iter != m_taghBeamPhoton_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<FcalShower*> *host_plist = &m_host->m_fcalShower_plist;
+      m_fcalShower_list.inflate(m_host, host_plist, this);
+      FcalShowerList::iterator iter;
+      for (iter = m_fcalShower_list.begin();
+           iter != m_fcalShower_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<BcalShower*> *host_plist = &m_host->m_bcalShower_plist;
+      m_bcalShower_list.inflate(m_host, host_plist, this);
+      BcalShowerList::iterator iter;
+      for (iter = m_bcalShower_list.begin();
+           iter != m_bcalShower_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<CcalShower*> *host_plist = &m_host->m_ccalShower_plist;
+      m_ccalShower_list.inflate(m_host, host_plist, this);
+      CcalShowerList::iterator iter;
+      for (iter = m_ccalShower_list.begin();
+           iter != m_ccalShower_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<ChargedTrack*> *host_plist = &m_host->m_chargedTrack_plist;
+      m_chargedTrack_list.inflate(m_host, host_plist, this);
+      ChargedTrackList::iterator iter;
+      for (iter = m_chargedTrack_list.begin();
+           iter != m_chargedTrack_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<StartHit*> *host_plist = &m_host->m_startHit_plist;
+      m_startHit_list.inflate(m_host, host_plist, this);
+      StartHitList::iterator iter;
+      for (iter = m_startHit_list.begin();
+           iter != m_startHit_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<TofPoint*> *host_plist = &m_host->m_tofPoint_plist;
+      m_tofPoint_list.inflate(m_host, host_plist, this);
+      TofPointList::iterator iter;
+      for (iter = m_tofPoint_list.begin();
+           iter != m_tofPoint_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<DircHit*> *host_plist = &m_host->m_dircHit_plist;
+      m_dircHit_list.inflate(m_host, host_plist, this);
+      DircHitList::iterator iter;
+      for (iter = m_dircHit_list.begin();
+           iter != m_dircHit_list.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<RFtime*> *host_plist = &m_host->m_RFtime_plist;
+      m_RFtime_link.inflate(m_host, host_plist, this);
+      RFtimeList::iterator iter;
+      for (iter = m_RFtime_link.begin();
+           iter != m_RFtime_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<Trigger*> *host_plist = &m_host->m_trigger_plist;
+      m_trigger_link.inflate(m_host, host_plist, this);
+      TriggerList::iterator iter;
+      for (iter = m_trigger_link.begin();
+           iter != m_trigger_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<DetectorMatches*> *host_plist = &m_host->m_detectorMatches_plist;
+      m_detectorMatches_link.inflate(m_host, host_plist, this);
+      DetectorMatchesList::iterator iter;
+      for (iter = m_detectorMatches_link.begin();
+           iter != m_detectorMatches_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+   {
+      std::list<HitStatistics*> *host_plist = &m_host->m_hitStatistics_plist;
+      m_hitStatistics_link.inflate(m_host, host_plist, this);
+      HitStatisticsList::iterator iter;
+      for (iter = m_hitStatistics_link.begin();
+           iter != m_hitStatistics_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+}
+#endif
+
 std::string HDDM::toString(int indent) {
    std::stringstream ostr;
    for (int n=0; n < indent; ++n)
@@ -2409,6 +6224,2016 @@ std::string HDDM::toXML(int indent) {
    return ostr.str();
 }
 
+#ifdef HDF5_SUPPORT
+hid_t HDDM::hdf5Datatype(int inmemory, int verbose)
+{
+   std::string tname("HDDM");
+   if (inmemory) {
+      if (HDDM::s_hdf5_memorytype.find(tname) != HDDM::s_hdf5_memorytype.end())
+         return HDDM::s_hdf5_memorytype[tname];
+   }
+   else {
+      if (HDDM::s_hdf5_datatype.find(tname) != HDDM::s_hdf5_datatype.end())
+         return HDDM::s_hdf5_datatype[tname];
+   }
+   hid_t tid = H5Tcreate(H5T_COMPOUND, sizeof(*this));
+   hid_t vl_string_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(vl_string_tid, H5T_VARIABLE);
+   hid_t vl_tid;
+   CDCAmpdEdx l_CDCAmpdEdx;
+   vl_tid = H5Tvlen_create(l_CDCAmpdEdx.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_CDCAmpdEdx", (char*)&m_hdf5_record.vl_CDCAmpdEdx - (char*)&m_hdf5_record, vl_tid);
+   RFtime l_RFtime;
+   vl_tid = H5Tvlen_create(l_RFtime.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_RFtime", (char*)&m_hdf5_record.vl_RFtime - (char*)&m_hdf5_record, vl_tid);
+   BcalCells l_bcalCells;
+   vl_tid = H5Tvlen_create(l_bcalCells.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_bcalCells", (char*)&m_hdf5_record.vl_bcalCells - (char*)&m_hdf5_record, vl_tid);
+   BcalCluster l_bcalCluster;
+   vl_tid = H5Tvlen_create(l_bcalCluster.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_bcalCluster", (char*)&m_hdf5_record.vl_bcalCluster - (char*)&m_hdf5_record, vl_tid);
+   BcalCorrelations l_bcalCorrelations;
+   vl_tid = H5Tvlen_create(l_bcalCorrelations.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_bcalCorrelations", (char*)&m_hdf5_record.vl_bcalCorrelations - (char*)&m_hdf5_record, vl_tid);
+   BcalDOCAtoTrack l_bcalDOCAtoTrack;
+   vl_tid = H5Tvlen_create(l_bcalDOCAtoTrack.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_bcalDOCAtoTrack", (char*)&m_hdf5_record.vl_bcalDOCAtoTrack - (char*)&m_hdf5_record, vl_tid);
+   BcalLayers l_bcalLayers;
+   vl_tid = H5Tvlen_create(l_bcalLayers.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_bcalLayers", (char*)&m_hdf5_record.vl_bcalLayers - (char*)&m_hdf5_record, vl_tid);
+   BcalMatchParams l_bcalMatchParams;
+   vl_tid = H5Tvlen_create(l_bcalMatchParams.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_bcalMatchParams", (char*)&m_hdf5_record.vl_bcalMatchParams - (char*)&m_hdf5_record, vl_tid);
+   BcalShower l_bcalShower;
+   vl_tid = H5Tvlen_create(l_bcalShower.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_bcalShower", (char*)&m_hdf5_record.vl_bcalShower - (char*)&m_hdf5_record, vl_tid);
+   CcalBlocks l_ccalBlocks;
+   vl_tid = H5Tvlen_create(l_ccalBlocks.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_ccalBlocks", (char*)&m_hdf5_record.vl_ccalBlocks - (char*)&m_hdf5_record, vl_tid);
+   CcalShower l_ccalShower;
+   vl_tid = H5Tvlen_create(l_ccalShower.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_ccalShower", (char*)&m_hdf5_record.vl_ccalShower - (char*)&m_hdf5_record, vl_tid);
+   CcdbContext l_ccdbContext;
+   vl_tid = H5Tvlen_create(l_ccdbContext.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_ccdbContext", (char*)&m_hdf5_record.vl_ccdbContext - (char*)&m_hdf5_record, vl_tid);
+   CdcStraws l_cdcStraws;
+   vl_tid = H5Tvlen_create(l_cdcStraws.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_cdcStraws", (char*)&m_hdf5_record.vl_cdcStraws - (char*)&m_hdf5_record, vl_tid);
+   ChargedTrack l_chargedTrack;
+   vl_tid = H5Tvlen_create(l_chargedTrack.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_chargedTrack", (char*)&m_hdf5_record.vl_chargedTrack - (char*)&m_hdf5_record, vl_tid);
+   Comment l_comment;
+   vl_tid = H5Tvlen_create(l_comment.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_comment", (char*)&m_hdf5_record.vl_comment - (char*)&m_hdf5_record, vl_tid);
+   DEdxDC l_dEdxDC;
+   vl_tid = H5Tvlen_create(l_dEdxDC.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_dEdxDC", (char*)&m_hdf5_record.vl_dEdxDC - (char*)&m_hdf5_record, vl_tid);
+   DataVersionString l_dataVersionString;
+   vl_tid = H5Tvlen_create(l_dataVersionString.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_dataVersionString", (char*)&m_hdf5_record.vl_dataVersionString - (char*)&m_hdf5_record, vl_tid);
+   DetectorMatches l_detectorMatches;
+   vl_tid = H5Tvlen_create(l_detectorMatches.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_detectorMatches", (char*)&m_hdf5_record.vl_detectorMatches - (char*)&m_hdf5_record, vl_tid);
+   DircHit l_dircHit;
+   vl_tid = H5Tvlen_create(l_dircHit.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_dircHit", (char*)&m_hdf5_record.vl_dircHit - (char*)&m_hdf5_record, vl_tid);
+   DircMatchHit l_dircMatchHit;
+   vl_tid = H5Tvlen_create(l_dircMatchHit.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_dircMatchHit", (char*)&m_hdf5_record.vl_dircMatchHit - (char*)&m_hdf5_record, vl_tid);
+   DircMatchParams l_dircMatchParams;
+   vl_tid = H5Tvlen_create(l_dircMatchParams.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_dircMatchParams", (char*)&m_hdf5_record.vl_dircMatchParams - (char*)&m_hdf5_record, vl_tid);
+   DircPMTs l_dircPMTs;
+   vl_tid = H5Tvlen_create(l_dircPMTs.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_dircPMTs", (char*)&m_hdf5_record.vl_dircPMTs - (char*)&m_hdf5_record, vl_tid);
+   ExitParams l_exitParams;
+   vl_tid = H5Tvlen_create(l_exitParams.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_exitParams", (char*)&m_hdf5_record.vl_exitParams - (char*)&m_hdf5_record, vl_tid);
+   Expectedhits l_expectedhits;
+   vl_tid = H5Tvlen_create(l_expectedhits.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_expectedhits", (char*)&m_hdf5_record.vl_expectedhits - (char*)&m_hdf5_record, vl_tid);
+   FcalBlocks l_fcalBlocks;
+   vl_tid = H5Tvlen_create(l_fcalBlocks.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_fcalBlocks", (char*)&m_hdf5_record.vl_fcalBlocks - (char*)&m_hdf5_record, vl_tid);
+   FcalCorrelations l_fcalCorrelations;
+   vl_tid = H5Tvlen_create(l_fcalCorrelations.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_fcalCorrelations", (char*)&m_hdf5_record.vl_fcalCorrelations - (char*)&m_hdf5_record, vl_tid);
+   FcalDOCAtoTrack l_fcalDOCAtoTrack;
+   vl_tid = H5Tvlen_create(l_fcalDOCAtoTrack.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_fcalDOCAtoTrack", (char*)&m_hdf5_record.vl_fcalDOCAtoTrack - (char*)&m_hdf5_record, vl_tid);
+   FcalMatchParams l_fcalMatchParams;
+   vl_tid = H5Tvlen_create(l_fcalMatchParams.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_fcalMatchParams", (char*)&m_hdf5_record.vl_fcalMatchParams - (char*)&m_hdf5_record, vl_tid);
+   FcalShower l_fcalShower;
+   vl_tid = H5Tvlen_create(l_fcalShower.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_fcalShower", (char*)&m_hdf5_record.vl_fcalShower - (char*)&m_hdf5_record, vl_tid);
+   FcalShowerClassification l_fcalShowerClassification;
+   vl_tid = H5Tvlen_create(l_fcalShowerClassification.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_fcalShowerClassification", (char*)&m_hdf5_record.vl_fcalShowerClassification - (char*)&m_hdf5_record, vl_tid);
+   FcalShowerNBlocks l_fcalShowerNBlocks;
+   vl_tid = H5Tvlen_create(l_fcalShowerNBlocks.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_fcalShowerNBlocks", (char*)&m_hdf5_record.vl_fcalShowerNBlocks - (char*)&m_hdf5_record, vl_tid);
+   FcalShowerProperties l_fcalShowerProperties;
+   vl_tid = H5Tvlen_create(l_fcalShowerProperties.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_fcalShowerProperties", (char*)&m_hdf5_record.vl_fcalShowerProperties - (char*)&m_hdf5_record, vl_tid);
+   FdcPseudos l_fdcPseudos;
+   vl_tid = H5Tvlen_create(l_fdcPseudos.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_fdcPseudos", (char*)&m_hdf5_record.vl_fdcPseudos - (char*)&m_hdf5_record, vl_tid);
+   HitStatistics l_hitStatistics;
+   vl_tid = H5Tvlen_create(l_hitStatistics.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_hitStatistics", (char*)&m_hdf5_record.vl_hitStatistics - (char*)&m_hdf5_record, vl_tid);
+   Hitlayers l_hitlayers;
+   vl_tid = H5Tvlen_create(l_hitlayers.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_hitlayers", (char*)&m_hdf5_record.vl_hitlayers - (char*)&m_hdf5_record, vl_tid);
+   Mcmatch l_mcmatch;
+   vl_tid = H5Tvlen_create(l_mcmatch.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_mcmatch", (char*)&m_hdf5_record.vl_mcmatch - (char*)&m_hdf5_record, vl_tid);
+   Momentum l_momentum;
+   vl_tid = H5Tvlen_create(l_momentum.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_momentum", (char*)&m_hdf5_record.vl_momentum - (char*)&m_hdf5_record, vl_tid);
+   Origin l_origin;
+   vl_tid = H5Tvlen_create(l_origin.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_origin", (char*)&m_hdf5_record.vl_origin - (char*)&m_hdf5_record, vl_tid);
+   Preshower l_preshower;
+   vl_tid = H5Tvlen_create(l_preshower.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_preshower", (char*)&m_hdf5_record.vl_preshower - (char*)&m_hdf5_record, vl_tid);
+   Product l_product;
+   vl_tid = H5Tvlen_create(l_product.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_product", (char*)&m_hdf5_record.vl_product - (char*)&m_hdf5_record, vl_tid);
+   Reaction l_reaction;
+   vl_tid = H5Tvlen_create(l_reaction.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_reaction", (char*)&m_hdf5_record.vl_reaction - (char*)&m_hdf5_record, vl_tid);
+   ReconstructedPhysicsEvent l_reconstructedPhysicsEvent;
+   vl_tid = H5Tvlen_create(l_reconstructedPhysicsEvent.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_reconstructedPhysicsEvent", (char*)&m_hdf5_record.vl_reconstructedPhysicsEvent - (char*)&m_hdf5_record, vl_tid);
+   ScMatchParams l_scMatchParams;
+   vl_tid = H5Tvlen_create(l_scMatchParams.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_scMatchParams", (char*)&m_hdf5_record.vl_scMatchParams - (char*)&m_hdf5_record, vl_tid);
+   StartCounters l_startCounters;
+   vl_tid = H5Tvlen_create(l_startCounters.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_startCounters", (char*)&m_hdf5_record.vl_startCounters - (char*)&m_hdf5_record, vl_tid);
+   StartHit l_startHit;
+   vl_tid = H5Tvlen_create(l_startHit.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_startHit", (char*)&m_hdf5_record.vl_startHit - (char*)&m_hdf5_record, vl_tid);
+   TaghBeamPhoton l_taghBeamPhoton;
+   vl_tid = H5Tvlen_create(l_taghBeamPhoton.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_taghBeamPhoton", (char*)&m_hdf5_record.vl_taghBeamPhoton - (char*)&m_hdf5_record, vl_tid);
+   TaghChannel l_taghChannel;
+   vl_tid = H5Tvlen_create(l_taghChannel.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_taghChannel", (char*)&m_hdf5_record.vl_taghChannel - (char*)&m_hdf5_record, vl_tid);
+   TagmBeamPhoton l_tagmBeamPhoton;
+   vl_tid = H5Tvlen_create(l_tagmBeamPhoton.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_tagmBeamPhoton", (char*)&m_hdf5_record.vl_tagmBeamPhoton - (char*)&m_hdf5_record, vl_tid);
+   TagmChannel l_tagmChannel;
+   vl_tid = H5Tvlen_create(l_tagmChannel.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_tagmChannel", (char*)&m_hdf5_record.vl_tagmChannel - (char*)&m_hdf5_record, vl_tid);
+   TflightPCorrelation l_tflightPCorrelation;
+   vl_tid = H5Tvlen_create(l_tflightPCorrelation.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_tflightPCorrelation", (char*)&m_hdf5_record.vl_tflightPCorrelation - (char*)&m_hdf5_record, vl_tid);
+   TofDedx l_tofDedx;
+   vl_tid = H5Tvlen_create(l_tofDedx.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_tofDedx", (char*)&m_hdf5_record.vl_tofDedx - (char*)&m_hdf5_record, vl_tid);
+   TofEnergyDeposition l_tofEnergyDeposition;
+   vl_tid = H5Tvlen_create(l_tofEnergyDeposition.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_tofEnergyDeposition", (char*)&m_hdf5_record.vl_tofEnergyDeposition - (char*)&m_hdf5_record, vl_tid);
+   TofMatchParams l_tofMatchParams;
+   vl_tid = H5Tvlen_create(l_tofMatchParams.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_tofMatchParams", (char*)&m_hdf5_record.vl_tofMatchParams - (char*)&m_hdf5_record, vl_tid);
+   TofPaddles l_tofPaddles;
+   vl_tid = H5Tvlen_create(l_tofPaddles.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_tofPaddles", (char*)&m_hdf5_record.vl_tofPaddles - (char*)&m_hdf5_record, vl_tid);
+   TofPoint l_tofPoint;
+   vl_tid = H5Tvlen_create(l_tofPoint.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_tofPoint", (char*)&m_hdf5_record.vl_tofPoint - (char*)&m_hdf5_record, vl_tid);
+   TofStatus l_tofStatus;
+   vl_tid = H5Tvlen_create(l_tofStatus.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_tofStatus", (char*)&m_hdf5_record.vl_tofStatus - (char*)&m_hdf5_record, vl_tid);
+   TrackFit l_trackFit;
+   vl_tid = H5Tvlen_create(l_trackFit.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_trackFit", (char*)&m_hdf5_record.vl_trackFit - (char*)&m_hdf5_record, vl_tid);
+   TrackFlags l_trackFlags;
+   vl_tid = H5Tvlen_create(l_trackFlags.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_trackFlags", (char*)&m_hdf5_record.vl_trackFlags - (char*)&m_hdf5_record, vl_tid);
+   Trigger l_trigger;
+   vl_tid = H5Tvlen_create(l_trigger.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_trigger", (char*)&m_hdf5_record.vl_trigger - (char*)&m_hdf5_record, vl_tid);
+   TriggerEnergySums l_triggerEnergySums;
+   vl_tid = H5Tvlen_create(l_triggerEnergySums.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_triggerEnergySums", (char*)&m_hdf5_record.vl_triggerEnergySums - (char*)&m_hdf5_record, vl_tid);
+   Vertex l_vertex;
+   vl_tid = H5Tvlen_create(l_vertex.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_vertex", (char*)&m_hdf5_record.vl_vertex - (char*)&m_hdf5_record, vl_tid);
+   Width l_width;
+   vl_tid = H5Tvlen_create(l_width.hdf5Datatype(inmemory));
+   H5Tinsert(tid, "vl_width", (char*)&m_hdf5_record.vl_width - (char*)&m_hdf5_record, vl_tid);
+   if (inmemory == 0)
+      H5Tpack(tid);
+   if (inmemory) {
+      HDDM::s_hdf5_memorytype["HDDM"] = tid;
+   }
+   else {
+      HDDM::s_hdf5_datatype["HDDM"] = tid;
+   }
+   if (verbose) {
+      size_t slen;
+      H5LTdtype_to_text(tid, 0, H5LT_DDL, &slen);
+      char *ddlstring = (char*)malloc(slen);
+      H5LTdtype_to_text(tid, ddlstring, H5LT_DDL, &slen);
+      if (inmemory)
+         printf("=== in-memory datatype %ld for %s is:\n %s\n", tid, "HDDM", ddlstring);
+      else
+         printf("=== on-disk datatype %ld for %s is:\n %s\n", tid, "HDDM", ddlstring);
+      free(ddlstring);
+   }
+   return tid;
+}
+herr_t HDDM::hdf5FileStamp(hid_t file_id, char **tags)
+{
+   std::string stamp(DocumentString());
+   while (tags != 0 && *tags != 0) {
+      stamp += "<stamptag>";
+      stamp += *tags;
+      stamp += "</stamptag>\n";
+      ++tags;
+   }
+   hid_t stamp_tid = H5Tcopy(H5T_C_S1);
+   H5Tset_size(stamp_tid, H5T_VARIABLE);
+   hsize_t dims[1] = {1};
+   hsize_t maxdims[1] = {1};
+   hid_t stamp_sid = H5Screate_simple(1, dims, maxdims);
+   char *pstamp = (char*)stamp.c_str();
+   hid_t stamp_id = H5Lexists(file_id, "HDDMstamp", H5P_DEFAULT);
+   if (stamp_id > 0) {
+      stamp_id = H5Dopen(file_id, "HDDMstamp", H5P_DEFAULT);
+   }
+   else {
+      stamp_id = H5Dcreate(file_id, "HDDMstamp",
+                           stamp_tid, stamp_sid,
+                           H5P_DEFAULT, H5P_DEFAULT,
+                           H5P_DEFAULT);
+   }
+   herr_t res = H5Dwrite(stamp_id, stamp_tid,
+                         H5S_ALL, H5S_ALL,
+                         H5P_DEFAULT, &pstamp);
+   return res;
+}
+herr_t HDDM::hdf5FileCheck(hid_t file_id, char **tags)
+{
+   char *pstamp;
+   hid_t stamp_id = H5Dopen(file_id, "HDDMstamp", H5P_DEFAULT);
+   hid_t stamp_sid = H5Dget_space(stamp_id);   hid_t stamp_tid = H5Dget_type(stamp_id);
+   stamp_tid = H5Tget_native_type(stamp_tid, H5T_DIR_DEFAULT);
+   herr_t res = H5Dread(stamp_id, stamp_tid,
+                        H5S_ALL, H5S_ALL,
+                        H5P_DEFAULT, &pstamp);
+   std::string sstamp(pstamp);
+   H5Dvlen_reclaim(stamp_tid, stamp_sid,
+                   H5P_DEFAULT, &pstamp);
+   if (sstamp.find(DocumentString()) != 0) {
+      throw std::runtime_error("hddm_r::hdf5FileCheck - "
+                  "HDF5 input record format mismatch!");
+   }
+   while (tags != 0 && *tags != 0) {
+      std::string stag("<stamptag>");
+      stag += *tags;
+      stag += "</stamptag>";
+      if (sstamp.find(stag) == sstamp.npos) {
+         throw std::runtime_error("hddm_r::hdf5FileCheck - "
+                  "HDF5 input record tag is missing!");
+      }
+      ++tags;
+   }
+   H5Dclose(stamp_id);
+   return res;
+}
+std::string HDDM::hdf5DocumentString(hid_t file_id)
+{
+   char *pstamp;
+   hid_t stamp_id = H5Dopen(file_id, "HDDMstamp", H5P_DEFAULT);
+   hid_t stamp_sid = H5Dget_space(stamp_id);   hid_t stamp_tid = H5Dget_type(stamp_id);
+   stamp_tid = H5Tget_native_type(stamp_tid, H5T_DIR_DEFAULT);
+   H5Dread(stamp_id, stamp_tid,
+           H5S_ALL, H5S_ALL, H5P_DEFAULT, &pstamp);
+   std::string sstamp(pstamp);
+   H5Dvlen_reclaim(stamp_tid, stamp_sid,
+                   H5P_DEFAULT, &pstamp);
+   H5Dclose(stamp_id);
+   return sstamp;
+}
+long int HDDM::hdf5GetEntries(hid_t file_id)
+{
+   hid_t eventspace_id;
+   hid_t eventdata_id;
+   hid_t chunking_id;
+   htri_t exists =   H5Lexists(file_id, "HDDMevents", H5P_DEFAULT);
+   if (exists <= 0)
+      return exists;
+   if (s_hdf5_dataset.find(file_id) == s_hdf5_dataset.end()) {
+
+      eventdata_id = H5Dopen(file_id, "HDDMevents",
+                               H5P_DEFAULT);
+      chunking_id = H5Dget_create_plist(eventdata_id);
+      eventspace_id = H5Dget_space(eventdata_id);
+      s_hdf5_dataset[file_id] = eventdata_id;
+      s_hdf5_chunking[file_id] = chunking_id;
+      s_hdf5_dataspace[file_id] = eventspace_id;
+   }
+   else {
+      eventdata_id = s_hdf5_dataset[file_id];      chunking_id = s_hdf5_chunking[file_id];      eventspace_id = s_hdf5_dataspace[file_id];
+   }
+   hsize_t dims;
+   hsize_t maxdims;
+   H5Sget_simple_extent_dims(eventspace_id, &dims, &maxdims);
+   return dims;
+}
+herr_t HDDM::hdf5SetChunksize(hid_t file_id, hsize_t chunksize)
+{
+   hid_t chunking_id;
+   if (s_hdf5_chunking.find(file_id) == s_hdf5_chunking.end()) {
+      chunking_id = H5Pcreate(H5P_DATASET_CREATE);
+      s_hdf5_chunking[file_id] = chunking_id;
+   }
+   else {
+      chunking_id = s_hdf5_chunking[file_id];
+   }
+   hsize_t chunks[1] = {chunksize};
+   return H5Pset_chunk(chunking_id, 1, chunks);
+}
+hsize_t HDDM::hdf5GetChunksize(hid_t file_id)
+{
+   if (s_hdf5_chunking.find(file_id) == s_hdf5_chunking.end()) {
+      return HDF5_DEFAULT_CHUNK_SIZE;
+   }
+   hid_t chunking_id = s_hdf5_chunking[file_id];
+   hsize_t dims[1];
+   H5Pget_chunk(chunking_id, 1, dims);
+   return dims[0];
+}
+herr_t HDDM::hdf5SetFilters(hid_t file_id, std::vector<H5Z_filter_t> &filters)
+{
+   hid_t chunking_id;
+   if (s_hdf5_chunking.find(file_id) == s_hdf5_chunking.end()) {
+      chunking_id = H5Pcreate(H5P_DATASET_CREATE);
+      s_hdf5_chunking[file_id] = chunking_id;
+   }
+   else {
+      chunking_id = s_hdf5_chunking[file_id];
+   }
+   for (auto filter : filters) {
+      if (filter == H5Z_FILTER_DEFLATE) {
+         H5Pset_deflate(chunking_id, 9);
+      }
+      else if (filter == H5Z_FILTER_SZIP) {
+         H5Pset_szip(chunking_id, H5_SZIP_NN_OPTION_MASK, 8);
+      }
+      else if (filter == H5Z_FILTER_SHUFFLE) {
+         H5Pset_shuffle(chunking_id);
+      }
+      else if (filter == H5Z_FILTER_SCALEOFFSET) {
+         H5Pset_scaleoffset(chunking_id, H5Z_SO_INT,
+                            H5Z_SO_INT_MINBITS_DEFAULT);
+      }
+      else if (filter == H5Z_FILTER_NBIT) {
+         H5Pset_nbit(chunking_id);
+      }
+      else if (filter == H5Z_FILTER_FLETCHER32) {
+         H5Pset_fletcher32(chunking_id);
+      }
+      else {
+         unsigned int cd_values[] = {6};
+         H5Pset_filter(chunking_id, filter,
+                       H5Z_FLAG_MANDATORY, (size_t)1, cd_values);      }
+
+   }
+   return 0;
+}
+herr_t HDDM::hdf5GetFilters(hid_t file_id, std::vector<H5Z_filter_t> &filters)
+{
+   filters.clear();
+   if (s_hdf5_chunking.find(file_id) == s_hdf5_chunking.end()) {
+      return 0;
+   }
+   hid_t chunking_id = s_hdf5_chunking[file_id];
+   for (int i=0; i < H5Pget_nfilters(chunking_id); ++i) {
+      unsigned int flags;
+      size_t cd_nelmts = 9;
+      unsigned int cd_values[9];
+      size_t namelen = 99;
+      char name[99];
+      unsigned int filter_config;
+      filters.push_back(H5Pget_filter2(chunking_id, i,
+                        &flags, &cd_nelmts, cd_values,
+                        namelen, name, &filter_config));
+   }
+   return 0;
+}
+herr_t HDDM::hdf5FileWrite(hid_t file_id, long int entry)
+{
+   hdf5_record_t hdf5_record;
+   int size;
+
+   int len;
+
+   if ((len = hdf5_record.vl_CDCAmpdEdx.len = m_CDCAmpdEdx_plist.size()) > 0) {
+      size = sizeof(CDCAmpdEdx);
+      hdf5_record.vl_CDCAmpdEdx.p = malloc(len * size);
+      std::list<CDCAmpdEdx*>::iterator iter = m_CDCAmpdEdx_plist.begin();
+      CDCAmpdEdx *p = (CDCAmpdEdx*)hdf5_record.vl_CDCAmpdEdx.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_RFtime.len = m_RFtime_plist.size()) > 0) {
+      size = sizeof(RFtime);
+      hdf5_record.vl_RFtime.p = malloc(len * size);
+      std::list<RFtime*>::iterator iter = m_RFtime_plist.begin();
+      RFtime *p = (RFtime*)hdf5_record.vl_RFtime.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_bcalCells.len = m_bcalCells_plist.size()) > 0) {
+      size = sizeof(BcalCells);
+      hdf5_record.vl_bcalCells.p = malloc(len * size);
+      std::list<BcalCells*>::iterator iter = m_bcalCells_plist.begin();
+      BcalCells *p = (BcalCells*)hdf5_record.vl_bcalCells.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_bcalCluster.len = m_bcalCluster_plist.size()) > 0) {
+      size = sizeof(BcalCluster);
+      hdf5_record.vl_bcalCluster.p = malloc(len * size);
+      std::list<BcalCluster*>::iterator iter = m_bcalCluster_plist.begin();
+      BcalCluster *p = (BcalCluster*)hdf5_record.vl_bcalCluster.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_bcalCorrelations.len = m_bcalCorrelations_plist.size()) > 0) {
+      size = sizeof(BcalCorrelations);
+      hdf5_record.vl_bcalCorrelations.p = malloc(len * size);
+      std::list<BcalCorrelations*>::iterator iter = m_bcalCorrelations_plist.begin();
+      BcalCorrelations *p = (BcalCorrelations*)hdf5_record.vl_bcalCorrelations.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_bcalDOCAtoTrack.len = m_bcalDOCAtoTrack_plist.size()) > 0) {
+      size = sizeof(BcalDOCAtoTrack);
+      hdf5_record.vl_bcalDOCAtoTrack.p = malloc(len * size);
+      std::list<BcalDOCAtoTrack*>::iterator iter = m_bcalDOCAtoTrack_plist.begin();
+      BcalDOCAtoTrack *p = (BcalDOCAtoTrack*)hdf5_record.vl_bcalDOCAtoTrack.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_bcalLayers.len = m_bcalLayers_plist.size()) > 0) {
+      size = sizeof(BcalLayers);
+      hdf5_record.vl_bcalLayers.p = malloc(len * size);
+      std::list<BcalLayers*>::iterator iter = m_bcalLayers_plist.begin();
+      BcalLayers *p = (BcalLayers*)hdf5_record.vl_bcalLayers.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_bcalMatchParams.len = m_bcalMatchParams_plist.size()) > 0) {
+      size = sizeof(BcalMatchParams);
+      hdf5_record.vl_bcalMatchParams.p = malloc(len * size);
+      std::list<BcalMatchParams*>::iterator iter = m_bcalMatchParams_plist.begin();
+      BcalMatchParams *p = (BcalMatchParams*)hdf5_record.vl_bcalMatchParams.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_bcalShower.len = m_bcalShower_plist.size()) > 0) {
+      size = sizeof(BcalShower);
+      hdf5_record.vl_bcalShower.p = malloc(len * size);
+      std::list<BcalShower*>::iterator iter = m_bcalShower_plist.begin();
+      BcalShower *p = (BcalShower*)hdf5_record.vl_bcalShower.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_ccalBlocks.len = m_ccalBlocks_plist.size()) > 0) {
+      size = sizeof(CcalBlocks);
+      hdf5_record.vl_ccalBlocks.p = malloc(len * size);
+      std::list<CcalBlocks*>::iterator iter = m_ccalBlocks_plist.begin();
+      CcalBlocks *p = (CcalBlocks*)hdf5_record.vl_ccalBlocks.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_ccalShower.len = m_ccalShower_plist.size()) > 0) {
+      size = sizeof(CcalShower);
+      hdf5_record.vl_ccalShower.p = malloc(len * size);
+      std::list<CcalShower*>::iterator iter = m_ccalShower_plist.begin();
+      CcalShower *p = (CcalShower*)hdf5_record.vl_ccalShower.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_ccdbContext.len = m_ccdbContext_plist.size()) > 0) {
+      size = sizeof(CcdbContext);
+      hdf5_record.vl_ccdbContext.p = malloc(len * size);
+      std::list<CcdbContext*>::iterator iter = m_ccdbContext_plist.begin();
+      CcdbContext *p = (CcdbContext*)hdf5_record.vl_ccdbContext.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_cdcStraws.len = m_cdcStraws_plist.size()) > 0) {
+      size = sizeof(CdcStraws);
+      hdf5_record.vl_cdcStraws.p = malloc(len * size);
+      std::list<CdcStraws*>::iterator iter = m_cdcStraws_plist.begin();
+      CdcStraws *p = (CdcStraws*)hdf5_record.vl_cdcStraws.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_chargedTrack.len = m_chargedTrack_plist.size()) > 0) {
+      size = sizeof(ChargedTrack);
+      hdf5_record.vl_chargedTrack.p = malloc(len * size);
+      std::list<ChargedTrack*>::iterator iter = m_chargedTrack_plist.begin();
+      ChargedTrack *p = (ChargedTrack*)hdf5_record.vl_chargedTrack.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_comment.len = m_comment_plist.size()) > 0) {
+      size = sizeof(Comment);
+      hdf5_record.vl_comment.p = malloc(len * size);
+      std::list<Comment*>::iterator iter = m_comment_plist.begin();
+      Comment *p = (Comment*)hdf5_record.vl_comment.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_dEdxDC.len = m_dEdxDC_plist.size()) > 0) {
+      size = sizeof(DEdxDC);
+      hdf5_record.vl_dEdxDC.p = malloc(len * size);
+      std::list<DEdxDC*>::iterator iter = m_dEdxDC_plist.begin();
+      DEdxDC *p = (DEdxDC*)hdf5_record.vl_dEdxDC.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_dataVersionString.len = m_dataVersionString_plist.size()) > 0) {
+      size = sizeof(DataVersionString);
+      hdf5_record.vl_dataVersionString.p = malloc(len * size);
+      std::list<DataVersionString*>::iterator iter = m_dataVersionString_plist.begin();
+      DataVersionString *p = (DataVersionString*)hdf5_record.vl_dataVersionString.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_detectorMatches.len = m_detectorMatches_plist.size()) > 0) {
+      size = sizeof(DetectorMatches);
+      hdf5_record.vl_detectorMatches.p = malloc(len * size);
+      std::list<DetectorMatches*>::iterator iter = m_detectorMatches_plist.begin();
+      DetectorMatches *p = (DetectorMatches*)hdf5_record.vl_detectorMatches.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_dircHit.len = m_dircHit_plist.size()) > 0) {
+      size = sizeof(DircHit);
+      hdf5_record.vl_dircHit.p = malloc(len * size);
+      std::list<DircHit*>::iterator iter = m_dircHit_plist.begin();
+      DircHit *p = (DircHit*)hdf5_record.vl_dircHit.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_dircMatchHit.len = m_dircMatchHit_plist.size()) > 0) {
+      size = sizeof(DircMatchHit);
+      hdf5_record.vl_dircMatchHit.p = malloc(len * size);
+      std::list<DircMatchHit*>::iterator iter = m_dircMatchHit_plist.begin();
+      DircMatchHit *p = (DircMatchHit*)hdf5_record.vl_dircMatchHit.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_dircMatchParams.len = m_dircMatchParams_plist.size()) > 0) {
+      size = sizeof(DircMatchParams);
+      hdf5_record.vl_dircMatchParams.p = malloc(len * size);
+      std::list<DircMatchParams*>::iterator iter = m_dircMatchParams_plist.begin();
+      DircMatchParams *p = (DircMatchParams*)hdf5_record.vl_dircMatchParams.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_dircPMTs.len = m_dircPMTs_plist.size()) > 0) {
+      size = sizeof(DircPMTs);
+      hdf5_record.vl_dircPMTs.p = malloc(len * size);
+      std::list<DircPMTs*>::iterator iter = m_dircPMTs_plist.begin();
+      DircPMTs *p = (DircPMTs*)hdf5_record.vl_dircPMTs.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_exitParams.len = m_exitParams_plist.size()) > 0) {
+      size = sizeof(ExitParams);
+      hdf5_record.vl_exitParams.p = malloc(len * size);
+      std::list<ExitParams*>::iterator iter = m_exitParams_plist.begin();
+      ExitParams *p = (ExitParams*)hdf5_record.vl_exitParams.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_expectedhits.len = m_expectedhits_plist.size()) > 0) {
+      size = sizeof(Expectedhits);
+      hdf5_record.vl_expectedhits.p = malloc(len * size);
+      std::list<Expectedhits*>::iterator iter = m_expectedhits_plist.begin();
+      Expectedhits *p = (Expectedhits*)hdf5_record.vl_expectedhits.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_fcalBlocks.len = m_fcalBlocks_plist.size()) > 0) {
+      size = sizeof(FcalBlocks);
+      hdf5_record.vl_fcalBlocks.p = malloc(len * size);
+      std::list<FcalBlocks*>::iterator iter = m_fcalBlocks_plist.begin();
+      FcalBlocks *p = (FcalBlocks*)hdf5_record.vl_fcalBlocks.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_fcalCorrelations.len = m_fcalCorrelations_plist.size()) > 0) {
+      size = sizeof(FcalCorrelations);
+      hdf5_record.vl_fcalCorrelations.p = malloc(len * size);
+      std::list<FcalCorrelations*>::iterator iter = m_fcalCorrelations_plist.begin();
+      FcalCorrelations *p = (FcalCorrelations*)hdf5_record.vl_fcalCorrelations.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_fcalDOCAtoTrack.len = m_fcalDOCAtoTrack_plist.size()) > 0) {
+      size = sizeof(FcalDOCAtoTrack);
+      hdf5_record.vl_fcalDOCAtoTrack.p = malloc(len * size);
+      std::list<FcalDOCAtoTrack*>::iterator iter = m_fcalDOCAtoTrack_plist.begin();
+      FcalDOCAtoTrack *p = (FcalDOCAtoTrack*)hdf5_record.vl_fcalDOCAtoTrack.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_fcalMatchParams.len = m_fcalMatchParams_plist.size()) > 0) {
+      size = sizeof(FcalMatchParams);
+      hdf5_record.vl_fcalMatchParams.p = malloc(len * size);
+      std::list<FcalMatchParams*>::iterator iter = m_fcalMatchParams_plist.begin();
+      FcalMatchParams *p = (FcalMatchParams*)hdf5_record.vl_fcalMatchParams.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_fcalShower.len = m_fcalShower_plist.size()) > 0) {
+      size = sizeof(FcalShower);
+      hdf5_record.vl_fcalShower.p = malloc(len * size);
+      std::list<FcalShower*>::iterator iter = m_fcalShower_plist.begin();
+      FcalShower *p = (FcalShower*)hdf5_record.vl_fcalShower.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_fcalShowerClassification.len = m_fcalShowerClassification_plist.size()) > 0) {
+      size = sizeof(FcalShowerClassification);
+      hdf5_record.vl_fcalShowerClassification.p = malloc(len * size);
+      std::list<FcalShowerClassification*>::iterator iter = m_fcalShowerClassification_plist.begin();
+      FcalShowerClassification *p = (FcalShowerClassification*)hdf5_record.vl_fcalShowerClassification.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_fcalShowerNBlocks.len = m_fcalShowerNBlocks_plist.size()) > 0) {
+      size = sizeof(FcalShowerNBlocks);
+      hdf5_record.vl_fcalShowerNBlocks.p = malloc(len * size);
+      std::list<FcalShowerNBlocks*>::iterator iter = m_fcalShowerNBlocks_plist.begin();
+      FcalShowerNBlocks *p = (FcalShowerNBlocks*)hdf5_record.vl_fcalShowerNBlocks.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_fcalShowerProperties.len = m_fcalShowerProperties_plist.size()) > 0) {
+      size = sizeof(FcalShowerProperties);
+      hdf5_record.vl_fcalShowerProperties.p = malloc(len * size);
+      std::list<FcalShowerProperties*>::iterator iter = m_fcalShowerProperties_plist.begin();
+      FcalShowerProperties *p = (FcalShowerProperties*)hdf5_record.vl_fcalShowerProperties.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_fdcPseudos.len = m_fdcPseudos_plist.size()) > 0) {
+      size = sizeof(FdcPseudos);
+      hdf5_record.vl_fdcPseudos.p = malloc(len * size);
+      std::list<FdcPseudos*>::iterator iter = m_fdcPseudos_plist.begin();
+      FdcPseudos *p = (FdcPseudos*)hdf5_record.vl_fdcPseudos.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_hitStatistics.len = m_hitStatistics_plist.size()) > 0) {
+      size = sizeof(HitStatistics);
+      hdf5_record.vl_hitStatistics.p = malloc(len * size);
+      std::list<HitStatistics*>::iterator iter = m_hitStatistics_plist.begin();
+      HitStatistics *p = (HitStatistics*)hdf5_record.vl_hitStatistics.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_hitlayers.len = m_hitlayers_plist.size()) > 0) {
+      size = sizeof(Hitlayers);
+      hdf5_record.vl_hitlayers.p = malloc(len * size);
+      std::list<Hitlayers*>::iterator iter = m_hitlayers_plist.begin();
+      Hitlayers *p = (Hitlayers*)hdf5_record.vl_hitlayers.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_mcmatch.len = m_mcmatch_plist.size()) > 0) {
+      size = sizeof(Mcmatch);
+      hdf5_record.vl_mcmatch.p = malloc(len * size);
+      std::list<Mcmatch*>::iterator iter = m_mcmatch_plist.begin();
+      Mcmatch *p = (Mcmatch*)hdf5_record.vl_mcmatch.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_momentum.len = m_momentum_plist.size()) > 0) {
+      size = sizeof(Momentum);
+      hdf5_record.vl_momentum.p = malloc(len * size);
+      std::list<Momentum*>::iterator iter = m_momentum_plist.begin();
+      Momentum *p = (Momentum*)hdf5_record.vl_momentum.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_origin.len = m_origin_plist.size()) > 0) {
+      size = sizeof(Origin);
+      hdf5_record.vl_origin.p = malloc(len * size);
+      std::list<Origin*>::iterator iter = m_origin_plist.begin();
+      Origin *p = (Origin*)hdf5_record.vl_origin.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_preshower.len = m_preshower_plist.size()) > 0) {
+      size = sizeof(Preshower);
+      hdf5_record.vl_preshower.p = malloc(len * size);
+      std::list<Preshower*>::iterator iter = m_preshower_plist.begin();
+      Preshower *p = (Preshower*)hdf5_record.vl_preshower.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_product.len = m_product_plist.size()) > 0) {
+      size = sizeof(Product);
+      hdf5_record.vl_product.p = malloc(len * size);
+      std::list<Product*>::iterator iter = m_product_plist.begin();
+      Product *p = (Product*)hdf5_record.vl_product.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_reaction.len = m_reaction_plist.size()) > 0) {
+      size = sizeof(Reaction);
+      hdf5_record.vl_reaction.p = malloc(len * size);
+      std::list<Reaction*>::iterator iter = m_reaction_plist.begin();
+      Reaction *p = (Reaction*)hdf5_record.vl_reaction.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_reconstructedPhysicsEvent.len = m_reconstructedPhysicsEvent_plist.size()) > 0) {
+      size = sizeof(ReconstructedPhysicsEvent);
+      hdf5_record.vl_reconstructedPhysicsEvent.p = malloc(len * size);
+      std::list<ReconstructedPhysicsEvent*>::iterator iter = m_reconstructedPhysicsEvent_plist.begin();
+      ReconstructedPhysicsEvent *p = (ReconstructedPhysicsEvent*)hdf5_record.vl_reconstructedPhysicsEvent.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_scMatchParams.len = m_scMatchParams_plist.size()) > 0) {
+      size = sizeof(ScMatchParams);
+      hdf5_record.vl_scMatchParams.p = malloc(len * size);
+      std::list<ScMatchParams*>::iterator iter = m_scMatchParams_plist.begin();
+      ScMatchParams *p = (ScMatchParams*)hdf5_record.vl_scMatchParams.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_startCounters.len = m_startCounters_plist.size()) > 0) {
+      size = sizeof(StartCounters);
+      hdf5_record.vl_startCounters.p = malloc(len * size);
+      std::list<StartCounters*>::iterator iter = m_startCounters_plist.begin();
+      StartCounters *p = (StartCounters*)hdf5_record.vl_startCounters.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_startHit.len = m_startHit_plist.size()) > 0) {
+      size = sizeof(StartHit);
+      hdf5_record.vl_startHit.p = malloc(len * size);
+      std::list<StartHit*>::iterator iter = m_startHit_plist.begin();
+      StartHit *p = (StartHit*)hdf5_record.vl_startHit.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_taghBeamPhoton.len = m_taghBeamPhoton_plist.size()) > 0) {
+      size = sizeof(TaghBeamPhoton);
+      hdf5_record.vl_taghBeamPhoton.p = malloc(len * size);
+      std::list<TaghBeamPhoton*>::iterator iter = m_taghBeamPhoton_plist.begin();
+      TaghBeamPhoton *p = (TaghBeamPhoton*)hdf5_record.vl_taghBeamPhoton.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_taghChannel.len = m_taghChannel_plist.size()) > 0) {
+      size = sizeof(TaghChannel);
+      hdf5_record.vl_taghChannel.p = malloc(len * size);
+      std::list<TaghChannel*>::iterator iter = m_taghChannel_plist.begin();
+      TaghChannel *p = (TaghChannel*)hdf5_record.vl_taghChannel.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_tagmBeamPhoton.len = m_tagmBeamPhoton_plist.size()) > 0) {
+      size = sizeof(TagmBeamPhoton);
+      hdf5_record.vl_tagmBeamPhoton.p = malloc(len * size);
+      std::list<TagmBeamPhoton*>::iterator iter = m_tagmBeamPhoton_plist.begin();
+      TagmBeamPhoton *p = (TagmBeamPhoton*)hdf5_record.vl_tagmBeamPhoton.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_tagmChannel.len = m_tagmChannel_plist.size()) > 0) {
+      size = sizeof(TagmChannel);
+      hdf5_record.vl_tagmChannel.p = malloc(len * size);
+      std::list<TagmChannel*>::iterator iter = m_tagmChannel_plist.begin();
+      TagmChannel *p = (TagmChannel*)hdf5_record.vl_tagmChannel.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_tflightPCorrelation.len = m_tflightPCorrelation_plist.size()) > 0) {
+      size = sizeof(TflightPCorrelation);
+      hdf5_record.vl_tflightPCorrelation.p = malloc(len * size);
+      std::list<TflightPCorrelation*>::iterator iter = m_tflightPCorrelation_plist.begin();
+      TflightPCorrelation *p = (TflightPCorrelation*)hdf5_record.vl_tflightPCorrelation.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_tofDedx.len = m_tofDedx_plist.size()) > 0) {
+      size = sizeof(TofDedx);
+      hdf5_record.vl_tofDedx.p = malloc(len * size);
+      std::list<TofDedx*>::iterator iter = m_tofDedx_plist.begin();
+      TofDedx *p = (TofDedx*)hdf5_record.vl_tofDedx.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_tofEnergyDeposition.len = m_tofEnergyDeposition_plist.size()) > 0) {
+      size = sizeof(TofEnergyDeposition);
+      hdf5_record.vl_tofEnergyDeposition.p = malloc(len * size);
+      std::list<TofEnergyDeposition*>::iterator iter = m_tofEnergyDeposition_plist.begin();
+      TofEnergyDeposition *p = (TofEnergyDeposition*)hdf5_record.vl_tofEnergyDeposition.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_tofMatchParams.len = m_tofMatchParams_plist.size()) > 0) {
+      size = sizeof(TofMatchParams);
+      hdf5_record.vl_tofMatchParams.p = malloc(len * size);
+      std::list<TofMatchParams*>::iterator iter = m_tofMatchParams_plist.begin();
+      TofMatchParams *p = (TofMatchParams*)hdf5_record.vl_tofMatchParams.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_tofPaddles.len = m_tofPaddles_plist.size()) > 0) {
+      size = sizeof(TofPaddles);
+      hdf5_record.vl_tofPaddles.p = malloc(len * size);
+      std::list<TofPaddles*>::iterator iter = m_tofPaddles_plist.begin();
+      TofPaddles *p = (TofPaddles*)hdf5_record.vl_tofPaddles.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_tofPoint.len = m_tofPoint_plist.size()) > 0) {
+      size = sizeof(TofPoint);
+      hdf5_record.vl_tofPoint.p = malloc(len * size);
+      std::list<TofPoint*>::iterator iter = m_tofPoint_plist.begin();
+      TofPoint *p = (TofPoint*)hdf5_record.vl_tofPoint.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_tofStatus.len = m_tofStatus_plist.size()) > 0) {
+      size = sizeof(TofStatus);
+      hdf5_record.vl_tofStatus.p = malloc(len * size);
+      std::list<TofStatus*>::iterator iter = m_tofStatus_plist.begin();
+      TofStatus *p = (TofStatus*)hdf5_record.vl_tofStatus.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_trackFit.len = m_trackFit_plist.size()) > 0) {
+      size = sizeof(TrackFit);
+      hdf5_record.vl_trackFit.p = malloc(len * size);
+      std::list<TrackFit*>::iterator iter = m_trackFit_plist.begin();
+      TrackFit *p = (TrackFit*)hdf5_record.vl_trackFit.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_trackFlags.len = m_trackFlags_plist.size()) > 0) {
+      size = sizeof(TrackFlags);
+      hdf5_record.vl_trackFlags.p = malloc(len * size);
+      std::list<TrackFlags*>::iterator iter = m_trackFlags_plist.begin();
+      TrackFlags *p = (TrackFlags*)hdf5_record.vl_trackFlags.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_trigger.len = m_trigger_plist.size()) > 0) {
+      size = sizeof(Trigger);
+      hdf5_record.vl_trigger.p = malloc(len * size);
+      std::list<Trigger*>::iterator iter = m_trigger_plist.begin();
+      Trigger *p = (Trigger*)hdf5_record.vl_trigger.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_triggerEnergySums.len = m_triggerEnergySums_plist.size()) > 0) {
+      size = sizeof(TriggerEnergySums);
+      hdf5_record.vl_triggerEnergySums.p = malloc(len * size);
+      std::list<TriggerEnergySums*>::iterator iter = m_triggerEnergySums_plist.begin();
+      TriggerEnergySums *p = (TriggerEnergySums*)hdf5_record.vl_triggerEnergySums.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_vertex.len = m_vertex_plist.size()) > 0) {
+      size = sizeof(Vertex);
+      hdf5_record.vl_vertex.p = malloc(len * size);
+      std::list<Vertex*>::iterator iter = m_vertex_plist.begin();
+      Vertex *p = (Vertex*)hdf5_record.vl_vertex.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   if ((len = hdf5_record.vl_width.len = m_width_plist.size()) > 0) {
+      size = sizeof(Width);
+      hdf5_record.vl_width.p = malloc(len * size);
+      std::list<Width*>::iterator iter = m_width_plist.begin();
+      Width *p = (Width*)hdf5_record.vl_width.p;
+      for (int i=0; i < len; ++i, ++iter) {
+         memcpy(p+i, *iter, size);
+         p[i].hdf5DataPack();
+      }
+   }
+   hid_t eventtype_id = hdf5Datatype();
+   hid_t memorytype_id = hdf5Datatype(1);
+   hid_t chunking_id;
+   if (s_hdf5_chunking.find(file_id) == s_hdf5_chunking.end()) {
+      hdf5SetChunksize(file_id, HDF5_DEFAULT_CHUNK_SIZE);
+   }
+   chunking_id = s_hdf5_chunking[file_id];
+   hid_t memoryspace_id;
+   if (s_hdf5_memoryspace.find("HDDM") == s_hdf5_memoryspace.end()) {
+      hsize_t dims[1] = {1};
+      hsize_t maxdims[1] = {H5S_UNLIMITED};
+      memoryspace_id = H5Screate_simple(1, dims, maxdims);
+      s_hdf5_memoryspace["HDDM"] = memoryspace_id;
+   }
+   else {
+      memoryspace_id = s_hdf5_memoryspace["HDDM"];
+   }
+   hid_t eventspace_id;
+   if (s_hdf5_dataspace.find(file_id) == s_hdf5_dataspace.end()) {
+      hsize_t dims[1] = {1};
+      hsize_t maxdims[1] = {H5S_UNLIMITED};
+      eventspace_id = H5Screate_simple(1, dims, maxdims);
+      s_hdf5_dataspace[file_id] = eventspace_id;
+   }
+   else {
+      eventspace_id = HDDM::s_hdf5_dataspace[file_id];
+   }
+   hid_t eventdata_id;
+   if (s_hdf5_dataset.find(file_id) == s_hdf5_dataset.end()) {
+
+      eventdata_id = H5Dcreate(file_id, "HDDMevents",
+                               eventtype_id, eventspace_id,
+                               H5P_DEFAULT, chunking_id,
+                               H5P_DEFAULT);
+      s_hdf5_dataset[file_id] = eventdata_id;
+      m_hdf5_record_extent = 0;
+      m_hdf5_record_offset = 0;
+
+   }
+   else {
+      eventdata_id = s_hdf5_dataset[file_id];      hsize_t maxdims;
+      H5Sget_simple_extent_dims(eventspace_id, &m_hdf5_record_extent, &maxdims);
+      H5Sget_select_bounds(eventspace_id, &m_hdf5_record_offset, &maxdims);
+      ++m_hdf5_record_offset;
+   }
+   if (entry >= 0) {
+      m_hdf5_record_offset = entry;
+   }
+   if (m_hdf5_record_offset >= m_hdf5_record_extent) {
+      m_hdf5_record_extent = m_hdf5_record_offset + 1;
+      H5Dset_extent(eventdata_id, &m_hdf5_record_extent);
+      H5Sclose(eventspace_id);
+      eventspace_id = H5Dget_space(eventdata_id);
+      s_hdf5_dataspace[file_id] = eventspace_id;
+   }
+   hsize_t hdf5_record_count = 1;
+   H5Sselect_hyperslab(eventspace_id, H5S_SELECT_SET,
+                       &m_hdf5_record_offset, NULL,
+                       &hdf5_record_count, NULL);
+   herr_t res = H5Dwrite(eventdata_id, memorytype_id,
+                         memoryspace_id, eventspace_id,
+                         H5P_DEFAULT, &hdf5_record);
+   if ((len = hdf5_record.vl_CDCAmpdEdx.len = m_CDCAmpdEdx_plist.size()) > 0) {
+      free(hdf5_record.vl_CDCAmpdEdx.p);
+   }
+   if ((len = hdf5_record.vl_RFtime.len = m_RFtime_plist.size()) > 0) {
+      free(hdf5_record.vl_RFtime.p);
+   }
+   if ((len = hdf5_record.vl_bcalCells.len = m_bcalCells_plist.size()) > 0) {
+      free(hdf5_record.vl_bcalCells.p);
+   }
+   if ((len = hdf5_record.vl_bcalCluster.len = m_bcalCluster_plist.size()) > 0) {
+      free(hdf5_record.vl_bcalCluster.p);
+   }
+   if ((len = hdf5_record.vl_bcalCorrelations.len = m_bcalCorrelations_plist.size()) > 0) {
+      free(hdf5_record.vl_bcalCorrelations.p);
+   }
+   if ((len = hdf5_record.vl_bcalDOCAtoTrack.len = m_bcalDOCAtoTrack_plist.size()) > 0) {
+      free(hdf5_record.vl_bcalDOCAtoTrack.p);
+   }
+   if ((len = hdf5_record.vl_bcalLayers.len = m_bcalLayers_plist.size()) > 0) {
+      free(hdf5_record.vl_bcalLayers.p);
+   }
+   if ((len = hdf5_record.vl_bcalMatchParams.len = m_bcalMatchParams_plist.size()) > 0) {
+      free(hdf5_record.vl_bcalMatchParams.p);
+   }
+   if ((len = hdf5_record.vl_bcalShower.len = m_bcalShower_plist.size()) > 0) {
+      free(hdf5_record.vl_bcalShower.p);
+   }
+   if ((len = hdf5_record.vl_ccalBlocks.len = m_ccalBlocks_plist.size()) > 0) {
+      free(hdf5_record.vl_ccalBlocks.p);
+   }
+   if ((len = hdf5_record.vl_ccalShower.len = m_ccalShower_plist.size()) > 0) {
+      free(hdf5_record.vl_ccalShower.p);
+   }
+   if ((len = hdf5_record.vl_ccdbContext.len = m_ccdbContext_plist.size()) > 0) {
+      free(hdf5_record.vl_ccdbContext.p);
+   }
+   if ((len = hdf5_record.vl_cdcStraws.len = m_cdcStraws_plist.size()) > 0) {
+      free(hdf5_record.vl_cdcStraws.p);
+   }
+   if ((len = hdf5_record.vl_chargedTrack.len = m_chargedTrack_plist.size()) > 0) {
+      free(hdf5_record.vl_chargedTrack.p);
+   }
+   if ((len = hdf5_record.vl_comment.len = m_comment_plist.size()) > 0) {
+      free(hdf5_record.vl_comment.p);
+   }
+   if ((len = hdf5_record.vl_dEdxDC.len = m_dEdxDC_plist.size()) > 0) {
+      free(hdf5_record.vl_dEdxDC.p);
+   }
+   if ((len = hdf5_record.vl_dataVersionString.len = m_dataVersionString_plist.size()) > 0) {
+      free(hdf5_record.vl_dataVersionString.p);
+   }
+   if ((len = hdf5_record.vl_detectorMatches.len = m_detectorMatches_plist.size()) > 0) {
+      free(hdf5_record.vl_detectorMatches.p);
+   }
+   if ((len = hdf5_record.vl_dircHit.len = m_dircHit_plist.size()) > 0) {
+      free(hdf5_record.vl_dircHit.p);
+   }
+   if ((len = hdf5_record.vl_dircMatchHit.len = m_dircMatchHit_plist.size()) > 0) {
+      free(hdf5_record.vl_dircMatchHit.p);
+   }
+   if ((len = hdf5_record.vl_dircMatchParams.len = m_dircMatchParams_plist.size()) > 0) {
+      free(hdf5_record.vl_dircMatchParams.p);
+   }
+   if ((len = hdf5_record.vl_dircPMTs.len = m_dircPMTs_plist.size()) > 0) {
+      free(hdf5_record.vl_dircPMTs.p);
+   }
+   if ((len = hdf5_record.vl_exitParams.len = m_exitParams_plist.size()) > 0) {
+      free(hdf5_record.vl_exitParams.p);
+   }
+   if ((len = hdf5_record.vl_expectedhits.len = m_expectedhits_plist.size()) > 0) {
+      free(hdf5_record.vl_expectedhits.p);
+   }
+   if ((len = hdf5_record.vl_fcalBlocks.len = m_fcalBlocks_plist.size()) > 0) {
+      free(hdf5_record.vl_fcalBlocks.p);
+   }
+   if ((len = hdf5_record.vl_fcalCorrelations.len = m_fcalCorrelations_plist.size()) > 0) {
+      free(hdf5_record.vl_fcalCorrelations.p);
+   }
+   if ((len = hdf5_record.vl_fcalDOCAtoTrack.len = m_fcalDOCAtoTrack_plist.size()) > 0) {
+      free(hdf5_record.vl_fcalDOCAtoTrack.p);
+   }
+   if ((len = hdf5_record.vl_fcalMatchParams.len = m_fcalMatchParams_plist.size()) > 0) {
+      free(hdf5_record.vl_fcalMatchParams.p);
+   }
+   if ((len = hdf5_record.vl_fcalShower.len = m_fcalShower_plist.size()) > 0) {
+      free(hdf5_record.vl_fcalShower.p);
+   }
+   if ((len = hdf5_record.vl_fcalShowerClassification.len = m_fcalShowerClassification_plist.size()) > 0) {
+      free(hdf5_record.vl_fcalShowerClassification.p);
+   }
+   if ((len = hdf5_record.vl_fcalShowerNBlocks.len = m_fcalShowerNBlocks_plist.size()) > 0) {
+      free(hdf5_record.vl_fcalShowerNBlocks.p);
+   }
+   if ((len = hdf5_record.vl_fcalShowerProperties.len = m_fcalShowerProperties_plist.size()) > 0) {
+      free(hdf5_record.vl_fcalShowerProperties.p);
+   }
+   if ((len = hdf5_record.vl_fdcPseudos.len = m_fdcPseudos_plist.size()) > 0) {
+      free(hdf5_record.vl_fdcPseudos.p);
+   }
+   if ((len = hdf5_record.vl_hitStatistics.len = m_hitStatistics_plist.size()) > 0) {
+      free(hdf5_record.vl_hitStatistics.p);
+   }
+   if ((len = hdf5_record.vl_hitlayers.len = m_hitlayers_plist.size()) > 0) {
+      free(hdf5_record.vl_hitlayers.p);
+   }
+   if ((len = hdf5_record.vl_mcmatch.len = m_mcmatch_plist.size()) > 0) {
+      free(hdf5_record.vl_mcmatch.p);
+   }
+   if ((len = hdf5_record.vl_momentum.len = m_momentum_plist.size()) > 0) {
+      free(hdf5_record.vl_momentum.p);
+   }
+   if ((len = hdf5_record.vl_origin.len = m_origin_plist.size()) > 0) {
+      free(hdf5_record.vl_origin.p);
+   }
+   if ((len = hdf5_record.vl_preshower.len = m_preshower_plist.size()) > 0) {
+      free(hdf5_record.vl_preshower.p);
+   }
+   if ((len = hdf5_record.vl_product.len = m_product_plist.size()) > 0) {
+      free(hdf5_record.vl_product.p);
+   }
+   if ((len = hdf5_record.vl_reaction.len = m_reaction_plist.size()) > 0) {
+      free(hdf5_record.vl_reaction.p);
+   }
+   if ((len = hdf5_record.vl_reconstructedPhysicsEvent.len = m_reconstructedPhysicsEvent_plist.size()) > 0) {
+      free(hdf5_record.vl_reconstructedPhysicsEvent.p);
+   }
+   if ((len = hdf5_record.vl_scMatchParams.len = m_scMatchParams_plist.size()) > 0) {
+      free(hdf5_record.vl_scMatchParams.p);
+   }
+   if ((len = hdf5_record.vl_startCounters.len = m_startCounters_plist.size()) > 0) {
+      free(hdf5_record.vl_startCounters.p);
+   }
+   if ((len = hdf5_record.vl_startHit.len = m_startHit_plist.size()) > 0) {
+      free(hdf5_record.vl_startHit.p);
+   }
+   if ((len = hdf5_record.vl_taghBeamPhoton.len = m_taghBeamPhoton_plist.size()) > 0) {
+      free(hdf5_record.vl_taghBeamPhoton.p);
+   }
+   if ((len = hdf5_record.vl_taghChannel.len = m_taghChannel_plist.size()) > 0) {
+      free(hdf5_record.vl_taghChannel.p);
+   }
+   if ((len = hdf5_record.vl_tagmBeamPhoton.len = m_tagmBeamPhoton_plist.size()) > 0) {
+      free(hdf5_record.vl_tagmBeamPhoton.p);
+   }
+   if ((len = hdf5_record.vl_tagmChannel.len = m_tagmChannel_plist.size()) > 0) {
+      free(hdf5_record.vl_tagmChannel.p);
+   }
+   if ((len = hdf5_record.vl_tflightPCorrelation.len = m_tflightPCorrelation_plist.size()) > 0) {
+      free(hdf5_record.vl_tflightPCorrelation.p);
+   }
+   if ((len = hdf5_record.vl_tofDedx.len = m_tofDedx_plist.size()) > 0) {
+      free(hdf5_record.vl_tofDedx.p);
+   }
+   if ((len = hdf5_record.vl_tofEnergyDeposition.len = m_tofEnergyDeposition_plist.size()) > 0) {
+      free(hdf5_record.vl_tofEnergyDeposition.p);
+   }
+   if ((len = hdf5_record.vl_tofMatchParams.len = m_tofMatchParams_plist.size()) > 0) {
+      free(hdf5_record.vl_tofMatchParams.p);
+   }
+   if ((len = hdf5_record.vl_tofPaddles.len = m_tofPaddles_plist.size()) > 0) {
+      free(hdf5_record.vl_tofPaddles.p);
+   }
+   if ((len = hdf5_record.vl_tofPoint.len = m_tofPoint_plist.size()) > 0) {
+      free(hdf5_record.vl_tofPoint.p);
+   }
+   if ((len = hdf5_record.vl_tofStatus.len = m_tofStatus_plist.size()) > 0) {
+      free(hdf5_record.vl_tofStatus.p);
+   }
+   if ((len = hdf5_record.vl_trackFit.len = m_trackFit_plist.size()) > 0) {
+      free(hdf5_record.vl_trackFit.p);
+   }
+   if ((len = hdf5_record.vl_trackFlags.len = m_trackFlags_plist.size()) > 0) {
+      free(hdf5_record.vl_trackFlags.p);
+   }
+   if ((len = hdf5_record.vl_trigger.len = m_trigger_plist.size()) > 0) {
+      free(hdf5_record.vl_trigger.p);
+   }
+   if ((len = hdf5_record.vl_triggerEnergySums.len = m_triggerEnergySums_plist.size()) > 0) {
+      free(hdf5_record.vl_triggerEnergySums.p);
+   }
+   if ((len = hdf5_record.vl_vertex.len = m_vertex_plist.size()) > 0) {
+      free(hdf5_record.vl_vertex.p);
+   }
+   if ((len = hdf5_record.vl_width.len = m_width_plist.size()) > 0) {
+      free(hdf5_record.vl_width.p);
+   }
+   return res;
+}
+herr_t HDDM::hdf5FileRead(hid_t file_id, long int entry)
+{
+   clear();
+   hid_t memorytype_id = hdf5Datatype(1);
+   hid_t memoryspace_id;
+   if (s_hdf5_memoryspace.find("HDDM") == s_hdf5_memoryspace.end()) {
+      hsize_t dims[1] = {1};
+      hsize_t maxdims[1] = {H5S_UNLIMITED};
+      memoryspace_id = H5Screate_simple(1, dims, maxdims);
+      s_hdf5_memoryspace["HDDM"] = memoryspace_id;
+   }
+   else {
+      memoryspace_id = s_hdf5_memoryspace["HDDM"];
+   }
+   hid_t eventdata_id;
+   hid_t chunking_id;
+   if (s_hdf5_dataset.find(file_id) == s_hdf5_dataset.end()) {
+
+      eventdata_id = H5Dopen(file_id, "HDDMevents",
+                               H5P_DEFAULT);
+      chunking_id = H5Dget_create_plist(eventdata_id);
+      s_hdf5_dataset[file_id] = eventdata_id;      s_hdf5_chunking[file_id] = chunking_id;
+   }
+   else {
+      eventdata_id = s_hdf5_dataset[file_id];      chunking_id = s_hdf5_chunking[file_id];
+   }
+   hid_t eventspace_id;
+   if (s_hdf5_dataspace.find(file_id) == s_hdf5_dataspace.end()) {
+      eventspace_id = H5Dget_space(eventdata_id);
+      s_hdf5_dataspace[file_id] = eventspace_id;
+      hsize_t maxdims;
+      H5Sget_simple_extent_dims(eventspace_id, &m_hdf5_record_extent, &maxdims);
+      m_hdf5_record_offset = 0;
+   }
+   else {
+      eventspace_id = HDDM::s_hdf5_dataspace[file_id];
+      hsize_t maxdims;
+      H5Sget_simple_extent_dims(eventspace_id, &m_hdf5_record_extent, &maxdims);
+      H5Sget_select_bounds(eventspace_id, &m_hdf5_record_offset, &maxdims);
+      ++m_hdf5_record_offset;
+   }
+   if (entry >= 0) {
+      m_hdf5_record_offset = entry;
+   }
+   if (m_hdf5_record_offset >= m_hdf5_record_extent)
+      return -1;
+   m_hdf5_record_count = 1;
+   H5Sselect_hyperslab(eventspace_id, H5S_SELECT_SET,
+                       &m_hdf5_record_offset, NULL,
+                       &m_hdf5_record_count, NULL);
+   herr_t res = H5Dread(eventdata_id, memorytype_id,
+                        memoryspace_id, eventspace_id,
+                        H5P_DEFAULT, &m_hdf5_record);
+   int len;
+   if ((len = m_hdf5_record.vl_CDCAmpdEdx.len) > 0) {
+      CDCAmpdEdx *p =(CDCAmpdEdx*)m_hdf5_record.vl_CDCAmpdEdx.p;
+      for (int i=0; i < len; ++i ) {
+         m_CDCAmpdEdx_plist.push_back(new(p+i) CDCAmpdEdx);
+      }
+   }
+   if ((len = m_hdf5_record.vl_RFtime.len) > 0) {
+      RFtime *p =(RFtime*)m_hdf5_record.vl_RFtime.p;
+      for (int i=0; i < len; ++i ) {
+         m_RFtime_plist.push_back(new(p+i) RFtime);
+      }
+   }
+   if ((len = m_hdf5_record.vl_bcalCells.len) > 0) {
+      BcalCells *p =(BcalCells*)m_hdf5_record.vl_bcalCells.p;
+      for (int i=0; i < len; ++i ) {
+         m_bcalCells_plist.push_back(new(p+i) BcalCells);
+      }
+   }
+   if ((len = m_hdf5_record.vl_bcalCluster.len) > 0) {
+      BcalCluster *p =(BcalCluster*)m_hdf5_record.vl_bcalCluster.p;
+      for (int i=0; i < len; ++i ) {
+         m_bcalCluster_plist.push_back(new(p+i) BcalCluster);
+      }
+   }
+   if ((len = m_hdf5_record.vl_bcalCorrelations.len) > 0) {
+      BcalCorrelations *p =(BcalCorrelations*)m_hdf5_record.vl_bcalCorrelations.p;
+      for (int i=0; i < len; ++i ) {
+         m_bcalCorrelations_plist.push_back(new(p+i) BcalCorrelations);
+      }
+   }
+   if ((len = m_hdf5_record.vl_bcalDOCAtoTrack.len) > 0) {
+      BcalDOCAtoTrack *p =(BcalDOCAtoTrack*)m_hdf5_record.vl_bcalDOCAtoTrack.p;
+      for (int i=0; i < len; ++i ) {
+         m_bcalDOCAtoTrack_plist.push_back(new(p+i) BcalDOCAtoTrack);
+      }
+   }
+   if ((len = m_hdf5_record.vl_bcalLayers.len) > 0) {
+      BcalLayers *p =(BcalLayers*)m_hdf5_record.vl_bcalLayers.p;
+      for (int i=0; i < len; ++i ) {
+         m_bcalLayers_plist.push_back(new(p+i) BcalLayers);
+      }
+   }
+   if ((len = m_hdf5_record.vl_bcalMatchParams.len) > 0) {
+      BcalMatchParams *p =(BcalMatchParams*)m_hdf5_record.vl_bcalMatchParams.p;
+      for (int i=0; i < len; ++i ) {
+         m_bcalMatchParams_plist.push_back(new(p+i) BcalMatchParams);
+      }
+   }
+   if ((len = m_hdf5_record.vl_bcalShower.len) > 0) {
+      BcalShower *p =(BcalShower*)m_hdf5_record.vl_bcalShower.p;
+      for (int i=0; i < len; ++i ) {
+         m_bcalShower_plist.push_back(new(p+i) BcalShower);
+      }
+   }
+   if ((len = m_hdf5_record.vl_ccalBlocks.len) > 0) {
+      CcalBlocks *p =(CcalBlocks*)m_hdf5_record.vl_ccalBlocks.p;
+      for (int i=0; i < len; ++i ) {
+         m_ccalBlocks_plist.push_back(new(p+i) CcalBlocks);
+      }
+   }
+   if ((len = m_hdf5_record.vl_ccalShower.len) > 0) {
+      CcalShower *p =(CcalShower*)m_hdf5_record.vl_ccalShower.p;
+      for (int i=0; i < len; ++i ) {
+         m_ccalShower_plist.push_back(new(p+i) CcalShower);
+      }
+   }
+   if ((len = m_hdf5_record.vl_ccdbContext.len) > 0) {
+      CcdbContext *p =(CcdbContext*)m_hdf5_record.vl_ccdbContext.p;
+      for (int i=0; i < len; ++i ) {
+         m_ccdbContext_plist.push_back(new(p+i) CcdbContext);
+      }
+   }
+   if ((len = m_hdf5_record.vl_cdcStraws.len) > 0) {
+      CdcStraws *p =(CdcStraws*)m_hdf5_record.vl_cdcStraws.p;
+      for (int i=0; i < len; ++i ) {
+         m_cdcStraws_plist.push_back(new(p+i) CdcStraws);
+      }
+   }
+   if ((len = m_hdf5_record.vl_chargedTrack.len) > 0) {
+      ChargedTrack *p =(ChargedTrack*)m_hdf5_record.vl_chargedTrack.p;
+      for (int i=0; i < len; ++i ) {
+         m_chargedTrack_plist.push_back(new(p+i) ChargedTrack);
+      }
+   }
+   if ((len = m_hdf5_record.vl_comment.len) > 0) {
+      Comment *p =(Comment*)m_hdf5_record.vl_comment.p;
+      for (int i=0; i < len; ++i ) {
+         m_comment_plist.push_back(new(p+i) Comment);
+      }
+   }
+   if ((len = m_hdf5_record.vl_dEdxDC.len) > 0) {
+      DEdxDC *p =(DEdxDC*)m_hdf5_record.vl_dEdxDC.p;
+      for (int i=0; i < len; ++i ) {
+         m_dEdxDC_plist.push_back(new(p+i) DEdxDC);
+      }
+   }
+   if ((len = m_hdf5_record.vl_dataVersionString.len) > 0) {
+      DataVersionString *p =(DataVersionString*)m_hdf5_record.vl_dataVersionString.p;
+      for (int i=0; i < len; ++i ) {
+         m_dataVersionString_plist.push_back(new(p+i) DataVersionString);
+      }
+   }
+   if ((len = m_hdf5_record.vl_detectorMatches.len) > 0) {
+      DetectorMatches *p =(DetectorMatches*)m_hdf5_record.vl_detectorMatches.p;
+      for (int i=0; i < len; ++i ) {
+         m_detectorMatches_plist.push_back(new(p+i) DetectorMatches);
+      }
+   }
+   if ((len = m_hdf5_record.vl_dircHit.len) > 0) {
+      DircHit *p =(DircHit*)m_hdf5_record.vl_dircHit.p;
+      for (int i=0; i < len; ++i ) {
+         m_dircHit_plist.push_back(new(p+i) DircHit);
+      }
+   }
+   if ((len = m_hdf5_record.vl_dircMatchHit.len) > 0) {
+      DircMatchHit *p =(DircMatchHit*)m_hdf5_record.vl_dircMatchHit.p;
+      for (int i=0; i < len; ++i ) {
+         m_dircMatchHit_plist.push_back(new(p+i) DircMatchHit);
+      }
+   }
+   if ((len = m_hdf5_record.vl_dircMatchParams.len) > 0) {
+      DircMatchParams *p =(DircMatchParams*)m_hdf5_record.vl_dircMatchParams.p;
+      for (int i=0; i < len; ++i ) {
+         m_dircMatchParams_plist.push_back(new(p+i) DircMatchParams);
+      }
+   }
+   if ((len = m_hdf5_record.vl_dircPMTs.len) > 0) {
+      DircPMTs *p =(DircPMTs*)m_hdf5_record.vl_dircPMTs.p;
+      for (int i=0; i < len; ++i ) {
+         m_dircPMTs_plist.push_back(new(p+i) DircPMTs);
+      }
+   }
+   if ((len = m_hdf5_record.vl_exitParams.len) > 0) {
+      ExitParams *p =(ExitParams*)m_hdf5_record.vl_exitParams.p;
+      for (int i=0; i < len; ++i ) {
+         m_exitParams_plist.push_back(new(p+i) ExitParams);
+      }
+   }
+   if ((len = m_hdf5_record.vl_expectedhits.len) > 0) {
+      Expectedhits *p =(Expectedhits*)m_hdf5_record.vl_expectedhits.p;
+      for (int i=0; i < len; ++i ) {
+         m_expectedhits_plist.push_back(new(p+i) Expectedhits);
+      }
+   }
+   if ((len = m_hdf5_record.vl_fcalBlocks.len) > 0) {
+      FcalBlocks *p =(FcalBlocks*)m_hdf5_record.vl_fcalBlocks.p;
+      for (int i=0; i < len; ++i ) {
+         m_fcalBlocks_plist.push_back(new(p+i) FcalBlocks);
+      }
+   }
+   if ((len = m_hdf5_record.vl_fcalCorrelations.len) > 0) {
+      FcalCorrelations *p =(FcalCorrelations*)m_hdf5_record.vl_fcalCorrelations.p;
+      for (int i=0; i < len; ++i ) {
+         m_fcalCorrelations_plist.push_back(new(p+i) FcalCorrelations);
+      }
+   }
+   if ((len = m_hdf5_record.vl_fcalDOCAtoTrack.len) > 0) {
+      FcalDOCAtoTrack *p =(FcalDOCAtoTrack*)m_hdf5_record.vl_fcalDOCAtoTrack.p;
+      for (int i=0; i < len; ++i ) {
+         m_fcalDOCAtoTrack_plist.push_back(new(p+i) FcalDOCAtoTrack);
+      }
+   }
+   if ((len = m_hdf5_record.vl_fcalMatchParams.len) > 0) {
+      FcalMatchParams *p =(FcalMatchParams*)m_hdf5_record.vl_fcalMatchParams.p;
+      for (int i=0; i < len; ++i ) {
+         m_fcalMatchParams_plist.push_back(new(p+i) FcalMatchParams);
+      }
+   }
+   if ((len = m_hdf5_record.vl_fcalShower.len) > 0) {
+      FcalShower *p =(FcalShower*)m_hdf5_record.vl_fcalShower.p;
+      for (int i=0; i < len; ++i ) {
+         m_fcalShower_plist.push_back(new(p+i) FcalShower);
+      }
+   }
+   if ((len = m_hdf5_record.vl_fcalShowerClassification.len) > 0) {
+      FcalShowerClassification *p =(FcalShowerClassification*)m_hdf5_record.vl_fcalShowerClassification.p;
+      for (int i=0; i < len; ++i ) {
+         m_fcalShowerClassification_plist.push_back(new(p+i) FcalShowerClassification);
+      }
+   }
+   if ((len = m_hdf5_record.vl_fcalShowerNBlocks.len) > 0) {
+      FcalShowerNBlocks *p =(FcalShowerNBlocks*)m_hdf5_record.vl_fcalShowerNBlocks.p;
+      for (int i=0; i < len; ++i ) {
+         m_fcalShowerNBlocks_plist.push_back(new(p+i) FcalShowerNBlocks);
+      }
+   }
+   if ((len = m_hdf5_record.vl_fcalShowerProperties.len) > 0) {
+      FcalShowerProperties *p =(FcalShowerProperties*)m_hdf5_record.vl_fcalShowerProperties.p;
+      for (int i=0; i < len; ++i ) {
+         m_fcalShowerProperties_plist.push_back(new(p+i) FcalShowerProperties);
+      }
+   }
+   if ((len = m_hdf5_record.vl_fdcPseudos.len) > 0) {
+      FdcPseudos *p =(FdcPseudos*)m_hdf5_record.vl_fdcPseudos.p;
+      for (int i=0; i < len; ++i ) {
+         m_fdcPseudos_plist.push_back(new(p+i) FdcPseudos);
+      }
+   }
+   if ((len = m_hdf5_record.vl_hitStatistics.len) > 0) {
+      HitStatistics *p =(HitStatistics*)m_hdf5_record.vl_hitStatistics.p;
+      for (int i=0; i < len; ++i ) {
+         m_hitStatistics_plist.push_back(new(p+i) HitStatistics);
+      }
+   }
+   if ((len = m_hdf5_record.vl_hitlayers.len) > 0) {
+      Hitlayers *p =(Hitlayers*)m_hdf5_record.vl_hitlayers.p;
+      for (int i=0; i < len; ++i ) {
+         m_hitlayers_plist.push_back(new(p+i) Hitlayers);
+      }
+   }
+   if ((len = m_hdf5_record.vl_mcmatch.len) > 0) {
+      Mcmatch *p =(Mcmatch*)m_hdf5_record.vl_mcmatch.p;
+      for (int i=0; i < len; ++i ) {
+         m_mcmatch_plist.push_back(new(p+i) Mcmatch);
+      }
+   }
+   if ((len = m_hdf5_record.vl_momentum.len) > 0) {
+      Momentum *p =(Momentum*)m_hdf5_record.vl_momentum.p;
+      for (int i=0; i < len; ++i ) {
+         m_momentum_plist.push_back(new(p+i) Momentum);
+      }
+   }
+   if ((len = m_hdf5_record.vl_origin.len) > 0) {
+      Origin *p =(Origin*)m_hdf5_record.vl_origin.p;
+      for (int i=0; i < len; ++i ) {
+         m_origin_plist.push_back(new(p+i) Origin);
+      }
+   }
+   if ((len = m_hdf5_record.vl_preshower.len) > 0) {
+      Preshower *p =(Preshower*)m_hdf5_record.vl_preshower.p;
+      for (int i=0; i < len; ++i ) {
+         m_preshower_plist.push_back(new(p+i) Preshower);
+      }
+   }
+   if ((len = m_hdf5_record.vl_product.len) > 0) {
+      Product *p =(Product*)m_hdf5_record.vl_product.p;
+      for (int i=0; i < len; ++i ) {
+         m_product_plist.push_back(new(p+i) Product);
+      }
+   }
+   if ((len = m_hdf5_record.vl_reaction.len) > 0) {
+      Reaction *p =(Reaction*)m_hdf5_record.vl_reaction.p;
+      for (int i=0; i < len; ++i ) {
+         m_reaction_plist.push_back(new(p+i) Reaction);
+      }
+   }
+   if ((len = m_hdf5_record.vl_reconstructedPhysicsEvent.len) > 0) {
+      ReconstructedPhysicsEvent *p =(ReconstructedPhysicsEvent*)m_hdf5_record.vl_reconstructedPhysicsEvent.p;
+      for (int i=0; i < len; ++i ) {
+         m_reconstructedPhysicsEvent_plist.push_back(new(p+i) ReconstructedPhysicsEvent);
+      }
+   }
+   if ((len = m_hdf5_record.vl_scMatchParams.len) > 0) {
+      ScMatchParams *p =(ScMatchParams*)m_hdf5_record.vl_scMatchParams.p;
+      for (int i=0; i < len; ++i ) {
+         m_scMatchParams_plist.push_back(new(p+i) ScMatchParams);
+      }
+   }
+   if ((len = m_hdf5_record.vl_startCounters.len) > 0) {
+      StartCounters *p =(StartCounters*)m_hdf5_record.vl_startCounters.p;
+      for (int i=0; i < len; ++i ) {
+         m_startCounters_plist.push_back(new(p+i) StartCounters);
+      }
+   }
+   if ((len = m_hdf5_record.vl_startHit.len) > 0) {
+      StartHit *p =(StartHit*)m_hdf5_record.vl_startHit.p;
+      for (int i=0; i < len; ++i ) {
+         m_startHit_plist.push_back(new(p+i) StartHit);
+      }
+   }
+   if ((len = m_hdf5_record.vl_taghBeamPhoton.len) > 0) {
+      TaghBeamPhoton *p =(TaghBeamPhoton*)m_hdf5_record.vl_taghBeamPhoton.p;
+      for (int i=0; i < len; ++i ) {
+         m_taghBeamPhoton_plist.push_back(new(p+i) TaghBeamPhoton);
+      }
+   }
+   if ((len = m_hdf5_record.vl_taghChannel.len) > 0) {
+      TaghChannel *p =(TaghChannel*)m_hdf5_record.vl_taghChannel.p;
+      for (int i=0; i < len; ++i ) {
+         m_taghChannel_plist.push_back(new(p+i) TaghChannel);
+      }
+   }
+   if ((len = m_hdf5_record.vl_tagmBeamPhoton.len) > 0) {
+      TagmBeamPhoton *p =(TagmBeamPhoton*)m_hdf5_record.vl_tagmBeamPhoton.p;
+      for (int i=0; i < len; ++i ) {
+         m_tagmBeamPhoton_plist.push_back(new(p+i) TagmBeamPhoton);
+      }
+   }
+   if ((len = m_hdf5_record.vl_tagmChannel.len) > 0) {
+      TagmChannel *p =(TagmChannel*)m_hdf5_record.vl_tagmChannel.p;
+      for (int i=0; i < len; ++i ) {
+         m_tagmChannel_plist.push_back(new(p+i) TagmChannel);
+      }
+   }
+   if ((len = m_hdf5_record.vl_tflightPCorrelation.len) > 0) {
+      TflightPCorrelation *p =(TflightPCorrelation*)m_hdf5_record.vl_tflightPCorrelation.p;
+      for (int i=0; i < len; ++i ) {
+         m_tflightPCorrelation_plist.push_back(new(p+i) TflightPCorrelation);
+      }
+   }
+   if ((len = m_hdf5_record.vl_tofDedx.len) > 0) {
+      TofDedx *p =(TofDedx*)m_hdf5_record.vl_tofDedx.p;
+      for (int i=0; i < len; ++i ) {
+         m_tofDedx_plist.push_back(new(p+i) TofDedx);
+      }
+   }
+   if ((len = m_hdf5_record.vl_tofEnergyDeposition.len) > 0) {
+      TofEnergyDeposition *p =(TofEnergyDeposition*)m_hdf5_record.vl_tofEnergyDeposition.p;
+      for (int i=0; i < len; ++i ) {
+         m_tofEnergyDeposition_plist.push_back(new(p+i) TofEnergyDeposition);
+      }
+   }
+   if ((len = m_hdf5_record.vl_tofMatchParams.len) > 0) {
+      TofMatchParams *p =(TofMatchParams*)m_hdf5_record.vl_tofMatchParams.p;
+      for (int i=0; i < len; ++i ) {
+         m_tofMatchParams_plist.push_back(new(p+i) TofMatchParams);
+      }
+   }
+   if ((len = m_hdf5_record.vl_tofPaddles.len) > 0) {
+      TofPaddles *p =(TofPaddles*)m_hdf5_record.vl_tofPaddles.p;
+      for (int i=0; i < len; ++i ) {
+         m_tofPaddles_plist.push_back(new(p+i) TofPaddles);
+      }
+   }
+   if ((len = m_hdf5_record.vl_tofPoint.len) > 0) {
+      TofPoint *p =(TofPoint*)m_hdf5_record.vl_tofPoint.p;
+      for (int i=0; i < len; ++i ) {
+         m_tofPoint_plist.push_back(new(p+i) TofPoint);
+      }
+   }
+   if ((len = m_hdf5_record.vl_tofStatus.len) > 0) {
+      TofStatus *p =(TofStatus*)m_hdf5_record.vl_tofStatus.p;
+      for (int i=0; i < len; ++i ) {
+         m_tofStatus_plist.push_back(new(p+i) TofStatus);
+      }
+   }
+   if ((len = m_hdf5_record.vl_trackFit.len) > 0) {
+      TrackFit *p =(TrackFit*)m_hdf5_record.vl_trackFit.p;
+      for (int i=0; i < len; ++i ) {
+         m_trackFit_plist.push_back(new(p+i) TrackFit);
+      }
+   }
+   if ((len = m_hdf5_record.vl_trackFlags.len) > 0) {
+      TrackFlags *p =(TrackFlags*)m_hdf5_record.vl_trackFlags.p;
+      for (int i=0; i < len; ++i ) {
+         m_trackFlags_plist.push_back(new(p+i) TrackFlags);
+      }
+   }
+   if ((len = m_hdf5_record.vl_trigger.len) > 0) {
+      Trigger *p =(Trigger*)m_hdf5_record.vl_trigger.p;
+      for (int i=0; i < len; ++i ) {
+         m_trigger_plist.push_back(new(p+i) Trigger);
+      }
+   }
+   if ((len = m_hdf5_record.vl_triggerEnergySums.len) > 0) {
+      TriggerEnergySums *p =(TriggerEnergySums*)m_hdf5_record.vl_triggerEnergySums.p;
+      for (int i=0; i < len; ++i ) {
+         m_triggerEnergySums_plist.push_back(new(p+i) TriggerEnergySums);
+      }
+   }
+   if ((len = m_hdf5_record.vl_vertex.len) > 0) {
+      Vertex *p =(Vertex*)m_hdf5_record.vl_vertex.p;
+      for (int i=0; i < len; ++i ) {
+         m_vertex_plist.push_back(new(p+i) Vertex);
+      }
+   }
+   if ((len = m_hdf5_record.vl_width.len) > 0) {
+      Width *p =(Width*)m_hdf5_record.vl_width.p;
+      for (int i=0; i < len; ++i ) {
+         m_width_plist.push_back(new(p+i) Width);
+      }
+   }
+   new(&m_reconstructedPhysicsEvent_link) ReconstructedPhysicsEventLink(&m_reconstructedPhysicsEvent_plist,
+            m_reconstructedPhysicsEvent_plist.begin(),
+            m_reconstructedPhysicsEvent_plist.end(),
+            this);
+   hdf5DataUnpack();
+   return res;
+}
+hid_t HDDM::hdf5FileCreate(std::string name, unsigned int flags)
+{
+   hid_t file_id = H5Fcreate(name.c_str(), flags, H5P_DEFAULT, H5P_DEFAULT);
+   hdf5FileStamp(file_id);
+   return file_id;
+}
+hid_t HDDM::hdf5FileOpen(std::string name, unsigned int flags)
+{
+   hid_t file_id = H5Fopen(name.c_str(), flags, H5P_DEFAULT);
+   hdf5FileCheck(file_id);
+   return file_id;
+}
+herr_t HDDM::hdf5FileClose(hid_t file_id)
+{
+   herr_t res = H5Fclose(file_id);
+   if (HDDM::s_hdf5_dataspace.find(file_id) != HDDM::s_hdf5_dataspace.end()) {
+        H5Sclose(s_hdf5_dataspace[file_id]);
+        s_hdf5_dataspace.erase(file_id);
+   }
+   if (s_hdf5_chunking.find(file_id) != s_hdf5_chunking.end()) {
+       H5Pclose(s_hdf5_chunking[file_id]);
+       s_hdf5_chunking.erase(file_id);
+   }
+   if (s_hdf5_dataset.find(file_id) != s_hdf5_dataset.end()) {
+       H5Dclose(s_hdf5_dataset[file_id]);
+       s_hdf5_dataset.erase(file_id);
+   }
+   return res;
+}
+
+void HDDM::hdf5DataPack()
+{
+   m_reconstructedPhysicsEvent_link.deflate();
+}
+void HDDM::hdf5DataUnpack()
+{
+   {
+      std::list<ReconstructedPhysicsEvent*> *host_plist = &m_host->m_reconstructedPhysicsEvent_plist;
+      m_reconstructedPhysicsEvent_link.inflate(m_host, host_plist, this);
+      ReconstructedPhysicsEventList::iterator iter;
+      for (iter = m_reconstructedPhysicsEvent_link.begin();
+           iter != m_reconstructedPhysicsEvent_link.end(); ++iter)
+      {
+         iter->hdf5DataUnpack();
+      }
+   }
+}
+#endif
+
+
+void debug_print(CDCAmpdEdxList &list) {
+   list.debug_print();
+}
+
+void debug_print(RFtimeList &list) {
+   list.debug_print();
+}
+
+void debug_print(BcalCellsList &list) {
+   list.debug_print();
+}
+
+void debug_print(BcalClusterList &list) {
+   list.debug_print();
+}
+
+void debug_print(BcalCorrelationsList &list) {
+   list.debug_print();
+}
+
+void debug_print(BcalDOCAtoTrackList &list) {
+   list.debug_print();
+}
+
+void debug_print(BcalLayersList &list) {
+   list.debug_print();
+}
+
+void debug_print(BcalMatchParamsList &list) {
+   list.debug_print();
+}
+
+void debug_print(BcalShowerList &list) {
+   list.debug_print();
+}
+
+void debug_print(CcalBlocksList &list) {
+   list.debug_print();
+}
+
+void debug_print(CcalShowerList &list) {
+   list.debug_print();
+}
+
+void debug_print(CcdbContextList &list) {
+   list.debug_print();
+}
+
+void debug_print(CdcStrawsList &list) {
+   list.debug_print();
+}
+
+void debug_print(ChargedTrackList &list) {
+   list.debug_print();
+}
+
+void debug_print(CommentList &list) {
+   list.debug_print();
+}
+
+void debug_print(DEdxDCList &list) {
+   list.debug_print();
+}
+
+void debug_print(DataVersionStringList &list) {
+   list.debug_print();
+}
+
+void debug_print(DetectorMatchesList &list) {
+   list.debug_print();
+}
+
+void debug_print(DircHitList &list) {
+   list.debug_print();
+}
+
+void debug_print(DircMatchHitList &list) {
+   list.debug_print();
+}
+
+void debug_print(DircMatchParamsList &list) {
+   list.debug_print();
+}
+
+void debug_print(DircPMTsList &list) {
+   list.debug_print();
+}
+
+void debug_print(ExitParamsList &list) {
+   list.debug_print();
+}
+
+void debug_print(ExpectedhitsList &list) {
+   list.debug_print();
+}
+
+void debug_print(FcalBlocksList &list) {
+   list.debug_print();
+}
+
+void debug_print(FcalCorrelationsList &list) {
+   list.debug_print();
+}
+
+void debug_print(FcalDOCAtoTrackList &list) {
+   list.debug_print();
+}
+
+void debug_print(FcalMatchParamsList &list) {
+   list.debug_print();
+}
+
+void debug_print(FcalShowerList &list) {
+   list.debug_print();
+}
+
+void debug_print(FcalShowerClassificationList &list) {
+   list.debug_print();
+}
+
+void debug_print(FcalShowerNBlocksList &list) {
+   list.debug_print();
+}
+
+void debug_print(FcalShowerPropertiesList &list) {
+   list.debug_print();
+}
+
+void debug_print(FdcPseudosList &list) {
+   list.debug_print();
+}
+
+void debug_print(HitStatisticsList &list) {
+   list.debug_print();
+}
+
+void debug_print(HitlayersList &list) {
+   list.debug_print();
+}
+
+void debug_print(McmatchList &list) {
+   list.debug_print();
+}
+
+void debug_print(MomentumList &list) {
+   list.debug_print();
+}
+
+void debug_print(OriginList &list) {
+   list.debug_print();
+}
+
+void debug_print(PreshowerList &list) {
+   list.debug_print();
+}
+
+void debug_print(ProductList &list) {
+   list.debug_print();
+}
+
+void debug_print(ReactionList &list) {
+   list.debug_print();
+}
+
+void debug_print(ReconstructedPhysicsEventList &list) {
+   list.debug_print();
+}
+
+void debug_print(ScMatchParamsList &list) {
+   list.debug_print();
+}
+
+void debug_print(StartCountersList &list) {
+   list.debug_print();
+}
+
+void debug_print(StartHitList &list) {
+   list.debug_print();
+}
+
+void debug_print(TaghBeamPhotonList &list) {
+   list.debug_print();
+}
+
+void debug_print(TaghChannelList &list) {
+   list.debug_print();
+}
+
+void debug_print(TagmBeamPhotonList &list) {
+   list.debug_print();
+}
+
+void debug_print(TagmChannelList &list) {
+   list.debug_print();
+}
+
+void debug_print(TflightPCorrelationList &list) {
+   list.debug_print();
+}
+
+void debug_print(TofDedxList &list) {
+   list.debug_print();
+}
+
+void debug_print(TofEnergyDepositionList &list) {
+   list.debug_print();
+}
+
+void debug_print(TofMatchParamsList &list) {
+   list.debug_print();
+}
+
+void debug_print(TofPaddlesList &list) {
+   list.debug_print();
+}
+
+void debug_print(TofPointList &list) {
+   list.debug_print();
+}
+
+void debug_print(TofStatusList &list) {
+   list.debug_print();
+}
+
+void debug_print(TrackFitList &list) {
+   list.debug_print();
+}
+
+void debug_print(TrackFlagsList &list) {
+   list.debug_print();
+}
+
+void debug_print(TriggerList &list) {
+   list.debug_print();
+}
+
+void debug_print(TriggerEnergySumsList &list) {
+   list.debug_print();
+}
+
+void debug_print(VertexList &list) {
+   list.debug_print();
+}
+
+void debug_print(WidthList &list) {
+   list.debug_print();
+}
 
 streamposition::streamposition()
  : block_start(), block_offset(), block_status() {}
@@ -2756,6 +8581,7 @@ istream &istream::operator>>(HDDM &record) {
    MY(sbuf)->reset();
    MY(sequencing) = 0;
    MY(codon) = &MY(genome);
+   record.clear();
    *this >> (streamable&)record;
    return *this;
 }
@@ -3102,3 +8928,12 @@ chromosome istream::synthesize(const std::string &src, int p_src,
    }
    return chrom;
 }
+
+#ifdef HDF5_SUPPORT
+std::map<std::string, hid_t> HDDM::s_hdf5_datatype;
+std::map<std::string, hid_t> HDDM::s_hdf5_memorytype;
+std::map<std::string, hid_t> HDDM::s_hdf5_memoryspace;
+std::map<hid_t, hid_t> HDDM::s_hdf5_dataspace;
+std::map<hid_t, hid_t> HDDM::s_hdf5_chunking;
+std::map<hid_t, hid_t> HDDM::s_hdf5_dataset;
+#endif

@@ -83,10 +83,11 @@ set (presumably_abandoned_analysis_projects
         )
 
 
-foreach (project ${analysis_projects})
-    file(GLOB ${project}_SOURCES ${project}/*.cc)
-    set(target_name plugin_analysis_${project})
-    add_library(${target_name} ${${project}_SOURCES})
-    target_include_directories(${target_name} PRIVATE ../include ../../libraries ../../libraries/include ../../include ${ROOT_INCLUDE_DIRS} ${JANA_INCLUDE_DIR})
-    target_link_libraries(${target_name} halld_recon)
+foreach (target_name ${analysis_projects})
+    file(GLOB ${target_name}_SOURCES ${target_name}/*.cc)
+    add_library(${target_name} SHARED ${${target_name}_SOURCES})
+    target_include_directories(${target_name} PRIVATE ../include ../../libraries ../../libraries/include ../../include ${ROOT_INCLUDE_DIRS} ${JANA_INCLUDE_DIR} ${CCDB_INCLUDE_DIRS})
+    target_link_libraries(${target_name} halld_recon ${CCDB_LIB})
+    set_target_properties(${target_name} PROPERTIES PREFIX "")
+    install(TARGETS ${target_name} DESTINATION plugins)
 endforeach ()

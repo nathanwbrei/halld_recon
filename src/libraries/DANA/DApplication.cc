@@ -41,7 +41,6 @@ using std::string;
 DApplication::DApplication(int argc, char* argv[]) {
 	m_options = jana::ParseCommandLineOptions(argc, argv);
 	m_japp = jana::CreateJApplication(m_options);
-	m_japp = new JApplication();
 	japp = m_japp;
 	InitHallDLibraries(m_japp);
 }
@@ -53,16 +52,16 @@ DApplication::DApplication(JApplication *app) {
 
 void DApplication::RootUnLock() {
 	if (m_rootlock == nullptr) {
-		m_rootlock = m_japp->GetService<JGlobalRootLock>();
+		m_rootlock = m_japp->GetService<JLockService>();
 	}
-	m_rootlock->release_lock();
+	m_rootlock->RootUnLock();
 }
 
 void DApplication::RootWriteLock() {
 	if (m_rootlock == nullptr) {
-		m_rootlock = m_japp->GetService<JGlobalRootLock>();
+		m_rootlock = m_japp->GetService<JLockService>();
 	}
-	m_rootlock->acquire_write_lock();
+	m_rootlock->RootWriteLock();
 }
 
 DMagneticFieldMap* DApplication::GetBfield(uint32_t run_number) {
@@ -73,7 +72,6 @@ void DApplication::InitHallDLibraries(JApplication* app) {
 
 	// Add services
 	app->ProvideService(std::make_shared<JLockService>());
-	app->ProvideService(std::make_shared<JGlobalRootLock>());
 	auto calib_man = make_shared<JCalibrationManager>();
 	calib_man->AddCalibrationGenerator(new JCalibrationGeneratorCCDB);
 	app->ProvideService(calib_man);
@@ -106,11 +104,10 @@ void DApplication::InitHallDLibraries(JApplication* app) {
 	// that time gets counted against the thread as being non-reponsive. The default timeout of 8 seconds is
 	// therefore too small. Change it to 30 here, unless the user has set it explicitly on the command line.
 
-	// TODO: NWB: Want a better way to check if value has a default, and if so, change the default
-	// TODO: Verify this does the same thing as the old version
+	// TODO: NWB: Verify this does the same thing as the old version
 	string thread_timeout; // = "30 seconds";
 	auto thread_timeout_param = app->GetParameter("THREAD_TIMEOUT", thread_timeout);
-	if (thread_timeout_param && thread_timeout_param->default_value == thread_timeout_param->value) {
+	if (thread_timeout_param && thread_timeout_param->IsDefault()) {
 		app->SetParameterValue("THREAD_TIMEOUT", "30 seconds");
 	}
 
@@ -128,7 +125,7 @@ void DApplication::InitHallDLibraries(JApplication* app) {
 		app->Add(event_source_generator);
 		app->Add(new DEventSourceRESTGenerator());
 		app->Add(new JEventSourceGenerator_EVIOpp());
-		// app->Add(new JEventSourceGenerator_EVIO()); // TODO: NWB: Re-add
+		app->Add(new JEventSourceGenerator_EVIO());
 		app->Add(new DEventSourceEventStoreGenerator());
 	}
 	factory_generator = new DFactoryGenerator();

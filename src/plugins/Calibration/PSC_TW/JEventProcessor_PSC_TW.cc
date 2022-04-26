@@ -130,13 +130,11 @@ void JEventProcessor_PSC_TW::BeginRun(const std::shared_ptr<const JEvent>& event
   
   //////////////
   // Initialize RF time factory
-  locRFTimeFactory = static_cast<DRFTime_factory*>(eventLoop->GetFactory("DRFTime"));
+  locRFTimeFactory = static_cast<DRFTime_factory*>(event->GetFactory("DRFTime", ""));
   
   // be sure that DRFTime_factory::init() and brun() are called
   vector<const DRFTime*> locRFTimes;
-  eventLoop->Get(locRFTimes);
-  
-  return NOERROR;
+  event->Get(locRFTimes);
 }
 
 //------------------
@@ -162,8 +160,8 @@ void JEventProcessor_PSC_TW::Process(const std::shared_ptr<const JEvent>& event)
    vector<const DRFTime*>	locRFTimes;
    vector<const DPSCPair*>	pairs;
 
-   loop->Get(pairs);
-   loop->Get(locRFTimes,"PSC");
+   event->Get(pairs);
+   event->Get(locRFTimes,"PSC");
 
    const DRFTime* locRFTime = NULL;
 

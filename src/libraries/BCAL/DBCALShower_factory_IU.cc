@@ -11,7 +11,7 @@
 
 #include <JANA/JEvent.h>
 #include <JANA/Calibrations/JCalibrationManager.h>
-#include <JANA/Services/JGlobalRootLock.h>
+#include <JANA/Compatibility/JLockService.h>
 
 #include "DANA/DGeometryManager.h"
 #include "HDGEOMETRY/DGeometry.h"
@@ -281,7 +281,7 @@ DBCALShower_factory_IU::LoadCovarianceLookupTables(const std::shared_ptr<const J
 
 	auto app = event->GetJApplication();
 	auto calibration = app->GetService<JCalibrationManager>()->GetJCalibration(event->GetRunNumber());
-	auto root_lock = app->GetService<JGlobalRootLock>();
+	auto root_lock = app->GetService<JLockService>();
 
 	map<string,string> covariance_data;	
 	if (USECCDB) {
@@ -306,7 +306,7 @@ DBCALShower_factory_IU::LoadCovarianceLookupTables(const std::shared_ptr<const J
 	for (int i=0; i<5; i++) {
 		for (int j=0; j<=i; j++) {
 
-			root_lock->acquire_write_lock();
+			root_lock->RootWriteLock();
 			// change directory to memory so that histograms are not saved to file
 			TDirectory *savedir = gDirectory;
 
@@ -370,7 +370,7 @@ DBCALShower_factory_IU::LoadCovarianceLookupTables(const std::shared_ptr<const J
 			ifs.close();
 
 			savedir->cd();
-			root_lock->release_lock();
+			root_lock->RootUnLock();
 		}
 	}
 	return NOERROR;

@@ -21,7 +21,7 @@ map<string, pair<ofstream*, hddm_s::ostream*> >& DEventWriterHDDM::Get_HDDMOutpu
 DEventWriterHDDM::DEventWriterHDDM(const std::shared_ptr<const JEvent>& locEventLoop, string locOutputFileBaseName) : dOutputFileBaseName(locOutputFileBaseName)
 {
 	auto app = locEventLoop->GetJApplication();
-	lockService = GetLockService(locEventLoop);
+	lockService = DEvent::GetLockService(locEventLoop);
 	lockService->WriteLock("HDDMWriter");
 	{
 		++Get_NumEventWriterThreads();
@@ -41,7 +41,7 @@ DEventWriterHDDM::DEventWriterHDDM(const std::shared_ptr<const JEvent>& locEvent
 
     CCDB_CONTEXT_STRING = "";
     // if we can get the calibration context from the DANA interface, then save this as well
-	JCalibration *jcalib = GetJCalibration(locEventLoop);
+	JCalibration *jcalib = DEvent::GetJCalibration(locEventLoop);
 	if (jcalib) {
 		CCDB_CONTEXT_STRING = jcalib->GetContext();
 	}

@@ -13,7 +13,6 @@
 #include "TVector3.h"
 
 #include "HDGEOMETRY/DMagneticFieldMap.h"
-#include "DANA/DApplication.h"
 #include "DVector3.h"
 
 #include "PID/DVertex.h"

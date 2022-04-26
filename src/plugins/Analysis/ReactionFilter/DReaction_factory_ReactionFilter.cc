@@ -596,7 +596,6 @@ map<size_t, tuple<string, string, string, vector<string>>> DReaction_factory_Rea
 		string locKeyValue;
 		string locFullParamName = string("Reaction") + locParamPair.first; //have to add back on the filter
 		params->SetDefaultParameter(locFullParamName, locKeyValue);
-		// TODO: NWB: Verify this still works since the semantics may have evolved since this was written
 
 		//save it in the input map
 		if(locColonIndex == string::npos)
