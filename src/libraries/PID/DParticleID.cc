@@ -318,14 +318,14 @@ DParticleID::DParticleID(const std::shared_ptr<const JEvent>& event)
 	/// TODO: NEVER do this!
 	
 	// Initialize DIRC LUT
-	loop->GetSingle(dDIRCLut);
+	event->GetSingle(dDIRCLut);
 
 	// FCAL timewalk parameters
 	dFCALTimewalkPar1=3.89677;
 	dFCALTimewalkPar2=1.22325;	
 	// temporary command line arguments for testing time walk
-	gPARMS->SetDefaultParameter("FCAL:TIMEWALK1",dFCALTimewalkPar1);
-	gPARMS->SetDefaultParameter("FCAL:TIMEWALK2",dFCALTimewalkPar2);
+	app->SetDefaultParameter("FCAL:TIMEWALK1",dFCALTimewalkPar1);
+	app->SetDefaultParameter("FCAL:TIMEWALK2",dFCALTimewalkPar2);
 	
 }
 

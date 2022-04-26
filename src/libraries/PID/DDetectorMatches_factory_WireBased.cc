@@ -13,9 +13,7 @@
 void DDetectorMatches_factory_WireBased::Init()
 {
    ENABLE_FCAL_SINGLE_HITS = false;
-   gPARMS->SetDefaultParameter("PID:ENABLE_FCAL_SINGLE_HITS",ENABLE_FCAL_SINGLE_HITS);
-
-	return NOERROR;
+   GetApplication()->SetDefaultParameter("PID:ENABLE_FCAL_SINGLE_HITS",ENABLE_FCAL_SINGLE_HITS);
 }
 
 //------------------
@@ -75,7 +73,7 @@ DDetectorMatches* DDetectorMatches_factory_WireBased::Create_DDetectorMatches(co
 	// Try to find matches between tracks and single hits in FCAL
 	if (ENABLE_FCAL_SINGLE_HITS){
 	  vector<const DFCALHit*> locFCALHits;
-	  locEventLoop->Get(locFCALHits);
+	  event->Get(locFCALHits);
 	  if (locFCALHits.size()>0){
 	    vector<const DFCALHit*>locSingleHits;
 	    locParticleID->GetSingleFCALHits(locFCALShowers,locFCALHits,

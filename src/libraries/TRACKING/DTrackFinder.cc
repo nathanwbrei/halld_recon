@@ -38,16 +38,16 @@ DTrackFinder::DTrackFinder(JApplication* app)
 
    FDC_MATCH_RADIUS=2.;
    if (COSMICS) FDC_MATCH_RADIUS=10.;
-   gPARMS->SetDefaultParameter("FDC:MATCH_RADIUS", FDC_MATCH_RADIUS);
+   app->SetDefaultParameter("FDC:MATCH_RADIUS", FDC_MATCH_RADIUS);
 
    CDC_MATCH_RADIUS=2.5;
    app->SetDefaultParameter("TRKFIND:CDC_MATCH_RADIUS", CDC_MATCH_RADIUS);
 
    CDC_MATCH_PHI=0.2;
-   gPARMS->SetDefaultParameter("TRKFIND:CDC_MATCH_PHI", CDC_MATCH_PHI);
+   app->SetDefaultParameter("TRKFIND:CDC_MATCH_PHI", CDC_MATCH_PHI);
    
    CDC_COSMIC_MATCH_PHI=0.55;
-   gPARMS->SetDefaultParameter("TRKFIND:CDC_COSMIC_MATCH_PHI", CDC_COSMIC_MATCH_PHI);
+   app->SetDefaultParameter("TRKFIND:CDC_COSMIC_MATCH_PHI", CDC_COSMIC_MATCH_PHI);
 
    if (DEBUG_HISTS){
       hCDCMatch_PairD = new TH1F("CDC Pair distance", "CDC Pair distance", 100, 0.0, 20.0);

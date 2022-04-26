@@ -33,7 +33,7 @@ void DFCALCluster_factory_Island::Init()
   app->SetDefaultParameter("FCAL:TIME_CUT",TIME_CUT,"time cut for associating FCAL hits together into a cluster");
   
   MAX_HITS_FOR_CLUSTERING = 250;  
-  gPARMS->SetDefaultParameter("FCAL:MAX_HITS_FOR_CLUSTERING", MAX_HITS_FOR_CLUSTERING);
+  app->SetDefaultParameter("FCAL:MAX_HITS_FOR_CLUSTERING", MAX_HITS_FOR_CLUSTERING);
 
   MIN_CLUSTER_SEED_ENERGY=35.*k_MeV;
   app->SetDefaultParameter("FCAL:MIN_CLUSTER_SEED_ENERGY",
@@ -42,13 +42,13 @@ void DFCALCluster_factory_Island::Init()
   app->SetDefaultParameter("FCAL:SHOWER_ENERGY_THRESHOLD", SHOWER_ENERGY_THRESHOLD);
 
   SHOWER_WIDTH_PARAMETER=0.69;
-  gPARMS->SetDefaultParameter("FCAL:SHOWER_WIDTH_PARAMETER",
+  app->SetDefaultParameter("FCAL:SHOWER_WIDTH_PARAMETER",
 			      SHOWER_WIDTH_PARAMETER);
   INSERT_SHOWER_WIDTH_PARAMETER=0.31;
-  gPARMS->SetDefaultParameter("FCAL:INSERT_SHOWER_WIDTH_PARAMETER",
+  app->SetDefaultParameter("FCAL:INSERT_SHOWER_WIDTH_PARAMETER",
 			      INSERT_SHOWER_WIDTH_PARAMETER);
   MIN_CUTDOWN_FRACTION=0.1;
-  gPARMS->SetDefaultParameter("FCAL:MIN_CUTDOWN_FRACTION",
+  app->SetDefaultParameter("FCAL:MIN_CUTDOWN_FRACTION",
 			      MIN_CUTDOWN_FRACTION);
 
   DEBUG_HISTS=false;
@@ -58,10 +58,10 @@ void DFCALCluster_factory_Island::Init()
   app->SetDefaultParameter("FCAL:CHISQ_MARGIN",CHISQ_MARGIN);
 
   MASS_CUT=1e-6;
-  gPARMS->SetDefaultParameter("FCAL:MASS_CUT",MASS_CUT);
+  app->SetDefaultParameter("FCAL:MASS_CUT",MASS_CUT);
 
   ENERGY_SHARING_CUTOFF=0.9;
-  gPARMS->SetDefaultParameter("FCAL:ENERGY_SHARING_CUTOFF",ENERGY_SHARING_CUTOFF);
+  app->SetDefaultParameter("FCAL:ENERGY_SHARING_CUTOFF",ENERGY_SHARING_CUTOFF);
 
   HistdE=new TH2D("HistdE",";E [GeV];#deltaE [GeV]",100,0,10,201,-0.25,0.25);
   HistProb=new TH1D("HistProb",";CL",100,0,1);
@@ -72,12 +72,11 @@ void DFCALCluster_factory_Island::Init()
 //------------------
 void DFCALCluster_factory_Island::BeginRun(const std::shared_ptr<const JEvent> &event)
 {
-  DApplication *dapp = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   const DGeometry *geom = dapp->GetDGeometry(runnumber);
 
   double targetZ=0.;
   geom->GetTargetZ(targetZ);
-  eventLoop->GetSingle(dFCALGeom);
+  event->GetSingle(dFCALGeom);
   m_zdiff=dFCALGeom->fcalFrontZ()-targetZ;
 
   m_insert_Eres[0]=0.0003;
@@ -86,8 +85,6 @@ void DFCALCluster_factory_Island::BeginRun(const std::shared_ptr<const JEvent> &
   m_Eres[0]=0.0005;
   m_Eres[1]=0.001225;
   m_Eres[2]=9.0e-4;
-
-  return NOERROR;
 }
 
 //------------------
@@ -96,12 +93,12 @@ void DFCALCluster_factory_Island::BeginRun(const std::shared_ptr<const JEvent> &
 void DFCALCluster_factory_Island::Process(const std::shared_ptr<const JEvent> &event)
 {
   vector<const DFCALHit*>fcal_hits;
-  loop->Get(fcal_hits);
-  if (fcal_hits.size()==0) return OBJECT_NOT_AVAILABLE;
+  event->Get(fcal_hits);
+  if (fcal_hits.size()==0) return; // OBJECT_NOT_AVAILABLE;
 
   // LED events will have hits in nearly every channel. Do NOT
   // try clusterizing if more than 250 hits in FCAL
-  if(fcal_hits.size() > MAX_HITS_FOR_CLUSTERING) return VALUE_OUT_OF_RANGE;
+  if(fcal_hits.size() > MAX_HITS_FOR_CLUSTERING) return; // VALUE_OUT_OF_RANGE;
     
   // Sort the hits according to energy.
   stable_sort(fcal_hits.begin(),fcal_hits.end(),FCALHit_E_cmp);

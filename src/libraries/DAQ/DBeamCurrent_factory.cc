@@ -91,13 +91,13 @@ void DBeamCurrent_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
 	}
 	else{
 	        double new_cutoff;
-		if(loop->GetCalib("/ELECTRON_BEAM/ps_counts_threshold",new_cutoff))
+		if(DEvent::GetCalib(event, "/ELECTRON_BEAM/ps_counts_threshold",new_cutoff))
 		    jerr << "Error loading /ELECTRON_BEAM/ps_counts_threshold !" << endl;
 		else 
 		    BEAM_ON_MIN_PSCOUNTS = new_cutoff;
 
-		loop->GetJCalibration()->GetCalib("/ELECTRON_BEAM/ps_counts", mstr);
-		if(mstr.empty()) return NOERROR;
+		DEvent::GetCalib(event, "/ELECTRON_BEAM/ps_counts", mstr);
+		if(mstr.empty()) return;// NOERROR;
 		electron_beam_proxy = mstr.begin()->second;
 		cutoffval = BEAM_ON_MIN_PSCOUNTS;
 	}

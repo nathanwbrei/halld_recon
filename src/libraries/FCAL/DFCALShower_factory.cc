@@ -47,7 +47,7 @@ void DFCALShower_factory::Init()
   app->SetDefaultParameter("FCAL:SHOWER_ENERGY_THRESHOLD", SHOWER_ENERGY_THRESHOLD);
 
   SHOWER_POSITION_LOG = false;
-  gPARMS->SetDefaultParameter("FCAL:SHOWER_POSITION_LOG", SHOWER_POSITION_LOG);
+  app->SetDefaultParameter("FCAL:SHOWER_POSITION_LOG", SHOWER_POSITION_LOG);
   // these need to come from database to ensure accuracy
   // remove default value which might be close to the right solution,
   // but not quite correct -- allow command line tuning
@@ -104,8 +104,8 @@ void DFCALShower_factory::Init()
 
   INSERT_PAR1=0.155;
   INSERT_PAR2=1.1425;
-  gPARMS->SetDefaultParameter("FCAL:INSERT_PAR1",INSERT_PAR1);
-  gPARMS->SetDefaultParameter("FCAL:INSERT_PAR2",INSERT_PAR2);
+  app->SetDefaultParameter("FCAL:INSERT_PAR1",INSERT_PAR1);
+  app->SetDefaultParameter("FCAL:INSERT_PAR2",INSERT_PAR2);
 
   INSERT_POS_RES1=0.11;
   INSERT_POS_RES2=0.22;
@@ -115,11 +115,11 @@ void DFCALShower_factory::Init()
   INSERT_E_VAR1=0.001223;
   INSERT_E_VAR2=0.;
   INSERT_E_VAR3=2.025e-5;
-  gPARMS->SetDefaultParameter("FCAL:INSERT_POS_RES1",INSERT_POS_RES1);
-  gPARMS->SetDefaultParameter("FCAL:INSERT_POS_RES2",INSERT_POS_RES2);
-  gPARMS->SetDefaultParameter("FCAL:INSERT_E_VAR2",INSERT_E_VAR2);
-  gPARMS->SetDefaultParameter("FCAL:INSERT_E_VAR3",INSERT_E_VAR3);
-  gPARMS->SetDefaultParameter("FCAL:INSERT_E_VAR1",INSERT_E_VAR1);
+  app->SetDefaultParameter("FCAL:INSERT_POS_RES1",INSERT_POS_RES1);
+  app->SetDefaultParameter("FCAL:INSERT_POS_RES2",INSERT_POS_RES2);
+  app->SetDefaultParameter("FCAL:INSERT_E_VAR2",INSERT_E_VAR2);
+  app->SetDefaultParameter("FCAL:INSERT_E_VAR3",INSERT_E_VAR3);
+  app->SetDefaultParameter("FCAL:INSERT_E_VAR1",INSERT_E_VAR1);
  
 }
 

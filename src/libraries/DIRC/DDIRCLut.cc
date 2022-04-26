@@ -27,6 +27,9 @@ bool DDIRCLut::Init(const std::shared_ptr<const JEvent>& event) {
 	dGeometryManager = app->GetService<DGeometryManager>();
 	lockService = app->GetService<JLockService>();
 
+        DIRC_DEBUG_HISTS = false;
+        app->SetDefaultParameter("DIRC:DEBUG_HISTS",DIRC_DEBUG_HISTS);
+
 	DIRC_TRUTH_BARHIT = false;
 	app->SetDefaultParameter("DIRC:TRUTH_BARHIT",DIRC_TRUTH_BARHIT);
 
@@ -41,33 +44,33 @@ bool DDIRCLut::Init(const std::shared_ptr<const JEvent>& event) {
 
 	// Gives DeltaT = 0, but shouldn't it be v=20.3767 [cm/ns] for 1.47125
 	DIRC_LIGHT_V = 19.65; // v=19.8 [cm/ns] for 1.5141
-	gPARMS->SetDefaultParameter("DIRC:LIGHT_V",DIRC_LIGHT_V);
+	app->SetDefaultParameter("DIRC:LIGHT_V",DIRC_LIGHT_V);
 
 	// sigma (thetaC for single photon) in radians
 	DIRC_SIGMA_THETAC = 0.008;
-	gPARMS->SetDefaultParameter("DIRC:SIGMA_THETAC",DIRC_SIGMA_THETAC);
+	app->SetDefaultParameter("DIRC:SIGMA_THETAC",DIRC_SIGMA_THETAC);
 
 	// Rotate tracks angle based on bar box survey data
 	DIRC_ROTATE_TRACK = true;
-	gPARMS->SetDefaultParameter("DIRC:ROTATE_TRACK",DIRC_ROTATE_TRACK);
+	app->SetDefaultParameter("DIRC:ROTATE_TRACK",DIRC_ROTATE_TRACK);
 
 	// PMT angle offsets for each bar from CCDB table (deprecated)
 	DIRC_THETAC_OFFSET = false;
-	gPARMS->SetDefaultParameter("DIRC:THETAC_OFFSET",DIRC_THETAC_OFFSET);
+	app->SetDefaultParameter("DIRC:THETAC_OFFSET",DIRC_THETAC_OFFSET);
 
 	// PMT angle and time offsets to correct LUT from CCDB resource
 	DIRC_LUT_CORR = true;
-	gPARMS->SetDefaultParameter("DIRC:LUT_CORR",DIRC_LUT_CORR);
+	app->SetDefaultParameter("DIRC:LUT_CORR",DIRC_LUT_CORR);
 
 	// CHROMATIC CORRECTION
 	DIRC_CHROMATIC_CORR = true;
-	gPARMS->SetDefaultParameter("DIRC:CHROMATIC_CORR",DIRC_CHROMATIC_CORR);
+	app->SetDefaultParameter("DIRC:CHROMATIC_CORR",DIRC_CHROMATIC_CORR);
 	DIRC_CHROMATIC_CONST = 0.0025;
-	gPARMS->SetDefaultParameter("DIRC:CHROMATIC_CONST",DIRC_CHROMATIC_CONST);
+	app->SetDefaultParameter("DIRC:CHROMATIC_CONST",DIRC_CHROMATIC_CONST);
 
 	// CHERENKOV ANGLE CUT
 	DIRC_CUT_ANGLE = 0.03;
-	gPARMS->SetDefaultParameter("DIRC:CUT_ANGLE",DIRC_CUT_ANGLE);
+	app->SetDefaultParameter("DIRC:CUT_ANGLE",DIRC_CUT_ANGLE);
 
 	// set PID for different passes in debuging histograms
 	dFinalStatePIDs.push_back(Positron);
@@ -80,8 +83,6 @@ bool DDIRCLut::Init(const std::shared_ptr<const JEvent>& event) {
 	dCriticalAngle = asin(1.00028/1.47125); // n_quarzt = 1.47125; //(1.47125 <==> 390nm)
 	dIndex = 1.473;
 
-	DIRC_DEBUG_HISTS = false;
-	app->SetDefaultParameter("DIRC:DEBUG_HISTS",DIRC_DEBUG_HISTS);
 	if(DIRC_DEBUG_HISTS)
 		CreateDebugHistograms();
 
@@ -204,7 +205,7 @@ bool DDIRCLut::CalcLUT(TVector3 locProjPos, TVector3 locProjMom, const vector<co
 	if(locDIRCMatchParams == nullptr)
 		locDIRCMatchParams = std::make_shared<DDIRCMatchParams>();
 
-	// Initialize variables for LUT summary
+	// initialize variables for LUT summary
 	double locAngle = CalcAngle(momInBar.Mag(), locMass);
 	map<Particle_t, double> locExpectedAngle = CalcExpectedAngles(momInBar.Mag());
 	map<Particle_t, double> logLikelihoodSum;
@@ -214,7 +215,7 @@ bool DDIRCLut::CalcLUT(TVector3 locProjPos, TVector3 locProjMom, const vector<co
 		if(fabs(ParticleMass(dFinalStatePIDs[loc_i])-locMass) < 0.01) locHypothesisPID = dFinalStatePIDs[loc_i];
 	}
 
-	// event over DIRC hits
+	// loop over DIRC hits
 	int nPhotons = 0;
 	int nPhotonsThetaC = 0;
 	double meanThetaC = 0.;
@@ -260,7 +261,7 @@ bool DDIRCLut::CalcLUT(TVector3 locProjPos, TVector3 locProjMom, const vector<co
 
 vector<pair<double,double>> DDIRCLut::CalcPhoton(const DDIRCPmtHit *locDIRCHit, double locFlightTime, TVector3 posInBar, TVector3 momInBar, map<Particle_t, double> locExpectedAngle, double locAngle, Particle_t locPID, bool &isReflected, map<Particle_t, double> &logLikelihoodSum, int &nPhotonsThetaC, double &meanThetaC, double &meanDeltaT, bool &isGood) const
 {	
-	// Initialize photon pairs for time and thetaC
+	// initialize photon pairs for time and thetaC
 	pair<double, double> locDIRCPhoton(-999., -999.);
 	vector<pair<double, double>> locDIRCPhotons;
 
@@ -323,7 +324,7 @@ vector<pair<double,double>> DDIRCLut::CalcPhoton(const DDIRCPmtHit *locDIRCHit, 
 	if(dDIRCLutReader->GetLutPixelAngleSize(bar, box_channel) == 0) 
 		return locDIRCPhotons;
 	
-	// event over LUT table for this bar/pixel to calculate thetaC	     
+	// loop over LUT table for this bar/pixel to calculate thetaC
 	for(uint i = 0; i < dDIRCLutReader->GetLutPixelAngleSize(bar, box_channel); i++){
 		
 		dird   = dDIRCLutReader->GetLutPixelAngle(bar, box_channel, i); 
@@ -389,7 +390,7 @@ vector<pair<double,double>> DDIRCLut::CalcPhoton(const DDIRCPmtHit *locDIRCHit, 
 				  tangle += DIRC_CHROMATIC_CONST * locDeltaT; 
 
 				if(DIRC_DEBUG_HISTS) {	
-					dapp->RootWriteLock(); 
+					lockService->RootWriteLock();
 					hTime->Fill(hitTime);
 					hCalc->Fill(totalTime);
 					
@@ -448,8 +449,8 @@ vector<pair<double,double>> DDIRCLut::CalcPhoton(const DDIRCPmtHit *locDIRCHit, 
 				}
 				
 			}
-		} // end event over reflections
-	} // end event over nodes
+		} // end loop over reflections
+	} // end loop over nodes
 	
 	return locDIRCPhotons;
 }

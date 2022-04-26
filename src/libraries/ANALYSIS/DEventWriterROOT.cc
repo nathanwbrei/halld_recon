@@ -283,8 +283,8 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegist
 	if(params->Exists("ANALYSIS:STORE_MC_TRAJECTORIES"))
 		{params->GetParameter("ANALYSIS:STORE_MC_TRAJECTORIES",STORE_MC_TRAJECTORIES); cout << "ANALYSIS:STORE_MC_TRAJECTORIES set to " << STORE_MC_TRAJECTORIES << ", IGNORE the \"<-- NO DEFAULT! (TYPO?)\" message " << endl;}
 
-	if(gPARMS->Exists("ANALYSIS:STORE_SC_VETO_INFO"))
-	    {gPARMS->GetParameter("ANALYSIS:STORE_SC_VETO_INFO",STORE_SC_VETO_INFO); cout << "ANALYSIS:STORE_SC_VETO_INFO set to " << STORE_SC_VETO_INFO << ", IGNORE the \"<-- NO DEFAULT! (TYPO?)\" message " << endl;}
+	if(params->Exists("ANALYSIS:STORE_SC_VETO_INFO"))
+	    {params->GetParameter("ANALYSIS:STORE_SC_VETO_INFO",STORE_SC_VETO_INFO); cout << "ANALYSIS:STORE_SC_VETO_INFO set to " << STORE_SC_VETO_INFO << ", IGNORE the \"<-- NO DEFAULT! (TYPO?)\" message " << endl;}
 
 	if(locKinFitType != d_NoFit)
 	{

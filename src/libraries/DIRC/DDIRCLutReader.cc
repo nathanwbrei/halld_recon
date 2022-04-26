@@ -23,10 +23,10 @@ DDIRCLutReader::DDIRCLutReader(JApplication *app, unsigned int run_number)
         const int luts = DDIRCGeometry::kBars;
 
         string lut_file;
-        gPARMS->SetDefaultParameter("DIRC_LUT", lut_file, "DIRC LUT root file (will eventually be moved to resource)");
+        app->SetDefaultParameter("DIRC_LUT", lut_file, "DIRC LUT root file (will eventually be moved to resource)");
 
 	string lutcorr_file;
-        gPARMS->SetDefaultParameter("DIRC_LUT_CORR", lutcorr_file, "DIRC LUT correction root file (will eventually be moved to resource)");
+        app->SetDefaultParameter("DIRC_LUT_CORR", lutcorr_file, "DIRC LUT correction root file (will eventually be moved to resource)");
 	
 	// follow similar procedure as other resources (DMagneticFieldMapFineMesh)
 	map<string,string> lut_map_name;

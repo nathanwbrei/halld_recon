@@ -25,7 +25,6 @@
 
 #include "JANA/JObject.h"
 #include "JANA/JFactory.h"
-using namespace jana;
 // the follwing is for doxygen describing the class
 /*! \class DTOFGeometry provides TOF geometry parameters
 
