@@ -36,6 +36,7 @@ using namespace std;
 #include <JANA/JEvent.h>
 #include <JANA/Calibrations/JCalibrationManager.h>
 
+#include <DANA/DEvent.h>
 #include "DTOFPaddleHit_factory.h"
 #include "DTOFHit.h"
 #include "DTOFHitMC.h"
@@ -46,9 +47,9 @@ using namespace std;
 #define BuiltInNaN __builtin_nan("")
 
 //------------------
-// Init
+// BeginRun
 //------------------
-void DTOFPaddleHit_factory::Init()
+void DTOFPaddleHit_factory::BeginRun(const std::shared_ptr<const JEvent> &event)
 {
   /// Retreive TOF parameters based on the TOF geometry for this run. This includes
   /// values like the number of bars in a plane the length of the bars, the effective
@@ -64,7 +65,7 @@ void DTOFPaddleHit_factory::Init()
 
   map<string, double> tofparms; 
   string locTOFParmsTable = TOFGeom[0]->Get_CCDB_DirectoryName() + "/tof_parms";
-  if( !calibration->Get(locTOFParmsTable.c_str(), tofparms)) {
+  if( !DEvent::GetCalib(event, locTOFParmsTable.c_str(), tofparms)) {
     //cout<<"DTOFPaddleHit_factory: loading values from TOF data base"<<endl;
 
     C_EFFECTIVE    =    tofparms["TOF_C_EFFECTIVE"];
@@ -83,10 +84,10 @@ void DTOFPaddleHit_factory::Init()
   TIME_COINCIDENCE_CUT=2.*HALFPADDLE/C_EFFECTIVE;
 
   string locTOFPropSpeedTable = TOFGeom[0]->Get_CCDB_DirectoryName() + "/propagation_speed";
-  if(calibration->Get(locTOFPropSpeedTable.c_str(), propagation_speed))
+  if(DEvent::GetCalib(event, locTOFPropSpeedTable.c_str(), propagation_speed))
     jout << "Error loading " << locTOFPropSpeedTable << " !" << endl;
   string locTOFAttenLengthTable = TOFGeom[0]->Get_CCDB_DirectoryName() + "/attenuation_lengths";
-  if(calibration->Get(locTOFAttenLengthTable.c_str(), AttenuationLengths))
+  if(DEvent::GetCalib(event, locTOFAttenLengthTable.c_str(), AttenuationLengths))
     jout << "Error loading " << locTOFAttenLengthTable << " !" << endl;
 }
 

@@ -10,6 +10,7 @@
 #include <JANA/JEvent.h>
 #include <JANA/Calibrations/JCalibrationManager.h>
 #include "DANA/DGeometryManager.h"
+#include "DANA/DObjectID.h"
 #include "HDGEOMETRY/DGeometry.h"
 
 #include "START_COUNTER/DSCHit_factory.h"
@@ -3779,7 +3780,7 @@ const DDIRCLut* DParticleID::Get_DIRCLut() const {
 void DParticleID::GetSingleFCALHits(vector<const DFCALShower*>&locFCALShowers,
 				    vector<const DFCALHit *>&locFCALHits,
 				    vector<const DFCALHit*>&locSingleHits) const {
-  vector<JObject::oid_t>used_fcal_ids;	  
+  vector<oid_t>used_fcal_ids;
   for (size_t loc_j=0;loc_j<locFCALShowers.size();loc_j++){
     vector<const DFCALCluster*>clusters;
     locFCALShowers[loc_j]->Get(clusters);

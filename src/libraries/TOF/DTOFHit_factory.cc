@@ -68,10 +68,10 @@ using namespace std;
 #include <DAQ/Df250PulseIntegral.h>
 #include <DAQ/Df250Config.h>
 #include <DAQ/DCODAROCInfo.h>
+#include <DANA/DEvent.h>
 
 
-
-static bool COSMICmData = false;
+static bool COSMIC_DATA = false;
 static bool OVERRIDE_HIGH_TIME_CUT = false;
 static bool OVERRIDE_LOW_TIME_CUT = false;
 
@@ -96,11 +96,11 @@ void DTOFHit_factory::Init()
   app->SetDefaultParameter("TOF:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX, 
 			      "Maximum difference in ns between a (calibrated) fADC time and F1TDC time for them to be matched in a single hit");
   
-  int analyze_cosmicmData = 0;
-  app->SetDefaultParameter("TOF:COSMICmData", analyze_cosmicmData,
+  int analyze_cosmic_data = 0;
+  app->SetDefaultParameter("TOF:COSMIC_DATA", analyze_cosmic_data,
 			      "Special settings for analysing cosmic data");
-  if(analyze_cosmicmData > 0)
-    COSMICmData = true;
+  if(analyze_cosmic_data > 0)
+    COSMIC_DATA = true;
   
   CHECK_FADC_ERRORS = true;
   app->SetDefaultParameter("TOF:CHECK_FADC_ERRORS", CHECK_FADC_ERRORS, "Set to 1 to reject hits with fADC250 errors, set to 0 to keep these hits");
@@ -117,7 +117,7 @@ void DTOFHit_factory::Init()
   t_base     = 0.;       // ns
   t_base_tdc = 0.; // ns
   
-  if(COSMICmData)
+  if(COSMIC_DATA)
     // Hardcoding of 110 taken from cosmics events
     tdc_adc_time_offset = 110.;
   else 
@@ -140,6 +140,8 @@ void DTOFHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
   /// At this point the selection of which walk correction is to be applied is done.
 
 
+    auto runnumber = event->GetRunNumber();
+    auto calibration = DEvent::GetJCalibration(event);
     // Only print messages for one thread whenever run number change
     static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
     static set<int> runs_announced;
@@ -168,7 +170,7 @@ void DTOFHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
     vector<double> raw_tdc_offsets;
     vector<double> raw_adc2E;
     
-    if(print_messages) jout << "In DTOFHit_factory, loading constants..." << jendl;
+    if(print_messages) jout << "In DTOFHit_factory, loading constants..." << endl;
     
     // load timing cut values
     if(OVERRIDE_HIGH_TIME_CUT && OVERRIDE_LOW_TIME_CUT) {
@@ -212,12 +214,12 @@ void DTOFHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
     if( scale_factors.find("TOF_ADC_ASCALE") != scale_factors.end() ) {
       ;	//a_scale = scale_factors["TOF_ADC_ASCALE"];
     } else {
-      jerr << "Unable to get TOF_ADC_ASCALE from " << locTOFDigiScalesTable << " !" << jendl;
+      jerr << "Unable to get TOF_ADC_ASCALE from " << locTOFDigiScalesTable << " !" << endl;
     }
     if( scale_factors.find("TOF_ADC_TSCALE") != scale_factors.end() ) {
       ; //t_scale = scale_factors["TOF_ADC_TSCALE"];
     } else {
-      jerr << "Unable to get TOF_ADC_TSCALE from " << locTOFDigiScalesTable << " !" << jendl;
+      jerr << "Unable to get TOF_ADC_TSCALE from " << locTOFDigiScalesTable << " !" << endl;
     }
     
     // load base time offset
@@ -228,12 +230,12 @@ void DTOFHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
     if (base_time_offset.find("TOF_BASE_TIME_OFFSET") != base_time_offset.end())
       t_base = base_time_offset["TOF_BASE_TIME_OFFSET"];
     else
-      jerr << "Unable to get TOF_BASE_TIME_OFFSET from "<<locTOFBaseTimeOffsetTable<<" !" << jendl;
+      jerr << "Unable to get TOF_BASE_TIME_OFFSET from "<<locTOFBaseTimeOffsetTable<<" !" << endl;
     
     if (base_time_offset.find("TOF_TDC_BASE_TIME_OFFSET") != base_time_offset.end())
       t_base_tdc = base_time_offset["TOF_TDC_BASE_TIME_OFFSET"];
     else
-      jerr << "Unable to get TOF_TDC_BASE_TIME_OFFSET from "<<locTOFBaseTimeOffsetTable<<" !" << jendl;
+      jerr << "Unable to get TOF_TDC_BASE_TIME_OFFSET from "<<locTOFBaseTimeOffsetTable<<" !" << endl;
     
     // load constant tables
     string locTOFPedestalsTable = tofGeom.Get_CCDB_DirectoryName() + "/pedestals";
@@ -251,8 +253,8 @@ void DTOFHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
     vector<int> walkcorrtype;
     if(calibration->Get(locTOFWalkCorrectionType.c_str(), walkcorrtype)) {
       jout<<"\033[1;31m";  // red text";
-      jout<< "Error loading "<<locTOFWalkCorrectionType<<" !\033[0m" << jendl;
-      return; // (jerror_t)101; // TODO: #1
+      jout<< "Error loading "<<locTOFWalkCorrectionType<<" !\033[0m" << endl;
+      return; // (jerror_t)101;
     }
     
     switch ((int)walkcorrtype[0]) {
@@ -342,7 +344,6 @@ void DTOFHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
       CheckCalibTable(tdc_time_offsets,"/TOF/timing_offsets");
     */
 
-    return;
 }
 
 //------------------
@@ -419,7 +420,7 @@ void DTOFHit_factory::Process(const std::shared_ptr<const JEvent>& event)
     
     // nsamples_pedestal should always be positive for valid data - err on the side of caution for now
     if(nsamples_pedestal == 0) {
-      jerr << "DTOFDigiHit with nsamples_pedestal == 0 !   Event = " << eventnumber << jendl;
+      jerr << "DTOFDigiHit with nsamples_pedestal == 0 !   Event = " << eventnumber << endl;
       continue;
     }
     
@@ -491,7 +492,7 @@ void DTOFHit_factory::Process(const std::shared_ptr<const JEvent>& event)
       hit->Amp = dA*0.163;
     }
     
-    if(COSMICmData)
+    if(COSMIC_DATA)
       hit->dE = (A - 55*pedestal); // value of 55 is taken from (NSB,NSA)=(10,45) in the confg file
     
     hit->t_TDC=numeric_limits<double>::quiet_NaN();
@@ -632,8 +633,8 @@ DTOFHit* DTOFHit_factory::FindMatch(int plane, int bar, int end, double T)
     // Loop over existing hits (from fADC) and look for a match
     // in both the sector and the time.
 
-    for(unsigned int i=0; i<_data.size(); i++){
-        DTOFHit *hit = _data[i];
+    for(unsigned int i=0; i<mData.size(); i++){
+        DTOFHit *hit = mData[i];
 
         if(!isfinite(hit->t_fADC)) continue; // only match to fADC hits, not bachelor TDC hits
         if(hit->plane != plane) continue;

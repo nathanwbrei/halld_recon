@@ -24,7 +24,7 @@
  * Question here??: how to use the "tofgeometry" in a code like a plugin.
 
  */
-class DTOFGeometry_factory:public JFactory<DTOFGeometry>{
+class DTOFGeometry_factory:public JFactoryT<DTOFGeometry>{
 	public:
 		DTOFGeometry_factory(){};
 		~DTOFGeometry_factory(){};

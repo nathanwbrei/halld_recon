@@ -9,9 +9,8 @@
 #define _DCTOFHit_
 
 #include "JANA/JObject.h"
-#include "JANA/JFactory.h"
 
-class DCTOFHit:public jana::JObject{
+class DCTOFHit:public JObject{
  public:
   JOBJECT_PUBLIC(DCTOFHit);
 
@@ -20,11 +19,11 @@ class DCTOFHit:public jana::JObject{
   float dE; ///< attenuated energy deposition in GeV
   double t; ///< time in ns
    
-  void toStrings(vector<pair<string,string> > &items)const{
-    AddString(items, "bar", "%d", bar);
-    AddString(items, "end", "%d", end);
-    AddString(items, "dE", "%12.4f", dE);
-    AddString(items, "t", "%12.4f", t);
+  void Summarize(JObjectSummary& summary) const {
+    summary.add(bar, "bar", "%d");
+    summary.add(end, "end", "%d");
+    summary.add(dE, "dE", "%12.4f");
+    summary.add(t, "t", "%12.4f");
   }
 };
 

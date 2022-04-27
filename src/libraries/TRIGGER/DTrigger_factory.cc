@@ -24,11 +24,10 @@ void DTrigger_factory::Init()
 	string locUsageString = "Set BCAL LED front panel trigger bits if such events leak into other triggers (1/0, off by default)";
 	app->SetDefaultParameter("TRIGGER:EMULATE_BCAL_LED_TRIGGER", EMULATE_BCAL_LED_TRIGGER, locUsageString);
 	locUsageString = "Set FCAL LED front panel trigger bits if such events leak into other triggers (1/0, off by default)";
-	gPARMS->SetDefaultParameter("TRIGGER:EMULATE_FCAL_LED_TRIGGER", EMULATE_FCAL_LED_TRIGGER, locUsageString);
+	app->SetDefaultParameter("TRIGGER:EMULATE_FCAL_LED_TRIGGER", EMULATE_FCAL_LED_TRIGGER, locUsageString);
 	locUsageString = "Calculate calorimter energy sums using emulated triggers (1/0, off by default)";
-	gPARMS->SetDefaultParameter("TRIGGER:EMULATE_CAL_ENERGY_SUMS", EMULATE_CAL_ENERGY_SUMS, locUsageString);
+	app->SetDefaultParameter("TRIGGER:EMULATE_CAL_ENERGY_SUMS", EMULATE_CAL_ENERGY_SUMS, locUsageString);
 
-	return NOERROR;
 }
 
 
@@ -83,7 +82,7 @@ void DTrigger_factory::Process(const std::shared_ptr<const JEvent>& event)
         // eventually we'll get the values directly from the firmware
         if(EMULATE_CAL_ENERGY_SUMS) {
             vector<const DL1MCTrigger*> locMCTriggers;
-            locEventLoop->Get(locMCTriggers);
+            event->Get(locMCTriggers);
             const DL1MCTrigger* locMCTrigger = locMCTriggers.empty() ? NULL : locMCTriggers[0];
 
             if(locMCTrigger != NULL)

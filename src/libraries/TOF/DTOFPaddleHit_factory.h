@@ -51,7 +51,7 @@ class DTOFPaddleHit_factory:public JFactoryT<DTOFPaddleHit>{
   vector <const DTOFGeometry*> TOFGeom; ///< tof geometry class (vector has only one element)
 
  protected:
-  void Init() override;
+  // void Init() override;
   void BeginRun(const std::shared_ptr<const JEvent>& event) override;
   void Process(const std::shared_ptr<const JEvent>& event) override;
   //void EndRun() override;

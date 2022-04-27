@@ -21,21 +21,13 @@ class DFMWPCHit:public JObject{
 		float amp;   // peak amplitude
 		float t;     // time in ns
 
-		void toStrings(vector<pair<string, string> >&items) const {
-			AddString(items, "layer", "%d", layer);
-			AddString(items, "wire", "%d", wire);
-			AddString(items, "q",      "%10.2f",  q);
-			AddString(items, "amp",    "%10.2f", amp);
-			AddString(items, "t", "%3.3f", t);
-        }
-        
 		void Summarize(JObjectSummary& summary) const override {
 			summary.add(layer, "layer", "%d");
 			summary.add(wire, "wire", "%d");
-			summary.add(dE*1.0E6, "dE(keV)", "%3.1f");
+			summary.add(q, "q",      "%10.2f");
+			summary.add(amp, "amp",    "%10.2f");
 			summary.add(t, "t", "%3.3f");
-		}
-
+        }
 };
 
 #endif // _DFMWPCHit_

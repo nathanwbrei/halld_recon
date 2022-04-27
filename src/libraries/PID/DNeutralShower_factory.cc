@@ -38,15 +38,15 @@ DNeutralShower_factory::DNeutralShower_factory()
   dResourcePool_TMatrixFSym = std::make_shared<DResourcePool<TMatrixFSym>>(); 
 
   TOF_RF_CUT = 6.5;
-  gPARMS->SetDefaultParameter("NeutralShower:TOF_RF_CUT", TOF_RF_CUT);
+  japp->SetDefaultParameter("NeutralShower:TOF_RF_CUT", TOF_RF_CUT);
   
   SC_RF_CUT_MIN = 1.0;
   SC_RF_CUT_MAX = 7.0;
-  gPARMS->SetDefaultParameter("NeutralShower:SC_RF_CUT_MIN", SC_RF_CUT_MIN);
-  gPARMS->SetDefaultParameter("NeutralShower:SC_RF_CUT_MAX", SC_RF_CUT_MAX);
+  japp->SetDefaultParameter("NeutralShower:SC_RF_CUT_MIN", SC_RF_CUT_MIN);
+  japp->SetDefaultParameter("NeutralShower:SC_RF_CUT_MAX", SC_RF_CUT_MAX);
 
   SC_Energy_CUT = 0.2;
-  gPARMS->SetDefaultParameter("NeutralShower:SC_Energy_CUT", SC_Energy_CUT);
+  japp->SetDefaultParameter("NeutralShower:SC_Energy_CUT", SC_Energy_CUT);
   
 }
 
@@ -66,10 +66,7 @@ void DNeutralShower_factory::BeginRun(const std::shared_ptr<const JEvent>& event
 {
   DGeometry* locGeometry = DEvent::GetDGeometry(event);
 
-  DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-  DGeometry* locGeometry = locApplication->GetDGeometry(runnumber);
-
-  jana::JCalibration *jcalib = japp->GetJCalibration(runnumber);
+  JCalibration *jcalib = DEvent::GetJCalibration(event);
   double locTargetCenterZ;
   locGeometry->GetTargetZ(locTargetCenterZ);
   dTargetCenter.SetXYZ(0.0, 0.0, locTargetCenterZ);
@@ -82,9 +79,7 @@ void DNeutralShower_factory::BeginRun(const std::shared_ptr<const JEvent>& event
   m_beamSpotX = beam_spot.at("x");
   m_beamSpotY = beam_spot.at("y");
   
-  RunNumber = runnumber;
-
-  return NOERROR;
+  RunNumber = event->GetRunNumber();
 }
 
 //------------------
@@ -93,7 +88,7 @@ void DNeutralShower_factory::BeginRun(const std::shared_ptr<const JEvent>& event
 void DNeutralShower_factory::Process(const std::shared_ptr<const JEvent>& event)
 {
   const DDetectorMatches* locDetectorMatches = NULL;
-  locEventLoop->GetSingle(locDetectorMatches);
+  event->GetSingle(locDetectorMatches);
     
   vector<const DBCALShower*> locBCALShowers;
   event->Get(locBCALShowers);
@@ -113,10 +108,10 @@ void DNeutralShower_factory::Process(const std::shared_ptr<const JEvent>& event)
   //-----   TOF veto    -----//
   DVector3 vertex(m_beamSpotX, m_beamSpotY, dTargetCenter.Z());
   vector <const DTOFPoint*> locTOFPoints;
-  locEventLoop->Get(locTOFPoints);
+  event->Get(locTOFPoints);
   //-----   SC veto -----//
   vector<const DSCHit*> locSCHits;
-  locEventLoop->Get(locSCHits);
+  event->Get(locSCHits);
   
   // Loop over all DBCALShowers, create DNeutralShower if didn't match to any tracks
   // The chance of an actual neutral shower matching to a bogus track is very small
@@ -233,9 +228,7 @@ void DNeutralShower_factory::Process(const std::shared_ptr<const JEvent>& event)
       Insert(locNeutralShower);
     }
   
-  sort(_data.begin(), _data.end(), DNeutralShower_SortByEnergy);
-  
-  return NOERROR;
+  sort(mData.begin(), mData.end(), DNeutralShower_SortByEnergy);
 }
 
 //------------------

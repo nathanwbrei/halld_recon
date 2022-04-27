@@ -48,8 +48,9 @@ bool DTPOLRingHit_fadc_cmp(const DTPOLRingDigiHit *a,const DTPOLRingDigiHit *b){
 //------------------
 void DTPOLHit_factory::Init()
 {
+  auto app = GetApplication();
   ADC_THRESHOLD = 40.0;
-  gPARMS->SetDefaultParameter("TPOLHit:ADC_THRESHOLD", ADC_THRESHOLD,
+  app->SetDefaultParameter("TPOLHit:ADC_THRESHOLD", ADC_THRESHOLD,
 			      "ADC pulse-height threshold");
   
   /// set the base conversion scales
@@ -57,7 +58,6 @@ void DTPOLHit_factory::Init()
   a_scale    = 0.0001;
   t_scale    = 0.0625; // 62.5 ps/count
   
-  return NOERROR;
 }
 
 //------------------
@@ -104,8 +104,6 @@ void DTPOLHit_factory::BeginRun(const std::shared_ptr<const JEvent>& event)
   // adc_time_offsets (adc_timing_offsets)
   if (eventLoop->GetCalib("/TPOL/adc_timing_offsets", adc_time_offsets))
   jout << "Error loading /TPOL/adc_timing_offsets !" << endl;*/
-
-  return NOERROR;
 }
 
 
@@ -193,7 +191,7 @@ void DTPOLHit_factory::Process(const std::shared_ptr<const JEvent>& event)
   const DL1Trigger *trig_words = NULL;
   uint32_t trig_mask, fp_trig_mask;
   try {
-    loop->GetSingle(trig_words);
+    event->GetSingle(trig_words);
   } catch(...) {};
   if (trig_words) {
     trig_mask = trig_words->trig_mask;
@@ -207,12 +205,12 @@ void DTPOLHit_factory::Process(const std::shared_ptr<const JEvent>& event)
 
   /// skim PS triggers is by default applied and hardcoded!!!! what for?
   if (trig_bits!=8) {
-    return NOERROR;
+    return; // NOERROR;
   }
   
   // get raw samples and make TPOL hits
   vector<const DTPOLSectorDigiHit*> sectordigihits;
-  loop->Get(sectordigihits);
+  event->Get(sectordigihits);
   sort(sectordigihits.begin(),sectordigihits.end(),DTPOLSectorHit_fadc_cmp);
   
   // Loop over SECTOR hits
@@ -270,9 +268,8 @@ void DTPOLHit_factory::Process(const std::shared_ptr<const JEvent>& event)
     hit->dE = pulse_height;
     hit->t = t_scale*GetPulseTime(samplesvector,w_min,w_max,ADC_THRESHOLD);
     hit->AddAssociatedObject(windowraw);
-    _data.push_back(hit);
+    Insert(hit);
   }
-  return NOERROR;
 }
 
 //------------------
@@ -280,7 +277,6 @@ void DTPOLHit_factory::Process(const std::shared_ptr<const JEvent>& event)
 //------------------
 void DTPOLHit_factory::EndRun()
 {
-  return NOERROR;
 }
 
 //------------------
@@ -288,7 +284,6 @@ void DTPOLHit_factory::EndRun()
 //------------------
 void DTPOLHit_factory::Finish()
 {
-  return NOERROR;
 }
 
 double DTPOLHit_factory::GetPhi(int sector)

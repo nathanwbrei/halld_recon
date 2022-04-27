@@ -12,6 +12,7 @@ using namespace std;
 
 #include "DFCALCluster_factory_Island.h"
 #include <JANA/JEvent.h>
+#include <DANA/DEvent.h>
 
 inline bool FCALHit_E_cmp(const DFCALHit *a,const DFCALHit *b){
   return (a->E>b->E);
@@ -72,7 +73,7 @@ void DFCALCluster_factory_Island::Init()
 //------------------
 void DFCALCluster_factory_Island::BeginRun(const std::shared_ptr<const JEvent> &event)
 {
-  const DGeometry *geom = dapp->GetDGeometry(runnumber);
+  const DGeometry *geom = DEvent::GetDGeometry(event);
 
   double targetZ=0.;
   geom->GetTargetZ(targetZ);

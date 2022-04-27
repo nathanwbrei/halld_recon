@@ -14,7 +14,6 @@ using namespace std;
 #include <DAQ/Df125Config.h>
 #include <DAQ/Df125CDCPulse.h>
 
-using namespace jana;
 
 static int FMWPC_HIT_THRESHOLD = 0;
 
@@ -25,8 +24,9 @@ static int FMWPC_HIT_THRESHOLD = 0;
 //------------------
 jerror_t DFMWPCHit_factory::init(void)
 {
-  
-  gPARMS->SetDefaultParameter("FMWPC:FMWPC_HIT_THRESHOLD", FMWPC_HIT_THRESHOLD,
+
+  auto app = GetApplication();
+  app->SetDefaultParameter("FMWPC:FMWPC_HIT_THRESHOLD", FMWPC_HIT_THRESHOLD,
                               "Remove FMWPC Hits with peak amplitudes smaller than FMWPC_HIT_THRESHOLD");
   
   // default values

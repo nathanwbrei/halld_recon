@@ -6,7 +6,7 @@
  * like the number of paddles, planes, paddle widths ect. ... 
  */
 
-#include <DTOFGeometry.h>
+#include "DTOFGeometry.h"
 #include <map>
 #include <vector>
 

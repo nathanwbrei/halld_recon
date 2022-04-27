@@ -9,9 +9,8 @@
 #define _DCTOFPoint_
 
 #include <JANA/JObject.h>
-#include <JANA/JFactory.h>
 
-class DCTOFPoint:public jana::JObject{
+class DCTOFPoint:public JObject{
  public:
   JOBJECT_PUBLIC(DCTOFPoint);
 
@@ -21,12 +20,12 @@ class DCTOFPoint:public jana::JObject{
   double y; ///< position along scintillator in cm
 		
   // This method is used primarily for pretty printing
-  // the second argument to AddString is printf style format
-  void toStrings(vector<pair<string,string> > &items)const{
-    AddString(items, "bar", "%4d", bar);
-    AddString(items, "dE", "%f", dE);
-    AddString(items, "t", "%f", t);
-    AddString(items, "y", "%f", y);
+  // the second argument to summary.add is printf style format
+  void Summarize(JObjectSummary& summary) const {
+    summary.add(bar, "bar", "%4d");
+    summary.add(dE, "dE", "%f");
+    summary.add(t, "t", "%f");
+    summary.add(y, "y", "%f");
   }
 		
 };

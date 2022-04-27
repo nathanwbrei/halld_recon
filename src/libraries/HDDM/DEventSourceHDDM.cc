@@ -435,11 +435,11 @@ bool DEventSourceHDDM::GetObjects(const std::shared_ptr<const JEvent> &event, JF
 
    if (dataClassName == "DFMWPCTruthHit")
       return Extract_DFMWPCTruthHit(record, 
-                     dynamic_cast<JFactory<DFMWPCTruthHit>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DFMWPCTruthHit>*>(factory), tag);
    
    if (dataClassName == "DFMWPCTruth")
       return Extract_DFMWPCTruth(record, 
-                     dynamic_cast<JFactory<DFMWPCTruth>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DFMWPCTruth>*>(factory), tag);
 
    if (dataClassName == "DFMWPCHit")
       return Extract_DFMWPCHit(record, 
@@ -447,11 +447,11 @@ bool DEventSourceHDDM::GetObjects(const std::shared_ptr<const JEvent> &event, JF
 
    if (dataClassName == "DCTOFTruth")
       return Extract_DCTOFTruth(record, 
-                     dynamic_cast<JFactory<DCTOFTruth>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DCTOFTruth>*>(factory), tag);
    
    if (dataClassName == "DCTOFHit")
       return Extract_DCTOFHit(record, 
-                     dynamic_cast<JFactory<DCTOFHit>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DCTOFHit>*>(factory), tag);
 
    if (dataClassName == "DDIRCTruthBarHit")
      return Extract_DDIRCTruthBarHit(record,
@@ -2738,7 +2738,7 @@ jerror_t DEventSourceHDDM::Extract_DFMWPCTruthHit(hddm_s::HDDM *record,  JFactor
 // Extract_DFMWPCTruth
 //------------------
 jerror_t DEventSourceHDDM::Extract_DFMWPCTruth(hddm_s::HDDM *record,
-                                   JFactory<DFMWPCTruth>* factory, string tag)
+                                   JFactoryT<DFMWPCTruth>* factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -2815,7 +2815,7 @@ jerror_t DEventSourceHDDM::Extract_DFMWPCHit(hddm_s::HDDM *record,  JFactoryT<DF
 // Extract_DCTOFTruth
 //------------------
 jerror_t DEventSourceHDDM::Extract_DCTOFTruth(hddm_s::HDDM *record,
-                                   JFactory<DCTOFTruth>* factory, string tag)
+                                   JFactoryT<DCTOFTruth>* factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -2858,7 +2858,7 @@ jerror_t DEventSourceHDDM::Extract_DCTOFTruth(hddm_s::HDDM *record,
 //------------------
 // Extract_DCTOFHit
 //------------------
-jerror_t DEventSourceHDDM::Extract_DCTOFHit(hddm_s::HDDM *record,  JFactory<DCTOFHit> *factory, string tag)
+jerror_t DEventSourceHDDM::Extract_DCTOFHit(hddm_s::HDDM *record,  JFactoryT<DCTOFHit> *factory, string tag)
 {
    /// Copies the data from the given hddm_s record. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
