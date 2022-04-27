@@ -162,8 +162,6 @@ void DTrackWireBased_factory::Init()
    }
    mNumHypPlus=mass_hypotheses_positive.size();
    mNumHypMinus=mass_hypotheses_negative.size();
-
-   return;
 }
 
 //------------------
@@ -233,8 +231,6 @@ void DTrackWireBased_factory::BeginRun(const std::shared_ptr<const JEvent>& even
 
    // Get the particle ID algorithms
    event->Get(&dPIDAlgorithm);
-
-   return NOERROR;
 }
 
 //------------------

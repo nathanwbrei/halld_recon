@@ -228,8 +228,6 @@ void DTrackTimeBased_factory_StraightLine::Process(const std::shared_ptr<const J
 
   // Filter out duplicate tracks
   FilterDuplicates();
-
-  return NOERROR;
 }
 
 //------------------
@@ -299,14 +297,14 @@ void DTrackTimeBased_factory_StraightLine::FilterDuplicates(void)
   /// Look through all current DTrackTimeBased objects and remove any
   /// that have most of their hits in common with another track
 	
-  if(_data.size()==0)return;
+  if(mData.size()==0)return;
   
   if(DEBUG_LEVEL>2) _DBG_<<"Looking for clones of time-based tracks ..."<<endl;
     
   vector<unsigned int> candidates_to_keep;
   vector<unsigned int> candidates_to_delete;
-  for(unsigned int i=0; i<_data.size()-1; i++){
-    DTrackTimeBased *dtrack1 = _data[i];
+  for(unsigned int i=0; i<mData.size()-1; i++){
+    DTrackTimeBased *dtrack1 = mData[i];
     
     vector<const DCDCTrackHit*> cdchits1;
     vector<const DFDCPseudo*> fdchits1;
@@ -317,9 +315,9 @@ void DTrackTimeBased_factory_StraightLine::FilterDuplicates(void)
     unsigned int num_fdc1=fdchits1.size();
     unsigned int total1 = num_cdc1+num_fdc1;
     
-    JObject::oid_t cand1=dtrack1->candidateid;
-    for(unsigned int j=i+1; j<_data.size(); j++){
-      DTrackTimeBased *dtrack2 = _data[j];
+    oid_t cand1=dtrack1->candidateid;
+    for(unsigned int j=i+1; j<mData.size(); j++){
+      DTrackTimeBased *dtrack2 = mData[j];
       
       vector<const DCDCTrackHit*> cdchits2;
       vector<const DFDCPseudo*> fdchits2;
@@ -387,11 +385,11 @@ void DTrackTimeBased_factory_StraightLine::FilterDuplicates(void)
   // Copy pointers that we want to keep to a new container and delete
   // the clone objects
   vector<DTrackTimeBased*> new_data;
-  sort(_data.begin(),_data.end(),DTrackTimeBased_straightline_cmp);
-  for (unsigned int i=0;i<_data.size();i++){
+  sort(mData.begin(),mData.end(),DTrackTimeBased_straightline_cmp);
+  for (unsigned int i=0;i<mData.size();i++){
     bool keep_track=true;
     for (unsigned int j=0;j<candidates_to_delete.size();j++){
-      if (_data[i]->candidateid==candidates_to_delete[j]){
+      if (mData[i]->candidateid==candidates_to_delete[j]){
 	keep_track=false;
 	if(DEBUG_LEVEL>1)
 	  {
@@ -401,10 +399,10 @@ void DTrackTimeBased_factory_StraightLine::FilterDuplicates(void)
       }
     }
     if (keep_track){
-      new_data.push_back(_data[i]);
+      new_data.push_back(mData[i]);
     }
-    else delete _data[i];
+    else delete mData[i];
   }
-  _data = new_data;
+  mData = new_data;
 }
 

@@ -293,8 +293,8 @@ void DTrackTimeBased_factory::Process(const std::shared_ptr<const JEvent>& event
   vector<const DFCALShower*>fcal_showers;
   vector<const DFCALHit*>fcal_hits; // for fallback to single hits in FCAL
   if (USE_FCAL_TIME){
-    loop->Get(fcal_hits);
-    loop->Get(fcal_showers);
+    event->Get(fcal_hits);
+    event->Get(fcal_showers);
   }
   
   vector<const DMCThrown*> mcthrowns;
