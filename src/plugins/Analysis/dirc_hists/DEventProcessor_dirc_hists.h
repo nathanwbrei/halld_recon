@@ -45,11 +45,14 @@ public:
   pthread_mutex_t mutex;
 
 private:
+
   void Init() override;
   void BeginRun(const std::shared_ptr<const JEvent>& event) override;
   void Process(const std::shared_ptr<const JEvent>& event) override;
   void EndRun() override;
   void Finish() override;
+
+  std::shared_ptr<JLockService> lockService;
 
   TH2I* hDiffBar[DDIRCGeometry::kBars];
   TH1I* hNphCBar[DDIRCGeometry::kBars];

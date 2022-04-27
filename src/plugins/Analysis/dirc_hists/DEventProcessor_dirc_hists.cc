@@ -21,18 +21,18 @@ DEventProcessor_dirc_hists::~DEventProcessor_dirc_hists() {
 
 void DEventProcessor_dirc_hists::Init() {
 
-	auto params = GetApplication()->GetJParameterManager();
+  auto app = GetApplication();
+  lockService = app->GetService<JLockService>();
+
   DIRC_TRUTH_BARHIT = false;
   DIRC_CUT_TDIFF = 3.0;
   DIRC_BAR_DIAGNOSTIC = false;
   DIRC_BAR_HIT_MAP = -1;
 
-  if(gPARMS) {
-    gPARMS->SetDefaultParameter("DIRC:TRUTH_BARHIT",DIRC_TRUTH_BARHIT);
-    gPARMS->SetDefaultParameter("DIRC:HIST_CUT_TDIFF",DIRC_CUT_TDIFF);
-    gPARMS->SetDefaultParameter("DIRC:BAR_DIAGNOSTIC",DIRC_BAR_DIAGNOSTIC);
-    gPARMS->SetDefaultParameter("DIRC:BAR_HIT_MAP",DIRC_BAR_HIT_MAP);
-  }
+  app->SetDefaultParameter("DIRC:TRUTH_BARHIT",DIRC_TRUTH_BARHIT);
+  app->SetDefaultParameter("DIRC:HIST_CUT_TDIFF",DIRC_CUT_TDIFF);
+  app->SetDefaultParameter("DIRC:BAR_DIAGNOSTIC",DIRC_BAR_DIAGNOSTIC);
+  app->SetDefaultParameter("DIRC:BAR_HIT_MAP",DIRC_BAR_HIT_MAP);
 
   TDirectory *dir = new TDirectoryFile("DIRC","DIRC");
   dir->cd();
@@ -266,10 +266,10 @@ void DEventProcessor_dirc_hists::Process(const std::shared_ptr<const JEvent>& ev
 		  if(locBar > 23) //continue; // skip north box for now
 			  locBox = 0;
 
-		  GetLockService(event)->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+		  lockService->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
                   hExtrapolatedBarHitXY[locPID]->Fill(posInBar.X(), posInBar.Y());
 		  hExtrapolatedBarHitTime[locPID]->Fill(locExtrapolatedTime);
-        	  GetLockService(event)->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+        	  lockService->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 		  double locAngle = dDIRCLut->CalcAngle(locP, locMass);
 		  map<Particle_t, double> locExpectedAngle = dDIRCLut->CalcExpectedAngles(locP);
@@ -296,14 +296,14 @@ void DEventProcessor_dirc_hists::Process(const std::shared_ptr<const JEvent>& ev
 			  int locXbin = (int)(posInBar.X()/5.0) + 19;
 			  if(DIRC_BAR_HIT_MAP > 0) {
 			    if(locXbin >= 0 && locXbin < 40 && locBar == DIRC_BAR_HIT_MAP && locPID == PiPlus && momInBar.Mag() > 4.0) {
-			      
-			      japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
+			      lockService->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 			      hHitTimeMap[locXbin]->Fill(locHitTime);
 			      if(locHitTime < 38)
 				hPixelHitMap[locXbin]->Fill(pixel_row, pixel_col);
 			      else
 				hPixelHitMapReflected[locXbin]->Fill(pixel_row, pixel_col);	  
-			      japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+			      lockService->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 			    }
 			  }
 
@@ -314,7 +314,7 @@ void DEventProcessor_dirc_hists::Process(const std::shared_ptr<const JEvent>& ev
 					  double locDeltaT = locDIRCPhotons[loc_j].first - locHitTime;
 					  double locThetaC = locDIRCPhotons[loc_j].second;
 
-					  GetLockService(event)->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+					  lockService->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
 					  if(fabs(locDeltaT + 15.) < 5.)
 						  hDeltaThetaC_BadTime[locPID][locBox]->Fill(locThetaC-locExpectedThetaC);
@@ -363,7 +363,7 @@ void DEventProcessor_dirc_hists::Process(const std::shared_ptr<const JEvent>& ev
 						  }
 					  }
 					  
-					  GetLockService(event)->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+					  lockService->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 				  }
 			  }
 		  }
@@ -372,7 +372,7 @@ void DEventProcessor_dirc_hists::Process(const std::shared_ptr<const JEvent>& ev
 		  if(std::find(dFinalStatePIDs.begin(),dFinalStatePIDs.end(),locPID) == dFinalStatePIDs.end())
 			  continue;
 		    
-		  GetLockService(event)->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+		  lockService->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
 		  // fill histograms with per-track quantities
 		  hNphC[locPID][locBox]->Fill(locDIRCMatchParams->dNPhotons);
@@ -411,7 +411,7 @@ void DEventProcessor_dirc_hists::Process(const std::shared_ptr<const JEvent>& ev
 			  hLikelihoodDiffVsP[locPID][locBox]->Fill(locP, locDIRCMatchParams->dLikelihoodProton - locDIRCMatchParams->dLikelihoodKaon);
 		  }
 
-		  GetLockService(event)->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+		  lockService->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	  }
   }
 }
