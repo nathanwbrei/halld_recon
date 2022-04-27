@@ -445,7 +445,7 @@ class DTranslationTable:public JObject{
 		}
 		
 		// Method to print sizes of all vectors (for debugging)
-		#define printvectorsize(A) ttout << "     v" #A ".size() = " << v##A.size() << jendl;
+		#define printvectorsize(A) ttout << "     v" #A ".size() = " << v##A.size() << std::endl;
 		void PrintVectorSizes(void) const { MyTypes(printvectorsize) }
 		
 		
@@ -541,12 +541,12 @@ class DTranslationTable:public JObject{
 
 		DDIRCTDCDigiHit*  MakeDIRCTDCDigiHit( const DIRCIndex_t &idx,       const DDIRCTDCHit *hit) const;
 
-		//void Addf250ObjectsToCallStack(JEventLoop *loop, string caller) const;
-		//void Addf125CDCObjectsToCallStack(JEventLoop *loop, string caller, bool addpulseobjs) const;
-		//void Addf125FDCObjectsToCallStack(JEventLoop *loop, string caller, bool addpulseobjs) const;
-		//void AddF1TDCObjectsToCallStack(JEventLoop *loop, string caller) const;
-		//void AddCAEN1290TDCObjectsToCallStack(JEventLoop *loop, string caller) const;
-		//void AddToCallStack(JEventLoop *loop, string caller, string callee) const;
+		void Addf250ObjectsToCallStack(const JEvent& event, string caller) const;
+		void Addf125CDCObjectsToCallStack(const JEvent& event, string caller, bool addpulseobjs) const;
+		void Addf125FDCObjectsToCallStack(const JEvent& event, string caller, bool addpulseobjs) const;
+		void AddF1TDCObjectsToCallStack(const JEvent& event, string caller) const;
+		void AddCAEN1290TDCObjectsToCallStack(const JEvent& event, string caller) const;
+		void AddToCallStack(const JEvent& event, string caller, string callee) const;
 
 		void ReadOptionalROCidTranslation(void);
 		static std::set<uint32_t> GetSystemsToParse(string systems, int systems_to_parse_force);
