@@ -72,8 +72,7 @@ int main(int narg, char *argv[])
 	}
 
 	app->SetTicker(false); // Disable ticker
-
-	// app->monitor_heartbeat = false; // TODO: Re-add me
+        app->SetTimeoutEnabled(false);
 
 	app->Add(new MyProcessor);
 

@@ -192,9 +192,8 @@ void MyProcessor::Process(const std::shared_ptr<const JEvent>& event)
 		try{
 			string name =fac_info[i].dataClassName;
 			string tag = fac_info[i].tag;
-			eventLoop->Print(name,tag.c_str());
-                        
-			if(LIST_ASSOCIATED_OBJECTS)PrintAssociatedObjects(eventLoop, &fac_info[i]);
+			PrintFactoryData(event, name, tag);
+			if(LIST_ASSOCIATED_OBJECTS)PrintAssociatedObjects(event, &fac_info[i]);
 		}catch(...){
 			// exception thrown
 		}
@@ -202,7 +201,7 @@ void MyProcessor::Process(const std::shared_ptr<const JEvent>& event)
 	
         n_found++; // keep count of number of events printed
 
-        if (n_found==N_TO_FIND) eventLoop->QuitProgram();
+        if (n_found==N_TO_FIND) GetApplication()->Quit();
 
 	// If the program is quitting, then don't bother waiting for the user
 	if(event->GetJApplication()->IsQuitting()) return;
@@ -217,7 +216,7 @@ void MyProcessor::Process(const std::shared_ptr<const JEvent>& event)
 		cout<<endl;
 		switch(toupper(c)){
 			case 'Q':
-				event->GetJApplication()->Quit();
+				GetApplication()->Quit();
 				break;
 			case 'P':
 				//event->GotoEvent(eventnumber-1);
