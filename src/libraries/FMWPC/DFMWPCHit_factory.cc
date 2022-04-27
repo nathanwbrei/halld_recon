@@ -13,6 +13,7 @@ using namespace std;
 #include <DAQ/Df125PulseIntegral.h>
 #include <DAQ/Df125Config.h>
 #include <DAQ/Df125CDCPulse.h>
+#include "DANA/DEvent.h"
 
 
 static int FMWPC_HIT_THRESHOLD = 0;
@@ -20,9 +21,9 @@ static int FMWPC_HIT_THRESHOLD = 0;
 //#define ENABLE_UPSAMPLING
 
 //------------------
-// init
+// Init
 //------------------
-jerror_t DFMWPCHit_factory::init(void)
+void DFMWPCHit_factory::Init()
 {
 
   auto app = GetApplication();
@@ -46,15 +47,14 @@ jerror_t DFMWPCHit_factory::init(void)
   amp_a_scale = a_scale*28.8;
   t_scale = 8.0/10.0;    // 8 ns/count and integer time is in 1/10th of sample
   t_base  = 0.;       // ns
-  
-  return NOERROR;
 }
 
 //------------------
 // brun
 //------------------
-jerror_t DFMWPCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
+void DFMWPCHit_factory::BeginRun(const std::shared_ptr<const JEvent> &event)
 {
+  auto runnumber = event->GetRunNumber();
   // Only print messages for one thread whenever run number change
   static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
   static set<int> runs_announced;
@@ -76,7 +76,7 @@ jerror_t DFMWPCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
   
   // load scale factors
   map<string,double> scale_factors;
-  if (eventLoop->GetCalib("/FMWPC/digi_scales", scale_factors))
+  if (DEvent::GetCalib(event, "/FMWPC/digi_scales", scale_factors))
     jout << "Error loading /FMWPC/digi_scales !" << endl;
   if (scale_factors.find("FMWPC_ADC_ASCALE") != scale_factors.end())
     a_scale = scale_factors["FMWPC_ADC_ASCALE"];
@@ -95,7 +95,7 @@ jerror_t DFMWPCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
   
   // load base time offset
   map<string,double> base_time_offset;
-  if (eventLoop->GetCalib("/FMWPC/base_time_offset",base_time_offset))
+  if (DEvent::GetCalib(event, "/FMWPC/base_time_offset",base_time_offset))
     jout << "Error loading /FMWPC/base_time_offset !" << endl;
   if (base_time_offset.find("FMWPC_BASE_TIME_OFFSET") != base_time_offset.end())
     t_base = base_time_offset["FMWPC_BASE_TIME_OFFSET"];
@@ -103,11 +103,11 @@ jerror_t DFMWPCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     jerr << "Unable to get FMWPC_BASE_TIME_OFFSET from /FMWPC/base_time_offset !" << endl;
   
   // load constant tables
-  if (eventLoop->GetCalib("/FMWPC/wire_gains", gains))
+  if (DEvent::GetCalib(event, "/FMWPC/wire_gains", gains))
     jout << "Error loading /FMWPC/wire_gains !" << endl;
-  if (eventLoop->GetCalib("/FMWPC/pedestals", pedestals))
+  if (DEvent::GetCalib(event, "/FMWPC/pedestals", pedestals))
     jout << "Error loading /FMWPC/pedestals !" << endl;
-  if (eventLoop->GetCalib("/FMWPC/timing_offsets", time_offsets))
+  if (DEvent::GetCalib(event, "/FMWPC/timing_offsets", time_offsets))
     jout << "Error loading /FMWPC/timing_offsets !" << endl;
   
   // fill the tables
@@ -161,14 +161,12 @@ jerror_t DFMWPCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     }
   }
   -- */
-
-  return NOERROR;
 }
 
 //------------------
 // evnt
 //------------------
-jerror_t DFMWPCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
+void DFMWPCHit_factory::Process(const std::shared_ptr<const JEvent> &event)
 {
   /// Generate DCDCHit object for each DCDCDigiHit object.
   /// This is where the first set of calibration constants
@@ -182,7 +180,7 @@ jerror_t DFMWPCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
   /// In order to use the new Flash125 data types and maintain compatibility with the old code, what is below is a bit of a mess
 
   vector<const DFMWPCDigiHit*> digihits;
-  loop->Get(digihits);
+  event->Get(digihits);
 
   char str[256];
   for (unsigned int i=0; i < digihits.size(); i++) {
@@ -289,28 +287,24 @@ jerror_t DFMWPCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
     hit->AddAssociatedObject(digihit);
 
-    _data.push_back(hit);
+    mData.push_back(hit);
     
   }
-  
-  return NOERROR;
 }
 
 
 //------------------
-// erun
+// EndRun
 //------------------
-jerror_t DFMWPCHit_factory::erun(void)
+void DFMWPCHit_factory::EndRun()
 {
-  return NOERROR;
 }
 
 //------------------
 // fini
 //------------------
-jerror_t DFMWPCHit_factory::fini(void)
+void DFMWPCHit_factory::Finish()
 {
-  return NOERROR;
 }
 
 /* -- shouldn't need this if you make the CCDB tables 2D tables

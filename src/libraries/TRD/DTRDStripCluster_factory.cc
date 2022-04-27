@@ -87,17 +87,6 @@ void DTRDStripCluster_factory::Process(const std::shared_ptr<const JEvent>& even
 			planeHits[stripPlane].push_back(*i);
 		} 
 
-			if ((stripPlane >= 0) && stripPlane <= 2) {
-				planeHits[stripPlane].push_back(*i);
-			}
-			else {
-				static int warn_count = 0;
-				if (warn_count++ < 10) {
-					jout << "Warning: DTRDStripClusterFactory: Out-of-range stripPlane index: " << stripPlane << endl;
-				}
-			}
-		}
-
 		// Plane by plane, create clusters of strips
 		for(uint iplane = 0; iplane < 3; iplane++) {
 			if (planeHits[iplane].size()>0){

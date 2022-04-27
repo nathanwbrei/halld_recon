@@ -322,9 +322,11 @@ set(HALLD_RECON_SOURCES
         FDC/DFDCWireDigiHit.h
         FDC/FDC_init.cc
 
-
         FMWPC/DFMWPCTruthHit.h
-        FMWPC/DFMWPCHit.h
+        FMWPC/DFMWPCHit_factory.cc
+        FMWPC/DFMWPCCluster_factory.cc
+        FMWPC/DCTOFPoint_factory.cc
+        FMWPC/DFMWPCMatchedTrack_factory.cc
         FMWPC/FMWPC_init.cc
 
         HDDM/DEventHitStatistics.h

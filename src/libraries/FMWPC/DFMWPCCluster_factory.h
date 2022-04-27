@@ -8,7 +8,7 @@
 #ifndef _DFMWPCCluster_factory_
 #define _DFMWPCCluster_factory_
 
-#include <JANA/JFactory.h>
+#include <JANA/JFactoryT.h>
 
 #include "DFMWPCCluster.h"
 #include "DFMWPCHit.h"

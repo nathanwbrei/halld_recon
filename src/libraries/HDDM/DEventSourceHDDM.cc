@@ -2772,7 +2772,7 @@ jerror_t DEventSourceHDDM::Extract_DFMWPCTruth(hddm_s::HDDM *record,
    }
 
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -2805,7 +2805,7 @@ jerror_t DEventSourceHDDM::Extract_DFMWPCHit(hddm_s::HDDM *record,  JFactoryT<DF
    }
 
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -2849,7 +2849,7 @@ jerror_t DEventSourceHDDM::Extract_DCTOFTruth(hddm_s::HDDM *record,
    }
 
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }

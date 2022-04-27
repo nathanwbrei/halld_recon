@@ -8,7 +8,7 @@
 #ifndef _DCTOFPoint_factory_
 #define _DCTOFPoint_factory_
 
-#include <JANA/JFactory.h>
+#include <JANA/JFactoryT.h>
 #include "DCTOFPoint.h"
 
 class DCTOFPoint_factory:public JFactoryT<DCTOFPoint>{
