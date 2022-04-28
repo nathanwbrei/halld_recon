@@ -20,11 +20,6 @@ extern "C"{
 
 JEventProcessor_CCAL_online::JEventProcessor_CCAL_online()
 {
-	// Set defaults:
-	
-    	BEAM_RF_MAIN_PEAK = 0.0;
-	
-	gPARMS->SetDefaultParameter( "CCAL_online:BEAM_RF_MAIN_PEAK", BEAM_RF_MAIN_PEAK );
 }
 
 
@@ -33,6 +28,10 @@ void JEventProcessor_CCAL_online::Init() {
 
 	auto app = GetApplication();
 	lockService = app->GetService<JLockService>();
+
+	// Set defaults:
+	BEAM_RF_MAIN_PEAK = 0.0;
+	app->SetDefaultParameter( "CCAL_online:BEAM_RF_MAIN_PEAK", BEAM_RF_MAIN_PEAK );
 
 	TDirectory *main = gDirectory;
 	gDirectory->mkdir("ccal")->cd();
@@ -217,8 +216,6 @@ void JEventProcessor_CCAL_online::Init() {
 	
 	
 	main->cd();
-	
-	return NOERROR;
 }
 
 
@@ -230,18 +227,18 @@ void JEventProcessor_CCAL_online::Init() {
 void JEventProcessor_CCAL_online::BeginRun(const std::shared_ptr<const JEvent>& event) 
 {
 	
-	DGeometry *dgeom = GetDGeometry(event);
+	DGeometry *dgeom = DEvent::GetDGeometry(event);
 
 	if( dgeom ){
 		dgeom->GetTargetZ( m_beamZ );
 	}
 	else{
 		cerr << "No geometry accessbile to CCAL_online monitoring plugin." << endl;
-		throw JException("No geometry accessbile to CCAL_online monitoring plugin.");
+                return; // RESOURCE_UNAVAILABLE
 	}
 	
 	
-	JCalibration *jcalib = GetJCalibration(event);
+	JCalibration *jcalib = DEvent::GetJCalibration(event);
   	std::map<string, float> beam_spot;
   	jcalib->Get("PHOTON_BEAM/beam_spot", beam_spot);
   	m_beamX  =  beam_spot.at("x");
