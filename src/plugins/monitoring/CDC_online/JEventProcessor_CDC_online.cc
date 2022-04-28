@@ -26,8 +26,9 @@ using namespace std;
 #include "DAQ/Df125CDCPulse.h"
 #include "DAQ/Df125Config.h"
 #include "TRIGGER/DTrigger.h"
+#include "DANA/DEvent.h"
 
-#include <JANA/JCalibration.h>
+#include <JANA/Calibrations/JCalibration.h>
 
 #include <TDirectory.h>
 #include <TH2.h>
@@ -102,11 +103,8 @@ void JEventProcessor_CDC_online::Init() {
 
 
   WG_OCC = false;
-    if(gPARMS){
-      gPARMS->SetDefaultParameter("CDC_ONLINE:WG_OCC", WG_OCC, "Fill occupancy only if wire_gain > 0");
-    }  
+  app->SetDefaultParameter("CDC_ONLINE:WG_OCC", WG_OCC, "Fill occupancy only if wire_gain > 0");
 
-  
   // create root folder for cdc and cd to it, store main dir
   TDirectory *main = gDirectory;
   gDirectory->mkdir("CDC")->cd();
@@ -140,8 +138,6 @@ void JEventProcessor_CDC_online::Init() {
   
   // back to main dir
   main->cd();
-
-  return NOERROR;
 }
 
 
@@ -150,8 +146,9 @@ void JEventProcessor_CDC_online::Init() {
 
 void JEventProcessor_CDC_online::BeginRun(const std::shared_ptr<const JEvent>& event) {
   // This is called whenever the run number changes
- 
-    jana::JCalibration *jcalib = japp->GetJCalibration(runnumber);
+
+  auto runnumber = event->GetRunNumber();
+  JCalibration *jcalib = DEvent::GetJCalibration(event);
    
   // max values for histogram scales, modified fa250-format readout
 
@@ -236,7 +233,7 @@ void JEventProcessor_CDC_online::BeginRun(const std::shared_ptr<const JEvent>& e
 
   initialized_histograms = true;
 
-	lockService->RootUnLock(); //RELEASE ROOT LOCK
+  lockService->RootUnLock(); //RELEASE ROOT LOCK
 
     unsigned int numstraws[28]={42,42,54,54,66,66,80,80,93,93,106,106,123,123,
         135,135,146,146,158,158,170,170,182,182,197,197,
@@ -268,9 +265,6 @@ void JEventProcessor_CDC_online::BeginRun(const std::shared_ptr<const JEvent>& e
    }
 
    //   for (uint i=0; i<100; i++) cout << "wire_gain[" << i << "] " << wire_gain[0][i] << endl;
-	
-
-  return NOERROR;
 }
 
 
