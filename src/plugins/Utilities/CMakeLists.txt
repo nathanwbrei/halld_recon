@@ -31,6 +31,7 @@ set (utilities_plugins
         Pi0Finder
         dedx_tree
         cdc_scan
+        cdc_goodtrack_skim
 
         # Optional
 
