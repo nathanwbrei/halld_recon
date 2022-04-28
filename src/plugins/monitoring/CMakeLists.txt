@@ -64,6 +64,7 @@ set (monitoring_projects
         scaler_primex
         lumi_mon
         FMWPC_online
+        cppFMWPC_ana
         )
 
 set (optional_monitoring_projects

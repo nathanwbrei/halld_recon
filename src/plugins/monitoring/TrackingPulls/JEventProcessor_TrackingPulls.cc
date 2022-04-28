@@ -29,19 +29,16 @@ JEventProcessor_TrackingPulls::~JEventProcessor_TrackingPulls() {}
 void JEventProcessor_TrackingPulls::Init() {
   // This is called once at program startup.
   auto app = GetApplication();
-  lockService = app->GetService<JLockService>();
 
   // Use -PTRACKINGPULLS:MAKE_TREE=1 to produce tree output
   MAKE_TREE = 0;
-  if(gPARMS){
-    gPARMS->SetDefaultParameter("TRACKINGPULLS:MAKE_TREE", MAKE_TREE, "Make a ROOT tree file");
-  }
+  app->SetDefaultParameter("TRACKINGPULLS:MAKE_TREE", MAKE_TREE, "Make a ROOT tree file");
 
   if (MAKE_TREE){
     string treeName = "tree_tracking_pulls";
     string treeFile = "tree_tracking_pulls.root";
-    gPARMS->SetDefaultParameter("TRACKINGPULLS:TREENAME", treeName);
-    gPARMS->SetDefaultParameter("TRACKINGPULLS:TREEFILE", treeFile);
+    app->SetDefaultParameter("TRACKINGPULLS:TREENAME", treeName);
+    app->SetDefaultParameter("TRACKINGPULLS:TREEFILE", treeFile);
     dTreeInterface = DTreeInterface::Create_DTreeInterface(treeName, treeFile);
 
     //TTREE BRANCHES
@@ -90,8 +87,6 @@ void JEventProcessor_TrackingPulls::Init() {
     //REGISTER BRANCHES
     dTreeInterface->Create_Branches(locTreeBranchRegister);
   }
-
-  return NOERROR;
 }
 
 void JEventProcessor_TrackingPulls::BeginRun(const std::shared_ptr<const JEvent> &event) {
@@ -653,20 +648,16 @@ void JEventProcessor_TrackingPulls::Process(const std::shared_ptr<const JEvent> 
     if (MAKE_TREE)
       dTreeInterface->Fill(dTreeFillData);
   }
-
-  return;
 }
 
 void JEventProcessor_TrackingPulls::EndRun() {
   // This is called whenever the run number changes, before it is
   // changed to give you a chance to clean up before processing
   // events from the next run number.
-  return;
 }
 
 void JEventProcessor_TrackingPulls::Finish() {
   // Called before program exit after event processing is finished.
   if (MAKE_TREE)
     delete dTreeInterface; //saves trees to file, closes file
-  return NOERROR;
 }
