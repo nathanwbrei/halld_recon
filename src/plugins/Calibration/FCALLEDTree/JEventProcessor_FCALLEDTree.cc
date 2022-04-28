@@ -27,8 +27,6 @@ extern "C"{
 //------------------
 JEventProcessor_FCALLEDTree::JEventProcessor_FCALLEDTree()
 {
-  btree = 0;
-  gPARMS->SetDefaultParameter( "FCALLED:Tree", btree );
 }
 
 //------------------
@@ -44,8 +42,15 @@ JEventProcessor_FCALLEDTree::~JEventProcessor_FCALLEDTree()
 //------------------
 void JEventProcessor_FCALLEDTree::Init()
 {
-  // This is called once at program startup. 
-  japp->RootWriteLock();
+  auto app = GetApplication();
+
+  btree = 0;
+  app->SetDefaultParameter( "FCALLED:Tree", btree );
+
+  lockService = app->GetService<JLockService>();
+
+  // This is called once at program startup.
+  lockService->RootWriteLock();
   
   if (btree == 1) {
   
@@ -66,7 +71,6 @@ void JEventProcessor_FCALLEDTree::Init()
     m_tree->Branch( "eTot", &m_eTot, "eTot/F" );
   }
   
-
   lockService->RootUnLock();
 }
 
@@ -94,7 +98,8 @@ void JEventProcessor_FCALLEDTree::Process(const std::shared_ptr<const JEvent>& e
   
   vector<const DFCALGeometry*> fcalGeomVect;
   event->Get( fcalGeomVect );
-  if (fcalGeomVect.size() < 1) throw JException("Missing FCAL geometry!");
+  if (fcalGeomVect.size() < 1)
+      return;
 
   const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
   
@@ -145,9 +150,7 @@ void JEventProcessor_FCALLEDTree::Process(const std::shared_ptr<const JEvent>& e
     m_tree->Fill();
   }
   
-  japp->RootFillUnLock(this);
-  
-  return NOERROR;
+  lockService->RootFillUnLock(this);
 }
 
 //------------------
