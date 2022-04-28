@@ -116,8 +116,8 @@ JEventProcessor_HLDetectorTiming::~JEventProcessor_HLDetectorTiming()
 //------------------
 void JEventProcessor_HLDetectorTiming::Init()
 {
-	auto app = GetApplication();
-	lockService = GetLockService(app);
+    auto app = GetApplication();
+    lockService = GetLockService(app);
 
     BEAM_CURRENT = 50; // Assume that there is beam until first EPICs event. Set from EPICS evio data, can override on command line
 
@@ -144,24 +144,22 @@ void JEventProcessor_HLDetectorTiming::Init()
     CCAL_CALIB = false;
     STRAIGHT_TRACK = false;
 
-    if(gPARMS){
-        gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_ROUGH_TIMING", DO_ROUGH_TIMING, "Set to > 0 to do rough timing of all detectors");
-        gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_CDC_TIMING", DO_CDC_TIMING, "Set to > 0 to do CDC Per channel Alignment");
-        gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_TDC_ADC_ALIGN", DO_TDC_ADC_ALIGN, "Set to > 0 to do TDC/ADC alignment of SC,TOF,TAGM,TAGH");
-        gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_TRACK_BASED", DO_TRACK_BASED, "Set to > 0 to do Track Based timing corrections");
-        gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_HIGH_RESOLUTION", DO_HIGH_RESOLUTION, "Set to > 0 to increase the resolution of the track Based timing corrections");
-        gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_VERIFY", DO_VERIFY, "Set to > 0 to verify timing with current constants");
-        gPARMS->SetDefaultParameter("HLDETECTORTIMING:REQUIRE_BEAM", REQUIRE_BEAM, "Set to 0 to skip beam current check");
-        gPARMS->SetDefaultParameter("HLDETECTORTIMING:BEAM_EVENTS_TO_KEEP", BEAM_EVENTS_TO_KEEP, "Set to the number of beam on events to use");
-        gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_OPTIONAL", DO_OPTIONAL, "Set to >0 to enable optional histograms ");
-        gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_REACTION", DO_REACTION, "Set to >0 to run DReaction");
-        gPARMS->SetDefaultParameter("HLDETECTORTIMING:USE_RF_BUNCH", USE_RF_BUNCH, "Set to 0 to disable use of 2 vote RF Bunch");
-        gPARMS->SetDefaultParameter("HLDETECTORTIMING:NO_TRACKS", NO_TRACKS, "Don't use tracking information for timing calibrations");
-        gPARMS->SetDefaultParameter("HLDETECTORTIMING:CCAL_CALIB", CCAL_CALIB, "Perform CCAL calibrations");
-        gPARMS->SetDefaultParameter("HLDETECTORTIMING:TRIGGER_MASK", TRIGGER_MASK, "Set to >0 to override use of standard physics trigger");
-        gPARMS->SetDefaultParameter("HLDETECTORTIMING:STRAIGHT_TRACK", STRAIGHT_TRACK, "Set to >0 to change better for straight track data (field-off, drift chambers-on)");
-        gPARMS->SetDefaultParameter("HLDETECTORTIMING:NO_START_COUNTER", NO_START_COUNTER, "Set to >0 to disable the use of the start counter (e.g. for the CPP experiment)");
-    }
+    app->SetDefaultParameter("HLDETECTORTIMING:DO_ROUGH_TIMING", DO_ROUGH_TIMING, "Set to > 0 to do rough timing of all detectors");
+    app->SetDefaultParameter("HLDETECTORTIMING:DO_CDC_TIMING", DO_CDC_TIMING, "Set to > 0 to do CDC Per channel Alignment");
+    app->SetDefaultParameter("HLDETECTORTIMING:DO_TDC_ADC_ALIGN", DO_TDC_ADC_ALIGN, "Set to > 0 to do TDC/ADC alignment of SC,TOF,TAGM,TAGH");
+    app->SetDefaultParameter("HLDETECTORTIMING:DO_TRACK_BASED", DO_TRACK_BASED, "Set to > 0 to do Track Based timing corrections");
+    app->SetDefaultParameter("HLDETECTORTIMING:DO_HIGH_RESOLUTION", DO_HIGH_RESOLUTION, "Set to > 0 to increase the resolution of the track Based timing corrections");
+    app->SetDefaultParameter("HLDETECTORTIMING:DO_VERIFY", DO_VERIFY, "Set to > 0 to verify timing with current constants");
+    app->SetDefaultParameter("HLDETECTORTIMING:REQUIRE_BEAM", REQUIRE_BEAM, "Set to 0 to skip beam current check");
+    app->SetDefaultParameter("HLDETECTORTIMING:BEAM_EVENTS_TO_KEEP", BEAM_EVENTS_TO_KEEP, "Set to the number of beam on events to use");
+    app->SetDefaultParameter("HLDETECTORTIMING:DO_OPTIONAL", DO_OPTIONAL, "Set to >0 to enable optional histograms ");
+    app->SetDefaultParameter("HLDETECTORTIMING:DO_REACTION", DO_REACTION, "Set to >0 to run DReaction");
+    app->SetDefaultParameter("HLDETECTORTIMING:USE_RF_BUNCH", USE_RF_BUNCH, "Set to 0 to disable use of 2 vote RF Bunch");
+    app->SetDefaultParameter("HLDETECTORTIMING:NO_TRACKS", NO_TRACKS, "Don't use tracking information for timing calibrations");
+    app->SetDefaultParameter("HLDETECTORTIMING:CCAL_CALIB", CCAL_CALIB, "Perform CCAL calibrations");
+    app->SetDefaultParameter("HLDETECTORTIMING:TRIGGER_MASK", TRIGGER_MASK, "Set to >0 to override use of standard physics trigger");
+    app->SetDefaultParameter("HLDETECTORTIMING:STRAIGHT_TRACK", STRAIGHT_TRACK, "Set to >0 to change better for straight track data (field-off, drift chambers-on)");
+    app->SetDefaultParameter("HLDETECTORTIMING:NO_START_COUNTER", NO_START_COUNTER, "Set to >0 to disable the use of the start counter (e.g. for the CPP experiment)");
 
     // Would like the code with no arguments to simply verify the current status of the calibration
     if (DO_ROUGH_TIMING > 0 || DO_CDC_TIMING > 0 || DO_TDC_ADC_ALIGN > 0 || DO_TRACK_BASED > 0) DO_VERIFY = 0;
@@ -239,7 +237,7 @@ void JEventProcessor_HLDetectorTiming::Process(const std::shared_ptr<const JEven
    bool locIsNoFieldFlag = (dynamic_cast<const DMagneticFieldMapNoField*>(bfield) != NULL);
 
     const DTrigger* locTrigger = NULL; 
-    loop->GetSingle(locTrigger); 
+    event->GetSingle(locTrigger);
     
     // make sure no "special" front-panel trigger events are used (e.g. LED, random pulser...)
     if(locTrigger->Get_L1FrontPanelTriggerBits() != 0) 
@@ -249,11 +247,11 @@ void JEventProcessor_HLDetectorTiming::Process(const std::shared_ptr<const JEven
 	// allow the user to select which trigger select events to use for calibrations
 	if( TRIGGER_MASK > 0) {
 	    if( !((locTrigger->Get_L1TriggerBits())&TRIGGER_MASK) )
-        	return NOERROR;
+        	return; // NOERROR;
 	} else {
 		// but default to the main physics trigger
     	if(!locTrigger->Get_IsPhysicsEvent())
-	    	return NOERROR;
+	    	return; // NOERROR;
 	}
     
     // Get the particleID object for each run
@@ -335,21 +333,21 @@ void JEventProcessor_HLDetectorTiming::Process(const std::shared_ptr<const JEven
     vector<const DPSHit *> psHitVector;
     vector<const DPSCHit *> pscHitVector;
 
-    loop->Get(cdcHitVector);
-    loop->Get(fdcHitVector);
-    loop->Get(scHitVector);
-    loop->Get(bcalUnifiedHitVector);
-    loop->Get(tofHitVector);
-    loop->Get(tofPointVector);
-    loop->Get(fcalHitVector);
+    event->Get(cdcHitVector);
+    event->Get(fdcHitVector);
+    event->Get(scHitVector);
+    event->Get(bcalUnifiedHitVector);
+    event->Get(tofHitVector);
+    event->Get(tofPointVector);
+    event->Get(fcalHitVector);
     if(CCAL_CALIB) {
       event->Get(ccalHitVector);
     }
-    loop->Get(dircPmtHitVector);
-    loop->Get(psHitVector);
-    loop->Get(pscHitVector);
-    loop->Get(tagmHitVector, "Calib");
-    loop->Get(taghHitVector, "Calib");
+    event->Get(dircPmtHitVector);
+    event->Get(psHitVector);
+    event->Get(pscHitVector);
+    event->Get(tagmHitVector, "Calib");
+    event->Get(taghHitVector, "Calib");
     
 
     // TTabUtilities object used for RF time conversion
@@ -806,9 +804,9 @@ void JEventProcessor_HLDetectorTiming::Process(const std::shared_ptr<const JEven
 	    event->GetSingle(thisRFBunch, "CalorimeterOnly");
     } else {
         if(NO_START_COUNTER) {
-		    loop->GetSingle(thisRFBunch);   // if there's no start counter, then use the normal RF times 
+		    event->GetSingle(thisRFBunch);   // if there's no start counter, then use the normal RF times
 		} else {
-	    	loop->GetSingle(thisRFBunch, "Calibrations"); // SC only hits
+	    	event->GetSingle(thisRFBunch, "Calibrations"); // SC only hits
 	    }
     }
     if (thisRFBunch->dNumParticleVotes < 2) return;

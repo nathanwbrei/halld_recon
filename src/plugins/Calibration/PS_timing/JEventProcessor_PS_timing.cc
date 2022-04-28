@@ -90,11 +90,11 @@ void JEventProcessor_PS_timing::Init()
 void JEventProcessor_PS_timing::BeginRun(const std::shared_ptr<const JEvent>& event)
 {
 
-  locRFTimeFactory = static_cast<DRFTime_factory*>(eventLoop->GetFactory("DRFTime"));
+  locRFTimeFactory = static_cast<DRFTime_factory*>(event->GetFactory("DRFTime", ""));
  
   // be sure that DRFTime_factory::init() and brun() are called
   vector<const DRFTime*> rfTimes;
-  eventLoop->Get(rfTimes);
+  event->Get(rfTimes);
 
     // This is called whenever the run number changes
 }

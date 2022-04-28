@@ -30,6 +30,7 @@ set (utilities_plugins
         syncskim
         Pi0Finder
         dedx_tree
+        cdc_scan
 
         # Optional
 

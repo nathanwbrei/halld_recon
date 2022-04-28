@@ -14,6 +14,7 @@ set (utilities_programs
         hdskims               # TODO: NWB: Commented out all JANA refs because they appear to be no-ops anyway
 #        mergeTrees            # No C++ sources
         hd_rsai_gen
+        hd_hydra_cdc_gen
 
         # Optional
 

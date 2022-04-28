@@ -16,7 +16,6 @@
 #include <JANA/JApplication.h>
 
 using namespace std;
-using namespace jana;
 
 
 #include "CDC/DCDCDigiHit.h"
@@ -40,7 +39,7 @@ static TTree *tt = NULL;
 extern "C"{
 void InitPlugin(JApplication *app){
 	InitJANAPlugin(app);
-	app->AddProcessor(new JEventProcessor_cdc_scan());
+	app->Add(new JEventProcessor_cdc_scan());
 }
 } // "C"
 
@@ -50,7 +49,7 @@ void InitPlugin(JApplication *app){
 //------------------
 JEventProcessor_cdc_scan::JEventProcessor_cdc_scan()
 {
-
+    SetTypeName("JEventProcessor_cdc_scan");
 }
 
 //------------------
@@ -64,22 +63,23 @@ JEventProcessor_cdc_scan::~JEventProcessor_cdc_scan()
 //------------------
 // init
 //------------------
-jerror_t JEventProcessor_cdc_scan::init(void)
+void JEventProcessor_cdc_scan::Init()
 {
 	// This is called once at program startup. If you are creating
 	// and filling histograms in this plugin, you should lock the
 	// ROOT mutex like this:
 	//
 
+  auto app = GetApplication();
+  lockService = app->GetService<JLockService>();
+
   const uint32_t NSAMPLES = 200;
 
   SHORT_MODE = 1;    // suppresses use of window raw data and warnings if not found
 
-  if (gPARMS) {
-    gPARMS->SetDefaultParameter("CDC_SCAN:SHORT_MODE",SHORT_MODE,"Set to 0 to include window raw data");
-  }
+  app->SetDefaultParameter("CDC_SCAN:SHORT_MODE",SHORT_MODE,"Set to 0 to include window raw data");
 
-  japp->RootWriteLock();
+  lockService->RootWriteLock();
 
 
 
@@ -203,25 +203,22 @@ jerror_t JEventProcessor_cdc_scan::init(void)
   uint64_t tt_time;
   tt->Branch("time",&tt_time,"time/l");
 
-  japp->RootUnLock();
+  lockService->RootUnLock();
 
-
-  return NOERROR;
 }
 
 //------------------
-// brun
+// BeginRun
 //------------------
-jerror_t JEventProcessor_cdc_scan::brun(JEventLoop *eventLoop, int32_t runnumber)
+void JEventProcessor_cdc_scan::BeginRun(const std::shared_ptr<const JEvent> &event)
 {
 	// This is called whenever the run number changes
-	return NOERROR;
 }
 
 //------------------
-// evnt
+// Process
 //------------------
-jerror_t JEventProcessor_cdc_scan::evnt(JEventLoop *loop, uint64_t eventnumber)
+void JEventProcessor_cdc_scan::Process(const std::shared_ptr<const JEvent> &event)
 {
 	// This is called for every event. Use of common resources like writing
 	// to a file or filling a histogram should be mutex protected. Using
@@ -238,16 +235,17 @@ jerror_t JEventProcessor_cdc_scan::evnt(JEventLoop *loop, uint64_t eventnumber)
 	// japp->RootUnLock();
 
 
+  auto eventnumber = event->GetEventNumber();
 
   // Only look at physics triggers
 
   
   const DTrigger* locTrigger = NULL; 
-  loop->GetSingle(locTrigger); 
+  event->GetSingle(locTrigger);
   if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
-    return NOERROR;
+    return;
   if (!locTrigger->Get_IsPhysicsEvent()){ // do not look at PS triggers
-    return NOERROR;
+    return;
   }
 
 
@@ -256,13 +254,13 @@ jerror_t JEventProcessor_cdc_scan::evnt(JEventLoop *loop, uint64_t eventnumber)
 
   // get raw data for cdc
   vector<const DCDCDigiHit*> digihits;
-  loop->Get(digihits);
+  event->Get(digihits);
 
   vector<const Df125WindowRawData*> wrdvector;
-  loop->Get(wrdvector);
+  event->Get(wrdvector);
 
   vector<const Df125TriggerTime*> ttvector;
-  loop->Get(ttvector);
+  event->Get(ttvector);
 
   uint32_t nd = (uint32_t)digihits.size();
   uint32_t nw = (uint32_t)wrdvector.size();
@@ -271,7 +269,7 @@ jerror_t JEventProcessor_cdc_scan::evnt(JEventLoop *loop, uint64_t eventnumber)
   
   if (ntt > 0) { //   Df125TriggerTime 
 
-    japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+    lockService->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 
 
     ULong64_t tt_eventnum;
@@ -306,7 +304,7 @@ jerror_t JEventProcessor_cdc_scan::evnt(JEventLoop *loop, uint64_t eventnumber)
 
       tt->Fill();
     }
-    japp->RootUnLock();
+    lockService->RootUnLock();
 
   }
 
@@ -318,7 +316,7 @@ jerror_t JEventProcessor_cdc_scan::evnt(JEventLoop *loop, uint64_t eventnumber)
 
   if (nhits) {
 
-    japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+    lockService->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 
     const uint32_t NSAMPLES = 200;
     const uint32_t NSAMPLESFDC = 100;
@@ -426,6 +424,7 @@ jerror_t JEventProcessor_cdc_scan::evnt(JEventLoop *loop, uint64_t eventnumber)
     nu = 0;
 
 
+    auto eventnumber = event->GetEventNumber();
     t_eventnum = eventnumber;
 
     //    printf("%i hits \n",(int)nhits); //temp
@@ -640,7 +639,7 @@ jerror_t JEventProcessor_cdc_scan::evnt(JEventLoop *loop, uint64_t eventnumber)
     //    if (nd||nw) printf("filling tree T\n");
 
 
-    japp->RootUnLock();
+    lockService->RootUnLock();
 
 
   }  // if (nhits)
@@ -648,27 +647,23 @@ jerror_t JEventProcessor_cdc_scan::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 
 
-  return NOERROR;
-
 }
 
 //------------------
-// erun
+// EndRun
 //------------------
-jerror_t JEventProcessor_cdc_scan::erun(void)
+void JEventProcessor_cdc_scan::EndRun()
 {
 	// This is called whenever the run number changes);
 	// changed to give you a chance to clean up before processing
 	// events from the next run number.
-	return NOERROR;
 }
 
 //------------------
 // fini
 //------------------
-jerror_t JEventProcessor_cdc_scan::fini(void)
+void JEventProcessor_cdc_scan::Finish()
 {
 	// Called before program exit after event processing is finished.
-	return NOERROR;
 }
 

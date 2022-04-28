@@ -125,23 +125,23 @@ void JEventProcessor_TAGH_timewalk::Process(const std::shared_ptr<const JEvent>&
 
   vector<const DTAGHGeometry*> taghGeomVect;
 
-  loop->Get( taghGeomVect );  
+  event->Get( taghGeomVect );
   if (taghGeomVect.size() < 1){
     cout << "  taghGeomVect not found " << endl;
-    return OBJECT_NOT_AVAILABLE;  
+    return; // OBJECT_NOT_AVAILABLE;
   }
     
   const DTAGHGeometry&  taghGeom =  *(taghGeomVect[0]);
     
 
     vector<const DTAGHHit*> taghhits;
-    loop->Get(taghhits, "Calib");
+    event->Get(taghhits, "Calib");
     
     vector<const DPSCPair*>   psc_pairs;
-    loop->Get(psc_pairs); 
+    event->Get(psc_pairs);
     
     vector<const DPSPair*>   ps_pairs;
-    loop->Get(ps_pairs); 
+    event->Get(ps_pairs);
 
 //    RFs for PS and PSC
 //  Use two separate RFs
@@ -153,15 +153,15 @@ void JEventProcessor_TAGH_timewalk::Process(const std::shared_ptr<const JEvent>&
     vector <const DRFTime*> rfTimesPSC;
 
 
-    loop->Get(rfTimesPSC,"PSC");
+    event->Get(rfTimesPSC,"PSC");
 
     if (rfTimesPSC.size() > 0)
       rfTimePSC = rfTimesPSC[0];
     else
-      return NOERROR;
+      return; // NOERROR;
 
 
-    loop->Get(rfTimes,"TAGH");
+    event->Get(rfTimes,"TAGH");
 
     if (rfTimes.size() > 0)
         rfTime = rfTimes[0];

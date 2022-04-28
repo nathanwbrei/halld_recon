@@ -24,6 +24,7 @@ set (calibrations_projects
         FCAL_LED_shifts
         FCAL_Pi0TOF
         FCAL_TimingOffsets_Primex
+        CCAL_ComptonGains
         )
 
 set (optional_calibrations_projects
