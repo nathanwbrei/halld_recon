@@ -155,12 +155,10 @@ void JEventProcessor_fa125_itrig::Init()
 
   main->cd();
 
-
-  return NOERROR;
 }
 
 //------------------
-// brun
+// BeginRun
 //------------------
 void JEventProcessor_fa125_itrig::BeginRun(const std::shared_ptr<const JEvent> &event)
 {
@@ -168,7 +166,7 @@ void JEventProcessor_fa125_itrig::BeginRun(const std::shared_ptr<const JEvent> &
 }
 
 //------------------
-// evnt
+// Process
 //------------------
 void JEventProcessor_fa125_itrig::Process(const std::shared_ptr<const JEvent> &event)
 {
@@ -328,7 +326,7 @@ void JEventProcessor_fa125_itrig::Process(const std::shared_ptr<const JEvent> &e
 }
 
 //------------------
-// erun
+// EndRun
 //------------------
 void JEventProcessor_fa125_itrig::EndRun()
 {
@@ -338,7 +336,7 @@ void JEventProcessor_fa125_itrig::EndRun()
 }
 
 //------------------
-// fini
+// Finish
 //------------------
 void JEventProcessor_fa125_itrig::Finish()
 {

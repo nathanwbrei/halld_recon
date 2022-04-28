@@ -410,7 +410,7 @@ void JEventProcessor_highlevel_online::Process(const std::shared_ptr<const JEven
 	locEvent->Get(locBCALDigiHits);
         
 	vector<const DCCALDigiHit*> locCCALDigiHits;
-	locEventLoop->Get(locCCALDigiHits);
+	locEvent->Get(locCCALDigiHits);
 
         // BCAL LED Pseudo Trigger//
         vector<const DBCALHit*> locdbcalhits;
