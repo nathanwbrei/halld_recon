@@ -50,7 +50,7 @@ std::vector<const JObject*> JInspector::FindAllAncestors(const JObject* root) {
 std::tuple<JFactory_base*, size_t, size_t> JInspector::LocateObject(JEventLoop& event, const JObject* obj) {
     auto objName = obj->className();
     size_t fac_idx = 0;
-    for (auto fac : event.GetFactories()) {
+    for (auto fac : m_factories) {
         if (fac->GetDataClassName() == objName) {
             size_t obj_idx = 0;
 	    std::vector<void*> data = fac->Get();
@@ -70,14 +70,11 @@ void JInspector::PrintEvent() {
     ToText(m_event, m_format==Format::Json, m_out);
 }
 void JInspector::PrintFactories(int filter_level=0) {
-    auto facs = m_event->GetFactories();
-    std::sort(facs.begin(), facs.end(), [](JFactory_base* first, JFactory_base* second){
-		    return std::make_pair(first->GetDataClassName(), first->Tag()) <
-		           std::make_pair(second->GetDataClassName(), second->Tag());});
-    ToText(facs, filter_level, m_format==Format::Json, m_out);
+    BuildIndices();
+    ToText(m_factories, filter_level, m_format==Format::Json, m_out);
 }
 void JInspector::PrintObjects(std::string factory_key) {
-
+    BuildIndices();
     auto result = m_factory_index.find(factory_key);
     if (result == m_factory_index.end()) {
         m_out << "(Error: Invalid factory name or index)\n";
@@ -185,7 +182,7 @@ void JInspector::ToText(JFactory_base* fac, bool asJson, std::ostream& out) {
 
     if (!asJson) {
         out << "Plugin name          " << pluginName << std::endl;
-        out << "Factory name         " << factoryName << std::endl;
+        // out << "Factory name         " << factoryName << std::endl;
         out << "Object name          " << fac->GetDataClassName() << std::endl;
         out << "Tag                  " << tag << std::endl;
         out << "Creation status      " << creationStatus << std::endl;
@@ -196,7 +193,7 @@ void JInspector::ToText(JFactory_base* fac, bool asJson, std::ostream& out) {
     else {
         out << "{" << std::endl;
         out << "  \"plugin_name\":   \"" << pluginName << "\"," << std::endl;
-        out << "  \"factory_name\":  \"" << factoryName << "\"," << std::endl;
+        // out << "  \"factory_name\":  \"" << factoryName << "\"," << std::endl;
         out << "  \"object_name\":   \"" << fac->GetDataClassName() << "\"," << std::endl;
         out << "  \"tag\":           \"" << tag << "\"," << std::endl;
         out << "  \"creation\":      \"" << creationStatus << "\"," << std::endl;
@@ -212,13 +209,12 @@ void JInspector::ToText(const std::vector<JFactory_base*>& factories, int filter
     if (!asJson) {
         JTablePrinter t;
         t.AddColumn("Index", JTablePrinter::Justify::Right);
-        t.AddColumn("Factory name");
+        // t.AddColumn("Factory name");
         t.AddColumn("Object name");
         t.AddColumn("Tag");
         t.AddColumn("Creation status");
         t.AddColumn("Object count", JTablePrinter::Justify::Right);
         for (auto fac : factories) {
-            auto facName = "(no factory name)";
 	    std::string tag = fac->Tag();
             if (tag.empty()) tag = "(no tag)";
             std::string creationStatus = "Unknown";
@@ -241,7 +237,7 @@ void JInspector::ToText(const std::vector<JFactory_base*>& factories, int filter
                                     fac->GetCreationStatus()==JFactory::CreationStatus::InsertedViaGetObjects)) continue;
 	    */
 
-            t | idx | facName | fac->GetDataClassName() | tag | creationStatus | fac->GetNrows(false, true);
+            t | idx | fac->GetDataClassName() | tag | creationStatus | fac->GetNrows(false, true);
         }
         t.Render(out);
     }
@@ -250,8 +246,7 @@ void JInspector::ToText(const std::vector<JFactory_base*>& factories, int filter
         for (auto fac : factories) {
 	    std::string tag = fac->Tag();
             if (tag.empty()) tag = "null";
-            out << "  " << idx++ << ": { \"factory_name\": ";
-            out << "null, ";
+            out << "  " << idx++ << ": { ";
             out << "\"object_name\": \"" << fac->GetDataClassName() << "\", \"tag\": ";
             if (*(fac->Tag()) == 0) {
                 out << "null, ";
