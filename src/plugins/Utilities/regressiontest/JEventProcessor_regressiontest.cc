@@ -213,6 +213,43 @@ jerror_t JEventProcessor_regressiontest::fini()
 std::vector<JFactory_base*> JEventProcessor_regressiontest::GetFactoriesTopologicallyOrdered(JEventLoop& event) {
 
     std::vector<JFactory_base*> sorted_factories;
+
+
+        using FacName = std::pair<std::string, std::string>;
+        struct FacEdges {
+            std::vector<FacName> incoming;
+            std::vector<FacName> outgoing;
+        };
+
+        // Build adjacency matrix
+        std::map<FacName, FacEdges> adjacency;
+        for (const call_stack_t& node : event->GetCallStack()) {
+
+            adjacency[{node.caller_name, node.caller_tag}].incoming.emplace_back(node.callee_name, node.callee_tag);
+            adjacency[{node.callee_name, node.callee_tag}].outgoing.emplace_back(node.caller_name, node.caller_tag);
+        }
+
+        std::queue<FacName> ready;
+
+        // Populate frontier of "ready" elements with no incoming edges
+        for (auto& p : adjacency) {
+            if (p.second.incoming.empty()) ready.push(p.first);
+        }
+
+        // Process each ready element
+        while (!ready.empty()) {
+            auto n = ready.front();
+            ready.pop();
+            sorted_factories.push_back(n);
+            for (auto& m : adjacency[n].outgoing) {
+                auto& incoming = adjacency[m].incoming;
+                incoming.erase(std::remove(incoming.begin(), incoming.end(), n), incoming.end());
+                if (incoming.empty()) {
+                    ready.push(m);
+                }
+            }
+        }
+
     auto topologicalOrdering = event.GetJCallGraphRecorder()->TopologicalSort();
     for (auto pair : topologicalOrdering) {
         auto fac_name = pair.first;

@@ -57,15 +57,15 @@ private:
     static std::vector<const JObject*> FindAllAncestors(const JObject*);
     static std::tuple<JFactory_base*, size_t, size_t> LocateObject(JEventLoop&, const JObject* obj);
 };
-
-template <>
-inline std::string JParameterManager::stringify(JInspector::Format value) {
+/*
+inline std::ostream& operator<<(std::ostream os&, JInspector::Format value) {
     switch (value) {
-        case JInspector::Format::Table: return "table";
-        case JInspector::Format::Json: return "json";
-        case JInspector::Format::Tsv: return "tsv";
-        default: return "unknown";
+        case JInspector::Format::Table: os << "table"; break;
+        case JInspector::Format::Json: os << "json"; break;
+        case JInspector::Format::Tsv: os << "tsv"; break;
+        default: os << "unknown"; break;
     }
+    return os;
 }
 
 template <>
@@ -76,5 +76,6 @@ inline JInspector::Format JParameterManager::parse(const std::string& value) {
     if (lowered == "tsv") return JInspector::Format::Tsv;
     else return JInspector::Format::Table;
 }
+*/
 
 #endif // _JInspector_h_

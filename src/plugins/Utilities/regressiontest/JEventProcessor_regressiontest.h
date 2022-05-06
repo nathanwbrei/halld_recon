@@ -18,6 +18,8 @@ using std::tuple;
 using std::string;
 
 #include <JANA/JEventProcessor.h>
+#include <JANA/JFactory_base.h>
+#include <JANA/JEventLoop.h>
 #include <JANA/JApplication.h>
 
 

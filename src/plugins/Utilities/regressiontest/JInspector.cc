@@ -83,7 +83,11 @@ void JInspector::PrintObjects(std::string factory_key) {
         return;
     }
     auto fac = const_cast<JFactory_base*>(result->second.second);
-    auto objs = fac->GetAs<JObject>();
+    auto vobjs = fac->Get();
+    std::vector<JObject*> objs;
+    for (void* vobj: vobjs) {
+        objs.push_back((JObject*) vobj);
+    }
     ToText(objs, m_format==Format::Json, m_out);
 }
 void JInspector::PrintFactoryDetails(std::string fac_key) {
