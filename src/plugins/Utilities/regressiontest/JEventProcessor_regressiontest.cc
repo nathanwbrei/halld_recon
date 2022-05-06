@@ -20,7 +20,7 @@ extern "C" {
    void InitPlugin(JApplication *app) {
       InitJANAPlugin(app);
       app->AddProcessor(new JEventProcessor_regressiontest());
-      gPARMS->SetParameter("record_call_stack", true);
+      gPARMS->SetParameter("RECORD_CALL_STACK", 1);
    }
 } // "extern C"
 
@@ -224,7 +224,12 @@ std::vector<JFactory_base*> JEventProcessor_regressiontest::GetFactoriesTopologi
         auto fac_name = pair.first;
         auto fac_tag = pair.second;
         JFactory_base* fac = event.GetFactory(fac_name, fac_tag.c_str());
-        sorted_factories.push_back(fac);
+        if (fac == nullptr) {
+            jout << "Warning: Missing factory " << fac_name << " with tag " << fac_tag << std::endl;
+        }
+        else {
+            sorted_factories.push_back(fac);
+        }
     }
     return sorted_factories;
 }
