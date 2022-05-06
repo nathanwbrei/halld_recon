@@ -397,7 +397,7 @@ void JInspector::PrintFactoryParents(std::string factory_key) {
         for (const auto& node : callgraph) {
             if ((node.caller_name == obj_name) && (node.caller_tag == fac_tag)) {
                 found_anything = true;
-                auto idx = m_factory_index[{node.callee_name, node.callee_tag}].first;
+                auto idx = m_factory_index[MakeFactoryKey(node.callee_name, node.callee_tag)].first;
 		std::string tag = node.callee_tag;
                 if (tag.empty()) tag = "(no tag)";
                 t | idx | node.callee_name | tag;
@@ -416,7 +416,7 @@ void JInspector::PrintFactoryParents(std::string factory_key) {
         for (const auto& node : callgraph) {
             if ((node.caller_name == obj_name) && (node.caller_tag == fac_tag)) {
                 found_anything = true;
-                auto idx = m_factory_index[{node.callee_name, node.callee_tag}].first;
+                auto idx = m_factory_index[MakeFactoryKey(node.callee_name, node.callee_tag)].first;
 		std::string tag = node.callee_tag;
                 m_out << "  { \"index\": " << idx << ", \"object_name\": \"" << node.callee_name << "\", \"tag\": ";
                 if (tag.empty()) {
