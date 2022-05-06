@@ -9,6 +9,7 @@
 using namespace jana;
 
 #include <tuple>
+#include <queue>
 #include "JInspector.h"
 #include <JANA/JEventLoop.h>
 #include <JANA/JObject.h>
@@ -114,7 +115,9 @@ jerror_t JEventProcessor_regressiontest::evnt(JEventLoop* lel, uint64_t evt_nr)
             ss << evt_nr << "\t" << fac->GetDataClassName() << "\t" << fac->Tag() << "\t";
             ss << "{";
             for (auto& pair : summary) {
-                std::string blacklist_entry = fac->GetDataClassName() + "\t" + fac->Tag() + "\t" + pair.first;
+                std::stringstream oss;
+                oss << fac->GetDataClassName() << "\t" << fac->Tag() << "\t" << pair.first;
+                std::string blacklist_entry = oss.str();
                 if (blacklist.find(blacklist_entry) == blacklist.end()) {
                     ss << pair.first << ": " << pair.second << ", ";
                 }
@@ -189,7 +192,7 @@ std::vector<JFactory_base*> JEventProcessor_regressiontest::GetFactoriesTopologi
 
         // Build adjacency matrix
         std::map<FacName, FacEdges> adjacency;
-        for (const call_stack_t& node : event->GetCallStack()) {
+        for (const JEventLoop::call_stack_t& node : event->GetCallStack()) {
 
             adjacency[{node.caller_name, node.caller_tag}].incoming.emplace_back(node.callee_name, node.callee_tag);
             adjacency[{node.callee_name, node.callee_tag}].outgoing.emplace_back(node.caller_name, node.caller_tag);
@@ -216,8 +219,7 @@ std::vector<JFactory_base*> JEventProcessor_regressiontest::GetFactoriesTopologi
             }
         }
 
-    auto topologicalOrdering = event.GetJCallGraphRecorder()->TopologicalSort();
-    for (auto pair : topologicalOrdering) {
+    for (auto pair : sorted_factories) {
         auto fac_name = pair.first;
         auto fac_tag = pair.second;
         JFactory_base* fac = event.GetFactory(fac_name, fac_tag);
