@@ -30,9 +30,9 @@ jerror_t JEventProcessor_regressiontest::init()
 {
     app->SetShowTicker(false);
     app->monitor_heartbeat = 0;
-    app->SetDefaultParameter("regressiontest:interactive", interactive);
-    app->SetDefaultParameter("regressiontest:old_log", old_log_file_name);
-    app->SetDefaultParameter("regressiontest:new_log", new_log_file_name);
+    gPARMS->SetDefaultParameter("regressiontest:interactive", interactive);
+    gPARMS->SetDefaultParameter("regressiontest:old_log", old_log_file_name);
+    gPARMS->SetDefaultParameter("regressiontest:new_log", new_log_file_name);
 
     jout << "Running regressiontest plugin" << std::endl;
 
@@ -64,16 +64,15 @@ jerror_t JEventProcessor_regressiontest::brun(JEventLoop* lel, int run_nr)
 jerror_t JEventProcessor_regressiontest::evnt(JEventLoop* lel, uint64_t evt_nr)
 {
     JInspector inspector(lel);
-    auto run_nr = lel->GetJEvent()->GetRunNumber();
+    auto run_nr = lel->GetJEvent().GetRunNumber();
     for (auto fac : lel->GetFactories()) {
-        fac->Create(event, app, run_nr); // Make sure all factories have run
+        fac->Get(); // Make sure factory has run
     }
-    auto facs = GetFactoriesTopologicallyOrdered(lel);
+    auto facs = GetFactoriesTopologicallyOrdered(*lel);
 
     std::lock_guard<std::mutex> lock(m_mutex);
-    JInspector inspector(lel);
 
-    for (auto fac : facs) {
+    for (JFactory_base* fac : facs) {
 
         bool found_discrepancy = false;
         auto jobs = fac->Get();

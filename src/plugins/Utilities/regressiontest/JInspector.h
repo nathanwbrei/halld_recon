@@ -28,6 +28,7 @@ private:
     JEventLoop* m_event;
     bool m_indexes_built = false;
     std::map<std::string, std::pair<int, const JFactory_base*>> m_factory_index;
+    std::vector<const JFactory_base*> m_factories;
     std::ostream& m_out = std::cout;
     std::istream& m_in = std::cin;
 

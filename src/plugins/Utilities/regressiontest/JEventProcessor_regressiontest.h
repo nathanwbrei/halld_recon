@@ -22,6 +22,7 @@ using std::string;
 #include <JANA/JEventLoop.h>
 #include <JANA/JApplication.h>
 
+using jana::JFactory_base, jana::JEventLoop;
 
 class JEventProcessor_regressiontest : public jana::JEventProcessor
 {
