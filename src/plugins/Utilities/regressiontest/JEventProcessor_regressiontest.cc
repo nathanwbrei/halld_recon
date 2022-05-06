@@ -182,6 +182,7 @@ jerror_t JEventProcessor_regressiontest::fini()
 std::vector<JFactory_base*> JEventProcessor_regressiontest::GetFactoriesTopologicallyOrdered(JEventLoop& event) {
 
     std::vector<JFactory_base*> sorted_factories;
+    std::vector<std::pair<std::string, std::string>> topsort;
 
 
         using FacName = std::pair<std::string, std::string>;
@@ -209,7 +210,7 @@ std::vector<JFactory_base*> JEventProcessor_regressiontest::GetFactoriesTopologi
         while (!ready.empty()) {
             auto n = ready.front();
             ready.pop();
-            sorted_factories.push_back(n);
+            topsort.push_back(n);
             for (auto& m : adjacency[n].outgoing) {
                 auto& incoming = adjacency[m].incoming;
                 incoming.erase(std::remove(incoming.begin(), incoming.end(), n), incoming.end());
@@ -219,9 +220,9 @@ std::vector<JFactory_base*> JEventProcessor_regressiontest::GetFactoriesTopologi
             }
         }
 
-    for (auto pair : sorted_factories) {
-        auto fac_name = pair->first;
-        auto fac_tag = pair->second;
+    for (auto pair : topsort) {
+        auto fac_name = pair.first;
+        auto fac_tag = pair.second;
         JFactory_base* fac = event.GetFactory(fac_name, fac_tag);
         sorted_factories.push_back(fac);
     }
