@@ -223,7 +223,7 @@ std::vector<JFactory_base*> JEventProcessor_regressiontest::GetFactoriesTopologi
     for (auto pair : topsort) {
         auto fac_name = pair.first;
         auto fac_tag = pair.second;
-        JFactory_base* fac = event.GetFactory(fac_name, fac_tag);
+        JFactory_base* fac = event.GetFactory(fac_name, fac_tag.c_str());
         sorted_factories.push_back(fac);
     }
     return sorted_factories;
