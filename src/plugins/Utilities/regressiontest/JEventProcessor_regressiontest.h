@@ -42,7 +42,7 @@ private:
     std::string blacklist_file_name = "blacklist.tsv";
     std::set<std::string> blacklist;
 
-    std::vector<JFactory*> GetFactoriesTopologicallyOrdered(const JEvent& event);
+    std::vector<JFactory_base*> GetFactoriesTopologicallyOrdered(JEventLoop& event);
     int ParseOldItemCount(std::string old_count_line);
 };
 

@@ -76,13 +76,13 @@ jerror_t JEventProcessor_regressiontest::evnt(JEventLoop* lel, uint64_t evt_nr)
     for (auto fac : facs) {
 
         bool found_discrepancy = false;
-        auto jobs = fac->GetAs<JObject>();
+        auto jobs = fac->Get();
         auto item_ct = jobs.size();
         int old_item_ct = 0;
 
         // Generate line describing factory counts
         std::ostringstream os;
-        os << evt_nr << "\t" << fac->GetObjectName() << "\t" << fac->GetTag() << "\t" << item_ct;
+        os << evt_nr << "\t" << fac->GetDataClassName() << "\t" << fac->Tag() << "\t" << item_ct;
         std::string count_line = os.str();
 
         new_log_file << count_line << std::endl;
@@ -105,18 +105,19 @@ jerror_t JEventProcessor_regressiontest::evnt(JEventLoop* lel, uint64_t evt_nr)
 
         std::vector<std::string> new_object_lines;
 
-        for (auto obj : jobs) {
+        for (auto vobj : jobs) {
 
-            JObjectSummary summary;
-            obj->Summarize(summary);
+            JObject* obj = (JObject*) vobj; // vobj is a void*
+            std::vector<std::pair<std::string, std::string>> summary;
+            obj->toStrings(summary);
 
             std::stringstream ss;
-            ss << evt_nr << "\t" << fac->GetObjectName() << "\t" << fac->GetTag() << "\t";
+            ss << evt_nr << "\t" << fac->GetDataClassName() << "\t" << fac->Tag() << "\t";
             ss << "{";
-            for (auto& field : summary.get_fields()) {
-                std::string blacklist_entry = fac->GetObjectName() + "\t" + fac->GetTag() + "\t" + field.name;
+            for (auto& pair : summary) {
+                std::string blacklist_entry = fac->GetDataClassName() + "\t" + fac->Tag() + "\t" + field.name;
                 if (blacklist.find(blacklist_entry) == blacklist.end()) {
-                    ss << field.name << ": " << field.value << ", ";
+                    ss << pair.first << ": " << pair.second << ", ";
                 }
             }
             ss << "}";
@@ -209,14 +210,14 @@ jerror_t JEventProcessor_regressiontest::fini()
     return NOERROR;
 }
 
-std::vector<JFactory*> JEventProcessor_regressiontest::GetFactoriesTopologicallyOrdered(const JEvent& event) {
+std::vector<JFactory_base*> JEventProcessor_regressiontest::GetFactoriesTopologicallyOrdered(JEventLoop& event) {
 
-    std::vector<JFactory*> sorted_factories;
+    std::vector<JFactory_base*> sorted_factories;
     auto topologicalOrdering = event.GetJCallGraphRecorder()->TopologicalSort();
     for (auto pair : topologicalOrdering) {
         auto fac_name = pair.first;
         auto fac_tag = pair.second;
-        JFactory* fac = event.GetFactory(fac_name, fac_tag);
+        JFactory_base* fac = event.GetFactory(fac_name, fac_tag);
         sorted_factories.push_back(fac);
     }
     return sorted_factories;

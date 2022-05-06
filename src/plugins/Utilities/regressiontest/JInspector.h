@@ -77,4 +77,4 @@ inline JInspector::Format JParameterManager::parse(const std::string& value) {
     else return JInspector::Format::Table;
 }
 
-#endif // _JIntrospection_h_
+#endif // _JInspector_h_

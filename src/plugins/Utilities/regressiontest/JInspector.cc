@@ -104,8 +104,8 @@ void JInspector::PrintObject(std::string fac_key, int object_idx) {
         return;
     }
     JFactory_base* fac = const_cast<JFactory_base*>(result->second.second);
-    auto objs = fac->GetAs<JObject>();
-    if ((size_t) object_idx >= objs.size()) {
+    auto vobjs = fac->Get();
+    if ((size_t) object_idx >= vobjs.size()) {
         m_out << "(Error: Object index out of range)" << std::endl;
         return;
     }
@@ -431,15 +431,17 @@ void JInspector::PrintFactoryParents(int factory_idx) {
     }
 }
 
-void JInspector::PrintObjectParents(int factory_idx, int object_idx) {
+void JInspector::PrintObjectParents(std::string factory_key, int object_idx) {
 
-    auto facs = m_event->GetFactories();
-    if (factory_idx >= facs.size()) {
-        m_out << "(Error: Factory index out of range)" << std::endl;
+    BuildIndices();  // So that we can retrieve the integer index given the factory name/tag pair
+    auto result = m_factory_index.find(factory_key);
+    if (result == m_factory_index.end()) {
+        m_out << "(Error: Invalid factory name or index)\n";
         return;
     }
-    auto objs = facs[factory_idx]->Get();
-    if (object_idx >= objs.size()) {
+    auto fac = const_cast<JFactory*>(result->second.second);
+    auto objs = fac->Get();
+    if ((size_t) object_idx >= objs.size()) {
         m_out << "(Error: Object index out of range)" << std::endl;
         return;
     }
@@ -521,15 +523,17 @@ void JInspector::PrintObjectParents(int factory_idx, int object_idx) {
     }
 }
 
-void JInspector::PrintObjectAncestors(int factory_idx, int object_idx) {
+void JInspector::PrintObjectAncestors(std::string factory_key, int object_idx) {
 
-    auto facs = m_event->GetFactories();
-    if (factory_idx >= facs.size()) {
-        m_out << "(Error: Factory index out of range)" << std::endl;
+    BuildIndices();  // So that we can retrieve the integer index given the factory name/tag pair
+    auto result = m_factory_index.find(factory_key);
+    if (result == m_factory_index.end()) {
+        m_out << "(Error: Invalid factory name or index)\n";
         return;
     }
-    auto objs = facs[factory_idx]->Get();
-    if (object_idx >= objs.size()) {
+    auto fac = const_cast<JFactory*>(result->second.second);
+    auto objs = fac->Get();
+    if ((size_t) object_idx >= objs.size()) {
         m_out << "(Error: Object index out of range)" << std::endl;
         return;
     }
