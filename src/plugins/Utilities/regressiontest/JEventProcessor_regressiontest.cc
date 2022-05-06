@@ -64,8 +64,12 @@ jerror_t JEventProcessor_regressiontest::brun(JEventLoop* lel, int run_nr)
 //-------------------------------
 jerror_t JEventProcessor_regressiontest::evnt(JEventLoop* lel, uint64_t evt_nr)
 {
+	
     JInspector inspector(lel);
-    auto run_nr = lel->GetJEvent().GetRunNumber();
+    if (interactive) {
+	    inspector.Loop();
+	    return NOERROR;
+    }
     for (auto fac : lel->GetFactories()) {
         fac->Get(); // Make sure factory has run
     }
