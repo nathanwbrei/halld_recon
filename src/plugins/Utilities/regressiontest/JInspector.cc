@@ -15,14 +15,14 @@ void JInspector::BuildIndices() {
     for (auto fac: m_event->GetFactories()) {
         m_factories.push_back(fac);
     }
-    std::sort(m_factories.begin(), m_factories.end(), [](const JFactory_base* first, const JFactory_base* second){
+    std::sort(m_factories.begin(), m_factories.end(), [](JFactory_base* first, JFactory_base* second){
         return std::make_pair(first->GetDataClassName(), first->Tag()) <
                std::make_pair(second->GetDataClassName(), second->Tag());});
 
     int i = 0;
     for (auto fac : m_factories) {
         std::string key = MakeFactoryKey(fac->GetDataClassName(), fac->Tag());
-        std::pair<int, const JFactory_base*> value = std::make_pair<int, const JFactory_base*>(i++, fac);
+        std::pair<int, JFactory_base*> value = std::make_pair<int, JFactory_base*>(i++, fac);
         m_factory_index.insert({key, value});
         m_factory_index.insert({std::to_string(i), value});
     }
@@ -163,7 +163,7 @@ void JInspector::ToText(JEventLoop* event, bool asJson, std::ostream& out) {
     }
 }
 
-void JInspector::ToText(const JFactory_base* fac, bool asJson, std::ostream& out) {
+void JInspector::ToText(JFactory_base* fac, bool asJson, std::ostream& out) {
 
     std::string pluginName = "(no plugin)";
     std::string factoryName = "(dummy factory)";
