@@ -22,12 +22,13 @@ void JInspector::BuildIndices() {
     int i = 0;
     for (auto fac : m_factories) {
         std::string key = MakeFactoryKey(fac->GetDataClassName(), fac->Tag());
-        std::pair<int, const JFactory_base*> value = {i++, fac};
+        std::pair<int, const JFactory_base*> value = std::make_pair<int, const JFactory_base*>(i++, fac);
         m_factory_index.insert({key, value});
         m_factory_index.insert({std::to_string(i), value});
     }
     m_indexes_built = true;
 }
+
 
 std::vector<const JObject*> JInspector::FindAllAncestors(const JObject* root) {
     std::vector<const JObject*> all_ancestors;
@@ -66,14 +67,14 @@ std::tuple<JFactory_base*, size_t, size_t> JInspector::LocateObject(JEventLoop& 
 }
 
 void JInspector::PrintEvent() {
-    ToText(m_event, m_format==(int)Format::Json, m_out);
+    ToText(m_event, m_format==Format::Json, m_out);
 }
 void JInspector::PrintFactories(int filter_level=0) {
     auto facs = m_event->GetFactories();
     std::sort(facs.begin(), facs.end(), [](JFactory_base* first, JFactory_base* second){
 		    return std::make_pair(first->GetDataClassName(), first->Tag()) <
 		           std::make_pair(second->GetDataClassName(), second->Tag());});
-    ToText(facs, filter_level, m_format==(int)Format::Json, m_out);
+    ToText(facs, filter_level, m_format==Format::Json, m_out);
 }
 void JInspector::PrintObjects(std::string factory_key) {
 
@@ -113,7 +114,7 @@ void JInspector::PrintObject(std::string fac_key, int object_idx) {
         m_out << "(Error: Object index out of range)" << std::endl;
         return;
     }
-    auto obj = objs[object_idx];
+    auto obj = (JObject*) vobjs[object_idx];
     ToText(obj, m_format==Format::Json, m_out);
 }
 std::string JInspector::MakeFactoryKey(std::string name, std::string tag) {
@@ -364,17 +365,16 @@ void JInspector::ToText(const JObject* obj, bool asJson, std::ostream& out) {
     }
 }
 
-void JInspector::PrintFactoryParents(int factory_idx) {
+void JInspector::PrintFactoryParents(std::string factory_key) {
 
     bool callgraph_on = m_event->GetCallStackRecordingStatus();
     if (!callgraph_on) {
         m_out << "(Error: Callgraph recording is currently disabled)" << std::endl;
     }
-
     BuildIndices();  // So that we can retrieve the integer index given the factory name/tag pair
-    auto facs = m_event->GetFactories();
-    if (factory_idx >= facs.size()) {
-        m_out << "(Error: Factory index out of range)" << std::endl;
+    auto result = m_factory_index.find(factory_idx);
+    if (result == m_factory_index.end()) {
+        m_out << "(Error: Invalid factory name or index)\n";
         return;
     }
     auto fac = facs[factory_idx];
@@ -387,7 +387,7 @@ void JInspector::PrintFactoryParents(int factory_idx) {
         m_out << obj_name << ":" << fac_tag << std::endl;
     }
 
-    if (m_format != (int)Format::Json) {
+    if (m_format != Format::Json) {
         JTablePrinter t;
         t.AddColumn("Index", JTablePrinter::Justify::Right);
         t.AddColumn("Object name");
@@ -443,7 +443,7 @@ void JInspector::PrintObjectParents(std::string factory_key, int object_idx) {
         m_out << "(Error: Invalid factory name or index)\n";
         return;
     }
-    auto fac = const_cast<JFactory*>(result->second.second);
+    auto fac = const_cast<JFactory_base*>(result->second.second);
     auto objs = fac->Get();
     if ((size_t) object_idx >= objs.size()) {
         m_out << "(Error: Object index out of range)" << std::endl;
@@ -458,7 +458,7 @@ void JInspector::PrintObjectParents(std::string factory_key, int object_idx) {
         return;
     }
 
-    if (m_format == (int)Format::Table) {
+    if (m_format == Format::Table) {
         JTablePrinter t;
         t.AddColumn("Object name");
         t.AddColumn("Tag");
@@ -535,7 +535,7 @@ void JInspector::PrintObjectAncestors(std::string factory_key, int object_idx) {
         m_out << "(Error: Invalid factory name or index)\n";
         return;
     }
-    auto fac = const_cast<JFactory*>(result->second.second);
+    auto fac = const_cast<JFactory_base*>(result->second.second);
     auto objs = fac->Get();
     if ((size_t) object_idx >= objs.size()) {
         m_out << "(Error: Object index out of range)" << std::endl;
@@ -549,7 +549,7 @@ void JInspector::PrintObjectAncestors(std::string factory_key, int object_idx) {
          return;
     }
 
-    if (m_format == (int)Format::Table) {
+    if (m_format == Format::Table) {
         JTablePrinter t;
         t.AddColumn("Object name");
         t.AddColumn("Tag");

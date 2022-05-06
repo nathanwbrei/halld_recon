@@ -24,7 +24,7 @@ public:
 
 private:
     bool m_enabled = true;
-    int m_format = (int) Format::Table;
+    Format m_format = Format::Table;
     JEventLoop* m_event;
     bool m_indexes_built = false;
     std::map<std::string, std::pair<int, const JFactory_base*>> m_factory_index;
@@ -54,6 +54,7 @@ public:
 
 private:
     void BuildIndices();
+    std::string MakeFactoryKey(std::string name, std::string tag);
     static std::vector<const JObject*> FindAllAncestors(const JObject*);
     static std::tuple<JFactory_base*, size_t, size_t> LocateObject(JEventLoop&, const JObject* obj);
 };
