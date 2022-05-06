@@ -34,7 +34,7 @@ jerror_t JEventProcessor_regressiontest::init()
     app->SetDefaultParameter("regressiontest:old_log", old_log_file_name);
     app->SetDefaultParameter("regressiontest:new_log", new_log_file_name);
 
-    jout << "Running regressiontest plugin" << jendl;
+    jout << "Running regressiontest plugin" << std::endl;
 
     old_log_file.open(old_log_file_name);
     if (old_log_file.good()) {
@@ -63,8 +63,7 @@ jerror_t JEventProcessor_regressiontest::brun(JEventLoop* lel, int run_nr)
 //-------------------------------
 jerror_t JEventProcessor_regressiontest::evnt(JEventLoop* lel, uint64_t evt_nr)
 {
-    auto evt_nr = lel->GetEvent()->GetEventNumber();
-    auto run_nr = lel->GetEvent()->GetRunNumber();
+    auto run_nr = lel->GetJEvent()->GetRunNumber();
     for (auto fac : lel->GetFactories()) {
         fac->Create(event, app, run_nr); // Make sure all factories have run
     }

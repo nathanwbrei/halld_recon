@@ -372,12 +372,12 @@ void JInspector::PrintFactoryParents(std::string factory_key) {
         m_out << "(Error: Callgraph recording is currently disabled)" << std::endl;
     }
     BuildIndices();  // So that we can retrieve the integer index given the factory name/tag pair
-    auto result = m_factory_index.find(factory_idx);
+    auto result = m_factory_index.find(factory_key);
     if (result == m_factory_index.end()) {
         m_out << "(Error: Invalid factory name or index)\n";
         return;
     }
-    auto fac = facs[factory_idx];
+    auto fac = result->second.second;
     auto obj_name = fac->GetDataClassName();
     std::string fac_tag = fac->Tag();
     if (fac_tag.empty()) {
