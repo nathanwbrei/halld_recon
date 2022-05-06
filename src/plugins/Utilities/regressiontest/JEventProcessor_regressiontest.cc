@@ -63,6 +63,7 @@ jerror_t JEventProcessor_regressiontest::brun(JEventLoop* lel, int run_nr)
 //-------------------------------
 jerror_t JEventProcessor_regressiontest::evnt(JEventLoop* lel, uint64_t evt_nr)
 {
+    JInspector inspector(lel);
     auto run_nr = lel->GetJEvent()->GetRunNumber();
     for (auto fac : lel->GetFactories()) {
         fac->Create(event, app, run_nr); // Make sure all factories have run
@@ -104,7 +105,7 @@ jerror_t JEventProcessor_regressiontest::evnt(JEventLoop* lel, uint64_t evt_nr)
 
         std::vector<std::string> new_object_lines;
 
-        for (auto vobj : jobs) {
+        for (void* vobj : jobs) {
 
             JObject* obj = (JObject*) vobj; // vobj is a void*
             std::vector<std::pair<std::string, std::string>> summary;
@@ -114,7 +115,7 @@ jerror_t JEventProcessor_regressiontest::evnt(JEventLoop* lel, uint64_t evt_nr)
             ss << evt_nr << "\t" << fac->GetDataClassName() << "\t" << fac->Tag() << "\t";
             ss << "{";
             for (auto& pair : summary) {
-                std::string blacklist_entry = fac->GetDataClassName() + "\t" + fac->Tag() + "\t" + field.name;
+                std::string blacklist_entry = fac->GetDataClassName() + "\t" + fac->Tag() + "\t" + pair.first;
                 if (blacklist.find(blacklist_entry) == blacklist.end()) {
                     ss << pair.first << ": " << pair.second << ", ";
                 }
@@ -150,42 +151,9 @@ jerror_t JEventProcessor_regressiontest::evnt(JEventLoop* lel, uint64_t evt_nr)
             }
         }
         if (found_discrepancy) {
-            event->Inspect();
+            inspector.Loop();
         }
-
-/*
-        auto item_ct = fac->GetNrows();
-        auto key = std::make_tuple(evt_nr, fac->GetDataClassName(), fac->Tag());
-        counts.insert({key, item_ct});
-
-	int i=0;
-	for (auto untyped_obj : fac->Get()) {
-
-		JObject* obj = (JObject*) untyped_obj;
-
-		std::vector<std::pair<std::string, std::string>> summary;
-		obj->toStrings(summary);
-
-		if (expand_summaries) {
-			for (auto pair : summary) {
-				auto key = std::make_tuple(evt_nr, fac->GetDataClassName(), fac->Tag(), i++, pair.first);
-				summaries_expanded.insert({key, pair.second});
-			}
-		}
-		else {
-			std::stringstream ss;
-			ss << "{";
-			for (auto pair : summary) {
-				ss << pair.first << ": " << pair.second << ", ";
-			}
-			ss << "}";
-			auto key = std::make_tuple(evt_nr, fac->GetDataClassName(), fac->Tag(), i++);
-			summaries.insert({key, ss.str()});
-		}
-	}
-
     }
-    */
     return NOERROR;
 }
 

@@ -48,7 +48,7 @@ public:
 
     static void ToText(JEventLoop* event, bool asJson=false, std::ostream& out=std::cout);
     static void ToText(const std::vector<JFactory_base*>& factories, int filter_level, bool asJson=false, std::ostream& out=std::cout);
-    static void ToText(JFactory_base* factory, bool asJson=false, std::ostream& out=std::cout);
+    static void ToText(const JFactory_base* factory, bool asJson=false, std::ostream& out=std::cout);
     static void ToText(std::vector<JObject*> objs, bool as_json, std::ostream& out= std::cout);
     static void ToText(const JObject* obj, bool asJson, std::ostream& out=std::cout);
 

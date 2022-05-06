@@ -34,6 +34,8 @@ class JEventProcessor_regressiontest : public jana::JEventProcessor
 		jerror_t fini() override;
 
 private:
+    std::mutex m_mutex;
+
     bool interactive = true;
     bool have_old_log_file = false;
     std::ifstream old_log_file;

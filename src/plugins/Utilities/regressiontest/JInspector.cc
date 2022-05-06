@@ -12,7 +12,7 @@ JInspector::JInspector(JEventLoop* event) : m_event(event) {}
 void JInspector::BuildIndices() {
     if (m_indexes_built) return;
     m_factories.clear();
-    for (auto fac: m_event->GetFactorySet()->GetAllFactories()) {
+    for (auto fac: m_event->GetFactories()) {
         m_factories.push_back(fac);
     }
     std::sort(m_factories.begin(), m_factories.end(), [](const JFactory_base* first, const JFactory_base* second){
@@ -163,7 +163,7 @@ void JInspector::ToText(JEventLoop* event, bool asJson, std::ostream& out) {
     }
 }
 
-void JInspector::ToText(JFactory_base* fac, bool asJson, std::ostream& out) {
+void JInspector::ToText(const JFactory_base* fac, bool asJson, std::ostream& out) {
 
     std::string pluginName = "(no plugin)";
     std::string factoryName = "(dummy factory)";
