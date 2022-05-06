@@ -192,7 +192,7 @@ std::vector<JFactory_base*> JEventProcessor_regressiontest::GetFactoriesTopologi
 
         // Build adjacency matrix
         std::map<FacName, FacEdges> adjacency;
-        for (const JEventLoop::call_stack_t& node : event->GetCallStack()) {
+        for (const JEventLoop::call_stack_t& node : event.GetCallStack()) {
 
             adjacency[{node.caller_name, node.caller_tag}].incoming.emplace_back(node.callee_name, node.callee_tag);
             adjacency[{node.callee_name, node.callee_tag}].outgoing.emplace_back(node.caller_name, node.caller_tag);
@@ -220,8 +220,8 @@ std::vector<JFactory_base*> JEventProcessor_regressiontest::GetFactoriesTopologi
         }
 
     for (auto pair : sorted_factories) {
-        auto fac_name = pair.first;
-        auto fac_tag = pair.second;
+        auto fac_name = pair->first;
+        auto fac_tag = pair->second;
         JFactory_base* fac = event.GetFactory(fac_name, fac_tag);
         sorted_factories.push_back(fac);
     }

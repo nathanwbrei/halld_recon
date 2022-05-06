@@ -20,9 +20,9 @@ void JInspector::BuildIndices() {
                std::make_pair(second->GetDataClassName(), second->Tag());});
 
     int i = 0;
-    for (auto fac : m_factories) {
+    for (JFactory_base* fac : m_factories) {
         std::string key = MakeFactoryKey(fac->GetDataClassName(), fac->Tag());
-        std::pair<int, JFactory_base*> value = std::make_pair<int, JFactory_base*>(i++, fac);
+        std::pair<int, JFactory_base*> value(i++, fac);
         m_factory_index.insert({key, value});
         m_factory_index.insert({std::to_string(i), value});
     }
