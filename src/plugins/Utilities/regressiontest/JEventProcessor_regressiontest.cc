@@ -119,6 +119,7 @@ jerror_t JEventProcessor_regressiontest::evnt(JEventLoop* lel, uint64_t evt_nr)
             ss << evt_nr << "\t" << fac_key << "\t";
             ss << "{";
             for (auto& pair : summary) {
+		if (pair.first == "JObject" || pair.first == "id") continue;
                 std::stringstream oss;
                 oss << fac_key << "\t" << pair.first;
                 std::string blacklist_entry = oss.str();
