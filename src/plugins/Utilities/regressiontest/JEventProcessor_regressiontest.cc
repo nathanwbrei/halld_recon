@@ -181,8 +181,13 @@ jerror_t JEventProcessor_regressiontest::fini()
 
 std::vector<JFactory_base*> JEventProcessor_regressiontest::GetFactoriesTopologicallyOrdered(JEventLoop& event) {
 
-    std::vector<JFactory_base*> sorted_factories;
+    std::map<std::pair<std::string,std::string>, std::pair<JFactory_base*, bool>> factories;
     std::vector<std::pair<std::string, std::string>> topsort;
+    std::vector<JFactory_base*> sorted_factories;
+
+    for (JFactory_base* fac : event->GetFactories()) {
+        factories[std::make_pair(fac->GetDataClassName(), fac->Tag)] = std::make_pair(fac, false);
+    }
 
 
         using FacName = std::pair<std::string, std::string>;
@@ -223,12 +228,15 @@ std::vector<JFactory_base*> JEventProcessor_regressiontest::GetFactoriesTopologi
     for (auto pair : topsort) {
         auto fac_name = pair.first;
         auto fac_tag = pair.second;
-        JFactory_base* fac = event.GetFactory(fac_name, fac_tag.c_str());
-        if (fac == nullptr) {
-            jout << "Warning: Missing factory " << fac_name << " with tag " << fac_tag << std::endl;
+        auto result = factories.find(std::make_pair(fac_name,fac_tag));
+        if (result != factories.end()) {
+            result->second.second = true;
+            sorted_factories.push_back(result->second.first);
         }
-        else {
-            sorted_factories.push_back(fac);
+    }
+    for (auto pair : factories) {
+        if (pair->second.second == false) {
+            sorted_factories.push_back(pair->second.first);
         }
     }
     return sorted_factories;
