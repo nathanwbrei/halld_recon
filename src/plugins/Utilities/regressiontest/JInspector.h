@@ -57,7 +57,7 @@ private:
     void BuildIndices();
     std::string MakeFactoryKey(std::string name, std::string tag);
     static std::vector<const JObject*> FindAllAncestors(const JObject*);
-    static std::tuple<JFactory_base*, size_t, size_t> LocateObject(JEventLoop&, const JObject* obj);
+    std::tuple<JFactory_base*, size_t, size_t> LocateObject(JEventLoop&, const JObject* obj);
 };
 /*
 inline std::ostream& operator<<(std::ostream os&, JInspector::Format value) {

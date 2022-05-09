@@ -16,8 +16,8 @@ void JInspector::BuildIndices() {
         m_factories.push_back(fac);
     }
     std::sort(m_factories.begin(), m_factories.end(), [](JFactory_base* first, JFactory_base* second){
-        return std::make_pair(first->GetDataClassName(), first->Tag()) <
-               std::make_pair(second->GetDataClassName(), second->Tag());});
+        return std::make_pair(std::string(first->GetDataClassName()), std::string(first->Tag())) <
+               std::make_pair(std::string(second->GetDataClassName()), std::string(second->Tag()));});
 
     int i = 0;
     for (JFactory_base* fac : m_factories) {

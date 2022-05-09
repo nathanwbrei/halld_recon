@@ -64,8 +64,7 @@ jerror_t JEventProcessor_regressiontest::brun(JEventLoop* lel, int run_nr)
 //-------------------------------
 jerror_t JEventProcessor_regressiontest::evnt(JEventLoop* lel, uint64_t evt_nr)
 {
-    JInspector inspector(lel);
-    auto run_nr = lel->GetJEvent().GetRunNumber();
+	
     for (auto fac : lel->GetFactories()) {
         fac->Get(); // Make sure factory has run
     }
@@ -79,10 +78,17 @@ jerror_t JEventProcessor_regressiontest::evnt(JEventLoop* lel, uint64_t evt_nr)
         auto jobs = fac->Get();
         auto item_ct = jobs.size();
         int old_item_ct = 0;
+	std::ostringstream fac_key_builder;
+	fac_key_builder << fac->GetDataClassName();
+	if (*(fac->Tag()) != 0) {
+		fac_key_builder << ":" << fac->Tag();
+	}
+	std::string fac_key = fac_key_builder.str();
+
 
         // Generate line describing factory counts
         std::ostringstream os;
-        os << evt_nr << "\t" << fac->GetDataClassName() << "\t" << fac->Tag() << "\t" << item_ct;
+       	os << evt_nr << "\t" << fac_key << "\t" << item_ct;
         std::string count_line = os.str();
 
         new_log_file << count_line << std::endl;
@@ -93,9 +99,7 @@ jerror_t JEventProcessor_regressiontest::evnt(JEventLoop* lel, uint64_t evt_nr)
             old_item_ct = ParseOldItemCount(old_count_line);
 
             if (old_count_line != count_line) {
-                std::cout << "MISMATCH" << std::endl;
-                std::cout << "OLD COUNT: " << old_count_line << std::endl;
-                std::cout << "NEW COUNT: " << count_line << std::endl;
+                std::cout << "MISCOUNT in " << fac_key << ", old=" << old_count_line << ", new=" << count_line << std::endl;
                 found_discrepancy = true;
             }
             else {
@@ -112,11 +116,12 @@ jerror_t JEventProcessor_regressiontest::evnt(JEventLoop* lel, uint64_t evt_nr)
             obj->toStrings(summary);
 
             std::stringstream ss;
-            ss << evt_nr << "\t" << fac->GetDataClassName() << "\t" << fac->Tag() << "\t";
+            ss << evt_nr << "\t" << fac_key << "\t";
             ss << "{";
             for (auto& pair : summary) {
+		if (pair.first == "JObject" || pair.first == "id") continue;
                 std::stringstream oss;
-                oss << fac->GetDataClassName() << "\t" << fac->Tag() << "\t" << pair.first;
+                oss << fac_key << "\t" << pair.first;
                 std::string blacklist_entry = oss.str();
                 if (blacklist.find(blacklist_entry) == blacklist.end()) {
                     ss << pair.first << ": " << pair.second << ", ";
@@ -152,9 +157,11 @@ jerror_t JEventProcessor_regressiontest::evnt(JEventLoop* lel, uint64_t evt_nr)
                 }
             }
         }
-        if (found_discrepancy) {
-            inspector.Loop();
-        }
+    }
+    new_log_file << std::endl; // Separator between events for easier parsing
+    JInspector inspector(lel);
+    if (interactive) {
+	    inspector.Loop();
     }
     return NOERROR;
 }
