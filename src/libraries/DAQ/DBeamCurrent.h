@@ -43,7 +43,7 @@ class DBeamCurrent : public JObject{
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format
 		void Summarize(JObjectSummary& summary) const override {
-			summary.add(Ibeam, NAME_OF(ibeam), "%5.1f");
+			summary.add(Ibeam, NAME_OF(Ibeam), "%5.1f");
 			summary.add(t, NAME_OF(t), "%f");
 			summary.add(t_prev, NAME_OF(t_prev), "%f");
 			summary.add(t_next, NAME_OF(t_next), "%f");

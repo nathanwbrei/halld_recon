@@ -147,7 +147,7 @@ class Df250PulseData:public DDAQAddress{
 
             summary.add(QF, NAME_OF(QF), "%x");
             summary.add(emulated_all, "emulated", "%x");
-            summary.add(integral_emulated, NAME_OF(integral_emulated), "%x");
+            summary.add(integral_emulated, NAME_OF(integral_emulated), "%d");
             summary.add(pedestal_emulated, NAME_OF(pedestal_emulated), "%d");
             summary.add(course_time_emulated, NAME_OF(course_time_emulated), "%d");
             summary.add(fine_time_emulated, NAME_OF(fine_time_emulated), "%d");
