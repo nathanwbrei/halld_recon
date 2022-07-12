@@ -10,7 +10,6 @@
 
 #include <vector>
 #include <string>
-#include <atomic>
 #include <fstream>
 using std::vector;
 using std::string;
@@ -23,7 +22,7 @@ class DMagneticFieldMapFineMesh:public DMagneticFieldMap{
 
  public:
   static std::ofstream s_csvfile;
-  static inline std::atomic_bool s_file_opened {false};
+  static bool s_file_opened = false;
 
   DMagneticFieldMapFineMesh(JApplication *japp, int32_t runnumber=1, string namepath = "Magnets/Solenoid/solenoid_1350_poisson_20130925");
   DMagneticFieldMapFineMesh(JCalibration *jcalib, string namepath = "Magnets/Solenoid/solenoid_1350_poisson_20130925", int32_t runnumber=1);
@@ -93,6 +92,7 @@ class DMagneticFieldMapFineMesh:public DMagneticFieldMap{
   void InterpolateField(double r,double z,double &Br,double &Bz,double &dBrdr,
 			double &dBrdz,double &dBzdr,double &dBzdz) const;
 };
+
 
 #endif // _DMagneticFieldMapFineMesh_
 
