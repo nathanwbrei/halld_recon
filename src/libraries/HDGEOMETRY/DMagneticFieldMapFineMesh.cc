@@ -19,8 +19,6 @@ using namespace evio;
 
 #include <DAQ/HDEVIO.h>
 
-bool DMagneticFieldMapFineMesh::s_file_opened = false;
-std::ofstream DMagneticFieldMapFineMesh::s_csvfile;
 
 //---------------------------------
 // DMagneticFieldMapFineMesh    (Constructor)
@@ -56,12 +54,6 @@ DMagneticFieldMapFineMesh::DMagneticFieldMapFineMesh(JCalibration *jcalib, strin
 //---------------------------------
 DMagneticFieldMapFineMesh::~DMagneticFieldMapFineMesh()
 {
-    if (s_file_opened) {
-        cout << "Closing magfieldmap.csv" << std::endl;
-        s_file_opened = false;
-        s_csvfile.close();
-    }
-
 }
 
 //---------------------------------
@@ -623,7 +615,7 @@ void DMagneticFieldMapFineMesh::GetFieldAndGradient(double x,double y,double z,
   printf("Grad %f %f %f %f %f %f %f %f %f\n",dBxdx_,dBxdy_,dBxdz_,
 	 dBydx_,dBydy_,dBydz_,dBzdx_,dBzdy_,dBzdz_);
   */
-  s_csvfile << x << ", " << y << ", " << z << ", " << Bx_ << ", " << By_ << ", " << Bz_ << std::endl;
+  std::cout << "CSV: " << x << ", " << y << ", " << z << ", " << Bx_ << ", " << By_ << ", " << Bz_ << std::endl;
 }
 
 //-------------
@@ -744,7 +736,7 @@ void DMagneticFieldMapFineMesh::GetField(double x, double y, double z, double &B
 	// Rotate back into phi direction
 	Bx = Br*cos_theta;
 	By = Br*sin_theta;
-        s_csvfile << x << ", " << y << ", " << z << ", " << Bx << ", " << By << ", " << Bz << std::endl;
+        std::cout << "CSV: " << x << ", " << y << ", " << z << ", " << Bx << ", " << By << ", " << Bz << std::endl;
 }
 
 //---------------------------------
@@ -815,7 +807,7 @@ void DMagneticFieldMapFineMesh::GetField(const DVector3 &pos,DVector3 &Bout) con
 
 	// Rotate back into phi direction
 	Bout.SetXYZ(Br*cos_theta,Br*sin_theta,Bz);
-        s_csvfile << pos.x() << ", " << pos.y() << ", " << pos.z() << ", " << Bout.x() << ", " << Bout.y() << ", " << Bout.z() << std::endl;
+        std::cout << "CSV: " << pos.x() << ", " << pos.y() << ", " << pos.z() << ", " << Bout.x() << ", " << Bout.y() << ", " << Bout.z() << std::endl;
 }
 
 
@@ -861,15 +853,6 @@ double DMagneticFieldMapFineMesh::GetBz(double x, double y, double z) const{
 
 // Read a fine-mesh B-field map from an evio file
 void DMagneticFieldMapFineMesh::GetFineMeshMap(string namepath,int32_t runnumber){
-    if (!s_file_opened) {
-        s_csvfile.open("magfieldmap.csv");
-        cout << "Opening magfieldmap.csv" << std::endl;
-    }
-    else {
-        cout << "MagfieldMap.csv already opened!" << std::endl;
-    }
-
-
     // The solenoid field map files are stored in CCDB as /Magnets/Solenoid/BFIELD_MAP_NAME
     // The fine-mesh files are now stored as /Magnets/Solenoid/finemeshes/BFIELD_MAP_NAME
     size_t ipos = namepath.rfind("/");

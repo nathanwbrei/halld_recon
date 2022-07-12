@@ -21,8 +21,6 @@ using std::string;
 class DMagneticFieldMapFineMesh:public DMagneticFieldMap{
 
  public:
-  static std::ofstream s_csvfile;
-  static bool s_file_opened;
 
   DMagneticFieldMapFineMesh(JApplication *japp, int32_t runnumber=1, string namepath = "Magnets/Solenoid/solenoid_1350_poisson_20130925");
   DMagneticFieldMapFineMesh(JCalibration *jcalib, string namepath = "Magnets/Solenoid/solenoid_1350_poisson_20130925", int32_t runnumber=1);
