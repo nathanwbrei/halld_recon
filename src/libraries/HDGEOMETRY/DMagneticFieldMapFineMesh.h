@@ -94,7 +94,6 @@ class DMagneticFieldMapFineMesh:public DMagneticFieldMap{
 };
 
 
-bool DMagneticFieldMapFineMesh::s_file_opened = false;
 
 #endif // _DMagneticFieldMapFineMesh_
 

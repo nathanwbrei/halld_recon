@@ -19,6 +19,7 @@ using namespace evio;
 
 #include <DAQ/HDEVIO.h>
 
+bool DMagneticFieldMapFineMesh::s_file_opened = false;
 
 //---------------------------------
 // DMagneticFieldMapFineMesh    (Constructor)
