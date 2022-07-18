@@ -192,8 +192,8 @@ std::vector<JFactory_base*> JEventProcessor_regressiontest::GetFactoriesTopologi
     std::vector<std::pair<std::string, std::string>> topsort;
     std::vector<JFactory_base*> sorted_factories;
 
-    for (JFactory_base* fac : event->GetFactories()) {
-        factories[std::make_pair(fac->GetDataClassName(), fac->Tag)] = std::make_pair(fac, false);
+    for (JFactory_base* fac : event.GetFactories()) {
+        factories[std::make_pair(fac->GetDataClassName(), fac->Tag())] = std::make_pair(fac, false);
     }
 
 
@@ -242,8 +242,8 @@ std::vector<JFactory_base*> JEventProcessor_regressiontest::GetFactoriesTopologi
         }
     }
     for (auto pair : factories) {
-        if (pair->second.second == false) {
-            sorted_factories.push_back(pair->second.first);
+        if (pair.second.second == false) {
+            sorted_factories.push_back(pair.second.first);
         }
     }
     return sorted_factories;
