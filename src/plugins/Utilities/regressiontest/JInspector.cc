@@ -218,24 +218,31 @@ void JInspector::ToText(const std::vector<JFactory_base*>& factories, int filter
 	    std::string tag = fac->Tag();
             if (tag.empty()) tag = "(no tag)";
             std::string creationStatus = "Unknown";
-	    /*
-            switch (fac->GetCreationStatus()) {
-                case JFactory::CreationStatus::NotCreatedYet: creationStatus = "NotCreatedYet"; break;
-                case JFactory::CreationStatus::Created: creationStatus = "Created"; break;
-                case JFactory::CreationStatus::Inserted: creationStatus = "Inserted"; break;
-                case JFactory::CreationStatus::InsertedViaGetObjects: creationStatus = "InsertedViaGetObjects"; break;
-                case JFactory::CreationStatus::NeverCreated: creationStatus = "NeverCreated"; break;
-                default: creationStatus = "Unknown";
-            }
+	    if (fac->GetNcalls() == 0) { 
+	        creationStatus = "NotCreatedYet";
+	    }
+	    else if (fac->GetNgencalls() == 0) { 
+	        creationStatus = "InsertedViaGetObjects";
+	    }
+	    else {
+		creationStatus = "Created";
+	    }
+	    /*	
+	    switch (fac->GetDataOrigin()) {
+		    case ORIGIN_NONE: creationStatus = "ORIGIN_NONE"; break;
+		    case ORIGIN_FACTORY: creationStatus = "ORIGIN_FACTORY"; break;
+		    case ORIGIN_EXTERNAL: creationStatus = "ORIGIN_EXTERNAL"; break;
+	    }
 	    */
             idx += 1;
 	    /*
-            if (filterlevel > 0 && (fac->GetCreationStatus()==JFactory::CreationStatus::NeverCreated ||
-                           fac->GetCreationStatus()==JFactory::CreationStatus::NotCreatedYet)) continue;
+            if (filterlevel > 0 && (fac->GetDataOrigin()==ORIGIN_NONE)) continue;
             if (filterlevel > 1 && (fac->GetNrows(false, true)== 0)) continue;
-            if (filterlevel > 2 && (fac->GetCreationStatus()==JFactory::CreationStatus::Inserted ||
-                                    fac->GetCreationStatus()==JFactory::CreationStatus::InsertedViaGetObjects)) continue;
+            if (filterlevel > 2 && (fac->GetDataOrigin()==ORIGIN_EXTERNAL)) continue;
 	    */
+	    if (filterlevel > 0 && (fac->GetNcalls() == 0)) continue;
+	    if (filterlevel > 1 && (fac->GetNrows(false, true) == 0)) continue;
+	    if (filterlevel > 2 && (fac->GetNgencalls() == 0)) continue;
 
             t | idx | fac->GetDataClassName() | tag | creationStatus | fac->GetNrows(false, true);
         }
