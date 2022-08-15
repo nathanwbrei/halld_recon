@@ -31,6 +31,7 @@
 #include "DMCTrackHit.h"
 #include "DMCTrajectoryPoint.h"
 
+
 void TRACKING_init(JFactorySet *factorySet)
 {
    /// Create and register TRACKING data factories
@@ -60,7 +61,7 @@ void TRACKING_init(JFactorySet *factorySet)
    factorySet->Add(new DTrackFitter_factory_KalmanSIMD_ALT1());
    factorySet->Add(new DTrackFitter_factory_StraightTrack());
 
-   factorySet->Add(new JFactoryT<DMCThrown>());
-   factorySet->Add(new JFactoryT<DMCTrackHit>());
-   factorySet->Add(new JFactoryT<DMCTrajectoryPoint>());
+   factorySet->Add(new JGetObjectsFactory<DMCThrown>());
+   factorySet->Add(new JGetObjectsFactory<DMCTrackHit>());
+   factorySet->Add(new JGetObjectsFactory<DMCTrajectoryPoint>());
 }

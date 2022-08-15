@@ -1,7 +1,7 @@
 // $Id: PID_init.cc 2433 2007-04-07 14:57:32Z kornicer $
 
-#include <JANA/JFactoryT.h>
 #include <JANA/JFactorySet.h>
+#include <JANA/Compatibility/JGetObjectsFactory.h>
 
 #include "DBeamPhoton_factory.h"
 #include "DBeamPhoton_factory_TRUTH.h"
@@ -36,7 +36,7 @@
 void PID_init(JFactorySet *factorySet)
 {
 	/// Create and register PID data factories
-	factorySet->Add(new JFactoryT<DMCReaction>());
+	factorySet->Add(new JGetObjectsFactory<DMCReaction>());
 	factorySet->Add(new DBeamPhoton_factory);
 	factorySet->Add(new DBeamPhoton_factory_TRUTH);
 	factorySet->Add(new DBeamPhoton_factory_TAGGEDMCGEN);
