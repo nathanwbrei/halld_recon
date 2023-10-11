@@ -11,7 +11,7 @@
 #include <vector>
 using namespace std;
 
-#include <JANA/JFactory.h>
+#include <JANA/JFactoryT.h>
 #include "TTAB/DTranslationTable.h"
 
 #include "DCCALDigiHit.h"
@@ -19,9 +19,9 @@ using namespace std;
 
 typedef  vector< vector<double> >  ccal_constants_t;
 
-class DCCALHit_factory:public jana::JFactory<DCCALHit>{
+class DCCALHit_factory:public JFactoryT<DCCALHit>{
 	public:
-                DCCALHit_factory();
+		DCCALHit_factory();
 		~DCCALHit_factory(){};
 
 		ccal_constants_t  gains;
@@ -35,11 +35,11 @@ class DCCALHit_factory:public jana::JFactory<DCCALHit>{
 		double base_time;
 
         private:
-		jerror_t init(void);						///< Called once at program start.2
-		jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
-		jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);	///< Called every event.
-		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
-		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+		void Init() override;
+		void BeginRun(const std::shared_ptr<const JEvent>& event) override;
+		void Process(const std::shared_ptr<const JEvent>& event) override;
+		void EndRun() override;
+		void Finish() override;
 
 		void LoadCCALConst( ccal_constants_t &table, 
                                     const vector<double> &ccal_const_ch, 
