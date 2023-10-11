@@ -23,17 +23,18 @@
 #include <cmath>
 using namespace std;
 
-#include <JANA/JFactory_base.h>
-#include <JANA/JEventLoop.h>
+#include "HDDM/DEventSourceHDDM.h"
+
+#include <JANA/JFactory.h>
 #include <JANA/JEvent.h>
 #include <DANA/DStatusBits.h>
+#include <DANA/DEvent.h>
 
-#include <JANA/JGeometryXML.h>
+#include <JANA/Compatibility/JGeometryXML.h>
 #include "BCAL/DBCALGeometry.h"
 #include "PAIR_SPECTROMETER/DPSGeometry.h"
 
 #include <DVector2.h>
-#include <DEventSourceHDDM.h>
 #include <FDC/DFDCGeometry.h>
 #include <FCAL/DFCALGeometry.h>
 #include <FCAL/DFCALHit.h>
@@ -86,13 +87,13 @@ DEventSourceHDDM::DEventSourceHDDM(const char* source_name)
 
    fin = new hddm_s::istream(*ifs);
    initialized = false;
-   dapp = NULL;
    bfield = NULL;
    geom = NULL;
    
    dRunNumber = -1;
-	
-   if( (!gPARMS->Exists("JANA_CALIB_CONTEXT")) && (getenv("JANA_CALIB_CONTEXT")==NULL) ){
+
+   // TODO: NWB: This uses japp global. We really ought to move this into Init() instead.
+   if( (!japp->GetJParameterManager()->Exists("JANA_CALIB_CONTEXT")) && (getenv("JANA_CALIB_CONTEXT")==NULL) ){
    		cout << "============================================================" << endl;
 			cout << " WARNING: JANA_CALIB_CONTEXT not set. " << endl;
 			cout << "You are reading from an HDDM file which is most likely" << endl;
@@ -117,12 +118,12 @@ DEventSourceHDDM::~DEventSourceHDDM()
 //----------------
 // GetEvent
 //----------------
-jerror_t DEventSourceHDDM::GetEvent(JEvent &event)
+void DEventSourceHDDM::GetEvent(std::shared_ptr<JEvent> event)
 {
    /// Implementation of JEventSource virtual function
 
    if (!fin)
-      return EVENT_SOURCE_NOT_OPEN;
+      return; // EVENT_SOURCE_NOT_OPEN;
 
    // Each open HDDM file takes up about 1M of memory so it's
    // worthwhile to close it as soon as we can.
@@ -131,7 +132,7 @@ jerror_t DEventSourceHDDM::GetEvent(JEvent &event)
       fin = NULL;
       delete ifs;
       ifs = NULL;
-      return NO_MORE_EVENTS_IN_SOURCE;
+      throw RETURN_STATUS::kNO_MORE_EVENTS;
    }
    
    hddm_s::HDDM *record = new hddm_s::HDDM();
@@ -141,11 +142,9 @@ jerror_t DEventSourceHDDM::GetEvent(JEvent &event)
          fin = NULL;
          delete ifs;
          ifs = NULL;
-         return NO_MORE_EVENTS_IN_SOURCE;
+         throw RETURN_STATUS::kNO_MORE_EVENTS;
       }
    }
-
-   ++Nevents_read;
 
    int event_number = -1;
    int run_number = -1;
@@ -158,30 +157,29 @@ jerror_t DEventSourceHDDM::GetEvent(JEvent &event)
    }
 
    // Copy the reference info into the JEvent object
-   event.SetJEventSource(this);
-   event.SetEventNumber(event_number);
-   event.SetRunNumber(run_number);
-   event.SetRef(record);
-   event.SetStatusBit(kSTATUS_HDDM);
-   event.SetStatusBit(kSTATUS_FROM_FILE);
-   event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
- 
-   return NOERROR;
+   event->SetJEventSource(this);
+   event->SetEventNumber(event_number);
+   event->SetRunNumber(run_number);
+   event->Insert(record); // Transfer ownership of record to event
+
+   auto statusBits = new DStatusBits;
+   statusBits->SetStatusBit(kSTATUS_HDDM);
+   statusBits->SetStatusBit(kSTATUS_FROM_FILE);
+   statusBits->SetStatusBit(kSTATUS_PHYSICS_EVENT);
+   event->Insert(statusBits);
 }
 
 //----------------
-// FreeEvent
+// FinishEvent
 //----------------
-void DEventSourceHDDM::FreeEvent(JEvent &event)
+void DEventSourceHDDM::FinishEvent(JEvent &event)
 {
-   hddm_s::HDDM *record = (hddm_s::HDDM*)event.GetRef();
-   delete record;
 }
 
 //----------------
 // GetObjects
 //----------------
-jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
+bool DEventSourceHDDM::GetObjects(const std::shared_ptr<const JEvent> &event, JFactory *factory)
 {
    /// This gets called through the virtual method of the
    /// JEventSource base class. It creates the objects of the type
@@ -190,63 +188,57 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 
    // We must have a factory to hold the data
    if (!factory)
-      throw RESOURCE_UNAVAILABLE;
+      throw JException("DEventSourceHDDM::GetObjects received a NULL factory pointer");
    
    // HDDM doesn't exactly support tagged factories, but the tag
    // can be used to direct filling of the correct factory.
-   string tag = (factory->Tag()==NULL)? "" : factory->Tag();
+   string tag = factory->GetTag();
    
    // The ref field of the JEvent is just the HDDM object pointer.
-   hddm_s::HDDM *record = (hddm_s::HDDM*)event.GetRef();
-   if (!record)
-      throw RESOURCE_UNAVAILABLE;
+   hddm_s::HDDM *record = const_cast<hddm_s::HDDM*>(event->GetSingleStrict<hddm_s::HDDM>());
 
    // Get pointer to the B-field object and Geometry object
-   JEventLoop *loop = event.GetJEventLoop();
-   if (initialized == false && loop) {
+   if (initialized == false && event) {
       initialized = true;
-      dRunNumber = event.GetRunNumber();
-      dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
-      if (dapp) {
-         jcalib = dapp->GetJCalibration(event.GetRunNumber());
-         // Make sure jcalib is set
-         if (!jcalib) {
-            _DBG_ << "ERROR - no jcalib set!" <<endl;
-            return RESOURCE_UNAVAILABLE;
+      dRunNumber = event->GetRunNumber();
+      jcalib = DEvent::GetJCalibration(event);
+      // Make sure jcalib is set
+      if (!jcalib) {
+         _DBG_ << "ERROR - no jcalib set!" <<endl;
+         return false; // RESOURCE_UNAVAILABLE;
+      }
+      // Get constants and do basic check on number of elements
+      vector< map<string, float> > tvals;
+      if(jcalib->Get("FDC/strip_calib", tvals))
+         throw JException("Could not load CCDB table: FDC/strip_calib");
+
+      if (tvals.size() != 192) {
+         _DBG_ << "ERROR - strip calibration vectors are not the right size!"
+               << endl;
+         return false; // VALUE_OUT_OF_RANGE;
+      }
+      map<string,float>::iterator iter;
+      for (iter=tvals[0].begin(); iter!=tvals[0].end(); iter++) {
+         // Copy values into tables. We preserve the order since
+         // that is how it was originally done in hitFDC.c
+         for (unsigned int i=0; i<tvals.size(); i++) {
+            map<string, float> &row = tvals[i];
+            uscale[i]=row["qru"];
+            vscale[i]=row["qrv"];
          }
-         // Get constants and do basic check on number of elements
-         vector< map<string, float> > tvals;
-         if(jcalib->Get("FDC/strip_calib", tvals))
-             throw JException("Could not load CCDB table: FDC/strip_calib");
- 
-         if (tvals.size() != 192) {
-            _DBG_ << "ERROR - strip calibration vectors are not the right size!"
-                  << endl;
-            return VALUE_OUT_OF_RANGE;
-         }
-         map<string,float>::iterator iter;
-         for (iter=tvals[0].begin(); iter!=tvals[0].end(); iter++) {
-            // Copy values into tables. We preserve the order since
-            // that is how it was originally done in hitFDC.c
-            for (unsigned int i=0; i<tvals.size(); i++) {
-               map<string, float> &row = tvals[i];
-               uscale[i]=row["qru"];
-               vscale[i]=row["qrv"];
-            }
-         }     
       }
       // load BCAL geometry
       vector<const DBCALGeometry *> BCALGeomVec;
-      loop->Get(BCALGeomVec);
+      event->Get(BCALGeomVec);
       if(BCALGeomVec.size() == 0)
 	throw JException("Could not load DBCALGeometry object!");
       dBCALGeom = BCALGeomVec[0];
       
       // load PS geometry
       vector<const DPSGeometry*> psGeomVect;
-      loop->Get(psGeomVect);
+      event->Get(psGeomVect);
       if (psGeomVect.size() < 1)
-	return OBJECT_NOT_AVAILABLE;
+	return false; // OBJECT_NOT_AVAILABLE;
       psGeom = psGeomVect[0];
       
 
@@ -257,7 +249,7 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
    // It is expected that simulated data will rarely contain events from multiple
    // runs, as this is an intermediate format in the simulation chain, so for 
    // now we just insert a sanity check, and push the problem to the future
-   if(dRunNumber != event.GetRunNumber()) {
+   if(dRunNumber != event->GetRunNumber()) {
        jerr << endl
             << "WARNING:  DEventSourceHDDM cannot currently handle HDDM files containing" << endl
             << "events with multiple runs!  If you encounter this error message," << endl
@@ -269,16 +261,14 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
    //Get target center
    //multiple reader threads can access this object: need lock
    bool locNewRunNumber = false;
-   unsigned int locRunNumber = event.GetRunNumber();
-   LockRead();
+   unsigned int locRunNumber = event->GetRunNumber();
    {
+      std::lock_guard<std::mutex> lock(read_mutex);
       locNewRunNumber = (dTargetCenterZMap.find(locRunNumber) == dTargetCenterZMap.end());
    }
-   UnlockRead();
    if(locNewRunNumber)
    {
-      DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
-      DGeometry* locGeometry = dapp->GetDGeometry(loop->GetJEvent().GetRunNumber());
+      DGeometry* locGeometry = DEvent::GetDGeometry(event);
       double locTargetCenterZ = 0.0;
       locGeometry->GetTargetZ(locTargetCenterZ);
 
@@ -304,204 +294,203 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
       }
 
       vector<double> locBeamPeriodVector;
-      if(loop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector))
+      if(jcalib->Get("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector))
           throw runtime_error("Could not load CCDB table: PHOTON_BEAM/RF/beam_period");
       double locBeamBunchPeriod = locBeamPeriodVector[0];
 
-      LockRead();
       {
+         std::lock_guard<std::mutex> lock(read_mutex);
          dTargetCenterZMap[locRunNumber] = locTargetCenterZ;
          dBeamBunchPeriodMap[locRunNumber] = locBeamBunchPeriod;
       }
-      UnlockRead();
    }
 
    // Get name of data class we're trying to extract
-   string dataClassName = factory->GetDataClassName();
+   string dataClassName = factory->GetObjectName();
 
    if (dataClassName == "DPSHit")
       return Extract_DPSHit(record, 
-                     dynamic_cast<JFactory<DPSHit>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DPSHit>*>(factory), tag);
 
    if (dataClassName == "DPSTruthHit")
       return Extract_DPSTruthHit(record, 
-                     dynamic_cast<JFactory<DPSTruthHit>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DPSTruthHit>*>(factory), tag);
 
    if (dataClassName == "DPSCHit")
       return Extract_DPSCHit(record, 
-                     dynamic_cast<JFactory<DPSCHit>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DPSCHit>*>(factory), tag);
 
    if (dataClassName == "DPSCTruthHit")
       return Extract_DPSCTruthHit(record, 
-                     dynamic_cast<JFactory<DPSCTruthHit>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DPSCTruthHit>*>(factory), tag);
 
    if (dataClassName == "DRFTime")
       return Extract_DRFTime(record, 
-                     dynamic_cast<JFactory<DRFTime>*>(factory), loop);
+                     dynamic_cast<JFactoryT<DRFTime>*>(factory), event);
 
    if (dataClassName == "DTAGMHit")
       return Extract_DTAGMHit(record, 
-                     dynamic_cast<JFactory<DTAGMHit>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DTAGMHit>*>(factory), tag);
  
    if (dataClassName == "DTAGHHit")
       return Extract_DTAGHHit(record, 
-                     dynamic_cast<JFactory<DTAGHHit>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DTAGHHit>*>(factory), tag);
 
    if (dataClassName == "DMCTrackHit")
       return Extract_DMCTrackHit(record,
-                     dynamic_cast<JFactory<DMCTrackHit>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DMCTrackHit>*>(factory), tag);
  
    if (dataClassName == "DMCReaction")
       return Extract_DMCReaction(record,
-                     dynamic_cast<JFactory<DMCReaction>*>(factory), tag, loop);
+                     dynamic_cast<JFactoryT<DMCReaction>*>(factory), tag, event);
  
    if (dataClassName == "DMCThrown")
       return Extract_DMCThrown(record,
-                     dynamic_cast<JFactory<DMCThrown>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DMCThrown>*>(factory), tag);
  
    if (dataClassName == "DBCALTruthShower")
       return Extract_DBCALTruthShower(record, 
-                     dynamic_cast<JFactory<DBCALTruthShower>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DBCALTruthShower>*>(factory), tag);
  
    if (dataClassName == "DBCALSiPMSpectrum")
       return Extract_DBCALSiPMSpectrum(record,
-                     dynamic_cast<JFactory<DBCALSiPMSpectrum>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DBCALSiPMSpectrum>*>(factory), tag);
  
    if (dataClassName == "DBCALTruthCell")
       return Extract_DBCALTruthCell(record,
-                     dynamic_cast<JFactory<DBCALTruthCell>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DBCALTruthCell>*>(factory), tag);
  
    if (dataClassName == "DBCALSiPMHit")
       return Extract_DBCALSiPMHit(record,
-                     dynamic_cast<JFactory<DBCALSiPMHit>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DBCALSiPMHit>*>(factory), tag);
  
    if (dataClassName == "DBCALDigiHit")
       return Extract_DBCALDigiHit(record,
-                     dynamic_cast<JFactory<DBCALDigiHit>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DBCALDigiHit>*>(factory), tag);
 
    if (dataClassName == "DBCALIncidentParticle")
       return Extract_DBCALIncidentParticle(record,
-                     dynamic_cast<JFactory<DBCALIncidentParticle>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DBCALIncidentParticle>*>(factory), tag);
  
    if (dataClassName == "DBCALTDCDigiHit")
       return Extract_DBCALTDCDigiHit(record,
-                     dynamic_cast<JFactory<DBCALTDCDigiHit>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DBCALTDCDigiHit>*>(factory), tag);
  
    if (dataClassName == "DCDCHit")
-      return Extract_DCDCHit(loop, record,
-                     dynamic_cast<JFactory<DCDCHit>*>(factory) , tag);
+      return Extract_DCDCHit(event, record,
+                     dynamic_cast<JFactoryT<DCDCHit>*>(factory) , tag);
  
    if (dataClassName == "DFDCHit")
       return Extract_DFDCHit(record, 
-                     dynamic_cast<JFactory<DFDCHit>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DFDCHit>*>(factory), tag);
  
    if (dataClassName == "DFCALTruthShower")
       return Extract_DFCALTruthShower(record, 
-                     dynamic_cast<JFactory<DFCALTruthShower>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DFCALTruthShower>*>(factory), tag);
  
    if (dataClassName == "DFCALHit")
       return Extract_DFCALHit(record,
-                     dynamic_cast<JFactory<DFCALHit>*>(factory), tag,
-                     event.GetJEventLoop());
+                     dynamic_cast<JFactoryT<DFCALHit>*>(factory), tag,
+                     event);
  
    if (dataClassName == "DCCALTruthShower")
       return Extract_DCCALTruthShower(record,
-                     dynamic_cast<JFactory<DCCALTruthShower>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DCCALTruthShower>*>(factory), tag);
  
    if (dataClassName == "DCCALHit")
       return Extract_DCCALHit(record,
-                     dynamic_cast<JFactory<DCCALHit>*>(factory), tag,
-                     event.GetJEventLoop());
+                     dynamic_cast<JFactoryT<DCCALHit>*>(factory), tag,
+                     event);
  
    if (dataClassName == "DMCTrajectoryPoint" && tag == "")
       return Extract_DMCTrajectoryPoint(record,
-                     dynamic_cast<JFactory<DMCTrajectoryPoint>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DMCTrajectoryPoint>*>(factory), tag);
  
    if (dataClassName == "DTOFTruth")
       return Extract_DTOFTruth(record, 
-                     dynamic_cast<JFactory<DTOFTruth>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DTOFTruth>*>(factory), tag);
  
    // TOF is a special case: TWO factories are needed at the same time
    // DTOFHit and DTOFHitMC
    if (dataClassName == "DTOFHit") {
-      JFactory_base* factory2 = loop->GetFactory("DTOFHitMC", tag.c_str()); 
+      JFactory* factory2 = event->GetFactory("DTOFHitMC", tag.c_str());
       return Extract_DTOFHit(record, 
-                     dynamic_cast<JFactory<DTOFHit>*>(factory),
-                     dynamic_cast<JFactory<DTOFHitMC>*>(factory2), tag);
+                     dynamic_cast<JFactoryT<DTOFHit>*>(factory),
+                     dynamic_cast<JFactoryT<DTOFHitMC>*>(factory2), tag);
    }
    if (dataClassName == "DTOFHitMC") {
-      JFactory_base* factory2 = loop->GetFactory("DTOFHit", tag.c_str()); 
+      JFactory* factory2 = event->GetFactory("DTOFHit", tag.c_str());
       return Extract_DTOFHit(record, 
-                     dynamic_cast<JFactory<DTOFHit>*>(factory2),
-                     dynamic_cast<JFactory<DTOFHitMC>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DTOFHit>*>(factory2),
+                     dynamic_cast<JFactoryT<DTOFHitMC>*>(factory), tag);
    }
 
    if (dataClassName == "DSCHit")
       return Extract_DSCHit(record, 
-                     dynamic_cast<JFactory<DSCHit>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DSCHit>*>(factory), tag);
 
    if (dataClassName == "DSCTruthHit")
       return Extract_DSCTruthHit(record, 
-                     dynamic_cast<JFactory<DSCTruthHit>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DSCTruthHit>*>(factory), tag);
 
    if (dataClassName == "DFMWPCTruthHit")
       return Extract_DFMWPCTruthHit(record, 
-                     dynamic_cast<JFactory<DFMWPCTruthHit>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DFMWPCTruthHit>*>(factory), tag);
    
    if (dataClassName == "DFMWPCTruth")
       return Extract_DFMWPCTruth(record, 
-                     dynamic_cast<JFactory<DFMWPCTruth>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DFMWPCTruth>*>(factory), tag);
 
    if (dataClassName == "DFMWPCHit")
       return Extract_DFMWPCHit(record, 
-                     dynamic_cast<JFactory<DFMWPCHit>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DFMWPCHit>*>(factory), tag);
 
    if (dataClassName == "DCTOFTruth")
       return Extract_DCTOFTruth(record, 
-                     dynamic_cast<JFactory<DCTOFTruth>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DCTOFTruth>*>(factory), tag);
    
    if (dataClassName == "DCTOFHit")
       return Extract_DCTOFHit(record, 
-                     dynamic_cast<JFactory<DCTOFHit>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DCTOFHit>*>(factory), tag);
 
    if (dataClassName == "DDIRCTruthBarHit")
      return Extract_DDIRCTruthBarHit(record,
-		     dynamic_cast<JFactory<DDIRCTruthBarHit>*>(factory), tag);
+		     dynamic_cast<JFactoryT<DDIRCTruthBarHit>*>(factory), tag);
 
    if (dataClassName == "DDIRCTruthPmtHit")
      return Extract_DDIRCTruthPmtHit(record,
-		     dynamic_cast<JFactory<DDIRCTruthPmtHit>*>(factory), tag);
+		     dynamic_cast<JFactoryT<DDIRCTruthPmtHit>*>(factory), tag);
    
    if (dataClassName == "DDIRCPmtHit")
      return Extract_DDIRCPmtHit(record,
-		     dynamic_cast<JFactory<DDIRCPmtHit>*>(factory), tag, event.GetJEventLoop());
+		     dynamic_cast<JFactoryT<DDIRCPmtHit>*>(factory), tag, event);
 
    // extract CereTruth and CereRichHit hits, yqiang Oct 3, 2012
    // removed CereTruth (merged into MCThrown), added CereHit, yqiang Oct 10 2012
    if (dataClassName == "DCereHit")
       return Extract_DCereHit(record, 
-                     dynamic_cast<JFactory<DCereHit>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DCereHit>*>(factory), tag);
 
    if (dataClassName == "DTPOLHit")
       return Extract_DTPOLHit(record,
-                     dynamic_cast<JFactory<DTPOLHit>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DTPOLHit>*>(factory), tag);
 
    if (dataClassName == "DTPOLTruthHit")
       return Extract_DTPOLTruthHit(record,
-                     dynamic_cast<JFactory<DTPOLTruthHit>*>(factory), tag);
+                     dynamic_cast<JFactoryT<DTPOLTruthHit>*>(factory), tag);
 
-   return OBJECT_NOT_AVAILABLE;
+   return false; // OBJECT_NOT_AVAILABLE;
 }
 
 //------------------
 // Extract_DRFTime
 //------------------
 jerror_t DEventSourceHDDM::Extract_DRFTime(hddm_s::HDDM *record,
-                                   JFactory<DRFTime> *factory, JEventLoop* locEventLoop)
+                                   JFactoryT<DRFTime> *factory, const std::shared_ptr<const JEvent>& locEvent)
 {
    if (factory==NULL)
       return OBJECT_NOT_AVAILABLE;
-   string tag = (factory->Tag())? factory->Tag() : "";
+   string tag = factory->GetTag();
 
    vector<DRFTime*> locRFTimes;
 
@@ -521,7 +510,7 @@ jerror_t DEventSourceHDDM::Extract_DRFTime(hddm_s::HDDM *record,
 	if(!locRFTimes.empty())
 	{
 		//found in the file, copy into factory and return
-		factory->CopyTo(locRFTimes);
+		factory->Set(locRFTimes);
 		return NOERROR;
 	}
 
@@ -530,7 +519,7 @@ jerror_t DEventSourceHDDM::Extract_DRFTime(hddm_s::HDDM *record,
 		//MC data: generate it
 
 	vector<const DBeamPhoton*> locMCGENPhotons;
-	locEventLoop->Get(locMCGENPhotons, "MCGEN");
+	locEvent->Get(locMCGENPhotons, "MCGEN");
 	if(locMCGENPhotons.empty())
 		return OBJECT_NOT_AVAILABLE; //Experimental data & it's missing: bail
 
@@ -548,12 +537,11 @@ jerror_t DEventSourceHDDM::Extract_DRFTime(hddm_s::HDDM *record,
 	else
 	{
 		double locBeamBunchPeriod = 0.0;
-		int locRunNumber = locEventLoop->GetJEvent().GetRunNumber();
-		LockRead();
+		int locRunNumber = locEvent->GetRunNumber();
 		{
+			std::lock_guard<std::mutex> lock(read_mutex);
 			locBeamBunchPeriod = dBeamBunchPeriodMap[locRunNumber];
 		}
-		UnlockRead();
 
 		//start with true RF time, increment/decrement by multiples of locBeamBunchPeriod ns until closest to 0
 		double locTime = locMCGENPhotons[0]->time();
@@ -571,7 +559,7 @@ jerror_t DEventSourceHDDM::Extract_DRFTime(hddm_s::HDDM *record,
 	}
 
 	// Copy into factories
-	factory->CopyTo(locRFTimes);
+	factory->Set(locRFTimes);
 
    return NOERROR;
 }
@@ -580,7 +568,7 @@ jerror_t DEventSourceHDDM::Extract_DRFTime(hddm_s::HDDM *record,
 // Extract_DMCTrackHit
 //------------------
 jerror_t DEventSourceHDDM::Extract_DMCTrackHit(hddm_s::HDDM *record,
-                                   JFactory<DMCTrackHit> *factory, string tag)
+                                   JFactoryT<DMCTrackHit> *factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -624,7 +612,7 @@ jerror_t DEventSourceHDDM::Extract_DMCTrackHit(hddm_s::HDDM *record,
    }
    
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -845,7 +833,7 @@ jerror_t DEventSourceHDDM::GetSCTruthHits(hddm_s::HDDM *record,
 // Extract_DBCALSiPMHit
 //------------------
 jerror_t DEventSourceHDDM::Extract_DBCALSiPMHit(hddm_s::HDDM *record,
-                                   JFactory<DBCALSiPMHit> *factory, string tag)
+                                   JFactoryT<DBCALSiPMHit> *factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -891,7 +879,7 @@ jerror_t DEventSourceHDDM::Extract_DBCALSiPMHit(hddm_s::HDDM *record,
    }
    
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -900,7 +888,7 @@ jerror_t DEventSourceHDDM::Extract_DBCALSiPMHit(hddm_s::HDDM *record,
 // Extract_DBCALDigiHit
 //------------------
 jerror_t DEventSourceHDDM::Extract_DBCALDigiHit(hddm_s::HDDM *record,
-                                   JFactory<DBCALDigiHit> *factory, string tag)
+                                   JFactoryT<DBCALDigiHit> *factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -937,7 +925,7 @@ jerror_t DEventSourceHDDM::Extract_DBCALDigiHit(hddm_s::HDDM *record,
    }
 
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -946,7 +934,7 @@ jerror_t DEventSourceHDDM::Extract_DBCALDigiHit(hddm_s::HDDM *record,
 // Extract_DBCALIncidentParticle
 //------------------
 jerror_t DEventSourceHDDM::Extract_DBCALIncidentParticle(hddm_s::HDDM *record,
-                                   JFactory<DBCALIncidentParticle> *factory,
+                                   JFactoryT<DBCALIncidentParticle> *factory,
                                    string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
@@ -975,7 +963,7 @@ jerror_t DEventSourceHDDM::Extract_DBCALIncidentParticle(hddm_s::HDDM *record,
       data.push_back(part);
    }
   
-   factory->CopyTo(data);
+   factory->Set(data);
   
    return NOERROR;
 }
@@ -984,7 +972,7 @@ jerror_t DEventSourceHDDM::Extract_DBCALIncidentParticle(hddm_s::HDDM *record,
 // Extract_DBCALSiPMSpectrum
 //------------------
 jerror_t DEventSourceHDDM::Extract_DBCALSiPMSpectrum(hddm_s::HDDM *record,
-                                   JFactory<DBCALSiPMSpectrum> *factory,
+                                   JFactoryT<DBCALSiPMSpectrum> *factory,
                                    string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
@@ -1048,7 +1036,7 @@ jerror_t DEventSourceHDDM::Extract_DBCALSiPMSpectrum(hddm_s::HDDM *record,
    }
          
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -1057,7 +1045,7 @@ jerror_t DEventSourceHDDM::Extract_DBCALSiPMSpectrum(hddm_s::HDDM *record,
 // Extract_DBCALTDCDigiHit
 //------------------
 jerror_t DEventSourceHDDM::Extract_DBCALTDCDigiHit(hddm_s::HDDM *record,
-                                   JFactory<DBCALTDCDigiHit> *factory, string tag)
+                                   JFactoryT<DBCALTDCDigiHit> *factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -1084,7 +1072,7 @@ jerror_t DEventSourceHDDM::Extract_DBCALTDCDigiHit(hddm_s::HDDM *record,
    }
          
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -1093,8 +1081,8 @@ jerror_t DEventSourceHDDM::Extract_DBCALTDCDigiHit(hddm_s::HDDM *record,
 // Extract_DMCReaction
 //------------------
 jerror_t DEventSourceHDDM::Extract_DMCReaction(hddm_s::HDDM *record,
-                                   JFactory<DMCReaction> *factory, string tag,
-                                   JEventLoop *loop)
+                                   JFactoryT<DMCReaction> *factory, string tag,
+                                   const std::shared_ptr<const JEvent>& event)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -1107,12 +1095,11 @@ jerror_t DEventSourceHDDM::Extract_DMCReaction(hddm_s::HDDM *record,
       return OBJECT_NOT_AVAILABLE;
    
    double locTargetCenterZ = 0.0;
-   int locRunNumber = loop->GetJEvent().GetRunNumber();
-   LockRead();
+   int locRunNumber = event->GetRunNumber();
    {
+      std::lock_guard<std::mutex> lock(read_mutex);
       locTargetCenterZ = dTargetCenterZMap[locRunNumber];
    }
-   UnlockRead();
    DVector3 locPosition(0.0, 0.0, locTargetCenterZ);
 
    vector<DMCReaction*> dmcreactions;
@@ -1172,7 +1159,7 @@ jerror_t DEventSourceHDDM::Extract_DMCReaction(hddm_s::HDDM *record,
    // Copy into factories
    //_DBG_<<"Creating "<<dmcreactions.size()<<" DMCReaction objects"<<endl;
 
-   factory->CopyTo(dmcreactions);
+   factory->Set(dmcreactions);
 
    return NOERROR;
 }
@@ -1181,7 +1168,7 @@ jerror_t DEventSourceHDDM::Extract_DMCReaction(hddm_s::HDDM *record,
 // Extract_DMCThrown
 //------------------
 jerror_t DEventSourceHDDM::Extract_DMCThrown(hddm_s::HDDM *record,
-                                   JFactory<DMCThrown> *factory, string tag)
+                                   JFactoryT<DMCThrown> *factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -1252,7 +1239,7 @@ jerror_t DEventSourceHDDM::Extract_DMCThrown(hddm_s::HDDM *record,
    }
    
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -1260,8 +1247,8 @@ jerror_t DEventSourceHDDM::Extract_DMCThrown(hddm_s::HDDM *record,
 //------------------
 // Extract_DCDCHit
 //------------------
-jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDDM *record,
-                                   JFactory<DCDCHit> *factory, string tag)
+jerror_t DEventSourceHDDM::Extract_DCDCHit(const std::shared_ptr<const JEvent>& locEvent, hddm_s::HDDM *record,
+                                   JFactoryT<DCDCHit> *factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -1282,7 +1269,7 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
 
    if ( tag == "" || tag == "Calib" ) {
       vector<const DCDCHit*> locTruthHits;
-      locEventLoop->Get(locTruthHits, "TRUTH");
+      locEvent->Get(locTruthHits, "TRUTH");
 
 		//pre-sort truth hits
 		map<pair<int, int>, vector<const DCDCHit*>> locTruthHitMap; //key pair: ring, straw
@@ -1310,7 +1297,7 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
             if(iter->getCdcHitQFs().size() > 0) {
                 hit->QF  = iter->getCdcHitQF().getQF();
             }            
-            hit->d      = 0.; // initialize to zero to avoid any NaN
+            hit->d      = 0.; // Initialize to zero to avoid any NaN
             hit->itrack = 0;  // track information is in TRUTH tag
             hit->ptype  = 0;  // ditto
 
@@ -1350,7 +1337,7 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
    }
    
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -1360,7 +1347,7 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
 // Extract_DFDCHit
 //------------------
 jerror_t DEventSourceHDDM::Extract_DFDCHit(hddm_s::HDDM *record,
-                                   JFactory<DFDCHit> *factory, string tag)
+                                   JFactoryT<DFDCHit> *factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -1384,7 +1371,7 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(hddm_s::HDDM *record,
          newHit->q       = ahiter->getDE();
          newHit->pulse_height = 0.;     // not measured
          newHit->t       = ahiter->getT();
-         newHit->d       = 0.; // initialize to zero to avoid any NaN
+         newHit->d       = 0.; // Initialize to zero to avoid any NaN
          newHit->itrack  = 0;  // track information is in TRUTH tag
          newHit->ptype   = 0;  // ditto
          newHit->plane   = 2;
@@ -1412,7 +1399,7 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(hddm_s::HDDM *record,
              newHit->pulse_height  = chiter->getFdcDigihit().getPeakAmp();
          }
          newHit->t       = chiter->getT();
-         newHit->d       = 0.; // initialize to zero to avoid any NaN
+         newHit->d       = 0.; // Initialize to zero to avoid any NaN
          newHit->itrack  = 0;  // track information is in TRUTH tag
          newHit->ptype   = 0;  // ditto
          newHit->type    = 1;
@@ -1460,7 +1447,7 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(hddm_s::HDDM *record,
          newHit->q       = ctiter->getQ();
 	 newHit->pulse_height = newHit->q;
          newHit->t       = ctiter->getT();
-         newHit->d       = 0.; // initialize to zero to avoid any NaN
+         newHit->d       = 0.; // Initialize to zero to avoid any NaN
          newHit->itrack  = ctiter->getItrack();
          newHit->ptype   = ctiter->getPtype();
          newHit->type    = 1;
@@ -1482,7 +1469,7 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(hddm_s::HDDM *record,
          newHit->element = ahiter->getWire();
          newHit->q       = ahiter->getDE();
          newHit->t       = ahiter->getT();
-         newHit->d       = 0.; // initialize to zero to avoid any NaN
+         newHit->d       = 0.; // Initialize to zero to avoid any NaN
          newHit->itrack  = 0;  // track information is in TRUTH tag
          newHit->ptype   = 0;  // ditto
          newHit->plane   = 2;
@@ -1509,7 +1496,7 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(hddm_s::HDDM *record,
          else  // u
             newHit->q = chiter->getQ()*uscale[newHit->element-1];
          newHit->t       = chiter->getT();
-         newHit->d       = 0.; // initialize to zero to avoid any NaN
+         newHit->d       = 0.; // Initialize to zero to avoid any NaN
          newHit->itrack  = 0;  // track information is in TRUTH tag
          newHit->ptype   = 0;  // ditto
          newHit->type    = 1;
@@ -1521,7 +1508,7 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(hddm_s::HDDM *record,
    }
    
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
    
    return NOERROR;
 }
@@ -1530,7 +1517,7 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(hddm_s::HDDM *record,
 // Extract_DBCALTruthShower
 //------------------
 jerror_t DEventSourceHDDM::Extract_DBCALTruthShower(hddm_s::HDDM *record,
-                                   JFactory<DBCALTruthShower> *factory,
+                                   JFactoryT<DBCALTruthShower> *factory,
                                    string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
@@ -1565,7 +1552,7 @@ jerror_t DEventSourceHDDM::Extract_DBCALTruthShower(hddm_s::HDDM *record,
    }
 
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -1574,7 +1561,7 @@ jerror_t DEventSourceHDDM::Extract_DBCALTruthShower(hddm_s::HDDM *record,
 // Extract_DBCALTruthCell
 //------------------
 jerror_t DEventSourceHDDM::Extract_DBCALTruthCell(hddm_s::HDDM *record,
-                                   JFactory<DBCALTruthCell> *factory, 
+                                   JFactoryT<DBCALTruthCell> *factory, 
                                    string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
@@ -1602,7 +1589,7 @@ jerror_t DEventSourceHDDM::Extract_DBCALTruthCell(hddm_s::HDDM *record,
    }
 
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -1611,7 +1598,7 @@ jerror_t DEventSourceHDDM::Extract_DBCALTruthCell(hddm_s::HDDM *record,
 // Extract_DFCALTruthShower
 //------------------
 jerror_t DEventSourceHDDM::Extract_DFCALTruthShower(hddm_s::HDDM *record,
-                                   JFactory<DFCALTruthShower> *factory,
+                                   JFactoryT<DFCALTruthShower> *factory,
                                    string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
@@ -1624,7 +1611,7 @@ jerror_t DEventSourceHDDM::Extract_DFCALTruthShower(hddm_s::HDDM *record,
       return OBJECT_NOT_AVAILABLE;
    
    vector<DFCALTruthShower*> data;
-   JObject::oid_t id=1;
+   oid_t id=1;
 
    const hddm_s::FcalTruthShowerList &shows = record->getFcalTruthShowers();
    hddm_s::FcalTruthShowerList::iterator iter;
@@ -1650,7 +1637,7 @@ jerror_t DEventSourceHDDM::Extract_DFCALTruthShower(hddm_s::HDDM *record,
    }
 
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -1659,8 +1646,8 @@ jerror_t DEventSourceHDDM::Extract_DFCALTruthShower(hddm_s::HDDM *record,
 // Extract_DFCALHit
 //------------------
 jerror_t DEventSourceHDDM::Extract_DFCALHit(hddm_s::HDDM *record,
-                                   JFactory<DFCALHit> *factory, string tag,
-                                   JEventLoop* eventLoop)
+                                   JFactoryT<DFCALHit> *factory, string tag,
+                                   const std::shared_ptr<const JEvent>& event)
 {
   /// Copies the data from the given hddm_s structure. This is called
   /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -1673,7 +1660,7 @@ jerror_t DEventSourceHDDM::Extract_DFCALHit(hddm_s::HDDM *record,
 
    // extract the FCAL Geometry (for isBlockActive() and positionOnFace())
    vector<const DFCALGeometry*> fcalGeomVect;
-   eventLoop->Get( fcalGeomVect );
+   event->Get( fcalGeomVect );
    if (fcalGeomVect.size() < 1)
       return OBJECT_NOT_AVAILABLE;
    const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
@@ -1737,7 +1724,7 @@ jerror_t DEventSourceHDDM::Extract_DFCALHit(hddm_s::HDDM *record,
    }
   
   // Copy into factory
-  factory->CopyTo(data);
+  factory->Set(data);
   
   return NOERROR;
 }
@@ -1746,7 +1733,7 @@ jerror_t DEventSourceHDDM::Extract_DFCALHit(hddm_s::HDDM *record,
 // Extract_DCCALTruthShower
 //------------------
 jerror_t DEventSourceHDDM::Extract_DCCALTruthShower(hddm_s::HDDM *record,
-                                   JFactory<DCCALTruthShower> *factory,
+                                   JFactoryT<DCCALTruthShower> *factory,
                                    string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
@@ -1759,7 +1746,7 @@ jerror_t DEventSourceHDDM::Extract_DCCALTruthShower(hddm_s::HDDM *record,
       return OBJECT_NOT_AVAILABLE;
    
    vector<DCCALTruthShower*> data;
-   JObject::oid_t id=1;
+   oid_t id=1;
 
    const hddm_s::CcalTruthShowerList &shows = record->getCcalTruthShowers();
    hddm_s::CcalTruthShowerList::iterator iter;
@@ -1785,7 +1772,7 @@ jerror_t DEventSourceHDDM::Extract_DCCALTruthShower(hddm_s::HDDM *record,
    }
 
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -1794,8 +1781,8 @@ jerror_t DEventSourceHDDM::Extract_DCCALTruthShower(hddm_s::HDDM *record,
 // Extract_DCCALHit
 //------------------
 jerror_t DEventSourceHDDM::Extract_DCCALHit(hddm_s::HDDM *record,
-                                   JFactory<DCCALHit> *factory, string tag,
-                                   JEventLoop* eventLoop)
+                                   JFactoryT<DCCALHit> *factory, string tag,
+                                   const std::shared_ptr<const JEvent>& event)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -1808,7 +1795,7 @@ jerror_t DEventSourceHDDM::Extract_DCCALHit(hddm_s::HDDM *record,
 
    // extract the CCAL Geometry (for isBlockActive() and positionOnFace())
    vector<const DCCALGeometry*> ccalGeomVect;
-   eventLoop->Get( ccalGeomVect );
+   event->Get( ccalGeomVect );
    if (ccalGeomVect.size() < 1)
       return OBJECT_NOT_AVAILABLE;
    const DCCALGeometry& ccalGeom = *(ccalGeomVect[0]);
@@ -1871,7 +1858,7 @@ jerror_t DEventSourceHDDM::Extract_DCCALHit(hddm_s::HDDM *record,
    }
   
   // Copy into factory
-  factory->CopyTo(data);
+  factory->Set(data);
   
   return NOERROR;
 }
@@ -1880,7 +1867,7 @@ jerror_t DEventSourceHDDM::Extract_DCCALHit(hddm_s::HDDM *record,
 // Extract_DMCTrajectoryPoint
 //------------------
 jerror_t DEventSourceHDDM::Extract_DMCTrajectoryPoint(hddm_s::HDDM *record,
-                                   JFactory<DMCTrajectoryPoint> *factory, 
+                                   JFactoryT<DMCTrajectoryPoint> *factory, 
                                    string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
@@ -1917,7 +1904,7 @@ jerror_t DEventSourceHDDM::Extract_DMCTrajectoryPoint(hddm_s::HDDM *record,
    }
    
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -1926,7 +1913,7 @@ jerror_t DEventSourceHDDM::Extract_DMCTrajectoryPoint(hddm_s::HDDM *record,
 // Extract_DTOFTruth
 //------------------
 jerror_t DEventSourceHDDM::Extract_DTOFTruth(hddm_s::HDDM *record,
-                                   JFactory<DTOFTruth>* factory, string tag)
+                                   JFactoryT<DTOFTruth>* factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -1960,7 +1947,7 @@ jerror_t DEventSourceHDDM::Extract_DTOFTruth(hddm_s::HDDM *record,
    }
 
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -1969,8 +1956,8 @@ jerror_t DEventSourceHDDM::Extract_DTOFTruth(hddm_s::HDDM *record,
 // Extract_DTOFHit
 //------------------
 jerror_t DEventSourceHDDM::Extract_DTOFHit( hddm_s::HDDM *record,
-                                   JFactory<DTOFHit>* factory,
-                                   JFactory<DTOFHitMC> *factoryMC,
+                                   JFactoryT<DTOFHit>* factory,
+                                   JFactoryT<DTOFHitMC> *factoryMC,
                                    string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
@@ -2092,8 +2079,8 @@ jerror_t DEventSourceHDDM::Extract_DTOFHit( hddm_s::HDDM *record,
    }
 
    // Copy into factory
-   factory->CopyTo(data);
-   factoryMC->CopyTo(dataMC);
+   factory->Set(data);
+   factoryMC->Set(dataMC);
 
    return NOERROR;
 }
@@ -2102,7 +2089,7 @@ jerror_t DEventSourceHDDM::Extract_DTOFHit( hddm_s::HDDM *record,
 // Extract_DSCHit
 //------------------
 jerror_t DEventSourceHDDM::Extract_DSCHit(hddm_s::HDDM *record,
-                                   JFactory<DSCHit>* factory, string tag)
+                                   JFactoryT<DSCHit>* factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -2151,7 +2138,7 @@ jerror_t DEventSourceHDDM::Extract_DSCHit(hddm_s::HDDM *record,
    }
 
   // Copy into factory
-  factory->CopyTo(data);
+  factory->Set(data);
 
   return NOERROR;
 }
@@ -2160,7 +2147,7 @@ jerror_t DEventSourceHDDM::Extract_DSCHit(hddm_s::HDDM *record,
 // Extract_DSCTruthHit
 //------------------
 jerror_t DEventSourceHDDM::Extract_DSCTruthHit(hddm_s::HDDM *record,
-                                   JFactory<DSCTruthHit>* factory, string tag)
+                                   JFactoryT<DSCTruthHit>* factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -2192,7 +2179,7 @@ jerror_t DEventSourceHDDM::Extract_DSCTruthHit(hddm_s::HDDM *record,
    }
 
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -2201,8 +2188,8 @@ jerror_t DEventSourceHDDM::Extract_DSCTruthHit(hddm_s::HDDM *record,
 // Extract_DTrackTimeBased
 //------------------
 jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(hddm_s::HDDM *record,
-                                   JFactory<DTrackTimeBased> *factory, 
-                                   string tag, int32_t runnumber, JEventLoop* locEventLoop)
+                                   JFactoryT<DTrackTimeBased> *factory, 
+                                   string tag, int32_t runnumber, const std::shared_ptr<const JEvent>& locEvent)
 {
    // Note: Since this is a reconstructed factory, we want to generally return OBJECT_NOT_AVAILABLE
    // rather than NOERROR. The reason being that the caller interprets "NOERROR" to mean "yes I
@@ -2261,7 +2248,7 @@ jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(hddm_s::HDDM *record,
 
    // Copy into factory
    if (ttbs.size() > 0){
-      factory->CopyTo(data);
+      factory->Set(data);
 
       // If the event had a s_Tracktimebased_t pointer, then report
       // back that we read them in from the file. Otherwise, report
@@ -2301,7 +2288,7 @@ string DEventSourceHDDM::StringToTMatrixFSym(string &str_vals, TMatrixFSym* mat,
 // Extract_DTAGMHit
 //------------------
 jerror_t DEventSourceHDDM::Extract_DTAGMHit(hddm_s::HDDM *record,
-                                   JFactory<DTAGMHit>* factory,
+                                   JFactoryT<DTAGMHit>* factory,
                                    string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
@@ -2355,7 +2342,7 @@ jerror_t DEventSourceHDDM::Extract_DTAGMHit(hddm_s::HDDM *record,
    }
 
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -2364,7 +2351,7 @@ jerror_t DEventSourceHDDM::Extract_DTAGMHit(hddm_s::HDDM *record,
 // Extract_DTAGHHit
 //------------------
 jerror_t DEventSourceHDDM::Extract_DTAGHHit( hddm_s::HDDM *record,
-                                   JFactory<DTAGHHit>* factory,
+                                   JFactoryT<DTAGHHit>* factory,
                                    string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
@@ -2417,7 +2404,7 @@ jerror_t DEventSourceHDDM::Extract_DTAGHHit( hddm_s::HDDM *record,
    }
 
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -2426,7 +2413,7 @@ jerror_t DEventSourceHDDM::Extract_DTAGHHit( hddm_s::HDDM *record,
 // Extract_DPSHit
 //------------------
 jerror_t DEventSourceHDDM::Extract_DPSHit(hddm_s::HDDM *record,
-                                   JFactory<DPSHit>* factory, string tag)
+                                   JFactoryT<DPSHit>* factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -2476,7 +2463,7 @@ jerror_t DEventSourceHDDM::Extract_DPSHit(hddm_s::HDDM *record,
    }
 
   // Copy into factory
-  factory->CopyTo(data);
+  factory->Set(data);
 
   return NOERROR;
 }
@@ -2485,7 +2472,7 @@ jerror_t DEventSourceHDDM::Extract_DPSHit(hddm_s::HDDM *record,
 // Extract_DPSTruthHit
 //------------------
 jerror_t DEventSourceHDDM::Extract_DPSTruthHit(hddm_s::HDDM *record,
-                                   JFactory<DPSTruthHit>* factory, string tag)
+                                   JFactoryT<DPSTruthHit>* factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -2517,7 +2504,7 @@ jerror_t DEventSourceHDDM::Extract_DPSTruthHit(hddm_s::HDDM *record,
    }
 
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -2526,7 +2513,7 @@ jerror_t DEventSourceHDDM::Extract_DPSTruthHit(hddm_s::HDDM *record,
 // Extract_DPSCHit
 //------------------
 jerror_t DEventSourceHDDM::Extract_DPSCHit(hddm_s::HDDM *record,
-                                   JFactory<DPSCHit>* factory, string tag)
+                                   JFactoryT<DPSCHit>* factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -2582,7 +2569,7 @@ jerror_t DEventSourceHDDM::Extract_DPSCHit(hddm_s::HDDM *record,
    }
 
   // Copy into factory
-  factory->CopyTo(data);
+  factory->Set(data);
 
   return NOERROR;
 }
@@ -2591,7 +2578,7 @@ jerror_t DEventSourceHDDM::Extract_DPSCHit(hddm_s::HDDM *record,
 // Extract_DPSCTruthHit
 //------------------
 jerror_t DEventSourceHDDM::Extract_DPSCTruthHit(hddm_s::HDDM *record,
-                                   JFactory<DPSCTruthHit>* factory, string tag)
+                                   JFactoryT<DPSCTruthHit>* factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -2623,7 +2610,7 @@ jerror_t DEventSourceHDDM::Extract_DPSCTruthHit(hddm_s::HDDM *record,
    }
 
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -2632,7 +2619,7 @@ jerror_t DEventSourceHDDM::Extract_DPSCTruthHit(hddm_s::HDDM *record,
 // Etract_DTPOLHit
 //------------------
 jerror_t DEventSourceHDDM::Extract_DTPOLHit(hddm_s::HDDM *record,
-                                   JFactory<DTPOLHit>* factory, string tag)
+                                   JFactoryT<DTPOLHit>* factory, string tag)
 {
    if (factory == NULL)
       return OBJECT_NOT_AVAILABLE;
@@ -2670,7 +2657,7 @@ jerror_t DEventSourceHDDM::Extract_DTPOLHit(hddm_s::HDDM *record,
       }
    }
 
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -2678,7 +2665,7 @@ jerror_t DEventSourceHDDM::Extract_DTPOLHit(hddm_s::HDDM *record,
 //------------------------
 // Extract_DTPOLTruthHit
 //------------------------
-jerror_t DEventSourceHDDM::Extract_DTPOLTruthHit(hddm_s::HDDM *record,                                                                      JFactory<DTPOLTruthHit>* factory, string tag)
+jerror_t DEventSourceHDDM::Extract_DTPOLTruthHit(hddm_s::HDDM *record,                                                                      JFactoryT<DTPOLTruthHit>* factory, string tag)
 {
    if (factory == NULL)
       return OBJECT_NOT_AVAILABLE;
@@ -2705,7 +2692,7 @@ jerror_t DEventSourceHDDM::Extract_DTPOLTruthHit(hddm_s::HDDM *record,          
       data.push_back(hit);
    }
 
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -2734,13 +2721,13 @@ Particle_t DEventSourceHDDM::IDTrack(float locCharge, float locMass) const
       if (fabs(locMass - ParticleMass(Gamma)) < locMassTolerance) return Gamma;
       if (fabs(locMass - ParticleMass(Neutron)) < locMassTolerance) return Neutron;
    }
-   return Unknown;
+   return Particle_t::Unknown;
 }
 
 //------------------
 // Extract_DFMWPCTruthHit
 //------------------
-jerror_t DEventSourceHDDM::Extract_DFMWPCTruthHit(hddm_s::HDDM *record,  JFactory<DFMWPCTruthHit> *factory, string tag)
+jerror_t DEventSourceHDDM::Extract_DFMWPCTruthHit(hddm_s::HDDM *record,  JFactoryT<DFMWPCTruthHit> *factory, string tag)
 {
    /// Copies the data from the given hddm_s record. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -2766,7 +2753,7 @@ jerror_t DEventSourceHDDM::Extract_DFMWPCTruthHit(hddm_s::HDDM *record,  JFactor
    }
 
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -2776,7 +2763,7 @@ jerror_t DEventSourceHDDM::Extract_DFMWPCTruthHit(hddm_s::HDDM *record,  JFactor
 // Extract_DFMWPCTruth
 //------------------
 jerror_t DEventSourceHDDM::Extract_DFMWPCTruth(hddm_s::HDDM *record,
-                                   JFactory<DFMWPCTruth>* factory, string tag)
+                                   JFactoryT<DFMWPCTruth>* factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -2810,7 +2797,7 @@ jerror_t DEventSourceHDDM::Extract_DFMWPCTruth(hddm_s::HDDM *record,
    }
 
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -2818,7 +2805,7 @@ jerror_t DEventSourceHDDM::Extract_DFMWPCTruth(hddm_s::HDDM *record,
 //------------------
 // Extract_DFMWPCHit
 //------------------
-jerror_t DEventSourceHDDM::Extract_DFMWPCHit(hddm_s::HDDM *record,  JFactory<DFMWPCHit> *factory, string tag)
+jerror_t DEventSourceHDDM::Extract_DFMWPCHit(hddm_s::HDDM *record,  JFactoryT<DFMWPCHit> *factory, string tag)
 {
    /// Copies the data from the given hddm_s record. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -2843,7 +2830,7 @@ jerror_t DEventSourceHDDM::Extract_DFMWPCHit(hddm_s::HDDM *record,  JFactory<DFM
    }
 
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -2853,7 +2840,7 @@ jerror_t DEventSourceHDDM::Extract_DFMWPCHit(hddm_s::HDDM *record,  JFactory<DFM
 // Extract_DCTOFTruth
 //------------------
 jerror_t DEventSourceHDDM::Extract_DCTOFTruth(hddm_s::HDDM *record,
-                                   JFactory<DCTOFTruth>* factory, string tag)
+                                   JFactoryT<DCTOFTruth>* factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -2887,7 +2874,7 @@ jerror_t DEventSourceHDDM::Extract_DCTOFTruth(hddm_s::HDDM *record,
    }
 
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -2896,7 +2883,7 @@ jerror_t DEventSourceHDDM::Extract_DCTOFTruth(hddm_s::HDDM *record,
 //------------------
 // Extract_DCTOFHit
 //------------------
-jerror_t DEventSourceHDDM::Extract_DCTOFHit(hddm_s::HDDM *record,  JFactory<DCTOFHit> *factory, string tag)
+jerror_t DEventSourceHDDM::Extract_DCTOFHit(hddm_s::HDDM *record,  JFactoryT<DCTOFHit> *factory, string tag)
 {
    /// Copies the data from the given hddm_s record. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -2919,7 +2906,7 @@ jerror_t DEventSourceHDDM::Extract_DCTOFHit(hddm_s::HDDM *record,  JFactory<DCTO
    }
 
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -2928,8 +2915,8 @@ jerror_t DEventSourceHDDM::Extract_DCTOFHit(hddm_s::HDDM *record,  JFactory<DCTO
 // Extract_DDIRCPmtHit
 //------------------
 jerror_t DEventSourceHDDM::Extract_DDIRCPmtHit(hddm_s::HDDM *record,
-                                   JFactory<DDIRCPmtHit> *factory, string tag,
-                                   JEventLoop* eventLoop)
+                                   JFactoryT<DDIRCPmtHit> *factory, string tag,
+                                   const std::shared_ptr<const JEvent>& event)
 {
   /// Copies the data from the given hddm_s structure. This is called
   /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -2944,7 +2931,7 @@ jerror_t DEventSourceHDDM::Extract_DDIRCPmtHit(hddm_s::HDDM *record,
 
   if (tag == "") {
      vector<const DDIRCTruthPmtHit*> locDIRCTruthPmtHit;
-     eventLoop->Get(locDIRCTruthPmtHit);
+     event->Get(locDIRCTruthPmtHit);
 
      const hddm_s::DircPmtHitList &hits = record->getDircPmtHits();
      hddm_s::DircPmtHitList::iterator iter;
@@ -2972,7 +2959,7 @@ jerror_t DEventSourceHDDM::Extract_DDIRCPmtHit(hddm_s::HDDM *record,
   }
   
   // Copy into factory
-  factory->CopyTo(data);
+  factory->Set(data);
   
   return NOERROR;
 }
@@ -2982,7 +2969,7 @@ jerror_t DEventSourceHDDM::Extract_DDIRCPmtHit(hddm_s::HDDM *record,
 // added by yqiang Oct 11, 2012
 //------------------
 jerror_t DEventSourceHDDM::Extract_DCereHit(hddm_s::HDDM *record,
-                                   JFactory<DCereHit>* factory, string tag)
+                                   JFactoryT<DCereHit>* factory, string tag)
 {
    if (factory == NULL)
       return OBJECT_NOT_AVAILABLE;
@@ -3015,7 +3002,7 @@ jerror_t DEventSourceHDDM::Extract_DCereHit(hddm_s::HDDM *record,
    }
 
    // copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
@@ -3024,7 +3011,7 @@ jerror_t DEventSourceHDDM::Extract_DCereHit(hddm_s::HDDM *record,
 // Extract_DDIRCTruthBarHit
 //------------------
 jerror_t DEventSourceHDDM::Extract_DDIRCTruthBarHit(hddm_s::HDDM *record,
-                                   JFactory<DDIRCTruthBarHit>* factory, string tag)
+                                   JFactoryT<DDIRCTruthBarHit>* factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -3056,7 +3043,7 @@ jerror_t DEventSourceHDDM::Extract_DDIRCTruthBarHit(hddm_s::HDDM *record,
    }
 
   // Copy into factory
-  factory->CopyTo(data);
+  factory->Set(data);
 
   return NOERROR;
 }
@@ -3065,7 +3052,7 @@ jerror_t DEventSourceHDDM::Extract_DDIRCTruthBarHit(hddm_s::HDDM *record,
 // Extract_DDIRCTruthPmtHit
 //------------------
 jerror_t DEventSourceHDDM::Extract_DDIRCTruthPmtHit(hddm_s::HDDM *record,
-                                   JFactory<DDIRCTruthPmtHit>* factory, string tag)
+                                   JFactoryT<DDIRCTruthPmtHit>* factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -3101,7 +3088,7 @@ jerror_t DEventSourceHDDM::Extract_DDIRCTruthPmtHit(hddm_s::HDDM *record,
    }
 
   // Copy into factory
-  factory->CopyTo(data);
+  factory->Set(data);
 
   return NOERROR;
 }
