@@ -14,10 +14,7 @@
 #include <pthread.h>
 
 #include <JANA/JEventSource.h>
-#include <JANA/jerror.h>
-#include <JANA/JCalibration.h>
-#include <JANA/JCalibrationCCDB.h>
-#include <JANA/JCalibrationGeneratorCCDB.h>
+#include <JANA/Calibrations/JCalibrationGeneratorCCDB.h>
 
 #include "hddm_r.hpp"
 
@@ -37,7 +34,7 @@
 #include <FMWPC/DCTOFPoint.h>
 #include <FMWPC/DFMWPCHit.h>
 #include <TRIGGER/DTrigger.h>
-#include <DANA/DApplication.h>
+#include <DANA/DEvent.h>
 #include <RF/DRFTime.h>
 #include <DIRC/DDIRCPmtHit.h>
 #include <DIRC/DDIRCTruthBarHit.h>
@@ -55,13 +52,7 @@ class DEventSourceREST:public JEventSource
 {
  public:
    DEventSourceREST(const char* source_name);
-   virtual ~DEventSourceREST();		
-   virtual const char* className(void) {
-      return DEventSourceREST::static_className();
-   }
-   static const char* static_className(void) {
-      return "DEventSourceREST";
-   }
+   virtual ~DEventSourceREST();
 
    jerror_t GetEvent(JEvent &event);
    void FreeEvent(JEvent &event);
@@ -96,7 +87,7 @@ class DEventSourceREST:public JEventSource
                     JFactory<DDetectorMatches>* factory);
 #if 0
    jerror_t Extract_DRFTime(hddm_r::HDDM *record,
-                    JFactory<DRFTime>* factory);
+                    JFactoryT<DRFTime>* factory);
 #endif
    jerror_t Extract_DDIRCPmtHit(hddm_r::HDDM *record,
                     JFactory<DDIRCPmtHit>* factory, JEventLoop* locEventLoop);
@@ -105,7 +96,7 @@ class DEventSourceREST:public JEventSource
    jerror_t Extract_DFCALHit(hddm_r::HDDM *record,
                     JFactory<DFCALHit>* factory, JEventLoop* locEventLoop);
    jerror_t Extract_DEventHitStatistics(hddm_r::HDDM *record,
-                    JFactory<DEventHitStatistics> *factory);
+                    JFactoryT<DEventHitStatistics> *factory);
 
    void Get7x7ErrorMatrix(double mass, const double vec[5], const TMatrixFSym* C5x5, TMatrixFSym* loc7x7ErrorMatrix);
  private:
@@ -142,6 +133,8 @@ class DEventSourceREST:public JEventSource
    	map<unsigned int, JCalibration *> dJCalib_olds; //unsigned int is run number
    	map<unsigned int, DTAGHGeometry *> dTAGHGeoms; //unsigned int is run number
    	map<unsigned int, DTAGMGeometry *> dTAGMGeoms; //unsigned int is run number
+
+   	std::mutex readMutex;
 
 };
 
