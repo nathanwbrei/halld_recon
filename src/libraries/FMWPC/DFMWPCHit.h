@@ -22,13 +22,13 @@ class DFMWPCHit:public JObject{
 		float t;     // time in ns
 		int QF;      // quality factor
 
-		void toStrings(vector<pair<string, string> >&items) const {
-			AddString(items, "layer", "%d", layer);
-			AddString(items, "wire", "%d", wire);
-			AddString(items, "q",      "%10.2f",  q);
-			AddString(items, "amp",    "%10.2f", amp);
-			AddString(items, "t", "%3.3f", t);
-			AddString(items, "QF", "%d", QF);
+		void Summarize(JObjectSummary& summary) const override {
+			summary.add(layer, "layer", "%d");
+			summary.add(wire, "wire", "%d");
+			summary.add(q, "q", "%10.2f");
+			summary.add(amp, "amp", "%10.2f");
+			summary.add(t, "t", "%3.3f");
+			summary.add(QF, "QF", "%d");
 		}
 
 };
