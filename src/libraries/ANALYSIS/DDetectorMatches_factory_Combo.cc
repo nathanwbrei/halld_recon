@@ -24,8 +24,6 @@ void DDetectorMatches_factory_Combo::Init()
 //------------------
 void DDetectorMatches_factory_Combo::BeginRun(const std::shared_ptr<const JEvent>& locEvent)
 {
-	dDetectorMatchesFactory = dynamic_cast<DDetectorMatches_factory*>(locEvent->GetFactory<DDetectorMatches>());
-	// TODO: NWB: Don't do this!
 }
 
 double DDetectorMatches_factory_Combo::Calc_PVariance(const DTrackTimeBased* locTrack) const
@@ -65,7 +63,7 @@ pair<double, double> DDetectorMatches_factory_Combo::Calc_EnergyRatio(const DTra
 void DDetectorMatches_factory_Combo::Process(const std::shared_ptr<const JEvent>& locEvent)
 {
 #ifdef VTRACE
-	VT_TRACER("DDetectorMatches_factory_Combo::evnt()");
+	VT_TRACER("DDetectorMatches_factory_Combo::Process()");
 #endif
 
 	//get new DTrackTimeBased objects

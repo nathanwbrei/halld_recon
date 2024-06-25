@@ -41,7 +41,6 @@ class DDetectorMatches_factory_Combo : public JFactoryT<DDetectorMatches>
 		pair<double, double> Calc_EnergyRatio(const DTrackTimeBased* locTrackTimeBased, const DTrackTimeBased* locOriginalTrackTimeBased) const;
 		double Calc_PVariance(const DTrackTimeBased* locTrack) const;
 
-		DDetectorMatches_factory* dDetectorMatchesFactory;
 };
 
 #endif // _DDetectorMatches_factory_Combo_
