@@ -69,7 +69,7 @@ int main(int narg, char *argv[])
 	while(! MACRO_THREAD_RUNNING ) std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	
 	// Run though all events, calling our event processor's methods
-	// app.monitor_heartbeat = 0;  // TODO: NWB: Re-enable
+    app->SetTimeoutEnabled(false);
 	jana::Execute(app, dapp.GetUserOptions());
 
 	DONE = true;
