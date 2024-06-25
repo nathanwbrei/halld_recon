@@ -85,7 +85,6 @@ void JEventProcessor_EventTagPi0::Process(const std::shared_ptr<const JEvent>& e
 			double r2 = deltaX*deltaX + deltaY*deltaY;
 			if( r2 <= Rmin_cm_2 ){
 
-				// TODO: NWB: This is dangerous, why are we doing this?
 				const DStatusBits* sbc = event->GetSingle<DStatusBits>();
 				DStatusBits* sb = const_cast<DStatusBits*>(sbc);
 				sb->SetStatusBit(kSTATUS_FCAL_PI0);

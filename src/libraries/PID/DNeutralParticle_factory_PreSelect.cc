@@ -44,7 +44,6 @@ void DNeutralParticle_factory_PreSelect::Process(const std::shared_ptr<const JEv
 	dResourcePool_NeutralParticle->Recycle(dCreated);
 	dCreated.clear();
 	mData.clear();
-	// TODO: NWB: Aesthetics: Improve getter to mData
 
 	vector<const DNeutralParticle*> locNeutralParticles;
 	event->Get(locNeutralParticles);

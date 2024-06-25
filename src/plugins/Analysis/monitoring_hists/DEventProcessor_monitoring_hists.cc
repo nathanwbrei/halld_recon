@@ -38,8 +38,6 @@ void DEventProcessor_monitoring_hists::Init()
 	if(app->GetJParameterManager()->Exists("OUTPUT_FILENAME"))
 		app->GetParameter("OUTPUT_FILENAME", locOutputFileName);
 
-	// TODO: NWB: Rejigger Exists() to be less weird and ugly
-
 	//go to file
 	TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
 	if(locFile != NULL)
