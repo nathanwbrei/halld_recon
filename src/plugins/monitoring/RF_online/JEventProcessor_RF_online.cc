@@ -21,7 +21,7 @@ extern "C"
 void JEventProcessor_RF_online::Init()
 {
 	auto app = GetApplication();
-	lockService = app->GetService<JLockService>();  // TODO: NWB: Why does the linter think this is dead code?
+	lockService = app->GetService<JLockService>();
 
 	//This constant should be fixed for the lifetime of GlueX.  If it ever changes, move it into the CCDB.
 	dRFSignalPeriod = 1000.0/499.0; //2.004008016
@@ -240,9 +240,9 @@ void JEventProcessor_RF_online::Init()
 
 void JEventProcessor_RF_online::BeginRun(const std::shared_ptr<const JEvent> &locEvent, int32_t runnumber)
 {
-	// This is called whenever the run number changes
-
-    // TODO: NWB: Excise all uses of brun_was_called and Set_brun_called from codebase
+    // Make sure that DRFTime_factory::BeginRun gets called whenever the run number changes. Usually this happens automatically, but in this case,
+    // we are fetching and using that factory from inside Process() without triggering it.
+	locEvent->Get<DRFTime>("");
 }
 
 void JEventProcessor_RF_online::Process(const std::shared_ptr<const JEvent> &locEvent, uint64_t eventnumber)

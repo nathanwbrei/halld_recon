@@ -49,7 +49,6 @@ void JEventProcessor_randomtrigger_skim::BeginRun(const std::shared_ptr<const JE
     dBeamCurrentFactory->SetApplication(event->GetJApplication());
     dBeamCurrentFactory->Init();
     dBeamCurrentFactory->BeginRun(event);
-    // TODO: NWB: This thing again.
 }
 
 //-------------------------------

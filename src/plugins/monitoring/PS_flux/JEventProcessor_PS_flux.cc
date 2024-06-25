@@ -199,7 +199,6 @@ void JEventProcessor_PS_flux::BeginRun(const std::shared_ptr<const JEvent>& even
     dBeamCurrentFactory->SetApplication(GetApplication());
     dBeamCurrentFactory->Init();
     dBeamCurrentFactory->BeginRun(event);
-    // TODO: NWB: FML
 
     // extract the PS geometry
     vector<const DPSGeometry*> psGeomVect;
