@@ -1541,7 +1541,6 @@ void DL1MCTrigger_factory::GetSeeds(const std::shared_ptr<const JEvent>& event, 
   } else {
   
     hddm_s::HDDM *record = const_cast<hddm_s::HDDM*>(event->GetSingleStrict<hddm_s::HDDM>());
-    // TODO: NWB: Don't like this const cast
 
     if (!record){
       seed1 = 259921049 + eventnumber;

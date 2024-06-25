@@ -141,7 +141,6 @@ void JEventProcessor_danahddm::Process(const std::shared_ptr<const JEvent>& even
       exit(-1);
    }
    hddm_s::HDDM *hddm = const_cast<hddm_s::HDDM*>(event->GetSingle<hddm_s::HDDM>());
-   // TODO: NWB: Why are we const_cast-ing here?
    if (! hddm)
       return;
    

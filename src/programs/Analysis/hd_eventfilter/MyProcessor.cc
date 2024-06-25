@@ -79,7 +79,6 @@ void MyProcessor::Process(const std::shared_ptr<const JEvent>& event)
    }
    auto hddmc = event->GetSingle<hddm_s::HDDM>();
    hddm_s::HDDM *hddm = const_cast<hddm_s::HDDM*>(hddmc);
-   // TODO: NWB: I just don't like const casts
    if (!hddm)
       return;
    

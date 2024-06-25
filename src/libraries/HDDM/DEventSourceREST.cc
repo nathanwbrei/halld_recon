@@ -241,7 +241,6 @@ bool DEventSourceREST::GetObjects(const std::shared_ptr<const JEvent> &event, JF
    }
 
    hddm_r::HDDM *record = const_cast<hddm_r::HDDM*>(event->GetSingleStrict<hddm_r::HDDM>());
-   // TODO: NWB: Remove const cast if possible
 
    string dataClassName = factory->GetObjectName();
    JCalibration *jcalib = DEvent::GetJCalibration(event);
