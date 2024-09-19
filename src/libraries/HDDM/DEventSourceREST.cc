@@ -391,7 +391,7 @@ bool DEventSourceREST::GetObjects(const std::shared_ptr<const JEvent> &event, JF
    }
    if (dataClassName =="DFCALHit") {
       return Extract_DFCALHit(record,
-		     dynamic_cast<JFactory<DFCALHit>*>(factory), event);
+		     dynamic_cast<JFactoryT<DFCALHit>*>(factory), event);
    }
    if (dataClassName =="DDetectorMatches") {
       return (Extract_DDetectorMatches(event, record,
@@ -2032,8 +2032,7 @@ jerror_t DEventSourceREST::Extract_DFCALHit(hddm_r::HDDM *record,
    if (factory==NULL) {
       return OBJECT_NOT_AVAILABLE;
    }
-   string tag = (factory->Tag())? factory->Tag() : "";
-
+   string tag = factory->GetTag();
    vector<DFCALHit*> data;
 
    // loop over fmwpc hit records
@@ -2057,7 +2056,7 @@ jerror_t DEventSourceREST::Extract_DFCALHit(hddm_r::HDDM *record,
    }
 
    // Copy into factory
-   factory->CopyTo(data);
+   factory->Set(data);
 
    return NOERROR;
 }
